@@ -1,0 +1,27 @@
+{
+  "cli": {
+    "version": ">= 12.1.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal"
+    },
+    "production": {
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "pmarathay@infiniteoptions.com",
+        "ascAppId": "6670776069",
+        "appleTeamId": "8V66NC2T37"
+      }
+    }
+  }
+}

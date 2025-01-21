@@ -7,6 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import ProgressBar from "../src/Assets/Components/ProgressBar";
 
 export default function AccountSetup2Create() {
+  console.log("In Account Setup 2");
   const [formData, setFormData] = useState({
     email: "",
     // phone_number: '',

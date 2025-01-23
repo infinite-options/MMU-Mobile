@@ -77,10 +77,18 @@ export default function MatchProfileDisplay() {
     })
   ).current;
 
+  const [isLiked, setIsLiked] = useState(false);
+
   useEffect(() => {
     // On mount, we want the sheet at the "semi-open" position.
     sheetAnim.setValue(sheetClosedY);
   }, []);
+
+  useEffect(() => {
+    if (userInfo?.["Liked by"] === "YES") {
+      setIsLiked(true);
+    }
+  }, [userInfo]);
 
   // Video logic
   const handlePlaybackStatusUpdate = (statusUpdate) => {
@@ -130,9 +138,53 @@ export default function MatchProfileDisplay() {
       fetchData(0);
     }
   };
-  const handleLikePress = () => {
-    navigation.navigate('MatchPageNew');
-  }
+  const handleLikePress = async () => {
+    const updatedIsLiked = !isLiked;
+    setIsLiked(updatedIsLiked);
+
+    const userUid = await AsyncStorage.getItem('user_uid');
+    const likedUserUid = userInfo.user_uid;
+    const formData = new URLSearchParams();
+    formData.append('liker_user_id', userUid);
+    formData.append('liked_user_id', likedUserUid);
+
+    try {
+      if (updatedIsLiked) {
+        await axios.post('https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/likes', formData.toString(), {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        });
+      } else {
+        await axios.delete('https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/likes', {
+          data: formData.toString(),
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Error handling like action', error.message);
+      console.error('Error details:', error.response ? error.response.data : 'No response data');
+    }
+
+    // Debugging logs
+    console.log('updatedIsLiked:', updatedIsLiked);
+    console.log('userInfo.Liked:', userInfo?.Likes);
+
+    // Check if both users have liked each other
+    if (updatedIsLiked && userInfo?.Likes === "YES") {
+      try {
+        // Store the matched user's UserUid
+        await AsyncStorage.setItem('meet_date_user_id', userInfo.user_uid);
+        console.log('meet_date_user_id stored:', userInfo.user_uid);
+        // Navigate to MatchPageNew
+        navigation.navigate('MatchPageNew');
+      } catch (error) {
+        console.error('Failed to store meet_date_user_id:', error);
+      }
+    }
+  };
 
   const handleClosePress = () => {
     // Example: skip to next profile on "X"
@@ -143,7 +195,7 @@ export default function MatchProfileDisplay() {
     try {
       console.log('userUid', userUid);
       const response = await axios.get(
-        `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/100-000004`
+        `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/${userUid}`
       );
       console.log('API Response MatchProfileDisplay:', response.data);
 
@@ -159,8 +211,12 @@ export default function MatchProfileDisplay() {
           const data = await fetchUserInfo(uid);
           console.log('data', data);
           console.log('fetchedData', fetchedData);
+          console.log('userInfo', fetchedData.user_uid);
+          console.log('isLiked', fetchedData["Liked by"]);
           setUserInfo(fetchedData);
-          console.log('userInfo data', userInfo);
+
+          // Update isLiked state based on the new userInfo
+          setIsLiked(fetchedData["Liked by"] === "YES");
         } else {
           setError('No match data available.');
         }
@@ -227,14 +283,25 @@ export default function MatchProfileDisplay() {
     }
   }
 
-  // Parse userInfo.user_general_interests (which might be JSON string like ["Hiking","Biking"])
+  // Parse userInfo.user_general_interests
   let generalInterests = [];
   if (userInfo?.user_general_interests) {
     try {
-      generalInterests = JSON.parse(userInfo.user_general_interests);
+      // Log the raw data
+      console.log('Raw user_general_interests:', userInfo.user_general_interests);
+
+      // Attempt to parse as JSON
+      if (typeof userInfo.user_general_interests === 'string' && userInfo.user_general_interests.trim().startsWith('[')) {
+        generalInterests = JSON.parse(userInfo.user_general_interests);
+      } else {
+        // Fallback: Split by commas if it's a plain string
+        generalInterests = userInfo.user_general_interests.split(',').map(item => item.trim());
+      }
     } catch (e) {
       console.log('Failed to parse user_general_interests', e);
-      // Fallback if needed
+
+      // Fallback: Split by commas if it's a plain string
+      generalInterests = userInfo.user_general_interests.split(',').map(item => item.trim());
     }
   }
 
@@ -242,10 +309,21 @@ export default function MatchProfileDisplay() {
   let dateInterests = [];
   if (userInfo?.user_date_interests) {
     try {
-      dateInterests = JSON.parse(userInfo.user_date_interests);
+      // Log the raw data
+
+      // Check if the data is a valid JSON string
+      if (typeof userInfo.user_date_interests === 'string' && userInfo.user_date_interests.trim().startsWith('[')) {
+        // Attempt to parse as JSON
+        dateInterests = JSON.parse(userInfo.user_date_interests);
+      } else {
+        // Fallback: Split by commas if it's a plain string
+        dateInterests = userInfo.user_date_interests.split(',').map(item => item.trim());
+      }
     } catch (e) {
       console.log('Failed to parse user_date_interests', e);
-      // Fallback if needed
+
+      // Fallback: Split by commas if it's a plain string
+      dateInterests = userInfo.user_date_interests.split(',').map(item => item.trim());
     }
   }
 
@@ -325,10 +403,17 @@ export default function MatchProfileDisplay() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.roundButton, { backgroundColor: 'red', marginLeft: 25 }]}
+            style={[
+              styles.roundButton,
+              { backgroundColor: isLiked ? 'red' : 'white', marginLeft: 25 },
+            ]}
             onPress={handleLikePress}
           >
-            <Image source={likeImg} style={styles.centerImage} />
+            <Ionicons
+              name={isLiked ? "heart" : "heart-outline"}
+              size={24}
+              color={isLiked ? "white" : "red"}
+            />
           </TouchableOpacity>
         </View>
 
@@ -351,15 +436,18 @@ export default function MatchProfileDisplay() {
         <ScrollView style={styles.bottomSheetScroll}>
           {/* Name, Age, and Heart */}
           <View style={styles.nameRow}>
-            <Text style={styles.nameText}>
+          <Text style={styles.nameText}>
               {userInfo?.user_first_name}, {userInfo?.user_age}
+              
             </Text>
             <Ionicons
-              name={userInfo?.Likes === "YES" ? "heart" : "heart-outline"}
+              name={userInfo?.["Likes"] === "YES" ? "heart" : "heart-outline"}
               size={20}
               color="red"
               style={{ marginLeft: 6 }}
             />
+            
+            
           </View>
 
           {/* 5-star rating + attendance rating (example placeholder) */}
@@ -368,6 +456,11 @@ export default function MatchProfileDisplay() {
               <Ionicons key={i} name="star" size={18} color="#FFD700" />
             ))}
             <Text style={styles.attendanceText}> attendance rating</Text>
+
+          </View>
+          <View style={styles.starRatingContainer}>
+            
+          <Text style={styles.nameText}>{userInfo?.user_uid}</Text>
           </View>
 
           {/* Interests chips */}

@@ -4,6 +4,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import AccountSetup2Create from "./AccountSetup/AccountSetup2Create";
 import AccountSetup3Create from "./AccountSetup/AccountSetup3Create";
@@ -73,6 +74,10 @@ import Login from "./AccountSetup/Login.js";
 import EditProfile from "./Profile/EditProfile.js";
 import MatchPageNew from "./Match/MatchPageNew.js";
 import MatchResultsPage from "./Match/MatchResultsPage.js";
+import DateType from "./DatePreferences/DateType.js";
+import DateOccurance from "./DatePreferences/DateOccurance.js";
+import DateLocation from "./DatePreferences/DateLocation.js";
+import DateFinal from "./DatePreferences/DateFinal.js";
 const Stack = createNativeStackNavigator();
 // const Stack = createStackNavigator();
 SplashScreen.preventAutoHideAsync();
@@ -98,6 +103,7 @@ export default function App() {
     return null; 
   }
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <NavigationContainer>
       {/*
       <Stack.Navigator initialRouteName='AccountSetup2Create'>
@@ -112,6 +118,10 @@ export default function App() {
         <Stack.Screen name='MatchPageNew' component={MatchPageNew}/>
         <Stack.Screen name='MatchResultsPage' component={MatchResultsPage}/>
        <Stack.Screen name='MatchProfileDisplay' component={MatchProfileDisplay}/> 
+       <Stack.Screen name="DateType" component={DateType}/>
+       <Stack.Screen name="DateOccurance" component={DateOccurance}/>
+       <Stack.Screen name="DateLocation" component={DateLocation}/>
+       <Stack.Screen name="DateFinal" component={DateFinal}/>
        <Stack.Screen name='MatchPopUp' component={MatchPopUp}/>
         <Stack.Screen name='MatchPopUpTemp' component={MatchPopUpTemp}/>
         <Stack.Screen name='Start' component={Start} />
@@ -183,6 +193,7 @@ export default function App() {
         <Stack.Screen name="NextSummary" component={DateSummary}/>
       </Stack.Navigator>
     </NavigationContainer>
+    </GestureHandlerRootView>
   );
 }
 

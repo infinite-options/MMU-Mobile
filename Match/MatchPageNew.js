@@ -23,6 +23,9 @@ const MatchPageNew = () => {
     const handleKeepExploring = () => {
         navigation.navigate('MatchResultsPage');
     }
+    const handleSetUpDate = () => {
+        navigation.navigate('DateType');
+    }
   return (
     <LinearGradient colors={['#FC6767', '#EC008C']} style={styles.container}>
       {/* Title */}
@@ -42,7 +45,7 @@ const MatchPageNew = () => {
       </View>
 
       {/* Button: Set up our date */}
-      <TouchableOpacity style={styles.button}>
+      <TouchableOpacity style={styles.button} onPress={handleSetUpDate}>
         <Text style={styles.buttonText}>Set up our date</Text>
       </TouchableOpacity>
 

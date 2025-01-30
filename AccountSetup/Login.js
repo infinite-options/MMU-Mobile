@@ -64,7 +64,7 @@ export default function Login() {
 
       // 2. Combine salt with password and hash it
       const salt = saltObject.result[0].password_salt;
-      const saltedPassword = password + salt; 
+      const saltedPassword = password + salt;
       const hashedPassword = sha256(saltedPassword).toString();
 
       // 3. Call the Login endpoint with the hashed password
@@ -100,12 +100,12 @@ export default function Login() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Back Button */}
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+      {/* <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={28} color="red" />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       {/* Progress Bar (optional) */}
-      <ProgressBar startProgress={0} endProgress={10} />
+      <ProgressBar startProgress={0} endProgress={10} style={styles.progressBar} />
 
       {/* Title and Subtitle */}
       <Text style={styles.title}>Welcome Back!</Text>
@@ -150,7 +150,7 @@ export default function Login() {
       <Pressable
         style={[
           styles.continueButton,
-          { backgroundColor: isFormComplete() ? '#E4423F' : '#ccc' },
+          { backgroundColor: isFormComplete() ? '#E4423F' : '#F5F5F5' },
         ]}
         onPress={() => {
           if (isFormComplete()) {
@@ -159,7 +159,7 @@ export default function Login() {
         }}
         disabled={!isFormComplete()}
       >
-        <Text style={styles.continueButtonText}>Continue</Text>
+        <Text style={[styles.continueButtonText, { color: isFormComplete() ? '#FFF' : 'rgba(26, 26, 26, 0.25)' }]}>Continue</Text>
       </Pressable>
 
       {/* OR Separator */}
@@ -199,19 +199,23 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 25,
     backgroundColor: '#FFF',
     justifyContent: 'flex-start',
     alignItems: 'stretch',
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
-  backButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 20,
-    padding: 8,
-    marginBottom: 20,
-    marginTop: 30,
+  // backButton: {
+  //   alignSelf: 'flex-start',
+  //   backgroundColor: '#F5F5F5',
+  //   borderRadius: 20,
+  //   padding: 8,
+  //   marginBottom: 20,
+  //   marginTop: 30,
+  // },
+  progressBar: {
+    marginTop: 110,
+    marginBottom: 30,
   },
   title: {
     fontSize: 26,
@@ -287,7 +291,7 @@ const styles = StyleSheet.create({
   footerText: {
     textAlign: 'center',
     color: 'gray',
-    fontSize: 14,
+    fontSize: 16,
   },
   loginLink: {
     color: '#E4423F',

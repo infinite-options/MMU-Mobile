@@ -9,6 +9,7 @@ import {
   Pressable,
   StyleSheet,
   ScrollView,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ProgressBar from '../src/Assets/Components/ProgressBar';
@@ -94,7 +95,9 @@ export default function InterestsScreen({ navigation }) {
     const firstName = await AsyncStorage.getItem('user_first_name');
     const lastName = await AsyncStorage.getItem('user_last_name');  
     const age = await AsyncStorage.getItem('user_age');
+    const birthdate = await AsyncStorage.getItem('user_birthdate');
     const gender = await AsyncStorage.getItem('user_gender');
+    const identity = await AsyncStorage.getItem('user_identity');
     const height = await AsyncStorage.getItem('user_height_cm');
     const kids = await AsyncStorage.getItem('user_kids');
     const sexuality = await AsyncStorage.getItem('user_sexuality');
@@ -105,12 +108,15 @@ export default function InterestsScreen({ navigation }) {
     formData.append('user_first_name', firstName);
     formData.append('user_last_name', lastName);
     formData.append('user_age', age);
+    formData.append('user_birthdate', birthdate);
     formData.append('user_gender', gender);
+    formData.append('user_identity', identity);
     formData.append('user_height', height);
     formData.append('user_kids', kids);
     formData.append('user_sexuality', sexuality);
     formData.append('user_open_to', openTo);
     formData.append('user_general_interests', interests);
+    console.log("Form data from InterestsScreen:", formData);
     try {
       const response = await fetch(url, {
         method: "PUT",
@@ -130,11 +136,11 @@ export default function InterestsScreen({ navigation }) {
       <ScrollView> 
       {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={28} color="red" />
+        <Image source={require('../assets/icons/backarrow.png')} />
       </TouchableOpacity>
 
       {/* Progress Bar (adjust progress as needed) */}
-      <ProgressBar startProgress={60} endProgress={70} />
+      <ProgressBar startProgress={60} endProgress={70} style={styles.progressBar} />
 
       {/* Title / Subtitle */}
       <View style={styles.content}>
@@ -156,7 +162,7 @@ export default function InterestsScreen({ navigation }) {
                 // We might give a border color for the unselected state
                 // or a black border if selected:
                 {
-                  borderColor: isSelected ? '#000' : '#CCC',
+                  borderColor: isSelected ? 'rgba(26, 26, 26, 1)' : 'rgba(26, 26, 26, 0.5)',
                 },
               ]}
             >
@@ -165,22 +171,18 @@ export default function InterestsScreen({ navigation }) {
                 style={[
                   styles.circle,
                   {
-                    backgroundColor: isSelected ? '#000' : 'transparent',
-                    borderColor: isSelected ? '#000' : '#CCC',
+                    backgroundColor: isSelected ? '#000' : '#FFF',
+                    borderColor: isSelected ? 'rgba(26, 26, 26, 1)' : 'rgba(26, 26, 26, 0.5)',
                   },
                 ]}
               >
                 {isSelected && (
-                  <Ionicons name="checkmark" size={14} color="#FFF" />
+                  <Ionicons name="checkmark" size={10} color="#FFF" />
                 )}
               </View>
               {/* Interest text */}
               <Text
-                style={{
-                  color:  '#000',
-                  marginLeft: 5,
-                  fontSize:16,
-                }}
+                style={[styles.interestText, { color: isSelected ? 'rgba(26, 26, 26, 1)' : 'rgba(26, 26, 26, 0.5)' }]}
               >
                 {interest}
               </Text>
@@ -194,23 +196,23 @@ export default function InterestsScreen({ navigation }) {
     <Pressable
         style={[
           styles.continueButton,
-          { backgroundColor: isFormComplete ? '#E4423F' : '#ccc' },
+          { backgroundColor: isFormComplete ? '#E4423F' : '#F5F5F5', marginBottom: 20 },
         ]}
         onPress={handleTemp}
         disabled={!isFormComplete}
       >
-        <Text style={styles.continueButtonText}>Temp Button to Summary</Text>
+        <Text style={[styles.continueButtonText, { color: isFormComplete ? '#FFF' : 'rgba(26, 26, 26, 0.25)' }]}>Temp Button to Summary</Text>
       </Pressable>
       {/* Continue Button */}
       <Pressable
         style={[
           styles.continueButton,
-          { backgroundColor: isFormComplete ? '#E4423F' : '#ccc' },
+          { backgroundColor: isFormComplete ? '#E4423F' : '#F5F5F5' },
         ]}
         onPress={handleContinue}
         disabled={!isFormComplete}
       >
-        <Text style={styles.continueButtonText}>Continue</Text>
+        <Text style={[styles.continueButtonText, { color: isFormComplete ? '#FFF' : 'rgba(26, 26, 26, 0.25)' }]}>Continue</Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -223,17 +225,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     justifyContent: 'flex-start', // Align content to the top
     alignItems: 'stretch',
-    paddingHorizontal: 20,
+    paddingHorizontal: 25,
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   // Back button style
   backButton: {
     alignSelf: 'flex-start',
-    backgroundColor: '#F5F5F5',
     borderRadius: 20,
-    padding: 8,
     marginBottom: 20,
     marginTop: 30,
+  },
+  progressBar: {
+    marginBottom: 30,
   },
   // Title
   content: {
@@ -244,12 +247,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "#000",
-    marginBottom: 10,
+    marginBottom: 20,
   },
   subtitle: {
     fontSize: 14,
     color: "#888",
-    marginBottom: 20,
+    marginBottom: 50,
   },
   // Container for the interests, wrapping them onto multiple lines
   interestsContainer: {
@@ -268,6 +271,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
+  interestText: {
+    marginLeft: 5,
+    fontSize: 16,
+    fontWeight: 500,
+  },
   // The small circle on the left
   circle: {
     width: 20,
@@ -284,7 +292,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#E4423F",
     borderRadius: 30,
-    marginBottom: 20,
+    marginBottom: 50,
   },
   continueButtonText: {
     color: "#FFF",

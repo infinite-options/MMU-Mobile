@@ -1,34 +1,7 @@
-// ProgressBar.js
-// import React from 'react';
-// import { View, StyleSheet } from 'react-native';
-
-// const ProgressBar = ({ progress }) => {
-//   return (
-//     <View style={styles.progressBarContainer}>
-//       <View style={[styles.progress, { width: `${progress}%` }]} />
-//     </View>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   progressBarContainer: {
-//     height: 6,
-//     backgroundColor: '#E0E0E0',
-//     borderRadius: 3,
-//     overflow: 'hidden',
-//     marginVertical: 20,
-//   },
-//   progress: {
-//     height: '100%',
-//     backgroundColor: '#000',
-//   },
-// });
-
-// export default ProgressBar;
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
 
-const ProgressBar = ({ startProgress, endProgress }) => {
+const ProgressBar = ({ startProgress, endProgress, style }) => {
   const animatedProgress = useRef(new Animated.Value(startProgress)).current; // Initialize with startProgress
 
   useEffect(() => {
@@ -50,7 +23,7 @@ const ProgressBar = ({ startProgress, endProgress }) => {
   });
 
   return (
-    <View style={styles.progressBarContainer}>
+    <View style={[styles.progressBarContainer, style]}>
       <Animated.View style={[styles.progress, { width: animatedWidth }]} />
     </View>
   );

@@ -67,12 +67,16 @@ export default function AddDriversLicense({ navigation, route }) {
       </TouchableOpacity>
 
       {/* Progress Bar */}
-      startProgress={95} endProgress={100}
+      <ProgressBar 
+        startProgress={95} 
+        endProgress={100} 
+        style={styles.progressBar} 
+      />
 
       {/* Content */}
       <View style={styles.content}>
-        <Text style={styles.title}>Add your driver’s license.</Text>
-        <Text style={styles.subtitle}>Please upload a picture of your driver’s license.</Text>
+        <Text style={styles.title}>Add your driver's license.</Text>
+        <Text style={styles.subtitle}>Please upload a picture of your driver's license.</Text>
 
         {/* Upload Button */}
         <TouchableOpacity style={styles.uploadButton} onPress={handleUpload}>
@@ -194,5 +198,8 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  progressBar: {
+    marginBottom: 20,
   },
 });

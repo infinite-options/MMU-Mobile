@@ -18,6 +18,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import ProgressBar from '../src/Assets/Components/ProgressBar'; // or your placeholder
 import { decrementStepCount } from '../Profile/profileStepsState';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 // Days of the week for toggles
 const DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -54,11 +56,44 @@ function formatTime({ hour, minute, ampm }) {
   return `${hh}:${mm} ${ampm}`;
 }
 
+const saveAvailabilityToAPI = async (availabilityData) => {
+  try {
+    const user_uid = await AsyncStorage.getItem('user_uid');
+    const user_email_id = await AsyncStorage.getItem('user_email_id');
+    const uploadData = new FormData();
+    uploadData.append("user_uid", user_uid);
+    uploadData.append("user_email_id", user_email_id);
+    uploadData.append("user_available_time", JSON.stringify(availabilityData));
+    
+    if (!user_uid) {
+      Alert.alert('Error', 'User not logged in');
+      return;
+    }
+
+    const response = await axios.put(
+      "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo",
+      uploadData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+  );
+
+    if (response.status === 200) {
+            console.log("date uploaded successfully:", response.data);
+            Alert.alert("Success", "date uploaded successfully!");
+        } else {
+            console.error("Failed to upload date:", response);
+            Alert.alert("Error", "Failed to upload date to the server.");
+        }
+  } catch (error) {
+    Alert.alert('Error', error.message);
+    console.error('API Error:', error);
+  }
+};
+
 export default function DateAvailability() {
   const navigation = useNavigation();
   const route = useRoute();
 
-  // If you passed in how many date prefs are “required” from MyProfile:
+  // If you passed in how many date prefs are "required" from MyProfile:
   const stepIndex = route.params?.stepIndex ?? null;
 
   // We keep an array of time windows in local state. Each item can be:
@@ -104,7 +139,7 @@ export default function DateAvailability() {
     });
   };
 
-  // For demonstration, we’re using text inputs for hour/minute. 
+  // For demonstration, we're using text inputs for hour/minute. 
   // In a real app, consider a time picker or numeric up/down.
   const handleTimeChange = (
     windowIndex,
@@ -193,7 +228,7 @@ export default function DateAvailability() {
       return newArr;
     });
     
-    // If you want to say “each saved window is one completion chunk,” then:
+    // If you want to say "each saved window is one completion chunk," then:
     // Call onComplete if it still has incomplete tasks in MyProfile
     
   };
@@ -209,16 +244,29 @@ export default function DateAvailability() {
     });
   };
 
-  const handleContinue = () => {
-    // If we have at least one saved window, we can proceed.
+  const handleContinue = async () => {
     if (savedWindows.length === 0) {
       Alert.alert('Please add and save at least one availability window.');
       return;
     }
-    decrementStepCount(stepIndex);
-    // Optionally call onComplete() once more if your logic says so
-    // Then go back or navigate to next screen
-    navigation.navigate('TypeOfDate', { stepIndex });
+
+    // Convert saved windows to API format
+    const availabilityData = savedWindows.map(window => ({
+      day: summarizeDays(window.days),
+      start_time: formatTime(window.start),
+      end_time: formatTime(window.end)
+    }));
+
+    // Add debug log
+    console.log('Sending availability data:', JSON.stringify(availabilityData, null, 2));
+
+    try {
+      await saveAvailabilityToAPI(availabilityData);
+      decrementStepCount(stepIndex);
+      navigation.navigate('TypeOfDate', { stepIndex });
+    } catch (error) {
+      // Error already handled in saveAvailabilityToAPI
+    }
   };
 
   return (
@@ -683,3 +731,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+

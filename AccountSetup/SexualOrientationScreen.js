@@ -9,6 +9,7 @@ import {
   Pressable,
   StyleSheet,
   ScrollView,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -57,11 +58,11 @@ export default function SexualOrientationScreen({ navigation }) {
       <ScrollView> 
       {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={28} color="red" />
+        <Image source={require('../assets/icons/backarrow.png')} />
       </TouchableOpacity>
 
       {/* Progress Bar (adjust progress as needed) */}
-      <ProgressBar startProgress={40} endProgress={50} />
+      <ProgressBar startProgress={40} endProgress={50} style={styles.progressBar} />
 
       {/* Title / Subtitle */}
       <View style={styles.content}>
@@ -77,12 +78,12 @@ export default function SexualOrientationScreen({ navigation }) {
             {
               backgroundColor: selectedOption === option ? '#000' : '#FFF',
               // You can keep the border color #CCC for consistency
-              borderColor: '#CCC',
+              borderColor: 'rgba(26, 26, 26, 0.5)',
             },
           ]}
           onPress={() => handleOptionPress(option)}
         >
-          <Text style={{ color: selectedOption === option ? '#FFF' : '#000' }}>
+          <Text style={[styles.optionText, { color: selectedOption === option ? '#F5F5F5' : 'rgba(26, 26, 26, 0.5)' }]}>
             {option}
           </Text>
         </TouchableOpacity>
@@ -94,12 +95,12 @@ export default function SexualOrientationScreen({ navigation }) {
       <Pressable
         style={[
           styles.continueButton,
-          { backgroundColor: isFormComplete ? '#E4423F' : '#ccc' },
+          { backgroundColor: isFormComplete ? '#E4423F' : '#F5F5F5' },
         ]}
         onPress={handleContinue}
         disabled={!isFormComplete}
       >
-        <Text style={styles.continueButtonText}>Continue</Text>
+        <Text style={[styles.continueButtonText, { color: isFormComplete ? '#FFF' : 'rgba(26, 26, 26, 0.25)' }]}>Continue</Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -113,18 +114,19 @@ const styles = StyleSheet.create({
     // Align content to the top
     justifyContent: 'flex-start',
     alignItems: 'stretch',
-    paddingHorizontal: 20,
+    paddingHorizontal: 25,
     // Add top padding for Android
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   // Back button style
   backButton: {
     alignSelf: 'flex-start',
-    backgroundColor: '#F5F5F5',
     borderRadius: 20,
-    padding: 8,
     marginBottom: 20,
     marginTop: 30,
+  },
+  progressBar: {
+    marginBottom: 30,
   },
   // Title
   content: {
@@ -135,30 +137,33 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "#000",
-    marginBottom: 10,
+    marginBottom: 20,
   },
   subtitle: {
     fontSize: 14,
     color: "#888",
-    marginBottom: 20,
+    marginBottom: 50,
   },
   // Each option button (pill-shaped)
   optionButton: {
     padding: 15,
     borderWidth: 1,
     borderRadius: 30,
-    marginVertical: 10,
+    marginVertical: 5,
     alignItems: 'center',
+  },
+  optionText: {
+    fontSize: 16,
+    fontWeight: 500,
   },
   // Continue button styling
   continueButton: {
-    justifyContent: 'flex-end',
     height: 50,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#E4423F",
     borderRadius: 30,
-    marginBottom: 20,
+    marginBottom: 50,
   },
   continueButtonText: {
     color: "#FFF",

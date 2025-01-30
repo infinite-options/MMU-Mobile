@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   Platform,
@@ -14,8 +14,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 export default function DateOccurance({ navigation }) {
+  const route = useRoute();
+  const matchedUserId = route.params?.matchedUserId || null;
   // Track selected day (index or null)
   const [selectedDayIndex, setSelectedDayIndex] = useState(null);
 
@@ -28,6 +31,35 @@ export default function DateOccurance({ navigation }) {
   // Days array
   const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
+  // Add state for user info
+  const [matchedUserName, setMatchedUserName] = useState('');
+  const [matchedUserAvailability, setMatchedUserAvailability] = useState([]);
+
+  // Fetch user info when component mounts
+  useEffect(() => {
+    const fetchMatchedUserInfo = async () => {
+      try {
+        if (matchedUserId) {
+          const response = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${matchedUserId}`);
+          const data = await response.json();
+          const userData = data.result[0];
+          console.log("--- userData ---", userData);
+          setMatchedUserName(userData?.user_first_name || 'Your match');
+          const rawAvailability = userData?.user_available_time;
+          const availability = rawAvailability
+            ? JSON.parse(rawAvailability).map(slot => 
+                `${slot.day}, ${slot.start_time} to ${slot.end_time}`
+              )
+            : [];
+          setMatchedUserAvailability(availability);
+        }
+      } catch (error) {
+        console.error('Error fetching user info:', error);
+      }
+    };
+    fetchMatchedUserInfo();
+  }, [matchedUserId]);
+
   // Handler to pick a single day
   const handleDayPress = (index) => {
     setSelectedDayIndex(index);
@@ -38,7 +70,7 @@ export default function DateOccurance({ navigation }) {
     setAmPm(val);
   };
 
-  // Determine if form is “complete”
+  // Determine if form is "complete"
   const isFormComplete =
     selectedDayIndex !== null && startTime.trim() !== '' && amPm !== null;
 
@@ -62,6 +94,7 @@ export default function DateOccurance({ navigation }) {
         selectedDayIndex,
         startTime,
         amPm,
+        matchedUserId: matchedUserId,
       });
     }
   };
@@ -93,11 +126,17 @@ export default function DateOccurance({ navigation }) {
         <View style={styles.content}>
           <Text style={styles.title}>When will the date occur?</Text>
 
-          <Text style={styles.subtitle}>Gemma’s available times are:</Text>
+          <Text style={styles.subtitle}>{matchedUserName}'s available times are:</Text>
           <View style={{ marginLeft: 16, marginBottom: 20 }}>
-            <Text style={styles.bulletItem}>• Mon - Thu, 7 pm to 9 pm</Text>
-            <Text style={styles.bulletItem}>• Fri, 5 pm to 10 pm</Text>
-            <Text style={styles.bulletItem}>• Sat &amp; Sun, 9 am to 9:30 pm</Text>
+            {matchedUserAvailability.length > 0 ? (
+              matchedUserAvailability.map((time, index) => (
+                <Text key={index} style={styles.bulletItem}>
+                  • {time}
+                </Text>
+              ))
+            ) : (
+              <Text style={styles.bulletItem}>No availability times set yet</Text>
+            )}
           </View>
 
           {/* Gray box for day/time selection */}

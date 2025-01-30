@@ -7,7 +7,8 @@ import {
   View, 
   Text, 
   TouchableOpacity, 
-  StyleSheet 
+  StyleSheet,
+  Image
 } from 'react-native';
 import ProgressBar from '../src/Assets/Components/ProgressBar';
 import { Ionicons } from "@expo/vector-icons";
@@ -38,25 +39,28 @@ export default function AssignedSex({ navigation }) {
         style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
-        <Ionicons name="arrow-back" size={28} color="red" />
+        <Image source={require('../assets/icons/backarrow.png')} />
       </TouchableOpacity>
 
       {/* Progress Bar */}
-      <ProgressBar startProgress={30} endProgress={35} />
+      <ProgressBar startProgress={30} endProgress={35} style={styles.progressBar} />
       <View style={styles.content}>
       <Text style={styles.title}>What sex were you assigned?</Text>
       <Text style={styles.subtitle}>Your sex assigned at birth will NOT be public.</Text>
 
-      {['Man', 'Woman', 'Prefer not to say'].map((option) => (
+      {['Male', 'Female', 'Prefer not to say'].map((option) => (
         <TouchableOpacity
           key={option}
           style={[
             styles.optionButton,
-            { backgroundColor: selectedOption === option ? '#000' : '#FFF' },
+            { backgroundColor: selectedOption === option ? '#000' : '#FFF',
+              borderColor: 'rgba(26, 26, 26, 0.5)',
+             },
+            
           ]}
           onPress={() => setSelectedOption(option)}
         >
-          <Text style={{ color: selectedOption === option ? '#FFF' : '#000' }}>
+          <Text style={[styles.optionText, { color: selectedOption === option ? '#F5F5F5' : 'rgba(26, 26, 26, 0.5)' }]}>
             {option}
           </Text>
         </TouchableOpacity>
@@ -66,12 +70,12 @@ export default function AssignedSex({ navigation }) {
       <Pressable
         style={[
           styles.continueButton,
-          { backgroundColor: selectedOption ? "#E4423F" : "#ccc" },
+          { backgroundColor: selectedOption ? "#E4423F" : "#F5F5F5" },
         ]}
         onPress={handleContinue}
         disabled={!selectedOption}
       >
-        <Text style={styles.continueButtonText}>Continue</Text>
+        <Text style={[styles.continueButtonText, { color: selectedOption ? '#FFF' : 'rgba(26, 26, 26, 0.25)' }]}>Continue</Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -80,7 +84,7 @@ export default function AssignedSex({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 25,
     backgroundColor: '#FFF',
     justifyContent: 'flex-start',
     alignItems: 'stretch',
@@ -88,11 +92,12 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: 'flex-start',
-    backgroundColor: '#F5F5F5',
     borderRadius: 20,
-    padding: 8,
     marginBottom: 20,
     marginTop: 30,
+  },
+  progressBar: {
+    marginBottom: 30,
   },
   content: {
     flex: 1,
@@ -102,20 +107,24 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "#000",
-    marginBottom: 10,
+    marginBottom: 20,
   },
   subtitle: {
     fontSize: 14,
     color: "#888",
-    marginBottom: 20,
+    marginBottom: 50,
   },
   optionButton: {
     padding: 15,
     borderWidth: 1,
     borderColor: '#CCC',
     borderRadius: 30,
-    marginVertical: 10,
+    marginVertical: 5,
     alignItems: 'center',
+  },
+  optionText: {
+    fontSize: 16,
+    fontWeight: 500,
   },
   continueButton: {
     height: 50,
@@ -123,7 +132,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#E4423F",
     borderRadius: 30,
-    marginBottom: 20,
+    marginBottom: 50,
   },
   continueButtonText: {
     color: "#FFF",

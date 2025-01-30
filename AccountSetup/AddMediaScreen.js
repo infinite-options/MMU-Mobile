@@ -167,9 +167,9 @@ export default function AddMediaScreen({ navigation }) {
   // Handle picking a video
   const handleVideoUpload = async () => {
     try {
-      // If you want library instead of camera, un-comment below:
-      const result = await ImagePicker.launchImageLibraryAsync({
-      // const result = await ImagePicker.launchCameraAsync({
+      // If you want library instead of camera, un-comment below (For testing not Live):
+      // const result = await ImagePicker.launchImageLibraryAsync({
+      const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
         allowsEditing: true,
         quality: 0.5,
@@ -215,59 +215,58 @@ export default function AddMediaScreen({ navigation }) {
 
     const uploadData = new FormData();
     uploadData.append("user_uid", userId);
-    console.log("User ID:", userId);
     uploadData.append("user_email_id", userEmail);
-    console.log("User Email:", userEmail);
 
     // Append each photo if it exists
-    // photos.forEach((uri, index) => {
-    //   if (uri) {
-    //     uploadData.append(`img_${index}`, {
-    //       uri,
-    //       type: "image/jpeg",
-    //       name: `img_${index}.jpg`,
-    //     });
-    //   }
-    //   console.log("Photos:", uri, index);
-    // });
+    photos.forEach((uri, index) => {
+        if (uri) {
+            uploadData.append(`img_${index}`, {
+                uri,
+                type: "image/jpeg", // Ensure this matches the actual image type
+                name: `img_${index}.jpg`,
+            });
+            console.log(`Appending photo img_${index}:`, uri);
+        }
+    });
 
     // Append video if it exists
     if (videoUri) {
-      uploadData.append("user_video", {
-        uri: videoUri,
-        type: "video/mp4",
-        name: "video_filename.mp4",
-      });
-      console.log("Appending user_video:", videoUri);
+        uploadData.append("user_video", {
+            uri: videoUri,
+            type: "video/mp4",
+            name: "video_filename.mp4",
+        });
+        console.log("Appending user_video:", videoUri);
     }
-    
-      // console.log("Payload",uploadData);
+
     try {
-      const response = await axios.put(
-        "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo",
-        uploadData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
-      
-      if (response.status === 200) {
-        console.log("Media uploaded successfully:", response.data);
-        Alert.alert("Success", "Media uploaded successfully!");
-      } else {
-        console.error("Failed to upload media:", response);
-        Alert.alert("Error", "Failed to upload media to the server.");
-      }
+        const response = await axios.put(
+            "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo",
+            uploadData,
+            { headers: { "Content-Type": "multipart/form-data" } }
+        );
+
+        if (response.status === 200) {
+            console.log("Media uploaded successfully:", response.data);
+            Alert.alert("Success", "Media uploaded successfully!");
+        } else {
+            console.error("Failed to upload media:", response);
+            Alert.alert("Error", "Failed to upload media to the server.");
+        }
     } catch (error) {
-      console.error("Upload Error:", error);
-      if (error.response) {
-        console.error("Error Response:", error.response);
-        Alert.alert("Error", `Error: ${error.response.status} - ${error.response.statusText}`);
-      } else if (error.request) {
-        console.error("Error Request:", error.request);
-        Alert.alert("Error", "Network error. Please check your internet connection.");
-      } else {
-        console.error("Error Message:", error.message);
-        Alert.alert("Error", "Something went wrong while uploading.");
-      }
+        console.error("Upload Error:", error);
+        if (error.response) {
+            console.error("Error Response:", error.response);
+            Alert.alert("Error", `Error: ${error.response.status} - ${error.response.statusText}`);
+        } else if (error.request) {
+            console.error("Error Request:", error.request);
+            Alert.alert("Error", "Network error. Please check your internet connection.");
+        } else {
+            console.error("Error Message:", error.message);
+            Alert.alert("Error", "Something went wrong while uploading.");
+        }
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -276,9 +275,10 @@ export default function AddMediaScreen({ navigation }) {
   const handleContinue = async () => {
     if (isFormComplete) {
       await uploadMediaToBackend();
-      navigation.navigate('LocationScreen',{photos,videoUri});
+      navigation.navigate('LocationScreen',{photos,videoUri});  
     }
   };
+  
 
   return (
     <SafeAreaView style={styles.container}>
@@ -292,11 +292,11 @@ export default function AddMediaScreen({ navigation }) {
 
       {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={28} color="red" />
+        <Image source={require('../assets/icons/backarrow.png')} />
       </TouchableOpacity>
 
       {/* Progress Bar */}
-      <ProgressBar startProgress={70} endProgress={80} />
+      <ProgressBar startProgress={70} endProgress={80} style={styles.progressBar} />
 
       
         {/* Title & Subtitle */}
@@ -312,7 +312,7 @@ export default function AddMediaScreen({ navigation }) {
           <Text style={styles.trialBody}>
             For the testing phase, please keep your video{" "}
             <Text style={styles.bold}>short</Text>.
-            {"\n"}Example: “Hi! I’m Hannah and I enjoy outdoor activities.”
+            {"\n"}Example: "Hi! I'm Hannah and I enjoy outdoor activities."
             {"\n\n"}We are also unable to crop your photos for the testing phase,
             so please use <Text style={styles.bold}>centered photos</Text>.
           </Text>
@@ -354,8 +354,8 @@ export default function AddMediaScreen({ navigation }) {
             </View>
           ) : (
             <TouchableOpacity onPress={handleVideoUpload} style={styles.uploadVideoButton}>
-              <Ionicons name="cloud-upload-outline" size={20} color="#E4423F" />
-              <Text style={styles.uploadVideoText}>Upload Video File</Text>
+              <Image source={require('../assets/icons/record.png')} />
+              <Text style={styles.uploadVideoText}>Record Video</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -378,12 +378,14 @@ export default function AddMediaScreen({ navigation }) {
                   </TouchableOpacity>
                 </>
               ) : (
-                <Pressable
+                <View
                   style={styles.emptyPhotoBox}
-                  onPress={() => handlePickImage(idx)}
+                  
                 >
-                  <Ionicons name="add" size={24} color="red" />
-                </Pressable>
+                  <TouchableOpacity style={styles.addButton} onPress={() => handlePickImage(idx)}>
+                  <Ionicons name="add" size={24} color="#E4423F" />
+                  </TouchableOpacity>
+                </View>
               )}
             </View>
           ))}
@@ -396,12 +398,12 @@ export default function AddMediaScreen({ navigation }) {
       <Pressable
         style={[
           styles.continueButton,
-          { backgroundColor: isFormComplete ? "#E4423F" : "#ccc" },
+          { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5" },
         ]}
         onPress={handleContinue}
         disabled={!isFormComplete || isLoading}
       >
-        <Text style={styles.continueButtonText}>Continue</Text>
+        <Text style={[styles.continueButtonText, { color: isFormComplete ? '#FFF' : 'rgba(26, 26, 26, 0.25)' }]}>Continue</Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -414,7 +416,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     justifyContent: "flex-start",
     alignItems: "stretch",
-    paddingHorizontal: 20,
+    paddingHorizontal: 25,
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   loadingOverlay: {
@@ -430,9 +432,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: "flex-start",
-    backgroundColor: "#F5F5F5",
     borderRadius: 20,
-    padding: 8,
     marginBottom: 20,
     marginTop: 30,
   },
@@ -444,26 +444,27 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "#000",
-    marginBottom: 10,
+    marginBottom: 20,
   },
   subtitle: {
     fontSize: 14,
     color: "#888",
-    marginBottom: 20,
+    marginBottom: 50,
   },
   trialVersion: {
     marginBottom: 20,
   },
   trialHeading: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "bold",
     marginBottom: 8,
     textTransform: "uppercase",
   },
   trialBody: {
     fontSize: 14,
-    color: "#000",
+    color: "#1A1A1A",
     lineHeight: 20,
+    marginBottom: 20,
   },
   bold: {
     fontWeight: "bold",
@@ -513,12 +514,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     justifyContent: "center",
+    marginBottom: 20,
   },
   uploadVideoText: {
     color: "#E4423F",
     fontWeight: "bold",
     fontSize: 16,
-    marginLeft: 8,
+    marginLeft: 15,
   },
 
   // Photo boxes in a row (3 boxes)
@@ -539,6 +541,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#F5F5F5",
+  },
+  addButton: {
+    backgroundColor: "#FFF",
+    borderRadius: 20,
+    padding: 5,
   },
   photoImage: {
     width: "100%",
@@ -551,8 +559,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#E4423F",
     borderRadius: 30,
-    marginBottom: 20,
-    marginTop: 50,
+    marginBottom: 50,
   },
   continueButtonText: {
     color: "#FFF",

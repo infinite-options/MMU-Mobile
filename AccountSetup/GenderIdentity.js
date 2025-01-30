@@ -8,6 +8,7 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
+  Image,
 } from 'react-native';
 import ProgressBar from '../src/Assets/Components/ProgressBar';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,7 +21,7 @@ export default function GenderIdentity({ navigation }) {
     if (selectedOption) {
       try {
         // Store the user's gender identity in AsyncStorage
-        await AsyncStorage.setItem('user_gender_identity', selectedOption);
+        await AsyncStorage.setItem('user_identity', selectedOption);
         console.log('Gender identity stored:', selectedOption);
       } catch (error) {
         console.error('Error storing user_gender_identity:', error);
@@ -35,7 +36,7 @@ export default function GenderIdentity({ navigation }) {
     'Man',
     'Woman',
     'Man (transgender)',
-    'Female (transgender)',
+    'Woman (transgender)',
     'Non-binary',
     'Genderqueer',
     'Other',
@@ -45,11 +46,11 @@ export default function GenderIdentity({ navigation }) {
     <SafeAreaView style={styles.container}>
       {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={28} color="red" />
+        <Image source={require('../assets/icons/backarrow.png')} />
       </TouchableOpacity>
 
       {/* Progress Bar (adjust progress as needed) */}
-      <ProgressBar startProgress={35} endProgress={40} />
+      <ProgressBar startProgress={35} endProgress={40} style={styles.progressBar} />
 
       {/* Title / Subtitle */}
       <View style={styles.content}>
@@ -64,12 +65,12 @@ export default function GenderIdentity({ navigation }) {
             styles.optionButton,
             {
               backgroundColor: selectedOption === option ? '#000' : '#FFF',
-              borderColor: '#CCC',
+              borderColor: 'rgba(26, 26, 26, 0.5)',
             },
           ]}
           onPress={() => setSelectedOption(option)}
         >
-          <Text style={{ color: selectedOption === option ? '#FFF' : '#000' }}>
+          <Text style={[styles.optionText, { color: selectedOption === option ? '#F5F5F5' : 'rgba(26, 26, 26, 0.5)' }]}>
             {option}
           </Text>
         </TouchableOpacity>
@@ -79,12 +80,12 @@ export default function GenderIdentity({ navigation }) {
       <Pressable
         style={[
           styles.continueButton,
-          { backgroundColor: selectedOption ? '#E4423F' : '#ccc' },
+          { backgroundColor: selectedOption ? '#E4423F' : '#F5F5F5' },
         ]}
         onPress={handleContinue}
         disabled={!selectedOption}
       >
-        <Text style={styles.continueButtonText}>Continue</Text>
+        <Text style={[styles.continueButtonText, { color: selectedOption ? '#FFF' : 'rgba(26, 26, 26, 0.25)' }]}>Continue</Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -93,7 +94,7 @@ export default function GenderIdentity({ navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingHorizontal: 20,
+        paddingHorizontal: 25,
         backgroundColor: '#FFF',
         justifyContent: 'flex-start', // Align content to the top
     alignItems: 'stretch',
@@ -101,11 +102,12 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: 'flex-start',
-    backgroundColor: '#F5F5F5',
     borderRadius: 20,
-    padding: 8,
     marginBottom: 20,
     marginTop: 30,
+  },
+  progressBar: {
+    marginBottom: 30,
   },
   content: {
     flex: 1,
@@ -115,19 +117,23 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "#000",
-    marginBottom: 10,
+    marginBottom: 20,
   },
   subtitle: {
     fontSize: 14,
     color: "#888",
-    marginBottom: 20,
+    marginBottom: 50,
   },
   optionButton: {
     padding: 15,
     borderWidth: 1,
     borderRadius: 30,
-    marginVertical: 10,
+    marginVertical: 5,
     alignItems: 'center',
+  },
+  optionText: {
+    fontSize: 16,
+    fontWeight: 500,
   },
   continueButton: {
     height: 50,
@@ -135,7 +141,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#E4423F",
     borderRadius: 30,
-    marginBottom: 20,
+    marginBottom: 50,
   },
   continueButtonText: {
     color: "#FFF",

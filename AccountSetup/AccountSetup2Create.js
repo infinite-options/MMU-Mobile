@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { StatusBar, Platform, SafeAreaView, View, StyleSheet, Pressable, TouchableOpacity, Alert, Image } from 'react-native';
 import { Text, TextInput } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ProgressBar from '../src/Assets/Components/ProgressBar';
 
@@ -100,19 +99,19 @@ export default function AccountSetup2Create() {
                 Alert.alert('User Already Exists');
                 return;
             }
-            // await saveUserData('user_email_id', formData.email);
-            // await saveUserData('user_uid', result.result[0].user_uid);
-            await AsyncStorage.setItem('user_uid', result.result[0].user_uid); // Ensure this is correctly stored
-            await AsyncStorage.setItem('user_email_id', formData['email']);
-            // await AsyncStorage.setItem('user_uid', result.result[0].user_uid);
-            // await AsyncStorage.setItem('user_email_id', formData['email']);
-            // await AsyncStorage.setItem('user_phone_number', formData['phone_number']);
-            navigation.navigate('NameInput');
+
+            if (result.user_uid) {
+                await AsyncStorage.setItem('user_uid', result.user_uid);
+                await AsyncStorage.setItem('user_email_id', formData['email']);
+                navigation.navigate('NameInput');
+            } else {
+                console.error("Unexpected API response structure:", result);
+                Alert.alert("Error", "Unexpected response from server. Please try again.");
+            }
         } catch (error) {
             console.error("Error occurred:", error);
             Alert.alert("Error", "There was an issue creating your account. Please try again.");
         }
-
     };
 
     const getBarColor = () => {
@@ -155,15 +154,15 @@ export default function AccountSetup2Create() {
     return (
         <SafeAreaView style={styles.container}>
             {/* Back Button */}
-            <TouchableOpacity
+            {/* <TouchableOpacity
                 style={styles.backButton}
                 onPress={() => navigation.goBack()}
             >
                 <Ionicons name="arrow-back" size={28} color="red" />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
 
-            <ProgressBar startProgress={0} endProgress={10} />
+            <ProgressBar startProgress={0} endProgress={10} style={styles.progressBar} />
 
 
 
@@ -264,7 +263,7 @@ export default function AccountSetup2Create() {
             <Pressable
                 style={[
                     styles.continueButton,
-                    { backgroundColor: isFormComplete() ? '#E4423F' : '#ccc' },
+                    { backgroundColor: isFormComplete() ? '#E4423F' : '#F5F5F5' },
                 ]}
                 onPress={() => {
                     if (isFormComplete()) {
@@ -273,7 +272,7 @@ export default function AccountSetup2Create() {
                 }}
                 disabled={!isFormComplete()}
             >
-                <Text style={styles.continueButtonText}>Continue</Text>
+                <Text style={[styles.continueButtonText, { color: isFormComplete() ? '#FFF' : 'rgba(26, 26, 26, 0.25)' }]}>Continue</Text>
             </Pressable>
 
             {/* OR Separator */}
@@ -313,19 +312,23 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: 25,
         backgroundColor: '#FFF',
         justifyContent: 'flex-start', // Align content to the top
         alignItems: 'stretch',
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     },
-    backButton: {
-        alignSelf: 'flex-start',
-        backgroundColor: '#F5F5F5',
-        borderRadius: 20,
-        padding: 8,
-        marginBottom: 20,
-        marginTop: 30,
+    // backButton: {
+    //     alignSelf: 'flex-start',
+    //     backgroundColor: '#F5F5F5',
+    //     borderRadius: 20,
+    //     padding: 8,
+    //     marginBottom: 20,
+    //     marginTop: 30,
+    // },
+    progressBar: {
+        marginTop: 110,
+        marginBottom: 30,
     },
     title: {
         fontSize: 26,
@@ -413,7 +416,7 @@ const styles = StyleSheet.create({
     footerText: {
         textAlign: 'center',
         color: 'gray',
-        fontSize: 14,
+        fontSize: 16,
     },
     loginLink: {
         color: '#E4423F',

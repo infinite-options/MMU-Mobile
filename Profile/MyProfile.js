@@ -10,13 +10,11 @@ import {
   TouchableOpacity,
   Image,
   Pressable,
-  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import * as ImagePicker from "expo-image-picker";
 import { Video } from "expo-av";
 import { useFocusEffect } from '@react-navigation/native';
 import ProgressBar from '../src/Assets/Components/ProgressBar';
@@ -27,17 +25,17 @@ const BottomNav = () => {
   const navigation = useNavigation();
   return (
     <View style={styles.bottomNavContainer}>
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Home')}>
-        <Ionicons name="home-outline" size={24} color="#888" />
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Preferences')}>
+        <Image source={require('../assets/icons/search.png')} />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Matches')}>
-        <Ionicons name="heart-outline" size={24} color="#888" />
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('MatchResultsPage')}>
+        <Image source={require('../assets/icons/twohearts.png')}  />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Messages')}>
-        <Ionicons name="chatbubble-ellipses-outline" size={24} color="#888" />
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Chat')}>
+        <Image source={require('../assets/icons/chat.png')}  />
       </TouchableOpacity>
       <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('MyProfile')}>
-        <Ionicons name="person-circle-outline" size={24} color="#E4423F" />
+        <Image source={require('../assets/icons/profile.png')}  />
       </TouchableOpacity>
     </View>
   );
@@ -140,64 +138,6 @@ export default function MyProfile() {
 
   const isProfileComplete = profileSteps.length === 0;
 
-  // Handler: big "X" to remove the top media (video or photo)
-  const handleRemoveMainMedia = async () => {
-    // If it's a video, remove videoUri, etc.
-    setVideoUri(null);
-    // or remove photos[0] if that was displayed
-    // Then do an API call to update user_photo_url or user_video_url
-    console.log('Remove main media triggered');
-  };
-const handlePickImage = async (slotIndex) => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.5,
-      });
-
-      if (!result.canceled && result.assets?.[0]?.uri) {
-        const newPhotos = [...photos];
-        newPhotos[slotIndex] = result.assets[0].uri;
-        setPhotos(newPhotos);
-      }
-    } catch (error) {
-      console.error("Error picking image:", error);
-      Alert.alert("Error", "There was an issue processing the image.");
-    }
-  };
-  // Handler: remove a smaller photo (like from the photos array)
-  const handleRemovePhoto = (slotIndex) => {
-    const newPhotos = [...photos];
-    newPhotos[slotIndex] = null;
-    setPhotos(newPhotos);
-  };
-  // Handle picking a video
-    const handleVideoUpload = async () => {
-      try {
-        // If you want library instead of camera, un-comment below:
-        // const result = await ImagePicker.launchImageLibraryAsync({
-        const result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-          allowsEditing: true,
-          quality: 0.5,
-        });
-  
-        if (!result.canceled && result.assets?.[0]?.uri) {
-          setVideoUri(result.assets[0].uri);
-          setIsVideoPlaying(false);
-        }
-      } catch (error) {
-        console.error("Error picking video:", error);
-        Alert.alert("Error", "There was an issue processing the video.");
-      }
-    };
-  
-  
-  const handleRemoveVideo = () => {
-    setVideoUri(null);
-    setIsVideoPlaying(false);
-  };
   // Toggle video play/pause
   const handlePlayPause = async () => {
     if (!videoRef.current) return;
@@ -278,59 +218,6 @@ const handlePickImage = async (slotIndex) => {
   const toggleMenu = () => {
     setMenuVisible(!menuVisible);
   };
-  const uploadMediaToBackend = async () => {
-    if (!userId || !userEmail) {
-      Alert.alert("Error", "User ID or email missing. Please log in again.");
-      return;
-    }
-
-    setIsLoading(true);
-
-    const uploadData = new FormData();
-    uploadData.append("user_uid", userId);
-    uploadData.append("user_email_id", userEmail);
-
-    // Append each photo if it exists
-    photos.forEach((uri, index) => {
-      if (uri) {
-        uploadData.append(`img_${index}`, {
-          uri,
-          type: "image/jpeg",
-          name: `img_${index}.jpg`,
-        });
-      }
-    });
-
-    // Append video if it exists
-    if (videoUri) {
-      uploadData.append("user_video", {
-        uri: videoUri,
-        type: "video/mp4",
-        name: "video_filename.mp4",
-      });
-    }
-
-    try {
-      const response = await axios.put(
-        "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo",
-        uploadData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
-
-      if (response.status === 200) {
-        Alert.alert("Success", "Media uploaded successfully!");
-      } else {
-        console.error("Failed to upload media:", response);
-        Alert.alert("Error", "Failed to upload media to the server.");
-      }
-    } catch (error) {
-      console.error("Upload Error:", error);
-      Alert.alert("Error", "There was an error uploading the media.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Menu item pressed
   const handleMenuItemPress = (item) => {
     setMenuVisible(false);
@@ -351,10 +238,23 @@ const handlePickImage = async (slotIndex) => {
         // handle delete
         break;
       case 'Logout':
-        // handle logout
+        logoutUser();
         break;
       default:
         break;
+    }
+  };
+
+  // Helper to clear AsyncStorage completely
+  const logoutUser = async () => {
+    try {
+      // This removes EVERYTHING stored by AsyncStorage
+      await AsyncStorage.clear();
+
+      // Redirect to your welcome or login screen
+      navigation.navigate('Login');
+    } catch (error) {
+      console.error('Error clearing AsyncStorage:', error);
     }
   };
 
@@ -365,11 +265,14 @@ const handlePickImage = async (slotIndex) => {
     user_email_id = '',
     user_profile_bio = '',
     user_gender = '',
+    user_identity = '',
     user_age = '',
+    user_birthdate = '',
     user_kids = '',
     user_height = '',
     user_sexuality = '',
     user_open_to = '',
+    user_address = '',
     user_general_interests = '',
     user_date_interests = '',
     user_suburb = '',
@@ -385,11 +288,62 @@ const handlePickImage = async (slotIndex) => {
 
   // Convert open_to string or parse JSON if needed
   let openToList = [];
-  if (typeof user_open_to === 'string') {
-    openToList = user_open_to.includes(',') ? user_open_to.split(',') : [user_open_to];
+  if (typeof user_open_to === 'string' && user_open_to) {
+    try {
+      openToList = JSON.parse(user_open_to);
+    } catch (error) {
+      console.error("Error parsing user_open_to:", error);
+      openToList = user_open_to.includes(',') ? user_open_to.split(',') : [user_open_to];
+    }
   }
 
-  // Convert user_general_interests, user_date_interests likewise if needed
+  // Helper function to format the list
+  const formatOpenTo = (openToString) => {
+    try {
+      const openToList = JSON.parse(openToString);
+      if (openToList.length === 1) return openToList[0];
+      return openToList.slice(0, -1).join(', ') + ' and ' + openToList.slice(-1);
+    } catch (error) {
+      console.error("Error parsing open_to:", error);
+      return openToString; // Fallback to the original string if parsing fails
+    }
+  };
+
+  const parseDate = (dateString) => {
+    if (!dateString) return null;
+    const [day, month, year] = dateString.split('/');
+    return new Date(year, month - 1, day);
+  };
+
+  const formatDate = (dateString) => {
+    const date = parseDate(dateString);
+    if (!date || isNaN(date.getTime())) {
+      return 'Invalid Date';
+    }
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const currentYear = new Date().getFullYear();
+
+  const birthYear = user_birthdate ? parseDate(user_birthdate)?.getFullYear() : 'Unknown';
+
+  // Interests / Date interests
+  const parseInterests = (interestsString) => {
+    if (!interestsString) return [];
+    try {
+      return JSON.parse(interestsString);
+    } catch (error) {
+      console.error("Error parsing interests:", error);
+      return interestsString.split(',').map((interest) => interest.trim());
+    }
+  };
+
+  const generalInterests = parseInterests(user_general_interests);
+  const dateInterests = parseInterests(user_date_interests);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -460,15 +414,9 @@ const handlePickImage = async (slotIndex) => {
                   <Ionicons name="play" size={48} color="#FFF" />
                 </TouchableOpacity>
               )}
-              {/* "X" in top-right */}
-              <TouchableOpacity onPress={handleRemoveVideo} style={styles.removeIconTopRight}>
-                <View style={styles.removeIconBackground}>
-                  <Ionicons name="close" size={20} color="#FFF" />
-                </View>
-              </TouchableOpacity>
             </View>
             ) : (
-                        <TouchableOpacity onPress={handleVideoUpload} style={styles.uploadVideoButton}>
+                        <TouchableOpacity  style={styles.uploadVideoButton}>
                           <Ionicons name="cloud-upload-outline" size={20} color="#E4423F" />
                           <Text style={styles.uploadVideoText}>Upload Video File</Text>
                         </TouchableOpacity>
@@ -482,20 +430,11 @@ const handlePickImage = async (slotIndex) => {
               {photoUri ? (
                 <>
                   <Image source={{ uri: photoUri }} style={styles.photoImage} />
-                  {/* "X" in top-right */}
-                  <TouchableOpacity
-                    onPress={() => handleRemovePhoto(idx)}
-                    style={styles.removeIconTopRight}
-                  >
-                    <View style={styles.removeIconBackground}>
-                      <Ionicons name="close" size={20} color="#FFF" />
-                    </View>
-                  </TouchableOpacity>
+                  
                 </>
               ) : (
                 <Pressable
                   style={styles.emptyPhotoBox}
-                  onPress={() => handlePickImage(idx)}
                 >
                   <Ionicons name="add" size={24} color="red" />
                 </Pressable>
@@ -549,18 +488,16 @@ const handlePickImage = async (slotIndex) => {
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>My interests</Text>
             <View style={styles.interestsRow}>
-              {/* If user_general_interests is comma-separated or array */}
-              {(user_general_interests.split?.(',') || []).map((interest, i) => (
+              {generalInterests.map((interest, i) => (
                 <View key={i} style={styles.interestChip}>
-                  <Text style={styles.interestChipText}>{interest.trim()}</Text>
+                  <Text style={styles.interestChipText}>{interest}</Text>
                 </View>
               ))}
-              {/* user_date_interests similarly */}
-              {/* {(user_date_interests.split?.(',') || []).map((dateInt, i) => (
-                <View key={'date'+i} style={styles.interestChip}>
-                  <Text style={styles.interestChipText}>{dateInt.trim()}</Text>
+              {dateInterests.map((dateInt, i) => (
+                <View key={'date' + i} style={styles.interestChip}>
+                  <Text style={styles.interestChipText}>{dateInt}</Text>
                 </View>
-              ))} */}
+              ))}
             </View>
           </View>
         ) : null}
@@ -571,43 +508,155 @@ const handlePickImage = async (slotIndex) => {
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>A little bit about me</Text>
 
-          {/* Examples, adapt as you see fit */}
           {user_age ? (
             <View style={styles.aboutItem}>
-              <Ionicons name="calendar-outline" size={18} color="#999" />
-              <Text style={styles.aboutItemText}> {`Born in ${2023 - user_age} (Age: ${user_age})`}</Text>
+              <Image
+                source={require('../assets/icons/dob.png')}
+                style={{ width: 14, height: 16, }}
+              />
+              <Text style={styles.aboutItemText}>
+                Born on {formatDate(user_birthdate)} (Age: {user_age})
+              </Text>
             </View>
           ) : null}
 
           {user_height ? (
             <View style={styles.aboutItem}>
-              <Ionicons name="man-outline" size={18} color="#999" />
-              <Text style={styles.aboutItemText}> {user_height}</Text>
+              <Image
+                source={require('../assets/icons/height.png')}
+                style={{ width: 14, height: 16, }}
+              />
+              <Text style={styles.aboutItemText}>{user_height}</Text>
             </View>
           ) : null}
 
           {user_kids ? (
             <View style={styles.aboutItem}>
-              <Ionicons name="people-outline" size={18} color="#999" />
-              <Text style={styles.aboutItemText}> {user_kids} children</Text>
+              <Image
+                source={require('../assets/icons/kids.png')}
+                style={{ width: 14, height: 16 }}
+              />
+              <Text style={styles.aboutItemText}>{user_kids} children</Text>
             </View>
           ) : null}
 
           {user_gender ? (
             <View style={styles.aboutItem}>
-              <Ionicons name="male-female-outline" size={18} color="#999" />
-              <Text style={styles.aboutItemText}> Identifies as {user_gender}</Text>
+              <Image
+                source={require('../assets/icons/gender.png')}
+                style={{ width: 14, height: 16, }}
+              />
+              <Text style={styles.aboutItemText}>Sex assigned at birth was {user_gender}</Text>
+            </View>
+          ) : null}
+
+          {user_identity ? (
+            <View style={styles.aboutItem}>
+              <Image
+                source={require('../assets/icons/user_identity.png')}
+                style={{ width: 14, height: 16, }}
+              />
+              <Text style={styles.aboutItemText}>Identifies as {user_identity}</Text>
             </View>
           ) : null}
 
           {user_sexuality ? (
             <View style={styles.aboutItem}>
-              <Ionicons name="heart-outline" size={18} color="#999" />
-              <Text style={styles.aboutItemText}> {user_sexuality}</Text>
+              <Image
+                source={require('../assets/icons/sexuality.png')}
+                style={{ width: 14, height: 16, }}
+              />
+              <Text style={styles.aboutItemText}>{user_sexuality}</Text>
             </View>
           ) : null}
 
-          {/* You can add more lines for nationality, body_composition, job, education, religion, star_sign, etc. */}
+          {user_open_to ? (
+            <View style={styles.aboutItem}>
+              <Image
+                source={require('../assets/icons/opento.png')}
+                style={{ width: 14, height: 16, }}
+              />
+              <Text style={styles.aboutItemText}>
+                Open to {formatOpenTo(user_open_to)}
+              </Text>
+            </View>
+          ) : null}
+
+          {user_address ? (
+            <View style={styles.aboutItem}>
+              <Image
+                source={require('../assets/icons/location.png')}
+                style={{ width: 14, height: 16, }}
+              />
+              <Text style={styles.aboutItemText}>{user_address}</Text>
+            </View>
+          ) : null}
+
+          {/* Add more fields as needed */}
+          <View style={styles.aboutItem}>
+            <Image
+                source={require('../assets/icons/flag.png')}
+                style={{ width: 14, height: 16, }}
+              />
+            <Text style={styles.aboutItemText}>Coming in Live Version</Text>
+          </View>
+
+          <View style={styles.aboutItem}>
+            <Image
+                source={require('../assets/icons/ethnicity.png')}
+                style={{ width: 14, height: 16, }}
+              />
+            <Text style={styles.aboutItemText}>Coming in Live Version</Text>
+          </View>
+          <View style={styles.aboutItem}>
+            <Image
+                source={require('../assets/icons/bodytype.png')}
+                style={{ width: 14, height: 16, }}
+              />
+            <Text style={styles.aboutItemText}>Coming in Live Version</Text>
+          </View>
+          <View style={styles.aboutItem}>
+            <Image
+                source={require('../assets/icons/education.png')}
+                style={{ width: 14, height: 16, }}
+              />
+            <Text style={styles.aboutItemText}>Coming in Live Version</Text>
+          </View>
+          <View style={styles.aboutItem}>
+            <Image
+                source={require('../assets/icons/job.png')}
+                style={{ width: 14, height: 16, }}
+              />
+            <Text style={styles.aboutItemText}>Coming in Live Version</Text>
+          </View>
+          <View style={styles.aboutItem}>
+            <Image
+                source={require('../assets/icons/smoke.png')}
+                style={{ width: 14, height: 16, }}
+              />
+            <Text style={styles.aboutItemText}>Coming in Live Version</Text>
+          </View>
+          <View style={styles.aboutItem}>
+            <Image
+                source={require('../assets/icons/drink.png')}
+                style={{ width: 14, height: 16, }}
+              />
+            <Text style={styles.aboutItemText}>Coming in Live Version</Text>
+          </View>
+          <View style={styles.aboutItem}>
+            <Image
+                source={require('../assets/icons/religion.png')}
+                style={{ width: 14, height: 16, }}
+              />
+            <Text style={styles.aboutItemText}>Coming in Live Version</Text>
+          </View>
+          <View style={styles.aboutItem}>
+            <Image
+                source={require('../assets/icons/star.png')}
+                style={{ width: 14, height: 16, }}
+              />
+            <Text style={styles.aboutItemText}>Coming in Live Version</Text>
+          </View>
         </View>
 
         {/* Find My Match Button */}
@@ -642,7 +691,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     height: 60,
     backgroundColor: '#FFF',
-    borderTopWidth: 1,
+    borderTopWidth: 2,
     borderTopColor: '#EEE',
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -655,6 +704,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingBottom: 30,
   },
   headerTitle: {
     fontSize: 22,
@@ -814,9 +864,9 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
     marginBottom: 10,
+    color: 'gray',
   },
   bioText: {
     fontSize: 14,
@@ -830,15 +880,15 @@ const styles = StyleSheet.create({
   },
   interestChip: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 20,
+    borderColor: '#1A1A1A',
+    borderRadius: 100,
     paddingVertical: 6,
     paddingHorizontal: 12,
     marginRight: 8,
     marginBottom: 8,
   },
   interestChipText: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#000',
   },
   aboutItem: {
@@ -847,22 +897,28 @@ const styles = StyleSheet.create({
     marginVertical: 5,
   },
   aboutItemText: {
-    marginLeft: 5,
-    fontSize: 14,
+    marginLeft: 15,
+    fontSize: 16,
   },
   findMatchButton: {
     backgroundColor: '#E4423F',
     marginTop: 30,
     marginHorizontal: 20,
-    height: 50,
-    borderRadius: 25,
+    height: 60,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   findMatchButtonText: {
     color: '#FFF',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
+    textTransform: 'uppercase',
   },
 });
 

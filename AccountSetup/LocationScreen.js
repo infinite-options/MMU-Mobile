@@ -12,6 +12,7 @@ import {
   FlatList,
   Keyboard,
   Alert,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MapView, { Marker } from 'react-native-maps';
@@ -27,6 +28,7 @@ export default function LocationScreen({ navigation }) {
   const [searchText, setSearchText] = useState('');
   // Track location (latitude & longitude). Null if not chosen yet
   const [location, setLocation] = useState(null);
+  const [address, setAddress] = useState(null);
 
   // Default map region
   const [region, setRegion] = useState({
@@ -39,7 +41,7 @@ export default function LocationScreen({ navigation }) {
   // Autocomplete suggestions
   const [suggestions, setSuggestions] = useState([]);
 
-  // Credentials from AsyncStorage (we’ll fetch them in `useEffect`)
+  // Credentials from AsyncStorage (we'll fetch them in `useEffect`)
   const [userUid, setUserUid] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
   
@@ -103,6 +105,14 @@ export default function LocationScreen({ navigation }) {
     Keyboard.dismiss();
     setSearchText(suggestion.description);
     setSuggestions([]);
+    
+    // Store selected address to AsyncStorage
+    try {
+      await AsyncStorage.setItem('user_address', suggestion.description);
+      setAddress(suggestion.description);
+    } catch (error) {
+      console.error('Error saving address:', error);
+    }
 
     try {
       const detailsEndpoint = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${suggestion.place_id}&key=${GOOGLE_API_KEY}`;
@@ -136,36 +146,6 @@ export default function LocationScreen({ navigation }) {
     setRegion(newRegion);
   };
 
-  // PUT request to store lat/long in userinfo
-  const updateLocationOnServer = async (lat, lng) => {
-    if (!userUid || !userEmail) {
-      Alert.alert("Error", "Missing user credentials. Please log in again.");
-      return;
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append('user_uid', userUid);
-      formData.append('user_email_id', userEmail);
-      formData.append('user_latitude', lat);
-      formData.append('user_longitude', lng);
-
-      const response = await axios.put(
-        'https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo',
-        formData
-      );
-
-      if (response.status === 200) {
-        Alert.alert('Success', 'Location updated successfully!');
-      } else {
-        console.error('Update location failed:', response.data);
-        Alert.alert('Error', 'Failed to update location on the server.');
-      }
-    } catch (error) {
-      console.error('Error updating location on server:', error);
-      Alert.alert('Error', 'There was an error saving your location. Please try again.');
-    }
-  };
 
   // Continue => Save lat/long to server
   const handleContinue = async () => {
@@ -177,7 +157,8 @@ export default function LocationScreen({ navigation }) {
     fd.append("user_email_id", userEmail);
     fd.append("user_latitude", location.latitude);
     fd.append("user_longitude", location.longitude);
-
+    fd.append("user_address", address);
+    
       try {
         const response = await fetch(url, {
           method: "PUT",
@@ -199,11 +180,11 @@ export default function LocationScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={28} color="red" />
+        <Image source={require('../assets/icons/backarrow.png')} />
       </TouchableOpacity>
 
       {/* Progress Bar */}
-      <ProgressBar startProgress={80} endProgress={90} />
+      <ProgressBar startProgress={80} endProgress={90} style={styles.progressBar}/>
 
       {/* Title & Subtitle */}
       <Text style={styles.title}>Add your location</Text>
@@ -273,11 +254,11 @@ export default function LocationScreen({ navigation }) {
 
       {/* Continue Button */}
       <Pressable
-        style={[styles.continueButton, { backgroundColor: isFormComplete ? '#E4423F' : '#ccc' }]}
+        style={[styles.continueButton, { backgroundColor: isFormComplete ? '#E4423F' : '#F5F5F5' }]}
         onPress={handleContinue}
         disabled={!isFormComplete}
       >
-        <Text style={styles.continueButtonText}>Continue</Text>
+        <Text style={[styles.continueButtonText, { color: isFormComplete ? '#FFF' : 'rgba(26, 26, 26, 0.25)' }]}>Continue</Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -290,27 +271,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     justifyContent: 'flex-start',
     alignItems: 'stretch',
-    paddingHorizontal: 20,
+    paddingHorizontal: 25,
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   backButton: {
     alignSelf: 'flex-start',
-    backgroundColor: '#F5F5F5',
     borderRadius: 20,
-    padding: 8,
     marginBottom: 20,
     marginTop: 30,
+  },
+  progressBar: {
+    marginBottom: 30,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#000',
-    marginBottom: 10,
+    marginBottom: 20,
   },
   subtitle: {
     fontSize: 14,
     color: 'gray',
-    marginBottom: 20,
+    marginBottom: 50,
   },
   trialBox: {
     marginBottom: 20,
@@ -378,7 +360,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 50,
   },
   continueButtonText: {
     color: '#FFF',

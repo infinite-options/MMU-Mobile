@@ -15,7 +15,28 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { Ionicons } from '@expo/vector-icons'; // Import Ionicons
+import { useNavigation } from '@react-navigation/native';
+// Example placeholders for bottom navigation icons
 
+const BottomNav = () => {
+  const navigation = useNavigation();
+  return (
+    <View style={styles.bottomNavContainer}>
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Preferences')}>
+        <Image source={require('../assets/icons/search.png')} />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('MatchResultsPage')}>
+        <Image source={require('../assets/icons/twoheartsfilled.png')} />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Chat')}>
+        <Image source={require('../assets/icons/chat.png')}  />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('MyProfile')}>
+        <Image source={require('../assets/icons/profileoutline.png')} />
+      </TouchableOpacity>
+    </View>
+  );
+};
 // Utility to parse JSON safely
 function safeJsonParse(value, fallback = []) {
     // If value is null or not a string, just return fallback
@@ -37,6 +58,13 @@ const MatchResultsPage = () => {
   const [matchedResults, setMatchedResults] = useState([]);
   const [interestedInMe, setInterestedInMe] = useState([]);
   const [interestedIn, setInterestedIn] = useState([]);
+  
+  // This stores whether each matched user has an existing meet
+  // Example structure: { '100-000111': true, '100-000112': false }
+  const [meetStatus, setMeetStatus] = useState({});
+  const [meetSelfStatus, setMeetSelfStatus] = useState({});
+
+  const navigation = useNavigation();
 
   const handleMenuOpen = () => setMenuVisible(true);
   const handleMenuClose = () => setMenuVisible(false);
@@ -95,83 +123,196 @@ const MatchResultsPage = () => {
     }
   }, [userId]);
 
-  // POST match (like) to the API
-  const handleMatchClick = async (matchId) => {
-    try {
-      if (!userId) return;
+  // Once matchedResults loads, fetch meet info for each matched user
+  useEffect(() => {
+    // If no matches, clear and return
+    if (!matchedResults || matchedResults.length === 0) {
+      setMeetStatus({});
+      setMeetSelfStatus({});
+      return;
+    }
+    const fetchMeetSelfStatus = async () => {
+      try {
 
-      const apiUrl =
-        "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/likes";
-
-      const data = {
-        liker_user_id: userId,
-        liked_user_id: matchId,
-      };
-
-      const response = await axios.post(apiUrl, data);
-      if (response.status === 200) {
-        console.log("Match success:", response.data);
-        Alert.alert("Success", "Matched successfully!");
+        const meetSelfUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet/${userId}`;
+        const res = await axios.get(meetSelfUrl);
+        const selfmeets = Array.isArray(res.data?.result) ? res.data.result : [];
+        setMeetSelfStatus(selfmeets.length > 0);
+      } catch (err) {
+        console.warn("Error fetching meet data for self users:", err);
       }
-    } catch (error) {
-      console.error("Error calling the match API:", error);
-      Alert.alert("Error", "An error occurred while matching.");
+    };
+    fetchMeetSelfStatus();
+
+    // Create a copy of matchedResults to fetch meets for each user
+    const fetchMeetStatus = async () => {
+      try {
+        const newMeetStatus = {};
+        
+        // For each user in matchedResults, call the meet endpoint for THAT user's ID
+        // NOT your own userId.
+        for (const matchedUser of matchedResults) {
+          const theirUserId = matchedUser.user_uid;
+          console.log("--- theirUserId ---", theirUserId);
+          const meetUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet/${theirUserId}`;
+          
+          try {
+            const res = await axios.get(meetUrl);
+            
+            // Handle case where data is missing or malformed
+            const resultData = res.data?.result || [];
+            const meets = Array.isArray(resultData) ? resultData : [];
+            
+            newMeetStatus[theirUserId] = meets.length > 0;
+          } catch (err) {
+            console.warn("Error fetching meet data for user:", theirUserId, err);
+            newMeetStatus[theirUserId] = false; // Default to no meet
+          }
+        }
+
+        setMeetStatus(newMeetStatus);
+      } catch (err) {
+        console.warn("Error fetching meet data for matched users:", err);
+      }
+    };
+
+    fetchMeetStatus();
+  }, [matchedResults]);
+
+  // Render "Set up date" or "See invitation" depending on meet status
+  // Also handle button press to navigate to DateType or Chat
+  const handleButtonPress = (matchId) => {
+    if (meetStatus[matchId]) {
+      // Pass the matched user UID to Chat
+      navigation.navigate("Chat", { matchedUserId: matchId });
+    } else {
+      // Also pass the UID to DateType
+      navigation.navigate("DateType", { matchedUserId: matchId });
     }
   };
 
   const renderMatchRow = (
-    name,
+    firstname,
+    lastname,
     interests,
     imgSrc,
     buttonLabel = null,
     matchId = null
-  ) => (
-    <View
-      style={styles.matchRow}
-      key={`${name}-${matchId}-${Math.random()}`} // For unique keys
-    >
-      <View style={styles.matchRowLeft}>
-        <Image source={{ uri: imgSrc }} style={styles.avatar} />
-        <View>
-          <Text style={styles.matchName}>{name}</Text>
-          <Text style={styles.matchSubText}>
-            {interests} interests in common
-          </Text>
+  ) => {
+    // Decide which label to show (we ignore the passed buttonLabel here intentionally,
+    // because we override with either "See invitation" or "Set up date" below).
+    const hasMeet = meetStatus[matchId] || false;
+    console.log("--- hasMeet ---", hasMeet);
+    const hasMeetSelf = meetSelfStatus[matchId] || false;
+    console.log("--- hasMeetSelf ---", hasMeetSelf);
+    const dynamicButtonLabel = hasMeet ? "See invitation" : hasMeetSelf ? "change date" : "Set up date";
+    console.log("--- dynamicButtonLabel ---", dynamicButtonLabel);
+
+    return (
+      <View
+        style={styles.matchRow}
+        key={`${firstname}-${matchId}-${Math.random()}`}
+      >
+        <View style={styles.matchRowLeft}>
+          <Image 
+            source={imgSrc ? { uri: imgSrc } : require('../assets/account.png')} 
+            style={styles.avatar} 
+          />
+          <View>
+            <Text style={styles.matchName}>{firstname} {lastname}</Text>
+            <Text style={styles.matchSubText}>
+              {interests} interests in common
+            </Text>
+          </View>
         </View>
-      </View>
-      <View style={styles.matchRowRight}>
-        {buttonLabel && (
+        <View style={styles.matchRowRight}>
           <TouchableOpacity
             style={[
               styles.matchButton,
-              buttonLabel === "Set up date"
+              dynamicButtonLabel === "Set up date"
                 ? styles.setUpDateButton
                 : styles.defaultButtonBorder,
             ]}
-            onPress={
-              buttonLabel === "Match" && matchId
-                ? () => handleMatchClick(matchId)
-                : undefined
-            }
+            onPress={() => handleButtonPress(matchId)}
           >
             <Text
               style={[
                 styles.matchButtonText,
-                buttonLabel === "Match"
-                  ? { color: "#E4423F" }
-                  : { color: "#fff" },
+                dynamicButtonLabel === "Set up date"
+                  ? { color: "#fff" }
+                  : { color: "#E4423F" },
               ]}
             >
+              {dynamicButtonLabel}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.closeButton}>
+            <Text style={styles.closeButtonIcon}>×</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+  const renderInterestedInMeRow = (fname, lname, interests, imgSrc, buttonLabel = "Match", matchId = null) => {
+    return (
+      <View
+        style={styles.matchRow}
+        key={`${fname}-${matchId}`}
+      >
+        <View style={styles.matchRowLeft}>
+          <Image 
+            source={imgSrc ? { uri: imgSrc } : require('../assets/account.png')} 
+            style={styles.avatar} 
+          />
+          <View>
+            <Text style={styles.matchName}>{fname} {lname}</Text>
+            <Text style={styles.matchSubText}>
+              {interests} interests in common
+            </Text>
+          </View>
+        </View>
+        <View style={styles.matchRowRight}>
+          <TouchableOpacity
+            style={[styles.matchButton, styles.setUpDateButton]}
+            onPress={() => navigation.navigate('MatchProfileDisplay', { matchedUserId: matchId })}
+          >
+            <Text style={[styles.matchButtonText, { color: "#fff" }]}>
               {buttonLabel}
             </Text>
           </TouchableOpacity>
-        )}
-        <TouchableOpacity style={styles.closeButton}>
-          <Text style={styles.closeButtonIcon}>×</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.closeButton}>
+            <Text style={styles.closeButtonIcon}>×</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
+  const renderInterestedInRow = (fname, lname, interests, imgSrc, buttonLabel = null, matchId = null) => {
+    return (
+      <View
+        style={styles.matchRow}
+        key={`${fname}-${matchId}`}
+      >
+        <View style={styles.matchRowLeft}>
+          <Image 
+            source={imgSrc ? { uri: imgSrc } : require('../assets/account.png')} 
+            style={styles.avatar} 
+          />
+          <View>
+            <Text style={styles.matchName}>{fname} {lname}</Text>
+            <Text style={styles.matchSubText}>
+              {interests} interests in common
+            </Text>
+          </View>
+        </View>
+        <View style={styles.matchRowRight}>
+          <TouchableOpacity style={styles.closeButton}>
+            <Text style={styles.closeButtonIcon}>×</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -218,12 +359,13 @@ const MatchResultsPage = () => {
           {matchedResults.length > 0 ? (
             matchedResults.map((match) => {
               const photoUrls = safeJsonParse(match.user_photo_url, []);
-              const firstPhoto = photoUrls[0] || "";
+              const firstPhoto = photoUrls[0] || null;
               return renderMatchRow(
                 match.user_first_name,
+                match.user_last_name,
                 match.common_interests || "0",
                 firstPhoto,
-                "Set up date",
+                "Set up date or see invitation",
                 match.user_uid
               );
             })
@@ -238,9 +380,10 @@ const MatchResultsPage = () => {
           {interestedInMe.length > 0 ? (
             interestedInMe.map((match) => {
               const photoUrls = safeJsonParse(match.user_photo_url, []);
-              const firstPhoto = photoUrls[0] || "";
-              return renderMatchRow(
+              const firstPhoto = photoUrls[0] || null;
+              return renderInterestedInMeRow(
                 match.user_first_name,
+                match.user_last_name,
                 match.common_interests || "0",
                 firstPhoto,
                 "Match",
@@ -258,11 +401,14 @@ const MatchResultsPage = () => {
           {interestedIn.length > 0 ? (
             interestedIn.map((match) => {
               const photoUrls = safeJsonParse(match.user_photo_url, []);
-              const firstPhoto = photoUrls[0] || "";
-              return renderMatchRow(
+              const firstPhoto = photoUrls[0] || null;
+              return renderInterestedInRow(
                 match.user_first_name,
+                match.user_last_name,
                 match.common_interests || "0",
-                firstPhoto
+                firstPhoto,
+                "See Profile",
+                match.user_uid
               );
             })
           ) : (
@@ -271,23 +417,7 @@ const MatchResultsPage = () => {
         </ScrollView>
 
         {/* BOTTOM NAV */}
-        <View style={styles.bottomNav}>
-          <TouchableOpacity style={styles.navButton}>
-            <Ionicons name="search" size={28} color="#888" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navButton}>
-            <Image
-              source={require("../src/Assets/Images/redtwohearts.png")}
-              style={styles.bottomIcon}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navButton}>
-            <Ionicons name="chatbubble-outline" size={28} color="#888" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navButton}>
-            <Ionicons name="person-outline" size={28} color="#888" />
-          </TouchableOpacity>
-        </View>
+        <BottomNav />
     </SafeAreaView>
   );
 };
@@ -306,6 +436,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
+  bottomNavContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 60,
+    backgroundColor: '#FFF',
+    borderTopWidth: 2,
+    borderTopColor: '#EEE',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  navButton: {},
   header: {
     paddingHorizontal: 16,
     paddingVertical: 20,

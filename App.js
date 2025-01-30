@@ -27,7 +27,7 @@ import Location from "./Profile/Location";
 import Location2 from "./Profile/Location2";
 import AccountDetails from "./AccountDetails/AccountDetails";
 import AccountSetup1Login from './AccountSetup/AccountSetup1Login';  // Imported the newly created Login
-import MatchPreferences from "./Preferences/Preferences";
+// import MatchPreferences from "./MatcPreferences/Preferences";
 import Preferences from "./Preferences/Preferences"
 import MatchProfileDisplay from "./Match/MatchProfileDisplay"
 import MatchPopUp from "./Match/MatchPopUp"
@@ -78,6 +78,8 @@ import DateType from "./DatePreferences/DateType.js";
 import DateOccurance from "./DatePreferences/DateOccurance.js";
 import DateLocation from "./DatePreferences/DateLocation.js";
 import DateFinal from "./DatePreferences/DateFinal.js";
+import LandingPage5 from "./Intro/LandingPage5.js";
+import Chat from "./Chat/chat.js";
 const Stack = createNativeStackNavigator();
 // const Stack = createStackNavigator();
 SplashScreen.preventAutoHideAsync();
@@ -98,79 +100,87 @@ export default function App() {
     }
   }, [fontsLoaded]);
 
-  // If fonts aren’t loaded yet, return null or a temporary loading component
+  // If fonts aren't loaded yet, return null or a temporary loading component
   if (!fontsLoaded) {
-    return null; 
+    return null;
   }
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-    <NavigationContainer>
-      {/*
+      <NavigationContainer>
+        {/*
       <Stack.Navigator initialRouteName='AccountSetup2Create'>
         <Stack.Screen name='AccountSetup2Create' component={AccountSetup2Create} />
         <Stack.Screen name='AccountSetup3Create' component={AccountSetup3Create} />
         <Stack.Screen name='AccountSetup4Create' component={AccountSetup4Create} />
       </Stack.Navigator>
   */}
-      {/* <Stack.Navigator initialRouteName='Start' screenOptions={{ headerShown: false }}> */}
-      <Stack.Navigator initialRouteName='Start' screenOptions={{ headerShown: false }}>
-        <Stack.Screen name='Preferences' component={Preferences}/>
-        <Stack.Screen name='MatchPageNew' component={MatchPageNew}/>
-        <Stack.Screen name='MatchResultsPage' component={MatchResultsPage}/>
-       <Stack.Screen name='MatchProfileDisplay' component={MatchProfileDisplay}/> 
-       <Stack.Screen name="DateType" component={DateType}/>
-       <Stack.Screen name="DateOccurance" component={DateOccurance}/>
-       <Stack.Screen name="DateLocation" component={DateLocation}/>
-       <Stack.Screen name="DateFinal" component={DateFinal}/>
-       <Stack.Screen name='MatchPopUp' component={MatchPopUp}/>
-        <Stack.Screen name='MatchPopUpTemp' component={MatchPopUpTemp}/>
-        <Stack.Screen name='Start' component={Start} />
-        <Stack.Screen name="AgeVerification" component={AgeVerification} />
-        <Stack.Screen name='LandingPage' component={LandingPage} />
-        <Stack.Screen name='LandingPage2' component={LandingPage2} />
-        <Stack.Screen name='LandingPage3' component={LandingPage3} />
-        <Stack.Screen name='LandingPage4' component={LandingPage4} />
-        <Stack.Screen name='TrialAccount' component={TrialAccount} />
-        <Stack.Screen name='AccountSetup1Login' component={AccountSetup1Login}/>
-        <Stack.Screen name='AccountSetup2Create' component={AccountSetup2Create} />
-        <Stack.Screen name='Login' component={Login} />
+        {/* <Stack.Navigator initialRouteName='Start' screenOptions={{ headerShown: false }}> */}
+        <Stack.Navigator initialRouteName='Start' screenOptions={{ headerShown: false }}>
+          <Stack.Screen name='Start' component={Start} />
+          <Stack.Screen name="AgeVerification" component={AgeVerification} />
+          <Stack.Screen name='LandingPage' component={LandingPage} />
+          <Stack.Screen name='LandingPage2' component={LandingPage2} />
+          <Stack.Screen name='LandingPage3' component={LandingPage3} />
+          <Stack.Screen name='LandingPage4' component={LandingPage4} />
+          <Stack.Screen name='LandingPage5' component={LandingPage5} />
+          {/* not using TrialAccount for now */}
+          <Stack.Screen name='TrialAccount' component={TrialAccount} />
+          {/* SignUP to profile flow */}
+          <Stack.Screen name='AccountSetup2Create' component={AccountSetup2Create} />
+          <Stack.Screen name='NameInput' component={NameInput} />
+          <Stack.Screen name='BirthdayInput' component={BirthdayInput} />
+          <Stack.Screen name='Height' component={Height} />
+          <Stack.Screen name='HaveChildren' component={HaveChildren} />
+          <Stack.Screen name="AssignedSex" component={AssignedSex} />
+          <Stack.Screen name="GenderIdentity" component={GenderIdentity} />
+          <Stack.Screen name="OpenToScreen" component={OpenToScreen} />
+          <Stack.Screen name="SexualOrientationScreen" component={SexualOrientationScreen} />
+          <Stack.Screen name="InterestsScreen" component={InterestsScreen} />
+          <Stack.Screen name="AddMediaScreen" component={AddMediaScreen} />
+          <Stack.Screen name="LocationScreen" component={LocationScreen} />
+          <Stack.Screen name="EnableLocationScreen" component={EnableLocationScreen} />
+          <Stack.Screen name="EnableNotificationsScreen" component={EnableNotificationsScreen} />
+          <Stack.Screen name="MyProfile" component={MyProfile} />
+          <Stack.Screen name="EditProfile" component={EditProfile} />
+          <Stack.Screen name="DateAvailability" component={DateAvailability} />
+          <Stack.Screen name="TypeOfDate" component={TypeOfDate} />
+          <Stack.Screen name="AdditionalDetailsOne" component={AdditionalDetailsOne} />
+          <Stack.Screen name="AdditionalDetailsTwo" component={AdditionalDetailsTwo} />
+          <Stack.Screen name="AdditionalDetailsThree" component={AdditionalDetailsThree} />
+          <Stack.Screen name="AdditionalDetailsFour" component={AdditionalDetailsFour} />
+          <Stack.Screen name="AdditionalDetailsFive" component={AdditionalDetailsFive} />
+          <Stack.Screen name="AdditionalDetailsSix" component={AdditionalDetailsSix} />
+          <Stack.Screen name="AdditionalDetailsSeven" component={AdditionalDetailsSeven} />
+          <Stack.Screen name="AdditionalDetailsEight" component={AdditionalDetailsEight} />
+          <Stack.Screen name="ProfileBio" component={ProfileBio} />
+          <Stack.Screen name="VerifyPhoneNumber1" component={VerifyPhoneNumber1} />
+          <Stack.Screen name="VerifyPhoneNumber2" component={VerifyPhoneNumber2} />
+          <Stack.Screen name="AddDriversLicense" component={AddDriversLicense} />
+
+          {/* Login flow */}
+          <Stack.Screen name='Login' component={Login} />
+          <Stack.Screen name='Preferences' component={Preferences} />
+          <Stack.Screen name='MatchPageNew' component={MatchPageNew} />
+          <Stack.Screen name='MatchResultsPage' component={MatchResultsPage} />
+          <Stack.Screen name='MatchProfileDisplay' component={MatchProfileDisplay} />
+          <Stack.Screen name="DateType" component={DateType} />
+          <Stack.Screen name="DateOccurance" component={DateOccurance} />
+          <Stack.Screen name="DateLocation" component={DateLocation} />
+          <Stack.Screen name="DateFinal" component={DateFinal} />
+          <Stack.Screen name='MatchPopUp' component={MatchPopUp} />
+          <Stack.Screen name='MatchPopUpTemp' component={MatchPopUpTemp} />
+
+          {/* Chat flow */}
+          <Stack.Screen name='Chat' component={Chat} />
+          {/* Old flow */}
+          {/* <Stack.Screen name='AccountSetup1Login' component={AccountSetup1Login}/>
         <Stack.Screen name='PersonalDetails' component={PersonalDetails} />
-        {/* Created ui prefered pages for personal details */}
-        <Stack.Screen name='NameInput' component={NameInput} />
-        <Stack.Screen name='BirthdayInput' component={BirthdayInput} />
-        <Stack.Screen name='Height' component={Height} />
-        <Stack.Screen name='HaveChildren' component={HaveChildren} />
-        <Stack.Screen name="AssignedSex" component={AssignedSex} />
         <Stack.Screen name="GenderIdentity" component={GenderIdentity} />
-        <Stack.Screen name="OpenToScreen" component={OpenToScreen} />
-        <Stack.Screen name="SexualOrientationScreen" component={SexualOrientationScreen} />
-        <Stack.Screen name="InterestsScreen" component={InterestsScreen} />
-        <Stack.Screen name="AddMediaScreen" component={AddMediaScreen} />
-        <Stack.Screen name="LocationScreen" component={LocationScreen} />
-        <Stack.Screen name="EnableLocationScreen" component={EnableLocationScreen} />
-        <Stack.Screen name="EnableNotificationsScreen" component={EnableNotificationsScreen} />
-        <Stack.Screen name="MyProfile" component={MyProfile} />
-        <Stack.Screen name="EditProfile" component={EditProfile} />
-        <Stack.Screen name="DateAvailability" component={DateAvailability} />
-        <Stack.Screen name="TypeOfDate" component={TypeOfDate} />
-        <Stack.Screen name="AdditionalDetailsOne" component={AdditionalDetailsOne} />
-        <Stack.Screen name="AdditionalDetailsTwo" component={AdditionalDetailsTwo} />
-        <Stack.Screen name="AdditionalDetailsThree" component={AdditionalDetailsThree} />
-        <Stack.Screen name="AdditionalDetailsFour" component={AdditionalDetailsFour} />
-        <Stack.Screen name="AdditionalDetailsFive" component={AdditionalDetailsFive} />
-        <Stack.Screen name="AdditionalDetailsSix" component={AdditionalDetailsSix} />
-        <Stack.Screen name="AdditionalDetailsSeven" component={AdditionalDetailsSeven} />
-        <Stack.Screen name="AdditionalDetailsEight" component={AdditionalDetailsEight} />
-        <Stack.Screen name="ProfileBio" component={ProfileBio} />
-        <Stack.Screen name="VerifyPhoneNumber1" component={VerifyPhoneNumber1} />
-        <Stack.Screen name="VerifyPhoneNumber2" component={VerifyPhoneNumber2} />
-        <Stack.Screen name="AddDriversLicense" component={AddDriversLicense} />
-        {/* <Stack.Screen name="GenderIdentity" component={GenderIdentity} />
         <Stack.Screen name="SexualOrientation" component={SexualOrientation} />
         <Stack.Screen name="OpenTo" component={OpenTo} />
         <Stack.Screen name="Interests" component={Interests} />
         <Stack.Screen name="VideoAndPhotos" component={VideoAndPhotos} />
-        <Stack.Screen name="Location" component={LocationScreen} /> */}
+        <Stack.Screen name="Location" component={LocationScreen} />
         <Stack.Screen name='AccountSetup3Create' component={AccountSetup3Create} />
         <Stack.Screen name='AccountSetup4Create' component={AccountSetup4Create} />
         <Stack.Screen name='Location' component={Location} />
@@ -179,7 +189,7 @@ export default function App() {
         <Stack.Screen name = "AccountDetails3" component={AccountDetails3}/>
         <Stack.Screen name='AccountSetup7Summary' component={AccountSetup7Summary} />
         <Stack.Screen name='MatchPreferences' component={MatchPreferences}/>
-        {/* <Stack.Screen name='Preferences' component={Preferences}/> */}
+        <Stack.Screen name='Preferences' component={Preferences}/>
         <Stack.Screen name = "AccountSetup6Available" component={AccountSetup6Available}/>
         <Stack.Screen name ="SelectionResults" component={SelectionResults}/>
         <Stack.Screen name="ViewProfile" component={ViewProfile}/>
@@ -190,9 +200,9 @@ export default function App() {
         <Stack.Screen name="Begin" component={MatchBegin}/>
         <Stack.Screen name="SelectPlace" component={SelectPlace}/>
         <Stack.Screen name="SelectLocation" component={SelectLocation}/>
-        <Stack.Screen name="NextSummary" component={DateSummary}/>
-      </Stack.Navigator>
-    </NavigationContainer>
+        <Stack.Screen name="NextSummary" component={DateSummary}/> */}
+        </Stack.Navigator>
+      </NavigationContainer>
     </GestureHandlerRootView>
   );
 }

@@ -11,9 +11,12 @@ import {
   StatusBar,
   TextInput,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 // Example function for decrementing step. Adapt or remove if you use a different approach.
 import { decrementStepCount } from '../Profile/profileStepsState';
@@ -78,12 +81,42 @@ export default function TypeOfDate() {
     return true;
   };
 
-  // Save and return to profile
-  const handleSaveAndReturn = () => {
+  const saveDateInterestsToAPI = async (chosenTypes) => {
+    try {
+      const user_uid = await AsyncStorage.getItem('user_uid');
+      const user_email_id = await AsyncStorage.getItem('user_email_id');
+      if (!user_uid) {
+        Alert.alert('Error', 'User not logged in');
+        return;
+      }
+      const uploadData = new FormData();
+    uploadData.append("user_uid", user_uid);
+    uploadData.append("user_email_id", user_email_id);
+    uploadData.append("user_date_interests", JSON.stringify(chosenTypes));
+    const response = await axios.put(
+      "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo",
+      uploadData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+  );
+
+    if (response.status === 200) {
+            console.log("date interests uploaded successfully:", response.data);
+            Alert.alert("Success", "date interests  uploaded successfully!");
+        } else {
+            console.error("Failed to upload date interests:", response);
+            Alert.alert("Error", "Failed to upload date interests to the server.");
+        }
+    } catch (error) {
+      Alert.alert('Error', error.message);
+      console.error('API Error:', error);
+      throw error; // Re-throw to handle in calling function
+    }
+  };
+
+  // Modify handleSaveAndReturn to use the API call
+  const handleSaveAndReturn = async () => {
     if (!isSaveEnabled()) return;
 
-    // Gather the final chosen date types
-    // (You might want to store these in backend or pass them somewhere)
     const chosenTypes = dateTypes
       .filter((item) => item.selected)
       .map((item) =>
@@ -92,11 +125,13 @@ export default function TypeOfDate() {
           : item.label
       );
 
-    // Decrement the step only once user completes
-    decrementStepCount(stepIndex);
-
-    // Navigate back to MyProfile (or wherever needed)
-    navigation.navigate('MyProfile');
+    try {
+      await saveDateInterestsToAPI(chosenTypes);
+      decrementStepCount(stepIndex);
+      navigation.navigate('MyProfile');
+    } catch (error) {
+      // Error already handled in saveDateInterestsToAPI
+    }
   };
 
   return (

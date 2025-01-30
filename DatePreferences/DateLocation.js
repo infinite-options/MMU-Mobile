@@ -18,14 +18,16 @@ import { Ionicons } from '@expo/vector-icons';
 import MapView, { Marker } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { REACT_APP_GOOGLE_API_KEY } from '@env'; // or however you store your key
-
+import { useNavigation, useRoute } from '@react-navigation/native';
 // Example hearts images
 // import heartUser from '../src/Assets/Images/heartUser.png';
 // import heartMatch from '../src/Assets/Images/heartMatch.png';
 
 const GOOGLE_API_KEY = REACT_APP_GOOGLE_API_KEY;
 
-export default function DateLocation({ navigation }) {
+export default function DateLocation({ navigation}) {
+  const route = useRoute();
+  const matchedUserId = route.params?.matchedUserId || null;
   // Input text in the search bar
   const [searchText, setSearchText] = useState('');
   // If user has chosen a specific location => { latitude, longitude }
@@ -150,7 +152,7 @@ export default function DateLocation({ navigation }) {
       // Example: Save to your server or AsyncStorage
       console.log('Location chosen:', location, 'for user:', userUid);
       // Navigate onward
-      navigation.navigate('DateFinal', { location });
+      navigation.navigate('DateFinal', { location, matchedUserId: matchedUserId });
     }
   };
 
@@ -240,7 +242,7 @@ export default function DateLocation({ navigation }) {
         onPress={handleAskGemmaOut}
         disabled={!isFormComplete}
       >
-        <Text style={styles.askButtonText}>Ask Gemma Out!</Text>
+        <Text style={styles.askButtonText}>Confirm Date Details</Text>
       </Pressable>
 
       {/* Progress Dots (example: second dot in red) */}

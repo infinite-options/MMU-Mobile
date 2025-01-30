@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Pressable,
   SafeAreaView,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage"; // <-- Import AsyncStorage
@@ -43,11 +44,11 @@ export default function HaveChildren({ navigation }) {
     <SafeAreaView style={styles.container}>
       {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={28} color="red" />
+        <Image source={require('../assets/icons/backarrow.png')} />
       </TouchableOpacity>
 
       {/* Progress Bar */}
-      <ProgressBar startProgress={30} endProgress={30} />
+      <ProgressBar startProgress={30} endProgress={30} style={styles.progressBar} />
 
       {/* Title and Subtitle */}
       <View style={styles.content}>
@@ -78,11 +79,11 @@ export default function HaveChildren({ navigation }) {
 
       {/* Continue Button */}
       <Pressable
-        style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#ccc" }]}
+        style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5" }]}
         onPress={handleContinue}
         disabled={!isFormComplete}
       >
-        <Text style={styles.continueButtonText}>Continue</Text>
+        <Text style={[styles.continueButtonText, { color: isFormComplete ? '#FFF' : 'rgba(26, 26, 26, 0.25)' }]}>Continue</Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -91,7 +92,7 @@ export default function HaveChildren({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 25,
     backgroundColor: "#FFF",
     justifyContent: "flex-start",
     alignItems: "stretch",
@@ -99,27 +100,27 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: "flex-start",
-    backgroundColor: "#F5F5F5",
     borderRadius: 20,
-    padding: 8,
     marginBottom: 20,
     marginTop: 30,
+  },
+  progressBar: {
+    marginBottom: 30,
   },
   content: {
     flex: 1,
     justifyContent: "flex-start",
-    paddingHorizontal: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#000",
-    marginBottom: 10,
+    marginBottom: 20,
   },
   subtitle: {
     fontSize: 14,
     color: "#888",
-    marginBottom: 20,
+    marginBottom: 50,
   },
   fieldWrapperFull: {
     width: "100%",
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#E4423F",
     borderRadius: 30,
-    marginBottom: 20,
+    marginBottom: 50,
   },
   continueButtonText: {
     color: "#FFF",

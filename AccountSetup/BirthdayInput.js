@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Pressable,
   Alert,
+  Image,
 } from "react-native";
 import { Text, TextInput } from "react-native-paper";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
@@ -106,7 +107,10 @@ export default function BirthdayInput({ navigation }) {
 
     try {
       // Instead of storing the birthdate, we store user_age
+      console.log('age', age);
+      console.log('birthdate', birthdate);
       await AsyncStorage.setItem("user_age", age.toString());
+      await AsyncStorage.setItem("user_birthdate", birthdate);
     } catch (error) {
       console.error("Error storing user age:", error);
       Alert.alert("Storage Error", "Could not save your age.");
@@ -120,11 +124,11 @@ export default function BirthdayInput({ navigation }) {
     <SafeAreaView style={styles.container}>
       {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={28} color="red" />
+        <Image source={require('../assets/icons/backarrow.png')} />
       </TouchableOpacity>
 
       {/* Progress Bar */}
-      <ProgressBar startProgress={20} endProgress={30} />
+      <ProgressBar startProgress={20} endProgress={30} style={styles.progressBar} />
 
       {/* Content */}
       <View style={styles.content}>
@@ -157,11 +161,11 @@ export default function BirthdayInput({ navigation }) {
 
       {/* Continue Button */}
       <Pressable
-        style={[styles.continueButton, { backgroundColor: isValid ? "#E4423F" : "#ccc" }]}
+        style={[styles.continueButton, { backgroundColor: isValid ? "#E4423F" : "#F5F5F5" }]}
         onPress={handleContinue}
         disabled={!isValid}
       >
-        <Text style={styles.continueButtonText}>Continue</Text>
+        <Text style={[styles.continueButtonText, { color: isValid ? '#FFF' : 'rgba(26, 26, 26, 0.25)' }]}>Continue</Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -170,7 +174,7 @@ export default function BirthdayInput({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 25,
     backgroundColor: "#FFF",
     justifyContent: "flex-start",
     alignItems: "stretch",
@@ -178,11 +182,12 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: "flex-start",
-    backgroundColor: "#F5F5F5",
     borderRadius: 20,
-    padding: 8,
     marginBottom: 20,
     marginTop: 30,
+  },
+  progressBar: {
+    marginBottom: 30,
   },
   content: {
     flex: 1,
@@ -192,12 +197,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "#000",
-    marginBottom: 10,
+    marginBottom: 20,
   },
   subtitle: {
     fontSize: 14,
     color: "#888",
-    marginBottom: 20,
+    marginBottom: 50,
   },
   input: {
     backgroundColor: "#FFF",
@@ -231,7 +236,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#E4423F",
     borderRadius: 30,
-    marginBottom: 20,
+    marginBottom: 50,
   },
   continueButtonText: {
     color: "#FFF",

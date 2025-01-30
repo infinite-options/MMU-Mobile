@@ -20,7 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
-const MatchPreferences = () => {
+const Preferences = () => {
   const [maxDistance, setMaxDistance] = useState(80);
   const [ageRange, setAgeRange] = useState([18, 99]);
   const [heightRange, setHeightRange] = useState([122, 213]);
@@ -483,4 +483,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MatchPreferences;
+export default Preferences;

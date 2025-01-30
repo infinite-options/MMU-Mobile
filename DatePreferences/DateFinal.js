@@ -15,9 +15,12 @@ import { Ionicons } from '@expo/vector-icons';
 // Import your custom SlideToSend
 import SlideToSend from '../src/Assets/Components/SlideToSend.js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import axios from 'axios';
 
-export default function DateFinal({ navigation, route }) {
+export default function DateFinal({ navigation }) {
+  const route = useRoute();
+  const matchedUserId = route.params?.matchedUserId || null;
   const [dateType, setDateType] = useState('Dinner');
   const [dateDay, setDateDay] = useState('Sat, Aug 17');
   const [dateTime, setDateTime] = useState('7:00 pm');
@@ -120,9 +123,9 @@ export default function DateFinal({ navigation, route }) {
 
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.navigate('MatchResultsPage')}
+            onPress={() => navigation.navigate('MatchResultsPage',{  matchedUserId: matchedUserId })}
           >
-            <Text style={styles.backButtonText}>Back to my matches</Text>
+            <Text style={styles.backButtonText}>Back to my matches(Temp chat)</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

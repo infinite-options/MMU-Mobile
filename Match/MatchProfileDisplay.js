@@ -14,7 +14,7 @@ import {
 import { Video } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Slider from '@react-native-community/slider';
 
@@ -24,6 +24,25 @@ const heightImg = require('../src/Assets/Images/height.png');
 const genderImg = require('../src/Assets/Images/gender.png');
 const redlikeEmpty = require('../src/Assets/Images/redlike.png');
 const likeImg = require('../src/Assets/Images/like.png');
+const BottomNav = () => {
+  const navigation = useNavigation();
+  return (
+    <View style={styles.bottomNavContainer}>
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Preferences')}>
+        <Image source={require('../assets/icons/searchdark.png')} />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('MatchResultsPage')}>
+        <Image source={require('../assets/icons/twoheartsdark.png')}  />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Chat')}>
+        <Image source={require('../assets/icons/chatdark.png')}  />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('MyProfile')}>
+        <Image source={require('../assets/icons/profileoutlinedark.png')}  />
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 export default function MatchProfileDisplay() {
   const screenHeight = Dimensions.get('window').height;
@@ -179,7 +198,7 @@ export default function MatchProfileDisplay() {
         await AsyncStorage.setItem('meet_date_user_id', userInfo.user_uid);
         console.log('meet_date_user_id stored:', userInfo.user_uid);
         // Navigate to MatchPageNew
-        navigation.navigate('MatchPageNew');
+        navigation.navigate('MatchPageNew', { 'meet_date_user_id': userInfo.user_uid });
       } catch (error) {
         console.error('Failed to store meet_date_user_id:', error);
       }
@@ -194,12 +213,16 @@ export default function MatchProfileDisplay() {
   const fetchData = async (position) => {
     try {
       console.log('userUid', userUid);
+      console.log(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/${userUid}`);
       const response = await axios.get(
         `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/${userUid}`
       );
+      console.log('responseDate:', response.data);
       console.log('API Response MatchProfileDisplay:', response.data);
-
-      const matchResults = response.data['result of 1 way match'];
+    
+      let matchResults = response.data.hasOwnProperty('result of 1 way match') 
+                        ? response.data['result of 1 way match'] 
+                        : response.data['result'];
 
       if (Array.isArray(matchResults)) {
         const arrsize = matchResults.length;
@@ -630,39 +653,25 @@ export default function MatchProfileDisplay() {
               {userInfo?.user_star_sign || 'Sign not specified'}
             </Text>
           </View>
-
-          {/* Example slider for video position if you want
-          <View style={styles.progressContainer}>
-            <Slider
-              style={styles.slider}
-              minimumValue={0}
-              maximumValue={videoDuration}
-              value={videoPosition}
-              onValueChange={handleSeek}
-              minimumTrackTintColor="#FFFFFF"
-              maximumTrackTintColor="#000000"
-              thumbTintColor="#FF6347"
-            />
-          </View>
-          */}
         </ScrollView>
+        
+        {/* Progress slider positioned above bottom nav */}
+        <View style={styles.progressContainer}>
+          <Slider
+            style={styles.slider}
+            minimumValue={0}
+            maximumValue={videoDuration}
+            value={videoPosition}
+            onValueChange={handleSeek}
+            minimumTrackTintColor="#FFFFFF"
+            maximumTrackTintColor="#000000"
+            thumbTintColor="#FF6347"
+          />
+        </View>
       </Animated.View>
 
       {/* BOTTOM NAV BAR */}
-      <View style={styles.bottomNavBar}>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="search" size={28} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={handleClosePress}>
-          <Ionicons name="close" size={28} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="heart" size={28} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="person" size={28} color="#fff" />
-        </TouchableOpacity>
-      </View>
+      <BottomNav />
     </View>
   );
 }
@@ -768,7 +777,7 @@ const styles = StyleSheet.create({
   },
   bottomSheetScroll: {
     paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
 
   nameRow: {
@@ -827,7 +836,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   progressContainer: {
-    marginTop: 10,
+    position: 'absolute',
+    bottom: 70,
+    left: 20,
+    right: 20,
+    zIndex: 10000,
   },
   slider: {
     width: '100%',
@@ -848,6 +861,29 @@ const styles = StyleSheet.create({
   },
   navItem: {
     padding: 10,
+  },
+  bottomNavContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 60,
+    backgroundColor: '#222',
+    borderTopWidth: 2,
+    borderTopColor: '#EEE',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  navButton: {},
+  headerContainer: {
+    paddingHorizontal: 20,
+    marginTop: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 30,
   },
 
   infoText: {

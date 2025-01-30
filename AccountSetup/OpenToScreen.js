@@ -9,6 +9,7 @@ import {
   Pressable,
   StyleSheet,
   ScrollView,
+  Image,
 } from 'react-native';
 import ProgressBar from '../src/Assets/Components/ProgressBar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -63,11 +64,11 @@ export default function OpenToScreen({ navigation }) {
        <ScrollView> 
       {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={28} color="red" />
+        <Image source={require('../assets/icons/backarrow.png')} />
       </TouchableOpacity>
 
       {/* Progress Bar */}
-      <ProgressBar startProgress={50} endProgress={60} />
+      <ProgressBar startProgress={50} endProgress={60} style={styles.progressBar} />
 
       {/* Title / Subtitle */}
       <View style={styles.content}>
@@ -86,7 +87,7 @@ export default function OpenToScreen({ navigation }) {
             style={[
               styles.optionButton,
               // If selected, make the border black; otherwise gray
-              { borderColor: isSelected ? '#000' : '#CCC' },
+              { borderColor: isSelected ? 'rgba(26, 26, 26, 1)' : 'rgba(26, 26, 26, 0.5)' },
             ]}
           >
             <View style={styles.optionInner}>
@@ -95,18 +96,18 @@ export default function OpenToScreen({ navigation }) {
                 style={[
                   styles.circle,
                   {
-                    backgroundColor: isSelected ? '#000' : 'transparent',
-                    borderColor: isSelected ? '#000' : '#999',
+                    backgroundColor: isSelected ? '#000' : '#FFF',
+                    borderColor:  isSelected ? 'rgba(26, 26, 26, 1)' : 'rgba(26, 26, 26, 0.5)',
                   },
                 ]}
               >
                 {/* Show a checkmark if selected */}
                 {isSelected && (
-                  <Ionicons name="checkmark" size={14} color="#FFF" />
+                  <Ionicons name="checkmark" size={10} color="#FFF" />
                 )}
               </View>
               {/* Option text */}
-              <Text style={styles.optionText}>{option}</Text>
+              <Text style={[styles.optionText, { color: isSelected ? 'rgba(26, 26, 26, 1)' : 'rgba(26, 26, 26, 0.5)' }]}>{option}</Text>
             </View>
           </TouchableOpacity>
         );
@@ -117,12 +118,12 @@ export default function OpenToScreen({ navigation }) {
       <Pressable
         style={[
           styles.continueButton,
-          { backgroundColor: isFormComplete ? '#E4423F' : '#ccc' },
+          { backgroundColor: isFormComplete ? '#E4423F' : '#F5F5F5' },
         ]}
         onPress={handleContinue}
         disabled={!isFormComplete}
       >
-        <Text style={styles.continueButtonText}>Continue</Text>
+        <Text style={[styles.continueButtonText, { color: isFormComplete ? '#FFF' : 'rgba(26, 26, 26, 0.25)' }]}>Continue</Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -135,16 +136,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     justifyContent: 'flex-start', // Align content to the top
     alignItems: 'stretch',
-    paddingHorizontal: 20,
+    paddingHorizontal: 25,
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   backButton: {
     alignSelf: 'flex-start',
-    backgroundColor: '#F5F5F5',
     borderRadius: 20,
-    padding: 8,
     marginBottom: 20,
     marginTop: 30,
+  },
+  progressBar: {
+    marginBottom: 30,
   },
   content: {
     flex: 1,
@@ -154,12 +156,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "#000",
-    marginBottom: 10,
+    marginBottom: 20,
   },
   subtitle: {
     fontSize: 14,
     color: "#888",
-    marginBottom: 20,
+    marginBottom: 50,
   },
 
   /* Each option row is a large pill-shaped button */
@@ -167,11 +169,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 30,
     padding: 15,
-    marginVertical: 10,
+    marginVertical: 5,
   },
   optionInner: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  optionText: {
+    fontSize: 16,
+    fontWeight: 500,
   },
   /* Circle on the left side */
   circle: {
@@ -196,7 +202,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#E4423F",
     borderRadius: 30,
-    marginBottom: 20,
+    marginBottom: 50,
   },
   continueButtonText: {
     color: "#FFF",

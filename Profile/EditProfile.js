@@ -13,7 +13,8 @@ import {
   Keyboard,
   FlatList,
   ActivityIndicator,
-  Text as RNText
+  Text as RNText,
+  Modal
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { TextInput, Text } from "react-native-paper";
@@ -60,8 +61,8 @@ export default function EditProfile() {
 
   // Replace these text-based fields with pickers for Gender, Body Type, etc.
   const [genderOptions] = useState(['Male', 'Female', 'Non-binary', 'Other']);
-  const [bodyTypeOptions] = useState(['','Slim', 'Athletic', 'Curvy', 'Average', 'Other']);
-  const [orientationOptions] = useState(['','Straight',
+  const [bodyTypeOptions] = useState(['Slim', 'Athletic', 'Curvy', 'Average', 'Other']);
+  const [orientationOptions] = useState(['Straight',
     'Gay',
     'Bisexual',
     'Asexual',
@@ -70,9 +71,9 @@ export default function EditProfile() {
     'Questioning',
     'Other',]);
   const [openToOptions] = useState(['Men', 'Women', 'Men & Women', 'Everyone']);
-  const [smokingOptions] = useState(['',"I don't smoke", 'Social smoker', 'Regular smoker']);
-  const [drinkingOptions] = useState(['',"I don't drink", 'Social drinker', 'Regular drinker']);
-  const [religionOptions] = useState(['',
+  const [smokingOptions] = useState(["I don't smoke", 'Social smoker', 'Regular smoker']);
+  const [drinkingOptions] = useState(["I don't drink", 'Social drinker', 'Regular drinker']);
+  const [religionOptions] = useState([
     'No religion',
     'Christianity',
     'Islam',
@@ -80,7 +81,7 @@ export default function EditProfile() {
     'Buddhism',
     'Other'
   ]);
-  const [starSignOptions] = useState(['',
+  const [starSignOptions] = useState([
     'Aries','Taurus','Gemini','Cancer','Leo','Virgo',
     'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'
   ]);
@@ -116,6 +117,10 @@ export default function EditProfile() {
   });
 
   const [searchText, setSearchText] = useState(formValues.address || '');
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newEntryText, setNewEntryText] = useState('');
+  const [entryType, setEntryType] = useState('interest'); // 'interest' or 'dateType'
 
   useFocusEffect(
     React.useCallback(() => {
@@ -202,6 +207,17 @@ export default function EditProfile() {
             rawVideoUrl = rawVideoUrl.slice(1, -1);
           }
           setVideoUri(rawVideoUrl);
+        }
+
+        // Convert stored cm back to feet/inches
+        if (fetched.user_height) {
+          const cm = parseInt(fetched.user_height);
+          const totalInches = cm / 2.54;
+          const feet = Math.floor(totalInches / 12);
+          const inches = Math.round(totalInches % 12);
+          
+          setHeightFt(feet.toString());
+          setHeightIn(inches.toString());
         }
       } catch (error) {
         console.log('Error fetching user info:', error);
@@ -373,23 +389,15 @@ export default function EditProfile() {
 
   // Adding and removing "chips" for interests
   const handleAddInterest = () => {
-    // For a quick approach, just push a new interest from a prompt or something
-    // Here we'll do a simple prompt. In production, use a modal or input field.
-    Alert.prompt("Add Interest", "Enter your new interest:", (text) => {
-      if (text && text.trim().length > 0) {
-        setInterests([...interests, text.trim()]);
-      }
-    });
+    setEntryType('interest');
+    setModalVisible(true);
   };
   
 
   // Adding and removing "chips" for date types
   const handleAddDateType = () => {
-    Alert.prompt("Add Date Type", "Enter your new date type:", (text) => {
-      if (text && text.trim().length > 0) {
-        setDateTypes([...dateTypes, text.trim()]);
-      }
-    });
+    setEntryType('dateType');
+    setModalVisible(true);
   };
   const handleRemoveInterest = (index) => {
     const updated = [...interests];
@@ -426,8 +434,8 @@ export default function EditProfile() {
     await AsyncStorage.setItem('user_uid', userData.user_uid);
 
     // Convert feet/inches to centimeters
-    const totalInches = (heightFt * 12) + heightIn;
-    const heightCm = Math.round(totalInches * 2.54); // Convert to cm and round
+    const totalInches = (parseInt(heightFt || 0) * 12) + parseInt(heightIn || 0);
+    const heightCm = Math.round(totalInches * 2.54);
 
     // Convert interests and date interests to JSON
     const userInterestsJSON = JSON.stringify(interests);
@@ -700,26 +708,43 @@ export default function EditProfile() {
               outlineStyle={styles.textInputOutline}
             />
 
-            {/* Height +/- */}
-            <Text style={styles.label}>Height</Text>
-            <View style={styles.heightRow}>
-              <View style={styles.heightControl}>
-                <TouchableOpacity style={styles.heightButton} onPress={decrementFeet}>
-                  <Ionicons name="remove" size={20} color="#FFF" />
-                </TouchableOpacity>
-                <Text style={styles.heightText}>{heightFt} ft</Text>
-                <TouchableOpacity style={styles.heightButton} onPress={incrementFeet}>
-                  <Ionicons name="add" size={20} color="#FFF" />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.heightControl}>
-                <TouchableOpacity style={styles.heightButton} onPress={decrementInches}>
-                  <Ionicons name="remove" size={20} color="#FFF" />
-                </TouchableOpacity>
-                <Text style={styles.heightText}>{heightIn} in</Text>
-                <TouchableOpacity style={styles.heightButton} onPress={incrementInches}>
-                  <Ionicons name="add" size={20} color="#FFF" />
-                </TouchableOpacity>
+            {/* Height Input */}
+            <View style={styles.inputField}>
+              <Text variant="bodyMedium" style={styles.inputLabel}>Height</Text>
+              <View style={styles.heightContainer}>
+                {/* Feet Controls */}
+                <View style={styles.heightControlGroup}>
+                  <TouchableOpacity 
+                    style={styles.heightButton} 
+                    onPress={() => setHeightFt(Math.max(0, parseInt(heightFt || 0) - 1).toString())}
+                  >
+                    <Text style={styles.buttonText}>-</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.heightValue}>{heightFt || 0} ft</Text>
+                  <TouchableOpacity 
+                    style={styles.heightButton} 
+                    onPress={() => setHeightFt((parseInt(heightFt || 0) + 1).toString())}
+                  >
+                    <Text style={styles.buttonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Inches Controls */}
+                <View style={styles.heightControlGroup}>
+                  <TouchableOpacity 
+                    style={styles.heightButton} 
+                    onPress={() => setHeightIn(Math.max(0, parseInt(heightIn || 0) - 1).toString())}
+                  >
+                    <Text style={styles.buttonText}>-</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.heightValue}>{heightIn || 0} in</Text>
+                  <TouchableOpacity 
+                    style={styles.heightButton} 
+                    onPress={() => setHeightIn((parseInt(heightIn || 0) + 1).toString())}
+                  >
+                    <Text style={styles.buttonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
 
@@ -738,9 +763,10 @@ export default function EditProfile() {
             <Text style={styles.label}>Gender</Text>
             <View style={styles.pickerWrapper}>
               <Picker
-                selectedValue={formValues.gender || '-'}
+                selectedValue={formValues.gender || null}
                 onValueChange={(value) => setFormValues({ ...formValues, gender: value })}
               >
+                <Picker.Item label="-" value={''} />
                 {genderOptions.map((option, idx) => (
                   <Picker.Item key={idx} label={option} value={option} />
                 ))}
@@ -760,9 +786,10 @@ export default function EditProfile() {
             <Text style={styles.label}>Sexual Orientation</Text>
             <View style={styles.pickerWrapper}>
               <Picker
-                selectedValue={formValues.orientation || '-'}
+                selectedValue={formValues.orientation || null}
                 onValueChange={(value) => setFormValues({ ...formValues, orientation: value })}
               >
+                <Picker.Item label="-" value={''} />
                 {orientationOptions.map((opt, idx) => (
                   <Picker.Item key={idx} label={opt} value={opt} />
                 ))}
@@ -773,9 +800,10 @@ export default function EditProfile() {
             <Text style={styles.label}>Open To</Text>
             <View style={styles.pickerWrapper}>
               <Picker
-                selectedValue={formValues.openTo || '-'}
+                selectedValue={formValues.openTo || null}
                 onValueChange={(val) => setFormValues({ ...formValues, openTo: val })}
               >
+                <Picker.Item label="-" value={''} />
                 {openToOptions.map((opt, idx) => (
                   <Picker.Item key={idx} label={opt} value={opt} />
                 ))}
@@ -828,9 +856,10 @@ export default function EditProfile() {
             <Text style={styles.label}>Body Type</Text>
             <View style={styles.pickerWrapper}>
               <Picker
-                selectedValue={formValues.bodyType || '-'}
+                selectedValue={formValues.bodyType || null}
                 onValueChange={(val) => setFormValues({ ...formValues, bodyType: val })}
               >
+                <Picker.Item label="-" value={''} />
                 {bodyTypeOptions.map((opt, idx) => (
                   <Picker.Item key={idx} label={opt} value={opt} />
                 ))}
@@ -841,9 +870,10 @@ export default function EditProfile() {
             <Text style={styles.label}>Education Level</Text>
             <View style={styles.pickerWrapper}>
               <Picker
-                selectedValue={formValues.education || '-'}
+                selectedValue={formValues.education || null}
                 onValueChange={(val) => setFormValues({ ...formValues, education: val })}
               >
+                <Picker.Item label="-" value={''} />
                 {educationOptions.map((opt, idx) => (
                   <Picker.Item key={idx} label={opt} value={opt} />
                 ))}
@@ -864,9 +894,10 @@ export default function EditProfile() {
             <Text style={styles.label}>Smoking Habits</Text>
             <View style={styles.pickerWrapper}>
               <Picker
-                selectedValue={formValues.smoking || '-'}
+                selectedValue={formValues.smoking || null}
                 onValueChange={(val) => setFormValues({ ...formValues, smoking: val })}
               >
+                <Picker.Item label="-" value={''} />
                 {smokingOptions.map((opt, idx) => (
                   <Picker.Item key={idx} label={opt} value={opt} />
                 ))}
@@ -877,9 +908,10 @@ export default function EditProfile() {
             <Text style={styles.label}>Drinking Habits</Text>
             <View style={styles.pickerWrapper}>
               <Picker
-                selectedValue={formValues.drinking || '-'}
+                selectedValue={formValues.drinking || null}
                 onValueChange={(val) => setFormValues({ ...formValues, drinking: val })}
               >
+                <Picker.Item label="-" value={''} />
                 {drinkingOptions.map((opt, idx) => (
                   <Picker.Item key={idx} label={opt} value={opt} />
                 ))}
@@ -890,9 +922,10 @@ export default function EditProfile() {
             <Text style={styles.label}>Religion</Text>
             <View style={styles.pickerWrapper}>
               <Picker
-                selectedValue={formValues.religion || '-'}
+                selectedValue={formValues.religion || null}
                 onValueChange={(val) => setFormValues({ ...formValues, religion: val })}
               >
+                <Picker.Item label="-" value={''} />
                 {religionOptions.map((opt, idx) => (
                   <Picker.Item key={idx} label={opt} value={opt} />
                 ))}
@@ -903,9 +936,10 @@ export default function EditProfile() {
             <Text style={styles.label}>Star Sign</Text>
             <View style={styles.pickerWrapper}>
               <Picker
-                selectedValue={formValues.starSign || '-'}
+                selectedValue={formValues.starSign || null}
                 onValueChange={(val) => setFormValues({ ...formValues, starSign: val })}
               >
+                <Picker.Item label="-" value={''} />
                 {starSignOptions.map((opt, idx) => (
                   <Picker.Item key={idx} label={opt} value={opt} />
                 ))}
@@ -918,6 +952,55 @@ export default function EditProfile() {
           <TouchableOpacity onPress={handleSaveChanges} style={styles.saveButton}>
             <Text style={styles.saveButtonText}>Save Changes</Text>
           </TouchableOpacity>
+
+          <Modal
+            visible={modalVisible}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>
+                  Add {entryType === 'interest' ? 'Interest' : 'Date Type'}
+                </Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder={`Enter ${entryType === 'interest' ? 'interest' : 'date type'}`}
+                  value={newEntryText}
+                  onChangeText={setNewEntryText}
+                  autoFocus
+                />
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    style={styles.modalButton}
+                    onPress={() => {
+                      setModalVisible(false);
+                      setNewEntryText('');
+                    }}
+                  >
+                    <Text style={styles.modalButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.addButton]}
+                    onPress={() => {
+                      if (newEntryText.trim()) {
+                        if (entryType === 'interest') {
+                          setInterests(prev => [...prev, newEntryText.trim()]);
+                        } else {
+                          setDateTypes(prev => [...prev, newEntryText.trim()]);
+                        }
+                      }
+                      setModalVisible(false);
+                      setNewEntryText('');
+                    }}
+                  >
+                    <Text style={styles.modalButtonText}>Add</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
 
         </ScrollView>
       )}
@@ -1135,29 +1218,30 @@ const styles = StyleSheet.create({
     color: '#E4423F',
     fontWeight: 'bold',
   },
-  // Height +/- controls
-  heightRow: {
+  // Height Input
+  heightContainer: {
     flexDirection: 'row',
-    marginBottom: 15,
+    justifyContent: 'space-between',
   },
-  heightControl: {
+  heightControlGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 20,
+    marginHorizontal: 5,
   },
   heightButton: {
-    backgroundColor: '#E4423F',
-    borderRadius: 16,
-    width: 32,
-    height: 32,
-    justifyContent: 'center',
+    backgroundColor: '#e0e0e0',
+    borderRadius: 8,
+    padding: 10,
+    minWidth: 40,
     alignItems: 'center',
   },
-  heightText: {
-    width: 50,
-    textAlign: 'center',
+  heightValue: {
+    marginHorizontal: 10,
     fontSize: 16,
-    marginHorizontal: 8,
+  },
+  buttonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   // Picker styling
   pickerWrapper: {
@@ -1195,5 +1279,48 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 15,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  modalButton: {
+    padding: 10,
+    marginLeft: 15,
+  },
+  addButton: {
+    backgroundColor: '#E4423F',
+    borderRadius: 5,
+  },
+  modalButtonText: {
+    color: '#E4423F',
+    fontWeight: 'bold',
+  },
+  addButtonText: {
+    color: 'white',
   },
 });

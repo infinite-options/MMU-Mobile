@@ -484,7 +484,7 @@ export default function MyProfile() {
         ) : null}
 
         {/* Interests / Date interests */}
-        {user_general_interests || user_date_interests ? (
+        {user_general_interests  ? (
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>My interests</Text>
             <View style={styles.interestsRow}>
@@ -493,6 +493,15 @@ export default function MyProfile() {
                   <Text style={styles.interestChipText}>{interest}</Text>
                 </View>
               ))}
+            </View>
+          </View>
+        ) : null}
+
+        {/* "Kinds of dates I enjoy" / "My available times" you can add them likewise.  */}
+        {user_date_interests ? (
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>My interests</Text>
+            <View style={styles.interestsRow}>
               {dateInterests.map((dateInt, i) => (
                 <View key={'date' + i} style={styles.interestChip}>
                   <Text style={styles.interestChipText}>{dateInt}</Text>
@@ -501,8 +510,6 @@ export default function MyProfile() {
             </View>
           </View>
         ) : null}
-
-        {/* "Kinds of dates I enjoy" / "My available times" you can add them likewise.  */}
 
         {/* "A little bit about me" Section */}
         <View style={styles.sectionContainer}>

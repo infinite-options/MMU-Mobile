@@ -2,7 +2,7 @@
   "expo": {
     "name": "MeetMeUpvi",
     "slug": "MeetMeUpvi",
-    "version": "1.0.2 ",
+    "version": "1.1.1 ",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -13,8 +13,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.varsana.MeetMeUpvi",
-      "buildNumber": "6"
+      "bundleIdentifier": "com.infiniteoptions.meetmeupapp",
+      "buildNumber": "2"
     },
     "android": {
       "adaptiveIcon": {
@@ -31,9 +31,7 @@
         "projectId": "2b38dee4-3a65-41b8-80f5-45827ee6bb39"
       }
     },
-    "assetBundlePatterns": [
-      "assets/fonts/*"
-    ]
+    "assetBundlePatterns": ["assets/fonts/*"]
   },
   "web": {
     "favicon": "./assets/favicon.png"

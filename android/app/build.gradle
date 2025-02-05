@@ -109,9 +109,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.varsana.MeetMeUpvi'
+    namespace 'com.infiniteoptions.MeetMeUp'
     defaultConfig {
-        applicationId 'com.varsana.MeetMeUpvi'
+        applicationId 'com.infiniteoptions.MeetMeUp'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

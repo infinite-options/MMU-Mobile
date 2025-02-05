@@ -1,4 +1,4 @@
-package com.varsana.MeetMeUpvi
+package com.infiniteoptions.MeetMeUp
 
 import android.os.Build
 import android.os.Bundle

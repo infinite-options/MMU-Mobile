@@ -1,4 +1,4 @@
-package com.varsana.MeetMeUpvi
+package com.infiniteoptions.MeetMeUp
 
 import android.app.Application
 import android.content.res.Configuration

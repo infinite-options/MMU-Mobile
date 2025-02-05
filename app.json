@@ -21,7 +21,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.varsana.MeetMeUpvi"
+      "package": "com.infiniteoptions.MeetMeUp"
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -1,4 +1,4 @@
-package com.infiniteoptions.MeetMeUp
+package com.infiniteoptions.meetmeupapp
 
 import android.app.Application
 import android.content.res.Configuration

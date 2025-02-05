@@ -1,7 +1,7 @@
 {
   "cli": {
     "version": ">= 12.1.0",
-    "appVersionSource": "remote"
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
@@ -19,7 +19,7 @@
     "production": {
       "ios": {
         "appleId": "pmarathay@infiniteoptions.com",
-        "ascAppId": "6670776069",
+        "ascAppId": "6452625349",
         "appleTeamId": "8V66NC2T37"
       }
     }

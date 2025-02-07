@@ -114,8 +114,8 @@ android {
         applicationId 'com.infiniteoptions.meetmeupapp'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0.0"
+        versionCode 8
+        versionName "1.1.2"
     }
     signingConfigs {
         debug {

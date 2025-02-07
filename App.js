@@ -4,7 +4,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import AccountSetup2Create from "./AccountSetup/AccountSetup2Create";
 import AccountSetup3Create from "./AccountSetup/AccountSetup3Create";
@@ -12,7 +12,7 @@ import AccountSetup4Create from "./AccountSetup/AccountSetup4Create";
 import AccountSetup7Summary from "./AccountSetup/AccountSetup7Summary";
 import AccountDetails3 from "./AccountDetails/AccountDetails3";
 
-// new pages 
+// new pages
 import PersonalDetails from "./AccountSetup/PersonalDetails.js";
 import AssignedSex from "./AccountSetup/AssignedSex";
 // import { createStackNavigator } from '@react-navigation/stack';
@@ -21,17 +21,16 @@ import LandingPage2 from "./Intro/LandingPage2";
 import LandingPage3 from "./Intro/LandingPage3";
 import LandingPage4 from "./Intro/LandingPage4";
 import Start from "./Intro/Start";
-import AgeVerification from './Intro/AgeVerification';
 import TrialAccount from "./Intro/TrialAccount";
 import Location from "./Profile/Location";
 import Location2 from "./Profile/Location2";
 import AccountDetails from "./AccountDetails/AccountDetails";
-import AccountSetup1Login from './AccountSetup/AccountSetup1Login';  // Imported the newly created Login
+import AccountSetup1Login from "./AccountSetup/AccountSetup1Login"; // Imported the newly created Login
 // import MatchPreferences from "./MatcPreferences/Preferences";
-import Preferences from "./Preferences/Preferences"
-import MatchProfileDisplay from "./Match/MatchProfileDisplay"
-import MatchPopUp from "./Match/MatchPopUp"
-import MatchPopUpTemp from "./Match/MatchPopUpTemp"
+import Preferences from "./Preferences/Preferences";
+import MatchProfileDisplay from "./Match/MatchProfileDisplay";
+import MatchPopUp from "./Match/MatchPopUp";
+import MatchPopUpTemp from "./Match/MatchPopUpTemp";
 import AccountSetup6Available from "./AccountSetup/AccountSetup6Available";
 import SelectionResults from "./Match/SelectionResults";
 import ViewProfile from "./Match/ViewProfile";
@@ -85,12 +84,12 @@ const Stack = createNativeStackNavigator();
 SplashScreen.preventAutoHideAsync();
 export default function App() {
   const [fontsLoaded] = useFonts({
-    'Inria Sans': require('./assets/fonts/InriaSans-Regular.ttf'),
-    'InriaSans-Bold': require('./assets/fonts/InriaSans-Bold.ttf'),
-    'Lexend': require('./assets/fonts/Lexend-Regular.ttf'),
-    'Lexend-Regular': require('./assets/fonts/Lexend-Regular.ttf'),
-    'Lexend-Bold': require('./assets/fonts/Lexend-Bold.ttf'),
-    'DM Sans': require('./assets/fonts/DMSans-Regular.ttf'),
+    "Inria Sans": require("./assets/fonts/InriaSans-Regular.ttf"),
+    "InriaSans-Bold": require("./assets/fonts/InriaSans-Bold.ttf"),
+    Lexend: require("./assets/fonts/Lexend-Regular.ttf"),
+    "Lexend-Regular": require("./assets/fonts/Lexend-Regular.ttf"),
+    "Lexend-Bold": require("./assets/fonts/Lexend-Bold.ttf"),
+    "DM Sans": require("./assets/fonts/DMSans-Regular.ttf"),
   });
 
   // Once fonts are loaded, hide the splash screen
@@ -117,7 +116,6 @@ export default function App() {
         {/* <Stack.Navigator initialRouteName='Start' screenOptions={{ headerShown: false }}> */}
         <Stack.Navigator initialRouteName='Start' screenOptions={{ headerShown: false }}>
           <Stack.Screen name='Start' component={Start} />
-          <Stack.Screen name="AgeVerification" component={AgeVerification} />
           <Stack.Screen name='LandingPage' component={LandingPage} />
           <Stack.Screen name='LandingPage2' component={LandingPage2} />
           <Stack.Screen name='LandingPage3' component={LandingPage3} />
@@ -131,31 +129,31 @@ export default function App() {
           <Stack.Screen name='BirthdayInput' component={BirthdayInput} />
           <Stack.Screen name='Height' component={Height} />
           <Stack.Screen name='HaveChildren' component={HaveChildren} />
-          <Stack.Screen name="AssignedSex" component={AssignedSex} />
-          <Stack.Screen name="GenderIdentity" component={GenderIdentity} />
-          <Stack.Screen name="OpenToScreen" component={OpenToScreen} />
-          <Stack.Screen name="SexualOrientationScreen" component={SexualOrientationScreen} />
-          <Stack.Screen name="InterestsScreen" component={InterestsScreen} />
-          <Stack.Screen name="AddMediaScreen" component={AddMediaScreen} />
-          <Stack.Screen name="LocationScreen" component={LocationScreen} />
-          <Stack.Screen name="EnableLocationScreen" component={EnableLocationScreen} />
-          <Stack.Screen name="EnableNotificationsScreen" component={EnableNotificationsScreen} />
-          <Stack.Screen name="MyProfile" component={MyProfile} />
-          <Stack.Screen name="EditProfile" component={EditProfile} />
-          <Stack.Screen name="DateAvailability" component={DateAvailability} />
-          <Stack.Screen name="TypeOfDate" component={TypeOfDate} />
-          <Stack.Screen name="AdditionalDetailsOne" component={AdditionalDetailsOne} />
-          <Stack.Screen name="AdditionalDetailsTwo" component={AdditionalDetailsTwo} />
-          <Stack.Screen name="AdditionalDetailsThree" component={AdditionalDetailsThree} />
-          <Stack.Screen name="AdditionalDetailsFour" component={AdditionalDetailsFour} />
-          <Stack.Screen name="AdditionalDetailsFive" component={AdditionalDetailsFive} />
-          <Stack.Screen name="AdditionalDetailsSix" component={AdditionalDetailsSix} />
-          <Stack.Screen name="AdditionalDetailsSeven" component={AdditionalDetailsSeven} />
-          <Stack.Screen name="AdditionalDetailsEight" component={AdditionalDetailsEight} />
-          <Stack.Screen name="ProfileBio" component={ProfileBio} />
-          <Stack.Screen name="VerifyPhoneNumber1" component={VerifyPhoneNumber1} />
-          <Stack.Screen name="VerifyPhoneNumber2" component={VerifyPhoneNumber2} />
-          <Stack.Screen name="AddDriversLicense" component={AddDriversLicense} />
+          <Stack.Screen name='AssignedSex' component={AssignedSex} />
+          <Stack.Screen name='GenderIdentity' component={GenderIdentity} />
+          <Stack.Screen name='OpenToScreen' component={OpenToScreen} />
+          <Stack.Screen name='SexualOrientationScreen' component={SexualOrientationScreen} />
+          <Stack.Screen name='InterestsScreen' component={InterestsScreen} />
+          <Stack.Screen name='AddMediaScreen' component={AddMediaScreen} />
+          <Stack.Screen name='LocationScreen' component={LocationScreen} />
+          <Stack.Screen name='EnableLocationScreen' component={EnableLocationScreen} />
+          <Stack.Screen name='EnableNotificationsScreen' component={EnableNotificationsScreen} />
+          <Stack.Screen name='MyProfile' component={MyProfile} />
+          <Stack.Screen name='EditProfile' component={EditProfile} />
+          <Stack.Screen name='DateAvailability' component={DateAvailability} />
+          <Stack.Screen name='TypeOfDate' component={TypeOfDate} />
+          <Stack.Screen name='AdditionalDetailsOne' component={AdditionalDetailsOne} />
+          <Stack.Screen name='AdditionalDetailsTwo' component={AdditionalDetailsTwo} />
+          <Stack.Screen name='AdditionalDetailsThree' component={AdditionalDetailsThree} />
+          <Stack.Screen name='AdditionalDetailsFour' component={AdditionalDetailsFour} />
+          <Stack.Screen name='AdditionalDetailsFive' component={AdditionalDetailsFive} />
+          <Stack.Screen name='AdditionalDetailsSix' component={AdditionalDetailsSix} />
+          <Stack.Screen name='AdditionalDetailsSeven' component={AdditionalDetailsSeven} />
+          <Stack.Screen name='AdditionalDetailsEight' component={AdditionalDetailsEight} />
+          <Stack.Screen name='ProfileBio' component={ProfileBio} />
+          <Stack.Screen name='VerifyPhoneNumber1' component={VerifyPhoneNumber1} />
+          <Stack.Screen name='VerifyPhoneNumber2' component={VerifyPhoneNumber2} />
+          <Stack.Screen name='AddDriversLicense' component={AddDriversLicense} />
 
           {/* Login flow */}
           <Stack.Screen name='Login' component={Login} />
@@ -163,10 +161,10 @@ export default function App() {
           <Stack.Screen name='MatchPageNew' component={MatchPageNew} />
           <Stack.Screen name='MatchResultsPage' component={MatchResultsPage} />
           <Stack.Screen name='MatchProfileDisplay' component={MatchProfileDisplay} />
-          <Stack.Screen name="DateType" component={DateType} />
-          <Stack.Screen name="DateOccurance" component={DateOccurance} />
-          <Stack.Screen name="DateLocation" component={DateLocation} />
-          <Stack.Screen name="DateFinal" component={DateFinal} />
+          <Stack.Screen name='DateType' component={DateType} />
+          <Stack.Screen name='DateOccurance' component={DateOccurance} />
+          <Stack.Screen name='DateLocation' component={DateLocation} />
+          <Stack.Screen name='DateFinal' component={DateFinal} />
           <Stack.Screen name='MatchPopUp' component={MatchPopUp} />
           <Stack.Screen name='MatchPopUpTemp' component={MatchPopUpTemp} />
 

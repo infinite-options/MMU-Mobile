@@ -1,15 +1,5 @@
 import React, { useState } from "react";
-import {
-  SafeAreaView,
-  Platform,
-  StatusBar,
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Pressable,
-  Alert,
-  Image,
-} from "react-native";
+import { SafeAreaView, Platform, StatusBar, View, StyleSheet, TouchableOpacity, Pressable, Alert, Image } from "react-native";
 import { Text, TextInput } from "react-native-paper";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -23,9 +13,7 @@ function calculateAge(birthdateString) {
   let age = today.getFullYear() - birthDate.getFullYear();
 
   // If birth month/day is later in the year than today's month/day, subtract 1 from age
-  const hasNotHadBirthdayThisYear =
-    today.getMonth() < birthDate.getMonth() ||
-    (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate());
+  const hasNotHadBirthdayThisYear = today.getMonth() < birthDate.getMonth() || (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate());
 
   if (hasNotHadBirthdayThisYear) {
     age -= 1;
@@ -45,12 +33,7 @@ function formatBirthdate(input) {
     formatted = digitsOnly.slice(0, 2) + "/" + digitsOnly.slice(2);
   }
   if (digitsOnly.length > 4) {
-    formatted =
-      digitsOnly.slice(0, 2) +
-      "/" +
-      digitsOnly.slice(2, 4) +
-      "/" +
-      digitsOnly.slice(4, 8); // limit to 8 digits total
+    formatted = digitsOnly.slice(0, 2) + "/" + digitsOnly.slice(2, 4) + "/" + digitsOnly.slice(4, 8); // limit to 8 digits total
   }
   return formatted;
 }
@@ -106,14 +89,13 @@ export default function BirthdayInput({ navigation }) {
     const age = calculateAge(birthdate);
 
     try {
-      // Instead of storing the birthdate, we store user_age
-      console.log('age', age);
-      console.log('birthdate', birthdate);
+      // Store both age and verification status
       await AsyncStorage.setItem("user_age", age.toString());
       await AsyncStorage.setItem("user_birthdate", birthdate);
+      await AsyncStorage.setItem("userIsVerified", "true");
     } catch (error) {
-      console.error("Error storing user age:", error);
-      Alert.alert("Storage Error", "Could not save your age.");
+      console.error("Error storing user data:", error);
+      Alert.alert("Storage Error", "Could not save your information.");
       return;
     }
 
@@ -124,7 +106,7 @@ export default function BirthdayInput({ navigation }) {
     <SafeAreaView style={styles.container}>
       {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Image source={require('../assets/icons/backarrow.png')} />
+        <Image source={require("../assets/icons/backarrow.png")} />
       </TouchableOpacity>
 
       {/* Progress Bar */}
@@ -132,40 +114,33 @@ export default function BirthdayInput({ navigation }) {
 
       {/* Content */}
       <View style={styles.content}>
-        <Text style={styles.title}>When’s your birthday?</Text>
+        <Text style={styles.title}>When's your birthday?</Text>
         <Text style={styles.subtitle}>Your age will be public.</Text>
 
         {/* Input Field */}
         <TextInput
-          label="dd/mm/yyyy"
+          label='dd/mm/yyyy'
           value={birthdate}
           onChangeText={handleInputChange}
-          mode="outlined"
+          mode='outlined'
           style={styles.input}
-          keyboardType="numeric"
-          outlineStyle={[
-            styles.textInputOutline,
-            warning !== "" && { borderColor: "#E4423F", borderWidth: 2, borderRadius: 10 },
-          ]}
+          keyboardType='numeric'
+          outlineStyle={[styles.textInputOutline, warning !== "" && { borderColor: "#E4423F", borderWidth: 2, borderRadius: 10 }]}
           maxLength={10} // dd/mm/yyyy -> 10 characters
         />
 
         {/* Warning Section */}
         {warning !== "" && (
           <View style={styles.warningContainer}>
-            <MaterialIcons name="error-outline" size={20} color="red" />
+            <MaterialIcons name='error-outline' size={20} color='red' />
             <Text style={styles.warningText}>{warning}</Text>
           </View>
         )}
       </View>
 
       {/* Continue Button */}
-      <Pressable
-        style={[styles.continueButton, { backgroundColor: isValid ? "#E4423F" : "#F5F5F5" }]}
-        onPress={handleContinue}
-        disabled={!isValid}
-      >
-        <Text style={[styles.continueButtonText, { color: isValid ? '#FFF' : 'rgba(26, 26, 26, 0.25)' }]}>Continue</Text>
+      <Pressable style={[styles.continueButton, { backgroundColor: isValid ? "#E4423F" : "#F5F5F5" }]} onPress={handleContinue} disabled={!isValid}>
+        <Text style={[styles.continueButtonText, { color: isValid ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
       </Pressable>
     </SafeAreaView>
   );

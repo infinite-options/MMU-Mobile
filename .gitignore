@@ -36,3 +36,15 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# ESLint
+.eslintcache
+.eslint.cache
+*.eslintcache
+.eslintrc.local.json
+
+# Editor directories and files
+.idea/
+.vscode/
+*.swp
+*.swo

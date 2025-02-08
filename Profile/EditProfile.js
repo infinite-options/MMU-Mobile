@@ -17,7 +17,7 @@ import {
   Modal
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { TextInput, Text } from "react-native-paper";
+import { TextInput, Text } from 'react-native-paper';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -85,7 +85,7 @@ export default function EditProfile() {
     'Aries','Taurus','Gemini','Cancer','Leo','Virgo',
     'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'
   ]);
-  const [educationOptions] = useState(["","High School", "Bachelor's Degree", "Master's Degree", "PhD"]);
+  const [educationOptions] = useState(['','High School', "Bachelor's Degree", "Master's Degree", 'PhD']);
 
   // Interests and date interests as arrays of strings => displayed as chips
   const [interests, setInterests] = useState([]);
@@ -269,8 +269,8 @@ export default function EditProfile() {
         setIsVideoPlaying(false);
       }
     } catch (error) {
-      console.error("Error picking video:", error);
-      Alert.alert("Error", "There was an issue processing the video.");
+      console.error('Error picking video:', error);
+      Alert.alert('Error', 'There was an issue processing the video.');
     }
   };
   const handleRemoveVideo = () => {
@@ -1011,24 +1011,24 @@ export default function EditProfile() {
 // STYLES
 const styles = StyleSheet.create({
   container: {
+    alignItems: 'stretch',
+    backgroundColor: '#FFF',
     flex: 1,
-    backgroundColor: "#FFF",
-    justifyContent: "flex-start",
-    alignItems: "stretch",
+    justifyContent: 'flex-start',
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   loadingContainer: {
+    alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
   },
   headerContainer: {
-    paddingHorizontal: 20,
-    marginTop: 20,
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 20,
+    paddingHorizontal: 20,
   },
   headerTitle: {
     fontSize: 22,
@@ -1038,84 +1038,84 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   videoWrapper: {
-    position: "relative",
-    width: "100%",
     aspectRatio: 0.76,
-    backgroundColor: "#000",
-    marginBottom: 15,
+    backgroundColor: '#000',
     borderRadius: 10,
-    overflow: "hidden",
+    marginBottom: 15,
+    overflow: 'hidden',
+    position: 'relative',
+    width: '100%',
   },
   video: {
-    width: "100%",
-    height: "100%",
+    height: '100%',
+    width: '100%',
   },
   playOverlay: {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: [{ translateX: -24 }, { translateY: -24 }],
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: 'rgba(0,0,0,0.3)',
     borderRadius: 50,
+    left: '50%',
     padding: 10,
+    position: 'absolute',
+    top: '50%',
+    transform: [{ translateX: -24 }, { translateY: -24 }],
   },
   removeIconTopRight: {
-    position: "absolute",
-    top: 5,
+    position: 'absolute',
     right: 5,
+    top: 5,
   },
   removeIconBackground: {
-    backgroundColor: "#E4423F",
+    backgroundColor: '#E4423F',
     borderRadius: 20,
     padding: 4,
   },
   uploadVideoButton: {
-    flexDirection: "row",
-    alignItems: "center",
+    alignItems: 'center',
+    borderColor: '#E4423F',
     borderRadius: 25,
     borderWidth: 2,
-    borderColor: "#E4423F",
-    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
     paddingHorizontal: 20,
-    justifyContent: "center",
+    paddingVertical: 12,
   },
   uploadVideoText: {
-    color: "#E4423F",
-    fontWeight: "bold",
+    color: '#E4423F',
     fontSize: 16,
+    fontWeight: 'bold',
     marginLeft: 8,
   },
   photoBoxesRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 20,
   },
   photoBox: {
-    width: "30%",
     aspectRatio: 1,
+    backgroundColor: '#F5F5F5',
     borderRadius: 10,
-    backgroundColor: "#F5F5F5",
-    overflow: "hidden",
-    position: "relative",
+    overflow: 'hidden',
+    position: 'relative',
+    width: '30%',
   },
   emptyPhotoBox: {
+    alignItems: 'center',
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
   },
   photoImage: {
-    width: "100%",
-    height: "100%",
+    height: '100%',
+    width: '100%',
   },
   uploadButton: {
-    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
     borderColor: 'red',
     borderRadius: 25,
+    borderWidth: 1,
+    flexDirection: 'row',
+    marginBottom: 20,
     paddingHorizontal: 20,
     paddingVertical: 10,
-    marginBottom: 20,
   },
   uploadButtonText: {
     color: 'red',
@@ -1124,25 +1124,25 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   imageContainer: {
-    marginTop: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 20,
   },
   image: {
-    width: 200,
-    height: 120,
     borderRadius: 10,
+    height: 120,
     marginBottom: 10,
+    width: 200,
   },
   imageDetails: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     width: '80%',
   },
   imageFilename: {
-    fontSize: 14,
     color: '#333',
+    fontSize: 14,
   },
   formContainer: {
     marginBottom: 20,
@@ -1151,21 +1151,21 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   textInputOutline: {
-    borderWidth: 0,
-    borderColor: "#F9F9F9",
+    alignItems: 'center',
+    backgroundColor: '#F9F9F9',
+    borderColor: '#F9F9F9',
     borderRadius: 10,
+    borderWidth: 0,
     flex: 1,
-    alignItems: "center",
-    backgroundColor: "#F9F9F9",
-    paddingHorizontal: 15,
     height: 50,
+    paddingHorizontal: 15,
   },
   saveButton: {
-    height: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#E4423F",
+    alignItems: 'center',
+    backgroundColor: '#E4423F',
     borderRadius: 30,
+    height: 50,
+    justifyContent: 'center',
     marginBottom: 20,
   },
   saveButtonText: {
@@ -1175,8 +1175,8 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    marginBottom: 6,
     fontWeight: 'bold',
+    marginBottom: 6,
     marginTop: 10,
   },
   // Tag styles
@@ -1186,37 +1186,37 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   tag: {
-    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#E4423F',
     borderRadius: 20,
+    flexDirection: 'row',
+    marginBottom: 8,
+    marginRight: 8,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    alignItems: 'center',
-    marginRight: 8,
-    marginBottom: 8,
   },
   tagText: {
     color: '#FFF',
-    marginRight: 6,
     fontSize: 14,
+    marginRight: 6,
   },
   tagClose: {
-    width: 16,
-    height: 16,
+    alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: 8,
+    height: 16,
     justifyContent: 'center',
-    alignItems: 'center',
+    width: 16,
   },
   addTagButton: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     marginBottom: 10,
   },
   addTagButtonText: {
-    marginLeft: 4,
     color: '#E4423F',
     fontWeight: 'bold',
+    marginLeft: 4,
   },
   // Height Input
   heightContainer: {
@@ -1224,20 +1224,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   heightControlGroup: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     marginHorizontal: 5,
   },
   heightButton: {
+    alignItems: 'center',
     backgroundColor: '#e0e0e0',
     borderRadius: 8,
-    padding: 10,
     minWidth: 40,
-    alignItems: 'center',
+    padding: 10,
   },
   heightValue: {
-    marginHorizontal: 10,
     fontSize: 16,
+    marginHorizontal: 10,
   },
   buttonText: {
     fontSize: 18,
@@ -1245,52 +1245,52 @@ const styles = StyleSheet.create({
   },
   // Picker styling
   pickerWrapper: {
-    borderWidth: 1,
     borderColor: '#E4423F',
     borderRadius: 8,
+    borderWidth: 1,
     marginBottom: 15,
     overflow: 'hidden',
   },
   // Autocomplete
   searchRow: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     marginBottom: 20,
   },
   searchWrapper: {
     flex: 1,
   },
   searchInput: {
-    padding: 10,
     backgroundColor: '#F9F9F9',
+    padding: 10,
   },
   searchIconWrapper: {
     padding: 10,
   },
   suggestionsContainer: {
-    marginTop: -10,
     backgroundColor: '#FFF',
     borderRadius: 5,
-    zIndex: 999,
     elevation: 3,
     marginBottom: 10,
+    marginTop: -10,
+    zIndex: 999,
   },
   suggestionItem: {
-    padding: 10,
-    borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
+    borderBottomWidth: 1,
+    padding: 10,
   },
   modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
+    flex: 1,
+    justifyContent: 'center',
   },
   modalContent: {
-    width: '80%',
     backgroundColor: 'white',
     borderRadius: 10,
     padding: 20,
+    width: '80%',
   },
   modalTitle: {
     fontSize: 18,
@@ -1298,19 +1298,19 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   modalInput: {
-    borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
-    padding: 10,
+    borderWidth: 1,
     marginBottom: 15,
+    padding: 10,
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
   },
   modalButton: {
-    padding: 10,
     marginLeft: 15,
+    padding: 10,
   },
   addButton: {
     backgroundColor: '#E4423F',

@@ -51,34 +51,46 @@ const TrialAccount = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
+  arrowIcon: {
+    height: 30,
+    width: 30,
   },
   backgroundImage: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
     height: '100%',
-    resizeMode: 'cover',
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    padding: 10,
+    left: 0,
     position: 'absolute',
+    resizeMode: 'cover',
     top: 0,
-    zIndex: 2,
+    width: '100%',
   },
-  arrowIcon: {
-    width: 30,
-    height: 30,
+  bodyText: {
+    color: '#282828',
+    fontFamily: 'Lexend',
+    fontSize: 14,
+    marginTop: 10,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontFamily: 'Lexend',
+    fontSize: 18,
+  },
+  captionText: {
+    color: '#282828',
+    fontFamily: 'Lexend',
+    fontSize: 14,
+    marginTop: 10,
+  },
+  container: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  contentContainer: {
+    alignItems: 'center',
+    marginTop: 100,
+    padding: 20,
+    width: '100%',
   },
   headerText: {
     color: '#1A1A1A',
@@ -86,50 +98,38 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
   },
-  contentContainer: {
-    marginTop: 100,
-    padding: 20,
-    width: '100%',
-    alignItems: 'center',
-  },
   infoBox: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 15,
+    maxWidth: 378,
     padding: 20,
     width: '90%',
-    maxWidth: 378,
   },
   mainTitle: {
+    color: '#282828',
     fontFamily: 'Lexend',
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#282828',
-  },
-  bodyText: {
-    fontFamily: 'Lexend',
-    fontSize: 14,
-    marginTop: 10,
-    color: '#282828',
-  },
-  captionText: {
-    fontFamily: 'Lexend',
-    fontSize: 14,
-    marginTop: 10,
-    color: '#282828',
   },
   startButton: {
+    alignItems: 'center',
     backgroundColor: '#E4423F',
     borderRadius: 20,
-    width: 172,
     height: 42,
     justifyContent: 'center',
-    alignItems: 'center',
     marginTop: 20,
+    width: 172,
   },
-  buttonText: {
-    fontFamily: 'Lexend',
-    fontSize: 18,
-    color: '#FFFFFF',
+  topBar: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 10,
+    position: 'absolute',
+    top: 0,
+    width: '100%',
+    zIndex: 2,
   },
 });
 

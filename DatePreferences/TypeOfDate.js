@@ -90,21 +90,21 @@ export default function TypeOfDate() {
         return;
       }
       const uploadData = new FormData();
-    uploadData.append("user_uid", user_uid);
-    uploadData.append("user_email_id", user_email_id);
-    uploadData.append("user_date_interests", JSON.stringify(chosenTypes));
+    uploadData.append('user_uid', user_uid);
+    uploadData.append('user_email_id', user_email_id);
+    uploadData.append('user_date_interests', JSON.stringify(chosenTypes));
     const response = await axios.put(
-      "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo",
+      'https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo',
       uploadData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      { headers: { 'Content-Type': 'multipart/form-data' } }
   );
 
     if (response.status === 200) {
-            console.log("date interests uploaded successfully:", response.data);
-            Alert.alert("Success", "date interests  uploaded successfully!");
+            console.log('date interests uploaded successfully:', response.data);
+            Alert.alert('Success', 'date interests  uploaded successfully!');
         } else {
-            console.error("Failed to upload date interests:", response);
-            Alert.alert("Error", "Failed to upload date interests to the server.");
+            console.error('Failed to upload date interests:', response);
+            Alert.alert('Error', 'Failed to upload date interests to the server.');
         }
     } catch (error) {
       Alert.alert('Error', error.message);
@@ -222,95 +222,95 @@ export default function TypeOfDate() {
 
 // ---------------- Styles ----------------
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  bottomContainer: {
     backgroundColor: '#FFF',
+    bottom: 0,
+    padding: 20,
+    position: 'absolute',
+    width: '100%',
+  },
+  container: {
+    backgroundColor: '#FFF',
+    flex: 1,
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   headerRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    marginTop: 10,
+    flexDirection: 'row',
     marginBottom: 10,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '600',
-    marginHorizontal: 20,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: 'gray',
-    marginHorizontal: 20,
-    marginBottom: 20,
+    marginTop: 10,
+    paddingHorizontal: 20,
   },
   optionContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 25,
+    borderWidth: 1,
+    flexDirection: 'row',
+    marginBottom: 10,
+    marginHorizontal: 20,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    marginHorizontal: 20,
-    marginBottom: 10,
+  },
+  optionLabel: {
+    color: '#333',
+    fontSize: 16,
   },
   optionSelected: {
     borderColor: '#000',
   },
-  radioCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#666',
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  radioCircleFilled: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#000',
-  },
-  optionLabel: {
-    fontSize: 16,
-    color: '#333',
-  },
   otherContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     flex: 1, // so the input can expand
   },
   otherInput: {
-    flex: 1,
-    borderWidth: 1,
+    backgroundColor: '#F9F9F9',
     borderColor: '#eee',
     borderRadius: 6,
-    paddingHorizontal: 10,
-    backgroundColor: '#F9F9F9',
+    borderWidth: 1,
+    flex: 1,
     height: 40,
+    paddingHorizontal: 10,
   },
-  bottomContainer: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    backgroundColor: '#FFF',
-    padding: 20,
+  radioCircle: {
+    alignItems: 'center',
+    borderColor: '#666',
+    borderRadius: 10,
+    borderWidth: 1,
+    height: 20,
+    justifyContent: 'center',
+    marginRight: 12,
+    width: 20,
+  },
+  radioCircleFilled: {
+    backgroundColor: '#000',
+    borderRadius: 6,
+    height: 12,
+    width: 12,
   },
   saveButton: {
+    alignItems: 'center',
     backgroundColor: 'red',
     borderRadius: 25,
     height: 50,
     justifyContent: 'center',
-    alignItems: 'center',
   },
   saveButtonText: {
     color: '#FFF',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  subtitle: {
+    color: 'gray',
+    fontSize: 14,
+    marginBottom: 20,
+    marginHorizontal: 20,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '600',
+    marginBottom: 8,
+    marginHorizontal: 20,
   },
 });

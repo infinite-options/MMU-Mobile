@@ -28,11 +28,11 @@ export default function AccountSetup5Create() {
                     setUserEmail(storedUserEmail);
                     await fetchUserData(storedUserId); // Fetch already uploaded images and video
                 } else {
-                    Alert.alert("User data not found", "Please log in again.");
+                    Alert.alert('User data not found', 'Please log in again.');
                     navigation.navigate('Login');
                 }
             } catch (e) {
-                console.error("Error fetching user data", e);
+                console.error('Error fetching user data', e);
             }
         };
         requestPermissionsAndFetchUserData();
@@ -52,8 +52,8 @@ export default function AccountSetup5Create() {
                 setFormData(prevData => ({ ...prevData, video: fetchedData.user_video_url })); // Set video URL in the state
             }
         } catch (error) {
-            console.error("Error fetching user data", error);
-            Alert.alert("Error", "Failed to fetch existing media. Please try again later.");
+            console.error('Error fetching user data', error);
+            Alert.alert('Error', 'Failed to fetch existing media. Please try again later.');
         }
     };
 
@@ -73,11 +73,11 @@ export default function AccountSetup5Create() {
                     image: prevData.image ? `${prevData.image},${imageUri}` : imageUri,
                 }));
             } else {
-                console.log("Image picker was cancelled or returned no URI.");
+                console.log('Image picker was cancelled or returned no URI.');
             }
         } catch (error) {
-            console.error("Error selecting or uploading image:", error);
-            Alert.alert("Error", "There was an issue processing the image. Please try again.");
+            console.error('Error selecting or uploading image:', error);
+            Alert.alert('Error', 'There was an issue processing the image. Please try again.');
         }
     };
 
@@ -97,11 +97,11 @@ export default function AccountSetup5Create() {
                     video: videoUri,
                 }));
             } else {
-                console.log("Video picker was cancelled or returned no URI.");
+                console.log('Video picker was cancelled or returned no URI.');
             }
         } catch (error) {
-            console.error("Error selecting or uploading video:", error);
-            Alert.alert("Error", "There was an issue processing the video. Please try again.");
+            console.error('Error selecting or uploading video:', error);
+            Alert.alert('Error', 'There was an issue processing the video. Please try again.');
         }
     };
 
@@ -141,14 +141,14 @@ export default function AccountSetup5Create() {
             );
 
             if (response.status === 200) {
-                Alert.alert("Success", "Media uploaded successfully!");
+                Alert.alert('Success', 'Media uploaded successfully!');
             } else {
-                console.error("Failed to upload media:", response);
-                Alert.alert("Error", "Failed to upload media to the server. Please try again.");
+                console.error('Failed to upload media:', response);
+                Alert.alert('Error', 'Failed to upload media to the server. Please try again.');
             }
         } catch (error) {
-            console.error("Upload Error:", error.message);
-            Alert.alert("Error", "There was an error uploading the media. Please try again.");
+            console.error('Upload Error:', error.message);
+            Alert.alert('Error', 'There was an error uploading the media. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -169,7 +169,7 @@ export default function AccountSetup5Create() {
 
     const handleNext = async () => {
         await uploadMediaToBackend();
-        navigation.replace("AccountSetup7Summary");
+        navigation.replace('AccountSetup7Summary');
     };
 
     return (
@@ -231,26 +231,26 @@ export default function AccountSetup5Create() {
 }
 
 const styles = StyleSheet.create({
-    safeArea: { flex: 1 },
-    container: { flex: 1, padding: 20, backgroundColor: '#f7f7f7' },
-    headerContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
     backButton: { marginRight: 10 },
-    header: { fontSize: 26, fontWeight: 'bold', color: '#333' },
-    backText: { fontSize: 24, color: '#000' },
-    progressBarContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-    progressBar: { flex: 1, height: 10, backgroundColor: '#ddd', borderRadius: 5, overflow: 'hidden', marginRight: 10 },
-    progress: { width: '80%', height: '100%', backgroundColor: '#E4423F' },
-    progressText: { fontSize: 14, fontWeight: 'bold', color: '#E4423F' },
-    sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginTop: 20, marginBottom: 5 },
-    sectionSubtitle: { fontSize: 14, color: '#666', marginBottom: 10 },
-    imagePreviewContainer: { flexDirection: 'row', flexWrap: 'wrap', marginVertical: 10 },
-    imageContainer: { position: 'relative', margin: 5 },
-    image: { width: 100, height: 150, borderRadius: 5 },
-    deleteButton: { position: 'absolute', top: 5, right: 5, backgroundColor: 'rgba(0, 0, 0, 0.5)', borderRadius: 15, padding: 2 },
+    backText: { color: '#000', fontSize: 24 },
+    container: { backgroundColor: '#f7f7f7', flex: 1, padding: 20 },
+    deleteButton: { backgroundColor: 'rgba(0, 0, 0, 0.5)', borderRadius: 15, padding: 2, position: 'absolute', right: 5, top: 5 },
     deleteButtonText: { color: '#fff', fontSize: 12 },
-    videoContainer: { position: 'relative', padding: 20, backgroundColor: '#ddd', borderRadius: 5, marginTop: 10, alignItems: 'center' },
-    uploadButton: { backgroundColor: '#1A1A1A', width: 200, padding: 15, borderRadius: 45, alignItems: 'center', marginVertical: 10 },
-    uploadText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-    nextButton: { backgroundColor: '#E4423F', padding: 15, width: 200, borderRadius: 45, alignItems: 'center' },
-    nextText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+    header: { color: '#333', fontSize: 26, fontWeight: 'bold' },
+    headerContainer: { alignItems: 'center', flexDirection: 'row', marginBottom: 20 },
+    image: { borderRadius: 5, height: 150, width: 100 },
+    imageContainer: { margin: 5, position: 'relative' },
+    imagePreviewContainer: { flexDirection: 'row', flexWrap: 'wrap', marginVertical: 10 },
+    nextButton: { alignItems: 'center', backgroundColor: '#E4423F', borderRadius: 45, padding: 15, width: 200 },
+    nextText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+    progress: { backgroundColor: '#E4423F', height: '100%', width: '80%' },
+    progressBar: { backgroundColor: '#ddd', borderRadius: 5, flex: 1, height: 10, marginRight: 10, overflow: 'hidden' },
+    progressBarContainer: { alignItems: 'center', flexDirection: 'row', marginBottom: 20 },
+    progressText: { color: '#E4423F', fontSize: 14, fontWeight: 'bold' },
+    safeArea: { flex: 1 },
+    sectionSubtitle: { color: '#666', fontSize: 14, marginBottom: 10 },
+    sectionTitle: { color: '#333', fontSize: 18, fontWeight: 'bold', marginBottom: 5, marginTop: 20 },
+    uploadButton: { alignItems: 'center', backgroundColor: '#1A1A1A', borderRadius: 45, marginVertical: 10, padding: 15, width: 200 },
+    uploadText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+    videoContainer: { alignItems: 'center', backgroundColor: '#ddd', borderRadius: 5, marginTop: 10, padding: 20, position: 'relative' },
 });

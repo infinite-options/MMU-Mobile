@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   StatusBar,
   Platform,
@@ -8,19 +8,19 @@ import {
   TouchableOpacity,
   Pressable,
   Image,
-} from "react-native";
-import { Text, TextInput } from "react-native-paper";
-import { Ionicons } from "@expo/vector-icons";
-import ProgressBar from "../src/Assets/Components/ProgressBar";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+} from 'react-native';
+import { Text, TextInput } from 'react-native-paper';
+import { Ionicons } from '@expo/vector-icons';
+import ProgressBar from '../src/Assets/Components/ProgressBar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function NameInput({ navigation }) {
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    firstName: '',
+    lastName: '',
   });
 
-  const isFormComplete = formData.firstName.trim() !== "" && formData.lastName.trim() !== "";
+  const isFormComplete = formData.firstName.trim() !== '' && formData.lastName.trim() !== '';
 
   /**
    * Store the user's name (firstName, lastName) in AsyncStorage.
@@ -28,11 +28,11 @@ export default function NameInput({ navigation }) {
    */
   const saveUserName = async (firstName, lastName) => {
     try {
-      await AsyncStorage.setItem("user_first_name", firstName);
-      await AsyncStorage.setItem("user_last_name", lastName);
-      console.log("✅ First Name & Last Name stored successfully");
+      await AsyncStorage.setItem('user_first_name', firstName);
+      await AsyncStorage.setItem('user_last_name', lastName);
+      console.log('✅ First Name & Last Name stored successfully');
     } catch (error) {
-      console.error("Error saving name", error);
+      console.error('Error saving name', error);
     }
   };
 
@@ -43,7 +43,7 @@ export default function NameInput({ navigation }) {
 
       // 2) Navigate to next screen. We'll eventually call the API
       //    from the final screen once all data is collected.
-      navigation.navigate("BirthdayInput");
+      navigation.navigate('BirthdayInput');
     }
   };
 
@@ -88,7 +88,7 @@ export default function NameInput({ navigation }) {
       <Pressable
         style={[
           styles.continueButton,
-          { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5" },
+          { backgroundColor: isFormComplete ? '#E4423F' : '#F5F5F5' },
         ]}
         onPress={handleContinue}
         disabled={!isFormComplete}
@@ -100,65 +100,65 @@ export default function NameInput({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 25,
-    backgroundColor: "#FFF",
-    justifyContent: "flex-start",
-    alignItems: "stretch",
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
-  },
   backButton: {
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
     borderRadius: 20,
     marginBottom: 20,
     marginTop: 30,
   },
-  progressBar: {
-    marginBottom: 30,
+  container: {
+    alignItems: 'stretch',
+    backgroundColor: '#FFF',
+    flex: 1,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 25,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   content: {
     flex: 1,
-    justifyContent: "flex-start",
+    justifyContent: 'flex-start',
   },
-  title: {
-    fontSize: 26,
-    fontWeight: "bold",
-    textAlign: "left",
-    color: "#000",
-    marginBottom: 20,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "gray",
-    textAlign: "left",
+  continueButton: {
+    alignItems: 'center',
+    backgroundColor: '#E4423F',
+    borderRadius: 30,
+    height: 50,
+    justifyContent: 'center',
     marginBottom: 50,
+  },
+  continueButtonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   input: {
     marginBottom: 15,
   },
-  continueButton: {
-    height: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#E4423F",
-    borderRadius: 30,
-    marginBottom: 50,
+  progressBar: {
+    marginBottom: 30,
   },
-  continueButtonText: {
-    color: "#FFF",
-    fontSize: 18,
-    fontWeight: "bold",
+  subtitle: {
+    color: 'gray',
+    fontSize: 14,
+    marginBottom: 50,
+    textAlign: 'left',
   },
   textInputOutline: {
-    borderWidth: 0,
-    borderColor: "#F9F9F9",
+    alignItems: 'center',
+    backgroundColor: '#F9F9F9',
+    borderColor: '#F9F9F9',
     borderRadius: 10,
+    borderWidth: 0,
     flex: 1,
-    alignItems: "center",
-    backgroundColor: "#F9F9F9",
-    paddingHorizontal: 15,
-    marginBottom: 20,
     height: 50,
+    marginBottom: 20,
+    paddingHorizontal: 15,
+  },
+  title: {
+    color: '#000',
+    fontSize: 26,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'left',
   },
 });

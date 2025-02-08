@@ -28,7 +28,7 @@ const Match = () => {
                     await AsyncStorage.setItem('liked_user_ids', JSON.stringify(likedUserIds));
                 }
             } catch (error) {
-                console.error("Error initializing data:", error);
+                console.error('Error initializing data:', error);
             }
         };
         initialize();
@@ -67,7 +67,7 @@ const Match = () => {
 
     // Handle navigation to the profile view
     const handleProfile = (user) => {
-        navigation.navigate("ViewProfile", { user });
+        navigation.navigate('ViewProfile', { user });
     };
 
     // Handle like/unlike functionality and update AsyncStorage
@@ -151,41 +151,37 @@ const Match = () => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        padding: 20,
-        backgroundColor: '#f5f5f5',
+    button: {
+        backgroundColor: '#E4423F',
+        borderRadius: 25,
+        paddingHorizontal: 40,
+        paddingVertical: 15,
     },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 20,
+    },
+    buttonText: {
+        color: 'white',
+        fontSize: 18,
+    },
+    card: {
         alignItems: 'center',
+        backgroundColor: '#E4423F',
+        borderRadius: 10,
+        height: 400,
+        justifyContent: 'space-between',
+        padding: 15,
+        position: 'relative',
+        width: '100%',
     },
     cardContainer: {
         marginBottom: 20,
     },
-    card: {
-        backgroundColor: '#E4423F',
-        padding: 15,
-        borderRadius: 10,
-        alignItems: 'center',
-        width: '100%',
-        height: 400,
-        justifyContent: 'space-between',
-        position: 'relative',
-    },
-    profileImage: {
-        width: '100%',
-        height: '75%',
-        borderRadius: 10,
-    },
-    userName: {
-        fontSize: 20,
-        color: 'white',
-        marginTop: 10,
-    },
-    userDetails: {
-        fontSize: 12,
-        color: 'white',
+    container: {
+        backgroundColor: '#f5f5f5',
+        padding: 20,
     },
     flipText: {
         color: 'white',
@@ -193,35 +189,39 @@ const styles = StyleSheet.create({
     },
     likeButton: {
         position: 'absolute',
-        top: 10,
         right: 10,
+        top: 10,
         zIndex: 1,
     },
     likeIcon: {
-        width: 30,
         height: 30,
+        width: 30,
+    },
+    loadingContainer: {
+        alignItems: 'center',
+        flex: 1,
+        justifyContent: 'center',
     },
     profileButton: {
+        alignItems: 'center',
         backgroundColor: '#E4423F',
         borderRadius: 10,
-        width: '100%',
-        alignItems: 'center',
         paddingVertical: 10,
+        width: '100%',
     },
-    buttonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 20,
+    profileImage: {
+        borderRadius: 10,
+        height: '75%',
+        width: '100%',
     },
-    button: {
-        backgroundColor: '#E4423F',
-        paddingVertical: 15,
-        paddingHorizontal: 40,
-        borderRadius: 25,
-    },
-    buttonText: {
+    userDetails: {
         color: 'white',
-        fontSize: 18,
+        fontSize: 12,
+    },
+    userName: {
+        color: 'white',
+        fontSize: 20,
+        marginTop: 10,
     },
 });
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchUserInfo } from "../Api.js";
+import { fetchUserInfo } from '../Api.js';
 import { Video } from 'expo-av';
 // Import images
 const profile = require('../src/Assets/Images/profile.png');
@@ -70,7 +70,7 @@ const Profile = () => {
   }
 
   const handleSetting = () =>{
-    navigation .navigate ("AccountDetails")
+    navigation .navigate ('AccountDetails')
   }
   const handleUpdate = () => {
     navigation.navigate('AccountSetup3Create');
@@ -85,7 +85,7 @@ const Profile = () => {
   };
 
   const handleUpl = () => {
-    navigation.navigate("AccountSetup5Create");
+    navigation.navigate('AccountSetup5Create');
   };
 
   const interestArray = userInfo?.user_general_interests?.split(',').map(item => item.trim()) || [];
@@ -187,10 +187,47 @@ const Profile = () => {
 };
 
 const styles = StyleSheet.create({
+  accountInfoContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginVertical: 8,
+  },
+  accountInfoImage: {
+    height: 24,
+    marginRight: 8,
+    width: 24,
+  },
+  accountInfoText: {
+    fontSize: 16,
+  },
   container: {
-    flexGrow: 1,
     backgroundColor: '#FFFFFF',
+    flexGrow: 1,
     padding: 16,
+  },
+  description: {
+    fontSize: 14,
+    marginVertical: 16,
+  },
+  footer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  footerIcon: {
+    height: 24,
+    width: 24,
+  },
+  footerIconButton: {
+    alignItems: 'center',
+    backgroundColor: '#CECECE',
+    borderRadius: 25,
+    justifyContent: 'center',
+    marginHorizontal: 5,
+    padding: 10,
+  },
+  footerIcons: {
+    flexDirection: 'row',
+    marginBottom: 16,
   },
   header: {
     flexDirection: 'row',
@@ -201,51 +238,34 @@ const styles = StyleSheet.create({
     margin: 8,
   },
   iconImage: {
-    width: 24,
     height: 24,
+    width: 24,
   },
-  title: {
-    fontSize: 30,
-    textAlign: 'center',
-    marginVertical: 16,
+  image: {
+    height: 100,
+    resizeMode: 'cover',
+    width: '48%',
   },
   imageContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 16,
   },
-  image: {
-    width: '48%',
-    height: 100,
-    resizeMode: 'cover',
-  },
-  uploadButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'black',
+  interestItem: {
+    backgroundColor: '#fff',
     borderRadius: 25,
-    height: 45,
-    marginBottom: 16,
+    elevation: 2,
+    margin: 5,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
-  uploadButtonText: {
-    color: 'white',
-    fontSize: 18,
-    paddingHorizontal: 10,
-  },
-  uploadButtonImage: {
-    width: 24,
-    height: 24,
-  },
-  name: {
-    fontSize: 30,
-    textAlign: 'center',
-    marginVertical: 8,
-  },
-  subtitle: {
-    fontSize: 20,
-    textAlign: 'center',
-    marginVertical: 8,
+  interestText: {
+    color: '#000',
+    fontSize: 16,
   },
   interestsContainer: {
     flexDirection: 'row',
@@ -253,92 +273,72 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     marginVertical: 16,
   },
-  interestItem: {
-    backgroundColor: '#fff',
-    borderRadius: 25,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    margin: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  interestText: {
-    fontSize: 16,
-    color: '#000',
-  },
-  description: {
-    fontSize: 14,
-    marginVertical: 16,
-  },
-  accountInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  name: {
+    fontSize: 30,
     marginVertical: 8,
+    textAlign: 'center',
   },
-  accountInfoImage: {
-    width: 24,
-    height: 24,
-    marginRight: 8,
-  },
-  video: {
-    width: '100%',
-    height: 300,
-  },
-  accountInfoText: {
-    fontSize: 16,
-  },
-  videoPlayer: {
-    width: '100%',
-    height: 200,
-    marginVertical: 16,
-  },
-  footer: {
-    marginTop: 20,
+  nextButton: {
     alignItems: 'center',
+    backgroundColor: 'red',
+    borderRadius: 25,
+    height: 45,
+    justifyContent: 'center',
+    width: 160,
+  },
+  nextButtonText: {
+    color: 'white',
+    fontSize: 18,
+  },
+  subtitle: {
+    fontSize: 20,
+    marginVertical: 8,
+    textAlign: 'center',
+  },
+  title: {
+    fontSize: 30,
+    marginVertical: 16,
+    textAlign: 'center',
   },
   updateButton: {
+    alignItems: 'center',
     backgroundColor: 'black',
     borderRadius: 25,
     height: 45,
-    width: 160,
     justifyContent: 'center',
-    alignItems: 'center',
     marginBottom: 16,
+    width: 160,
   },
   updateButtonText: {
     color: 'white',
     fontSize: 18,
   },
-  footerIcons: {
+  uploadButton: {
+    alignItems: 'center',
+    backgroundColor: 'black',
+    borderRadius: 25,
     flexDirection: 'row',
+    height: 45,
+    justifyContent: 'center',
     marginBottom: 16,
   },
-  footerIconButton: {
-    backgroundColor: '#CECECE',
-    borderRadius: 25,
-    marginHorizontal: 5,
-    padding: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  footerIcon: {
-    width: 24,
+  uploadButtonImage: {
     height: 24,
+    width: 24,
   },
-  nextButton: {
-    backgroundColor: 'red',
-    borderRadius: 25,
-    height: 45,
-    width: 160,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  nextButtonText: {
+  uploadButtonText: {
     color: 'white',
     fontSize: 18,
+    paddingHorizontal: 10,
+  },
+  video: {
+    height: 300,
+    width: '100%',
+  },
+  videoPlayer: {
+    height: 200,
+    marginVertical: 16,
+    width: '100%',
   },
 });
 

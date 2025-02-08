@@ -82,12 +82,12 @@ export default function DateFinal({ navigation }) {
       console.log('Meet Latitude:', meetLatitude);
       console.log('Meet Longitude:', meetLongitude);
         const response = await fetch('https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet', {
-          method: "POST",
+          method: 'POST',
           body: formData,
         });
         if (response.ok) {
           const result = await response.json();
-          console.log("Response from server:", result);
+          console.log('Response from server:', result);
         }
       
     } catch (error) {
@@ -258,8 +258,8 @@ export default function DateFinal({ navigation }) {
 // STYLES
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: '#FFF',
+    flex: 1,
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
@@ -268,18 +268,18 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   title: {
+    alignSelf: 'center',
+    color: '#000',
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#000',
-    marginTop: 10,
     marginBottom: 5,
-    alignSelf: 'center',
+    marginTop: 10,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#888',
-    marginBottom: 20,
     alignSelf: 'center',
+    color: '#888',
+    fontSize: 14,
+    marginBottom: 20,
   },
   heartsContainer: {
     flexDirection: 'row',
@@ -287,12 +287,12 @@ const styles = StyleSheet.create({
     marginBottom: 25,
   },
   heartImage: {
-    width: 80,
-    height: 80,
-    resizeMode: 'cover',
+    borderColor: '#FF4081',
     borderRadius: 40,
     borderWidth: 2,
-    borderColor: '#FF4081',
+    height: 80,
+    resizeMode: 'cover',
+    width: 80,
   },
   heartOverlap: {
     marginLeft: -30,
@@ -302,50 +302,50 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   detailRow: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     marginVertical: 12,
   },
   detailIcon: {
     marginRight: 15,
   },
   detailText: {
-    fontSize: 16,
     color: '#000',
+    fontSize: 16,
   },
 
   // Cancel Modal
   modalBackground: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    flex: 1,
+    justifyContent: 'center',
   },
   modalContainer: {
-    width: '80%',
+    alignItems: 'center',
     backgroundColor: '#FFF',
     borderRadius: 12,
     padding: 20,
-    alignItems: 'center',
+    width: '80%',
   },
   modalTitle: {
+    color: '#000',
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000',
     marginBottom: 10,
   },
   modalSubtitle: {
-    fontSize: 14,
     color: '#888',
+    fontSize: 14,
     marginBottom: 20,
     textAlign: 'center',
   },
   confirmCancelButton: {
     backgroundColor: '#E4423F',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
     borderRadius: 30,
     marginBottom: 15,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
   confirmCancelText: {
     color: '#FFF',
@@ -356,36 +356,36 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   neverMindText: {
-    fontSize: 16,
     color: '#000',
+    fontSize: 16,
     textDecorationLine: 'underline',
   },
 
   // Invitation Sent screen
   sentContainer: {
-    flex: 1,
     alignItems: 'center',
+    flex: 1,
     justifyContent: 'center',
   },
   sentTitle: {
+    color: '#000',
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#000',
-    marginTop: 20,
     marginBottom: 10,
+    marginTop: 20,
   },
   sentSubtitle: {
-    fontSize: 14,
     color: '#888',
+    fontSize: 14,
     marginBottom: 30,
   },
   backButton: {
-    width: '80%',
-    height: 50,
+    alignItems: 'center',
     backgroundColor: '#E4423F',
     borderRadius: 30,
+    height: 50,
     justifyContent: 'center',
-    alignItems: 'center',
+    width: '80%',
   },
   backButtonText: {
     color: '#FFF',

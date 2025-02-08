@@ -84,29 +84,29 @@ const THUMB_SIZE = 50;
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
     height: THUMB_SIZE,
     justifyContent: 'center',
-  },
-  track: {
-    position: 'absolute',
     width: '100%',
-    height: THUMB_SIZE,
-    borderRadius: THUMB_SIZE / 2,
-    backgroundColor: '#ddd',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   slideText: {
     color: '#888',
     fontWeight: '600',
   },
   thumb: {
-    width: THUMB_SIZE,
-    height: THUMB_SIZE,
-    borderRadius: THUMB_SIZE / 2,
-    backgroundColor: '#E4423F',
-    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#E4423F',
+    borderRadius: THUMB_SIZE / 2,
+    height: THUMB_SIZE,
+    justifyContent: 'center',
+    width: THUMB_SIZE,
+  },
+  track: {
+    alignItems: 'center',
+    backgroundColor: '#ddd',
+    borderRadius: THUMB_SIZE / 2,
+    height: THUMB_SIZE,
+    justifyContent: 'center',
+    position: 'absolute',
+    width: '100%',
   },
 });

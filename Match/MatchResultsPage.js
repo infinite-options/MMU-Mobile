@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,9 @@ import {
   Platform,
   StatusBar,
   
-} from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons'; // Import Ionicons
 import { useNavigation } from '@react-navigation/native';
 // Example placeholders for bottom navigation icons
@@ -40,20 +40,20 @@ const BottomNav = () => {
 // Utility to parse JSON safely
 function safeJsonParse(value, fallback = []) {
     // If value is null or not a string, just return fallback
-    if (typeof value !== "string") {
+    if (typeof value !== 'string') {
       return fallback;
     }
     // Otherwise parse
     try {
       return JSON.parse(value);
     } catch (err) {
-      console.warn("Failed to parse JSON:", value, err);
+      console.warn('Failed to parse JSON:', value, err);
       return fallback;
     }
   }
 
 const MatchResultsPage = () => {
-  const [userId, setUserId] = useState("");
+  const [userId, setUserId] = useState('');
   const [menuVisible, setMenuVisible] = useState(false);
   const [matchedResults, setMatchedResults] = useState([]);
   const [interestedInMe, setInterestedInMe] = useState([]);
@@ -73,12 +73,12 @@ const MatchResultsPage = () => {
   useEffect(() => {
     const loadUserId = async () => {
       try {
-        const storedUserId = await AsyncStorage.getItem("user_uid");
+        const storedUserId = await AsyncStorage.getItem('user_uid');
         if (storedUserId) {
           setUserId(storedUserId);
         }
       } catch (error) {
-        console.error("Error loading user UID from AsyncStorage:", error);
+        console.error('Error loading user UID from AsyncStorage:', error);
       }
     };
     loadUserId();
@@ -93,27 +93,27 @@ const MatchResultsPage = () => {
       const response = await fetch(apiUrl);
       const text = await response.text();
       // Debug:
-      console.log("--- Raw server response ---", text);
+      console.log('--- Raw server response ---', text);
 
       // Now parse the text as JSON
       let data;
       try {
         data = JSON.parse(text);
       } catch (parseErr) {
-        console.error("JSON parse error:", parseErr);
-        Alert.alert("Error", "Failed to parse server response.");
+        console.error('JSON parse error:', parseErr);
+        Alert.alert('Error', 'Failed to parse server response.');
         return; // Stop here if parse fails
       }
 
       // If parse succeeded, proceed
-      console.log("--- data ---", data);
+      console.log('--- data ---', data);
 
       setMatchedResults(data.matched_results || []);
       setInterestedInMe(data.people_who_selected_you || []);
       setInterestedIn(data.people_whom_you_selected || []);
     } catch (error) {
-      console.error("Error fetching matches:", error);
-      Alert.alert("Error", "An error occurred while finding matches.");
+      console.error('Error fetching matches:', error);
+      Alert.alert('Error', 'An error occurred while finding matches.');
     }
   };
 
@@ -139,7 +139,7 @@ const MatchResultsPage = () => {
         const selfmeets = Array.isArray(res.data?.result) ? res.data.result : [];
         setMeetSelfStatus(selfmeets.length > 0);
       } catch (err) {
-        console.warn("Error fetching meet data for self users:", err);
+        console.warn('Error fetching meet data for self users:', err);
       }
     };
     fetchMeetSelfStatus();
@@ -153,7 +153,7 @@ const MatchResultsPage = () => {
         // NOT your own userId.
         for (const matchedUser of matchedResults) {
           const theirUserId = matchedUser.user_uid;
-          console.log("--- theirUserId ---", theirUserId);
+          console.log('--- theirUserId ---', theirUserId);
           const meetUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet/${theirUserId}`;
           
           try {
@@ -165,14 +165,14 @@ const MatchResultsPage = () => {
             
             newMeetStatus[theirUserId] = meets.length > 0;
           } catch (err) {
-            console.warn("Error fetching meet data for user:", theirUserId, err);
+            console.warn('Error fetching meet data for user:', theirUserId, err);
             newMeetStatus[theirUserId] = false; // Default to no meet
           }
         }
 
         setMeetStatus(newMeetStatus);
       } catch (err) {
-        console.warn("Error fetching meet data for matched users:", err);
+        console.warn('Error fetching meet data for matched users:', err);
       }
     };
 
@@ -184,10 +184,10 @@ const MatchResultsPage = () => {
   const handleButtonPress = (matchId) => {
     if (meetStatus[matchId]) {
       // Pass the matched user UID to Chat
-      navigation.navigate("Chat", { matchedUserId: matchId });
+      navigation.navigate('Chat', { matchedUserId: matchId });
     } else {
       // Also pass the UID to DateType
-      navigation.navigate("DateType", { matchedUserId: matchId });
+      navigation.navigate('DateType', { matchedUserId: matchId });
     }
   };
 
@@ -202,11 +202,11 @@ const MatchResultsPage = () => {
     // Decide which label to show (we ignore the passed buttonLabel here intentionally,
     // because we override with either "See invitation" or "Set up date" below).
     const hasMeet = meetStatus[matchId] || false;
-    console.log("--- hasMeet ---", hasMeet);
+    console.log('--- hasMeet ---', hasMeet);
     const hasMeetSelf = meetSelfStatus[matchId] || false;
-    console.log("--- hasMeetSelf ---", hasMeetSelf);
-    const dynamicButtonLabel = hasMeet ? "See invitation" : hasMeetSelf ? "change date" : "Set up date";
-    console.log("--- dynamicButtonLabel ---", dynamicButtonLabel);
+    console.log('--- hasMeetSelf ---', hasMeetSelf);
+    const dynamicButtonLabel = hasMeet ? 'See invitation' : hasMeetSelf ? 'change date' : 'Set up date';
+    console.log('--- dynamicButtonLabel ---', dynamicButtonLabel);
 
     return (
       <View
@@ -229,7 +229,7 @@ const MatchResultsPage = () => {
           <TouchableOpacity
             style={[
               styles.matchButton,
-              dynamicButtonLabel === "Set up date"
+              dynamicButtonLabel === 'Set up date'
                 ? styles.setUpDateButton
                 : styles.defaultButtonBorder,
             ]}
@@ -238,9 +238,9 @@ const MatchResultsPage = () => {
             <Text
               style={[
                 styles.matchButtonText,
-                dynamicButtonLabel === "Set up date"
-                  ? { color: "#fff" }
-                  : { color: "#E4423F" },
+                dynamicButtonLabel === 'Set up date'
+                  ? { color: '#fff' }
+                  : { color: '#E4423F' },
               ]}
             >
               {dynamicButtonLabel}
@@ -253,7 +253,7 @@ const MatchResultsPage = () => {
       </View>
     );
   };
-  const renderInterestedInMeRow = (fname, lname, interests, imgSrc, buttonLabel = "Match", matchId = null) => {
+  const renderInterestedInMeRow = (fname, lname, interests, imgSrc, buttonLabel = 'Match', matchId = null) => {
     return (
       <View
         style={styles.matchRow}
@@ -276,7 +276,7 @@ const MatchResultsPage = () => {
             style={[styles.matchButton, styles.setUpDateButton]}
             onPress={() => navigation.navigate('MatchProfileDisplay', { matchedUserId: matchId })}
           >
-            <Text style={[styles.matchButtonText, { color: "#fff" }]}>
+            <Text style={[styles.matchButtonText, { color: '#fff' }]}>
               {buttonLabel}
             </Text>
           </TouchableOpacity>
@@ -320,7 +320,7 @@ const MatchResultsPage = () => {
         <View style={styles.header}>
           <Text style={styles.headerTitle}>My Matching Results</Text>
           <View style={styles.headerIcons}>
-            <TouchableOpacity onPress={() => Alert.alert("Notifications!")}>
+            <TouchableOpacity onPress={() => Alert.alert('Notifications!')}>
               <Ionicons name="notifications-outline" size={24} color="#888" />
             </TouchableOpacity>
             <TouchableOpacity onPress={handleMenuOpen}>
@@ -363,9 +363,9 @@ const MatchResultsPage = () => {
               return renderMatchRow(
                 match.user_first_name,
                 match.user_last_name,
-                match.common_interests || "0",
+                match.common_interests || '0',
                 firstPhoto,
-                "Set up date or see invitation",
+                'Set up date or see invitation',
                 match.user_uid
               );
             })
@@ -384,9 +384,9 @@ const MatchResultsPage = () => {
               return renderInterestedInMeRow(
                 match.user_first_name,
                 match.user_last_name,
-                match.common_interests || "0",
+                match.common_interests || '0',
                 firstPhoto,
-                "Match",
+                'Match',
                 match.user_uid
               );
             })
@@ -405,9 +405,9 @@ const MatchResultsPage = () => {
               return renderInterestedInRow(
                 match.user_first_name,
                 match.user_last_name,
-                match.common_interests || "0",
+                match.common_interests || '0',
                 firstPhoto,
-                "See Profile",
+                'See Profile',
                 match.user_uid
               );
             })
@@ -428,157 +428,157 @@ export default MatchResultsPage;
  * STYLES
  */
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFF",
-    justifyContent: "flex-start",
-    alignItems: "stretch",
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+  avatar: {
+    backgroundColor: '#ccc',
+    borderRadius: 28,
+    height: 56,
+    marginRight: 8,
+    width: 56,
   },
-  bottomNavContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 60,
-    backgroundColor: '#FFF',
-    borderTopWidth: 2,
-    borderTopColor: '#EEE',
+  bottomIcon: {
+    height: 28,
+    resizeMode: 'contain',
+    width: 28,
+  },
+  bottomNav: {
+    alignItems: 'center',
+    borderTopColor: '#ddd',
+    borderTopWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-around',
+    paddingVertical: 8,
+  },
+  bottomNavContainer: {
     alignItems: 'center',
-  },
-  navButton: {},
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#FFF",
-  },
-  headerTitle: {
-    fontFamily: "Lexend", // Or your desired font
-    fontWeight: "500",
-    fontSize: 21,
-    color: "#1A1A1A",
-  },
-  headerIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  icon: {
-    fontSize: 24,
-    color: "#888",
-  },
-  menuContainer: {
-    position: "absolute",
-    top: 80,
-    right: 16,
-    backgroundColor: "#FFF",
-    borderRadius: 12,
-    padding: 8,
-    elevation: 5, // Shadow on Android
-    shadowColor: "#000", // iOS shadow
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-  },
-  menuItem: {
-    padding: 8,
-  },
-  scrollArea: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  sectionTitle: {
-    textAlign: "left",
-    color: "#757575",
-    fontFamily: "Lexend",
-    fontSize: 14,
-    marginBottom: 20,
-  },
-  matchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  matchRowLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    marginRight: 8,
-    backgroundColor: "#ccc",
-  },
-  matchName: {
-    fontWeight: "bold",
-    fontSize: 16,
-    color: "#000",
-  },
-  matchSubText: {
-    fontSize: 12,
-    color: "#666",
-  },
-  matchRowRight: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  matchButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 16,
-    borderRadius: 30,
-    borderWidth: 1,
-    marginRight: 8,
-  },
-  setUpDateButton: {
-    backgroundColor: "#E4423F",
-    borderColor: "#E4423F",
-  },
-  defaultButtonBorder: {
-    borderColor: "#E4423F",
-  },
-  matchButtonText: {
-    fontWeight: "bold",
-    fontSize: 14,
+    backgroundColor: '#FFF',
+    borderTopColor: '#EEE',
+    borderTopWidth: 2,
+    bottom: 0,
+    flexDirection: 'row',
+    height: 60,
+    justifyContent: 'space-around',
+    left: 0,
+    position: 'absolute',
+    right: 0,
   },
   closeButton: {
     padding: 8,
   },
   closeButtonIcon: {
     fontSize: 20,
-    fontWeight: "bold",
+    fontWeight: 'bold',
+  },
+  container: {
+    alignItems: 'stretch',
+    backgroundColor: '#FFF',
+    flex: 1,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
+  defaultButtonBorder: {
+    borderColor: '#E4423F',
   },
   divider: {
+    borderBottomColor: '#ddd',
     borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
     marginVertical: 16,
   },
-  noMatchesText: {
+  header: {
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+  },
+  headerIcons: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  headerTitle: {
+    fontFamily: 'Lexend', // Or your desired font
+    fontWeight: '500',
+    fontSize: 21,
+    color: '#1A1A1A',
+  },
+  icon: {
+    color: '#888',
+    fontSize: 24,
+  },
+  matchButton: {
+    borderRadius: 30,
+    borderWidth: 1,
+    marginRight: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+  },
+  matchButtonText: {
     fontSize: 14,
-    fontStyle: "italic",
-    color: "#666",
+    fontWeight: 'bold',
+  },
+  matchName: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  matchRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 16,
   },
-  bottomNav: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: "#ddd",
-    paddingVertical: 8,
+  matchRowLeft: {
+    alignItems: 'center',
+    flexDirection: 'row',
   },
+  matchRowRight: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  matchSubText: {
+    color: '#666',
+    fontSize: 12,
+  },
+  menuContainer: {
+    position: 'absolute',
+    top: 80,
+    right: 16,
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 8,
+    elevation: 5, // Shadow on Android
+    shadowColor: '#000', // iOS shadow
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+  },
+  menuItem: {
+    padding: 8,
+  },
+  navButton: {},
   navButton: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  bottomIcon: {
-    width: 28,
-    height: 28,
-    resizeMode: "contain",
+  noMatchesText: {
+    color: '#666',
+    fontSize: 14,
+    fontStyle: 'italic',
+    marginBottom: 16,
+  },
+  scrollArea: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  sectionTitle: {
+    color: '#757575',
+    fontFamily: 'Lexend',
+    fontSize: 14,
+    marginBottom: 20,
+    textAlign: 'left',
+  },
+  setUpDateButton: {
+    backgroundColor: '#E4423F',
+    borderColor: '#E4423F',
   },
 });

@@ -1,7 +1,7 @@
 import React,{useState} from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native'; 
-import { postUserData } from "../Api.js";
+import { postUserData } from '../Api.js';
 
 
 
@@ -78,25 +78,40 @@ return (
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: '#E4423F',
-    padding: 0,
-    margin: 0,
-    flexDirection: 'column',
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 32,
-    backgroundColor: '#E4423F',
-    width: '100%',
-  },
   arrowIcon: {
-    width: 30,
     height: 30,
     marginRight: 8,
+    width: 30,
+  },
+  bodyText: {
+    color: '#FFFFFF',
+    fontFamily: 'Segoe UI',
+    fontSize: 15,
+    fontWeight: '200',
+  },
+  buttonContainer: {
+    alignItems: 'left',
+    marginBottom: 700, 
+    marginLeft: 20,
+    width: '100%'
+  },
+  buttonText: {
+    color: '#000000',
+    fontFamily: 'Segoe UI',
+    fontSize: 18,
+  },
+  container: {
+    backgroundColor: '#E4423F',
+    flexDirection: 'column',
+    flexGrow: 1,
+    margin: 0,
+    padding: 0,
+  },
+  contentContainer: {
+    alignItems: 'flex-start',
+    flex: 1,
+    paddingBottom: 32,
+    paddingHorizontal: 20,
   },
   headerText: {
     color: '#FFFFFF',
@@ -104,66 +119,51 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'normal',
   },
-  contentContainer: {
-    flex: 1,
-    alignItems: 'flex-start',
-    paddingHorizontal: 20,
-    paddingBottom: 32,
+  icon: {
+    height: 72,
+    marginBottom: 16,
+    width: 72,
   },
   iconContainer: {
     alignItems: 'flex-start',
     marginBottom: 16,
   },
-  icon: {
-    width: 72,
-    height: 72,
-    marginBottom: 16,
+  laterButton: {
+    alignItems: 'left',
+    justifyContent: 'center',
+    marginLeft: 20,
+    marginTop: 10
+  },
+  mainTitle: {
+    color: '#FFFFFF',
+    fontFamily: 'Segoe UI',
+    fontSize: 30,
+    fontWeight: '200',
   },
   textContainer: {
-    width: '100%',
-    marginBottom: 16,
     color: '#FFFFFF',
     fontFamily: 'Segoe UI',
     fontSize: 30,
     fontWeight: 'normal',
-  },
-  mainTitle: {
-    fontFamily: 'Segoe UI',
-    fontSize: 30,
-    fontWeight: '200',
-    color: '#FFFFFF',
-  },
-  bodyText: {
-    fontFamily: 'Segoe UI',
-    fontSize: 15,
-    fontWeight: '200',
-    color: '#FFFFFF',
-  },
-  buttonContainer: {
+    marginBottom: 16,
     width: '100%',
-    alignItems: 'left', 
-    marginBottom: 700,
-    marginLeft: 20
+  },
+  topBar: {
+    alignItems: 'center',
+    backgroundColor: '#E4423F',
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 32,
+    width: '100%',
   },
   yesButton: {
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    width: 130,
     height: 45,
     justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 0, 
-  },
-  laterButton: {
-    justifyContent: 'center',
-    alignItems: 'left',
-    marginTop: 10,
-    marginLeft: 20
-  },
-  buttonText: {
-    fontFamily: 'Segoe UI',
-    fontSize: 18,
-    color: '#000000',
+    marginVertical: 0,
+    width: 130, 
   },
 });
 

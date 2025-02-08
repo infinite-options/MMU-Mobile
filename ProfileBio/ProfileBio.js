@@ -83,38 +83,25 @@ export default function ProfileBio({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF',
-    alignItems: 'stretch',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-  },
   backButton: {
     alignSelf: 'flex-start',
     backgroundColor: '#F5F5F5',
     borderRadius: 20,
-    padding: 8,
     marginBottom: 20,
     marginTop: 30,
+    padding: 8,
+  },
+  container: {
+    alignItems: 'stretch',
+    backgroundColor: '#FFF',
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
     marginTop: 10,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    textAlign: 'left',
-    color: '#000',
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: 'gray',
-    textAlign: 'left',
-    marginBottom: 20,
+    paddingHorizontal: 20,
   },
   input: {
     borderWidth: 0,
@@ -126,23 +113,36 @@ const styles = StyleSheet.create({
     minHeight: 50, // Initial height
     maxHeight: 200, // Maximum height
   },
-  textInputOutline: {
-    borderWidth: 0,
-    borderColor: '#F9F9F9',
-    borderRadius: 25,
-    backgroundColor: '#F9F9F9',
-    paddingHorizontal: 15,
-  },
   saveButton: {
-    margin: 20,
-    height: 50,
-    justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 25,
+    height: 50,
+    justifyContent: 'center',
+    margin: 20,
   },
   saveButtonText: {
     color: '#FFF',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  subtitle: {
+    color: 'gray',
+    fontSize: 14,
+    marginBottom: 20,
+    textAlign: 'left',
+  },
+  textInputOutline: {
+    backgroundColor: '#F9F9F9',
+    borderColor: '#F9F9F9',
+    borderRadius: 25,
+    borderWidth: 0,
+    paddingHorizontal: 15,
+  },
+  title: {
+    color: '#000',
+    fontSize: 26,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'left',
   },
 });

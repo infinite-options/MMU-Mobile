@@ -11,10 +11,10 @@ const Message = () => {
     const { user } = route.params || {};  
 
     const [messages, setMessages] = useState([]);  
-    const [newMessage, setNewMessage] = useState("");
-    const [userId, setUserId] = useState("");
+    const [newMessage, setNewMessage] = useState('');
+    const [userId, setUserId] = useState('');
     const handleBack=()=>{
-        navigation.navigate("Match");
+        navigation.navigate('Match');
     }
     useEffect(() => {
         const fetchUserId = async () => {
@@ -23,7 +23,7 @@ const Message = () => {
                 setUserId(storedUserId);
                 fetchMessages(storedUserId);
             } else {
-                Alert.alert("Error", "User ID not found. Please log in again.");
+                Alert.alert('Error', 'User ID not found. Please log in again.');
                 navigation.navigate('Login');
             }
         };
@@ -41,12 +41,12 @@ const Message = () => {
             setMessages(res.data.result || []); 
         })
         .catch(error => {
-            console.error("Error fetching messages:", error);
+            console.error('Error fetching messages:', error);
         });
     };
 
     const handleSendMessage = () => {
-        if (newMessage.trim() === "") return;
+        if (newMessage.trim() === '') return;
 
         axios.post('https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/messages', {
             sender_id: userId,
@@ -59,24 +59,24 @@ const Message = () => {
         })
         .then(res => {
             setMessages(prev => [...prev, { message_content: newMessage, message_sender_user_id: userId }]);
-            setNewMessage("");
+            setNewMessage('');
         })
         .catch(error => {
-            console.error("Error sending message:", error);
+            console.error('Error sending message:', error);
         });
     };
 
     const handleNavigate = () => {
-        navigation.navigate("SelectionResults");
+        navigation.navigate('SelectionResults');
     };
 
     return (
         <SafeAreaView style = {styles.safeArea}>
-        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Image source={require('../assets/arrow.png')} style={styles.arrowIcon} />
         </TouchableOpacity>
-            <Text style={styles.title}>{user ? `${user.user_first_name} ${user.user_last_name}` : "User"}</Text>
+            <Text style={styles.title}>{user ? `${user.user_first_name} ${user.user_last_name}` : 'User'}</Text>
             <ScrollView style={styles.messagesContainer}>
                 {messages && messages.map((message, index) => (
                     <View key={index} style={[
@@ -114,73 +114,67 @@ const Message = () => {
 };
 
 const styles = StyleSheet.create({
-    safeArea:{
-        flex: 1,
-        backgroundColor: '#FFFFFF',
-    },
+    arrowIcon: {
+        height: 28,
+        width: 28,
+      },
+    backButton: {
+        marginRight: 16,
+      },
     container: {
-        flex: 1,
-        padding: 20,
         backgroundColor: '#fff',
-        justifyContent: 'space-between'
+        flex: 1,
+        justifyContent: 'space-between',
+        padding: 20
     },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
+    input: {
+        backgroundColor: '#f9f9f9',
+        borderRadius: 20,
+        flex: 1,
+        fontSize: 16,
+        height: 40,
+        paddingHorizontal: 15,
+    },
+    inputContainer: {
+        alignItems: 'center',
+        borderColor: '#ddd',
+        borderTopWidth: 1,
+        flexDirection: 'row',
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+    },
+    messageBox: {
+        borderRadius: 20,
         marginBottom: 10,
-        textAlign: 'center',
+        maxWidth: '70%',
+        padding: 15,
+    },
+    messageBoxLeft: {
+        alignSelf: 'flex-start',
+        backgroundColor: '#E4423F',
+    },
+    messageBoxRight: {
+        alignSelf: 'flex-end',
+        backgroundColor: '#EDEDED',
+    },
+    messageText: {
+        color: 'white',
+        fontSize: 15,
+    },
+    messageTextRight: {
+        color: 'black',
     },
     messagesContainer: {
         flex: 1,
         marginVertical: 20,
         paddingHorizontal: 10,
     },
-    messageBox: {
-        padding: 15,
-        borderRadius: 20,
-        marginBottom: 10,
-        maxWidth: '70%',
-    },
-    messageBoxRight: {
-        alignSelf: 'flex-end',
-        backgroundColor: '#EDEDED',
-    },
-    messageBoxLeft: {
-        alignSelf: 'flex-start',
-        backgroundColor: '#E4423F',
-    },
-    messageText: {
-        fontSize: 15,
-        color: 'white',
-    },
-    messageTextRight: {
-        color: 'black',
-    },
-    inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderTopWidth: 1,
-        borderColor: '#ddd',
-        paddingVertical: 10,
-        paddingHorizontal: 10,
-    },
-    input: {
-        flex: 1,
-        backgroundColor: '#f9f9f9',
-        borderRadius: 20,
-        paddingHorizontal: 15,
-        fontSize: 16,
-        height: 40,
-    },
-    sendButton: {
-        marginLeft: 10,
-    },
     navigateButton: {
+        alignItems: 'center',
         backgroundColor: '#E4423F',
         borderRadius: 25,
         height: 45,
         justifyContent: 'center',
-        alignItems: 'center',
         marginTop: 10,
     },
     navigateButtonText: {
@@ -188,13 +182,19 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
     },
-    backButton: {
-        marginRight: 16,
-      },
-      arrowIcon: {
-        width: 28,
-        height: 28,
-      },
+    safeArea:{
+        backgroundColor: '#FFFFFF',
+        flex: 1,
+    },
+    sendButton: {
+        marginLeft: 10,
+    },
+      title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 10,
+        textAlign: 'center',
+    },
 });
 
 export default Message;

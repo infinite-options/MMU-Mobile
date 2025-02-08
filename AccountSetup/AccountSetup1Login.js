@@ -24,12 +24,12 @@ export default function AccountSetup1Login() {
 
     const handleSubmitLogin = async () => {
         if (formDataLogin.email === '' || formDataLogin.password === '') {
-            Alert.alert("Error", "Please fill out all the fields");
+            Alert.alert('Error', 'Please fill out all the fields');
             return;
         }
 
-        const saltUrl = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/MMU";
-        const loginUrl = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/Login/MMU";
+        const saltUrl = 'https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/MMU';
+        const loginUrl = 'https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/Login/MMU';
 
         try {
             setShowSpinner(true);
@@ -58,7 +58,7 @@ export default function AccountSetup1Login() {
                 Alert.alert('Error', 'User does not exist.');
             }
         } catch (error) {
-            console.error("Error occurred:", error);
+            console.error('Error occurred:', error);
             Alert.alert('Error', 'Invalid credentials or server error.');
         } finally {
             setShowSpinner(false);
@@ -71,7 +71,7 @@ export default function AccountSetup1Login() {
 
     return (
         <ImageBackground source={backgroundImage} style={styles.backgroundImage} resizeMode="cover">
-            <View style={[styles.overlay]} />
+            <View style={styles.overlay} />
             <View style={styles.formContainer}>
                 <View style={styles.roundedBox}>
                     <Text style={styles.title}>meet me up</Text>
@@ -96,7 +96,7 @@ export default function AccountSetup1Login() {
                         <Text style={styles.buttonText}>Login</Text>
                     </Pressable>
 
-                    <Text style={styles.linkText} onPress={() => Alert.alert("Retrieve password", "Password retrieval link")}>
+                    <Text style={styles.linkText} onPress={() => Alert.alert('Retrieve password', 'Password retrieval link')}>
                         Forgot password? Retrieve here
                     </Text>
 
@@ -122,81 +122,81 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start',
     },
 
+    button: {
+        alignItems: 'center',
+        backgroundColor: '#E4423F',
+        borderRadius: 25,
+        marginTop: 10,
+        paddingHorizontal: 32,
+        paddingVertical: 12,
+        width: '100%',
+    },
+    buttonText: {
+        color: '#FFFFFF',
+        fontFamily: 'Lexend',
+        fontSize: 18,
+    },
     formContainer: {
+        alignItems: 'center',
         flex: 1,
         justifyContent: 'flex-end',
-        alignItems: 'center',
+    },
+    header: {
+        fontFamily: 'Lexend',
+        fontSize: 24,
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    input: {
+        borderColor: '#ccc',
+        borderRadius: 10,
+        borderWidth: 1,
+        fontSize: 16,
+        height: 50,
+        marginBottom: 15,
+        paddingHorizontal: 15,
+        width: '100%',
+    },
+    linkText: {
+        color: '#E4423F',
+        fontSize: 14,
+        marginTop: 10,
     },
     roundedBox: {
-        backgroundColor: '#FFFFFF',
-        width: '100%',
-        padding: 30,
-        borderRadius: 30,
         alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 30,
+        elevation: 5,
+        padding: 30,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 5,
-        elevation: 5,
-    },
-    title: {
-        fontSize: 36,
-        fontFamily: 'Inria Sans',
-        color: '#E4423F',
-        textAlign: 'center',
-        marginBottom: 10,
-    },
-    header: {
-        fontSize: 24,
-        fontFamily: 'Lexend',
-        textAlign: 'center',
-        marginBottom: 20,
-    },
-    input: {
-        height: 50,
-        borderColor: '#ccc',
-        borderWidth: 1,
-        borderRadius: 10,
-        paddingHorizontal: 15,
-        marginBottom: 15,
         width: '100%',
-        fontSize: 16,
-    },
-    button: {
-        backgroundColor: '#E4423F',
-        borderRadius: 25,
-        paddingVertical: 12,
-        paddingHorizontal: 32,
-        marginTop: 10,
-        width: '100%',
-        alignItems: 'center',
-    },
-    buttonText: {
-        color: '#FFFFFF',
-        fontSize: 18,
-        fontFamily: 'Lexend',
-    },
-    linkText: {
-        color: '#E4423F',
-        marginTop: 10,
-        fontSize: 14,
     },
     separator: {
-        height: 1,
         backgroundColor: '#CECECE',
+        height: 1,
         marginVertical: 20,
         width: '100%',
     },
     subHeader: {
-        fontSize: 18,
         fontFamily: 'Lexend',
+        fontSize: 18,
         marginBottom: 10,
         textAlign: 'center',
     },
     subText: {
-        fontSize: 14,
         fontFamily: 'DM Sans',
-        textAlign: 'center',
+        fontSize: 14,
         marginBottom: 20,
+        textAlign: 'center',
+    },
+    title: {
+        color: '#E4423F',
+        fontFamily: 'Inria Sans',
+        fontSize: 36,
+        marginBottom: 10,
+        textAlign: 'center',
     },
 });

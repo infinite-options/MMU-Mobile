@@ -1,28 +1,28 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Image, ActivityIndicator, Modal, Alert } from "react-native";
-import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
-import axios from "axios";
-import { useNavigation } from "@react-navigation/native";
-import { formatPhoneNumber } from "./helper";
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Button, StyleSheet, Image, ActivityIndicator, Modal, Alert } from 'react-native';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import axios from 'axios';
+import { useNavigation } from '@react-navigation/native';
+import { formatPhoneNumber } from './helper';
 
 const CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 const CLIENT_SECRET = process.env.REACT_APP_GOOGLE_CLIENT_SECRET;
 const GOOGLE_LOGIN = process.env.REACT_APP_GOOGLE_LOGIN;
 const SCOPES = [
-  "https://www.googleapis.com/auth/calendar",
-  "https://www.googleapis.com/auth/userinfo.profile",
-  "https://www.googleapis.com/auth/userinfo.email"
+  'https://www.googleapis.com/auth/calendar',
+  'https://www.googleapis.com/auth/userinfo.profile',
+  'https://www.googleapis.com/auth/userinfo.email'
 ];
 
 function GoogleSignup() {
   const navigation = useNavigation();
-  const [email, setEmail] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [socialId, setSocialId] = useState("");
-  const [refreshToken, setRefreshToken] = useState("");
-  const [accessToken, setAccessToken] = useState("");
+  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [socialId, setSocialId] = useState('');
+  const [refreshToken, setRefreshToken] = useState('');
+  const [accessToken, setAccessToken] = useState('');
   const [signupSuccessful, setSignupSuccessful] = useState(false);
   const [userAlreadyExists, setUserAlreadyExists] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -47,13 +47,13 @@ function GoogleSignup() {
       fetchGoogleTokens(idToken);
     } catch (error) {
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        console.log("User cancelled the login flow");
+        console.log('User cancelled the login flow');
       } else if (error.code === statusCodes.IN_PROGRESS) {
-        console.log("Sign-in is in progress");
+        console.log('Sign-in is in progress');
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        console.log("Play Services not available or outdated");
+        console.log('Play Services not available or outdated');
       } else {
-        console.error("Error during Google Signup:", error);
+        console.error('Error during Google Signup:', error);
       }
       setLoading(false);
     }
@@ -61,30 +61,30 @@ function GoogleSignup() {
 
   const fetchGoogleTokens = async (auth_code) => {
     try {
-      const authorization_url = "https://accounts.google.com/o/oauth2/token";
+      const authorization_url = 'https://accounts.google.com/o/oauth2/token';
       const details = {
         code: auth_code,
         client_id: CLIENT_ID,
         client_secret: CLIENT_SECRET,
-        redirectUri: "postmessage",
-        grant_type: "authorization_code",
+        redirectUri: 'postmessage',
+        grant_type: 'authorization_code',
       };
 
       const formBody = Object.keys(details)
-        .map(key => encodeURIComponent(key) + "=" + encodeURIComponent(details[key]))
-        .join("&");
+        .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(details[key]))
+        .join('&');
 
       const response = await fetch(authorization_url, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
         },
         body: formBody,
       });
       const data = await response.json();
 
-      const at = data["access_token"];
-      const rt = data["refresh_token"];
+      const at = data['access_token'];
+      const rt = data['refresh_token'];
       setAccessToken(at);
       setRefreshToken(rt);
 
@@ -107,11 +107,11 @@ function GoogleSignup() {
 
       axios
         .post(
-          "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/MMU",
+          'https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/MMU',
           user
         )
         .then((response) => {
-          if (response.data.message === "User already exists") {
+          if (response.data.message === 'User already exists') {
             setUserAlreadyExists(true);
           } else {
             setSignupSuccessful(true);
@@ -119,7 +119,7 @@ function GoogleSignup() {
           setLoading(false);
         });
     } catch (error) {
-      console.error("Error fetching tokens:", error);
+      console.error('Error fetching tokens:', error);
       setLoading(false);
     }
   };
@@ -134,7 +134,7 @@ function GoogleSignup() {
       {signupSuccessful ? (
         <View>
           <Text style={styles.successMessage}>Signup Successful</Text>
-          <Button title="Login" onPress={() => navigation.navigate("AccountSetup1Login")} />
+          <Button title="Login" onPress={() => navigation.navigate('AccountSetup1Login')} />
         </View>
       ) : (
         <>
@@ -177,47 +177,47 @@ function GoogleSignup() {
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: '#fff',
     flex: 1,
-    justifyContent: "center",
+    justifyContent: 'center',
     padding: 20,
-    backgroundColor: "#fff",
   },
-  title: {
-    fontSize: 24,
-    textAlign: "center",
-    marginBottom: 20,
+  input: {
+    borderColor: '#ccc',
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 10,
+    padding: 10,
   },
   inputGroup: {
     marginBottom: 15,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
+  modalView: {
+    alignItems: 'center',
+    backgroundColor: 'white',
     borderRadius: 10,
-    marginBottom: 10,
+    elevation: 5,
+    flex: 1,
+    justifyContent: 'center',
+    margin: 20,
+    padding: 35,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
   },
   signUpButton: {
     marginTop: 20,
   },
   successMessage: {
+    color: 'green',
     fontSize: 18,
-    textAlign: "center",
-    color: "green",
+    textAlign: 'center',
   },
-  modalView: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    margin: 20,
-    backgroundColor: "white",
-    padding: 35,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+  title: {
+    fontSize: 24,
+    marginBottom: 20,
+    textAlign: 'center',
   },
 });
 

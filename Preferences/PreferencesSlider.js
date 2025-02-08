@@ -101,7 +101,7 @@ const PreferenceSlider = ({ preference, measurement, start, min, max }) => {
             formData.append('user_prefer_age_max', ageRange.maxAge);
         }
         
-        formData.append('user_prefer_gender', "Female");
+        formData.append('user_prefer_gender', 'Female');
 
         axios.put('https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo', formData)
             .then(response => console.log('Slider value updated:', response))
@@ -162,18 +162,18 @@ const styles = StyleSheet.create({
     container: {
         marginBottom: 20,
     },
+    label: {
+        fontFamily: 'Lexend',
+        fontSize: 18,
+    },
     labelContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginBottom: 10,
     },
-    label: {
-        fontSize: 18,
-        fontFamily: 'Lexend',
-    },
     slider: {
-        width: '100%',
         height: 40,
+        width: '100%',
     },
 });
 

@@ -118,7 +118,7 @@ export default function Login() {
       <View style={styles.inputContainer}>
         <TextInput
           label="Email"
-          mode='outlined'
+          mode="outlined"
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
@@ -198,11 +198,11 @@ export default function Login() {
 // Styles can be nearly identical to your signup page
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    paddingHorizontal: 25,
-    backgroundColor: '#FFF',
-    justifyContent: 'flex-start',
     alignItems: 'stretch',
+    backgroundColor: '#FFF',
+    flex: 1,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 25,
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   // backButton: {
@@ -214,21 +214,21 @@ const styles = StyleSheet.create({
   //   marginTop: 30,
   // },
   progressBar: {
-    marginTop: 110,
     marginBottom: 30,
+    marginTop: 110,
   },
   title: {
+    color: '#000',
     fontSize: 26,
     fontWeight: 'bold',
-    textAlign: 'left',
-    color: '#000',
     marginBottom: 10,
+    textAlign: 'left',
   },
   subtitle: {
-    fontSize: 14,
     color: 'gray',
-    textAlign: 'left',
+    fontSize: 14,
     marginBottom: 20,
+    textAlign: 'left',
   },
   inputContainer: {
     marginBottom: 30,
@@ -240,11 +240,11 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   continueButton: {
-    height: 50,
-    justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#E4423F',
     borderRadius: 30,
+    height: 50,
+    justifyContent: 'center',
     marginBottom: 20,
   },
   continueButtonText: {
@@ -253,19 +253,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   orSeparator: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     marginVertical: 20,
   },
   separatorLine: {
+    backgroundColor: '#E0E0E0',
     flex: 1,
     height: 1,
-    backgroundColor: '#E0E0E0',
   },
   orText: {
-    marginHorizontal: 10,
-    fontSize: 14,
     color: 'gray',
+    fontSize: 14,
+    marginHorizontal: 10,
   },
   socialContainer: {
     flexDirection: 'row',
@@ -273,38 +273,38 @@ const styles = StyleSheet.create({
     marginBottom: 25,
   },
   socialLoginButton: {
+    alignItems: 'center',
     backgroundColor: '#F5F5F5',
     borderRadius: 50,
-    padding: 15,
-    marginHorizontal: 10,
-    alignItems: 'center',
     justifyContent: 'center',
+    marginHorizontal: 10,
+    padding: 15,
   },
   googleLogo: {
-    width: 45,
     height: 45,
+    width: 45,
   },
   appleLogo: {
-    width: 45,
     height: 45,
+    width: 45,
   },
   footerText: {
-    textAlign: 'center',
     color: 'gray',
     fontSize: 16,
+    textAlign: 'center',
   },
   loginLink: {
     color: '#E4423F',
     fontWeight: 'bold',
   },
   textInputOutline: {
-    borderWidth: 0,
-    borderColor: '#F9F9F9',
-    borderRadius: 10,
-    flex: 1,
     alignItems: 'center',
     backgroundColor: '#F9F9F9',
-    paddingHorizontal: 15,
+    borderColor: '#F9F9F9',
+    borderRadius: 10,
+    borderWidth: 0,
+    flex: 1,
     height: 50,
+    paddingHorizontal: 15,
   },
 });

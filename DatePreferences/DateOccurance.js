@@ -43,7 +43,7 @@ export default function DateOccurance({ navigation }) {
           const response = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${matchedUserId}`);
           const data = await response.json();
           const userData = data.result[0];
-          console.log("--- userData ---", userData);
+          console.log('--- userData ---', userData);
           setMatchedUserName(userData?.user_first_name || 'Your match');
           const rawAvailability = userData?.user_available_time;
           const availability = rawAvailability
@@ -247,8 +247,8 @@ export default function DateOccurance({ navigation }) {
 const styles = StyleSheet.create({
   // Main container
   container: {
-    flex: 1,
     backgroundColor: '#FFF',
+    flex: 1,
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
@@ -258,9 +258,9 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     backgroundColor: '#F5F5F5',
     borderRadius: 20,
-    padding: 8,
     marginBottom: 20,
     marginTop: 30,
+    padding: 8,
   },
 
   // Hearts
@@ -270,12 +270,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   heartImage: {
-    width: 60,
-    height: 60,
-    resizeMode: 'cover',
-    borderRadius: 30, 
-    borderWidth: 2,
     borderColor: '#FF4081',
+    borderRadius: 30,
+    borderWidth: 2,
+    height: 60, 
+    resizeMode: 'cover',
+    width: 60,
   },
   heartOverlap: {
     marginLeft: -20,
@@ -287,19 +287,19 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   title: {
+    color: '#000',
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#000',
     marginBottom: 10,
   },
   subtitle: {
-    fontSize: 14,
     color: '#888',
+    fontSize: 14,
     marginBottom: 5,
   },
   bulletItem: {
-    fontSize: 14,
     color: '#888',
+    fontSize: 14,
     marginBottom: 5,
   },
 
@@ -317,12 +317,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   dayCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFF',
-    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
   },
   dayText: {
     color: '#000',
@@ -331,8 +331,8 @@ const styles = StyleSheet.create({
 
   // Time row
   timeRow: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     marginTop: 10,
   },
   timeBlock: {
@@ -340,18 +340,18 @@ const styles = StyleSheet.create({
     marginRight: 20,
   },
   smallLabel: {
-    fontSize: 14,
     color: '#000',
-    marginBottom: 5,
+    fontSize: 14,
     fontWeight: '600',
+    marginBottom: 5,
   },
   timeInput: {
     backgroundColor: '#FFF',
     borderColor: '#CCC',
-    borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 10,
+    borderWidth: 1,
     height: 40,
+    paddingHorizontal: 10,
   },
 
   // AM/PM toggles
@@ -359,13 +359,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   amPmButton: {
-    borderWidth: 1,
-    borderColor: '#CCC',
     backgroundColor: '#FFF',
+    borderColor: '#CCC',
+    borderRadius: 8,
+    borderWidth: 1,
+    marginRight: 10,
     paddingHorizontal: 15,
     paddingVertical: 8,
-    borderRadius: 8,
-    marginRight: 10,
   },
   amPmText: {
     color: '#000',
@@ -374,10 +374,10 @@ const styles = StyleSheet.create({
 
   // Continue button
   continueButton: {
-    height: 50,
-    justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 30,
+    height: 50,
+    justifyContent: 'center',
     marginBottom: 10, 
   },
   continueButtonText: {
@@ -393,9 +393,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   dot: {
-    width: 8,
-    height: 8,
     borderRadius: 4,
+    height: 8,
     marginHorizontal: 4,
+    width: 8,
   },
 });

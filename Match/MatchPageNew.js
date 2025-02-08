@@ -20,7 +20,7 @@ const Tiffany = require('../src/Assets/Images/Tiffany.jpeg');
 const MatchPageNew = () => {
   const route = useRoute();
   const meet_date_user_id  = route.params.meet_date_user_id;
-  console.log("--- meet_date_user_id ---", meet_date_user_id);
+  console.log('--- meet_date_user_id ---', meet_date_user_id);
   const [userId, setUserId] = useState(null);
   const [userPhoto, setUserPhoto] = useState(null);
   const [matchedUserPhoto, setMatchedUserPhoto] = useState(null);
@@ -28,12 +28,12 @@ const MatchPageNew = () => {
   useEffect(() => {
     const loadUserId = async () => {
       try {
-        const storedUserId = await AsyncStorage.getItem("user_uid");
+        const storedUserId = await AsyncStorage.getItem('user_uid');
         if (storedUserId) {
           setUserId(storedUserId);
         }
       } catch (error) {
-        console.error("Error loading user UID from AsyncStorage:", error);
+        console.error('Error loading user UID from AsyncStorage:', error);
       }
     };
     loadUserId();
@@ -56,7 +56,7 @@ const MatchPageNew = () => {
         setMatchedUserPhoto(matchedPhotoUrls[0] || null);
         
       } catch (error) {
-        console.error("Error fetching user photos:", error);
+        console.error('Error fetching user photos:', error);
         // Fallback to default images
         setUserPhoto(null);
         setMatchedUserPhoto(null);
@@ -68,7 +68,7 @@ const MatchPageNew = () => {
     }
   }, [userId, meet_date_user_id]);
 
-  console.log("--- userId ---", userId);
+  console.log('--- userId ---', userId);
     const navigation = useNavigation();
     const handleKeepExploring = () => {
         navigation.navigate('MatchResultsPage');
@@ -119,27 +119,27 @@ const MatchPageNew = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+  button: {
+    backgroundColor: '#fff',
+    borderRadius: 30,
+    marginBottom: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
-  title: {
-    fontSize: 24,
+  buttonText: {
+    color: '#000',
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#fff',
-    marginBottom: 24,
-  },
-  imagesContainer: {
-    flexDirection: 'row',
+  container: {
     alignItems: 'center',
-    marginBottom: 24,
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+  },
+  image: {
+    height: '100%',
+    resizeMode: 'cover',
+    width: '100%',
   },
   imageWrapper: {
     width: 140,
@@ -149,26 +149,26 @@ const styles = StyleSheet.create({
     borderRadius: 70, // This makes the image circular
     overflow: 'hidden',
   },
-  image: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  button: {
-    backgroundColor: '#fff',
-    borderRadius: 30,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    marginBottom: 16,
-  },
-  buttonText: {
-    color: '#000',
-    fontWeight: 'bold',
+  imagesContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: 24,
   },
   link: {
     color: '#fff',
     fontWeight: 'bold',
     textDecorationLine: 'underline',
+  },
+  subtitle: {
+    color: '#fff',
+    fontSize: 16,
+    marginBottom: 24,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
 });
 

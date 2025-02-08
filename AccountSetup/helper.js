@@ -1,11 +1,11 @@
 const MaskCharacter = (str, mask, n = 1) => {
-    return ("" + str).slice(0, -n).replace(/./g, mask) + ("" + str).slice(-n);
+    return ('' + str).slice(0, -n).replace(/./g, mask) + ('' + str).slice(-n);
   };
   
   const formatPhoneNumber = (value) => {
     if (!value) return value;
   
-    const phoneNumber = value.replace(/[^\d]/g, "");
+    const phoneNumber = value.replace(/[^\d]/g, '');
   
     const phoneNumberLength = phoneNumber.length;
   

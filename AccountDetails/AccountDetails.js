@@ -25,7 +25,7 @@ const Settings = () => {
   };
   const handleBack = () =>
   {
-    navigation.navigate("AccountSetup7Summary");
+    navigation.navigate('AccountSetup7Summary');
   }
 
   return (
@@ -88,77 +88,77 @@ const Settings = () => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
+  arrowIcon: {
+    height: 28,
+    width: 28,
   },
-  container: {
-    padding: 32,
-    backgroundColor: '#FFFFFF',
-    flexGrow: 1,
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
+  arrowText: {
+    color: '#1A1A1A',
+    fontSize: 18,
+    fontWeight: '400',
   },
   backButton: {
     marginRight: 16,
   },
-  arrowIcon: {
-    width: 28,
-    height: 28,
-  },
-  headerText: {
-    fontSize: 22,
-    fontWeight: '400',
-    color: '#1A1A1A',
-    fontFamily: 'Segoe UI',
-    textAlign: 'center',
-    flex: 1,
-  },
-  settingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  icon: {
-    width: 28,
-    height: 28,
-    marginRight: 16,
-  },
-  settingText: {
-    fontSize: 18,
-    fontWeight: '400',
-    color: '#1A1A1A',
-    fontFamily: 'Segoe UI',
-    flex: 1,
-  },
-  arrowText: {
-    fontSize: 18,
-    fontWeight: '400',
-    color: '#1A1A1A',
+  container: {
+    backgroundColor: '#FFFFFF',
+    flexGrow: 1,
+    padding: 32,
   },
   descriptionText: {
-    fontSize: 14,
     color: '#1A1A1A',
     fontFamily: 'Segoe UI',
+    fontSize: 14,
     marginBottom: 24,
   },
+  headerContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: 24,
+  },
+  headerText: {
+    color: '#1A1A1A',
+    flex: 1,
+    fontFamily: 'Segoe UI',
+    fontSize: 22,
+    fontWeight: '400',
+    textAlign: 'center',
+  },
+  icon: {
+    height: 28,
+    marginRight: 16,
+    width: 28,
+  },
   logoutButton: {
+    alignSelf: 'center',
     backgroundColor: '#E4423F',
     borderRadius: 30,
-    width: 130,
     height: 45,
     justifyContent: 'center',
-    alignSelf: 'center',
     marginTop: 16,
+    width: 130,
   },
   logoutText: {
     color: '#FFFFFF',
-    fontSize: 18,
     fontFamily: 'Segoe UI',
+    fontSize: 18,
     textAlign: 'center',
+  },
+  safeArea: {
+    backgroundColor: '#FFFFFF',
+    flex: 1,
+  },
+  settingContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: 24,
+  },
+  settingText: {
+    color: '#1A1A1A',
+    flex: 1,
+    fontFamily: 'Segoe UI',
+    fontSize: 18,
+    fontWeight: '400',
   },
 });
 

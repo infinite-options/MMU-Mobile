@@ -150,30 +150,30 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: "flex-start",
+    justifyContent: 'flex-start',
   },
   title: {
+    color: '#000',
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#000",
+    fontWeight: 'bold',
     marginBottom: 20,
   },
   subtitle: {
+    color: '#888',
     fontSize: 14,
-    color: "#888",
     marginBottom: 50,
   },
 
   /* Each option row is a large pill-shaped button */
   optionButton: {
-    borderWidth: 1,
     borderRadius: 30,
-    padding: 15,
+    borderWidth: 1,
     marginVertical: 5,
+    padding: 15,
   },
   optionInner: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
   },
   optionText: {
     fontSize: 16,
@@ -181,13 +181,13 @@ const styles = StyleSheet.create({
   },
   /* Circle on the left side */
   circle: {
-    width: 20,
-    height: 20,
-    marginRight: 10,
+    alignItems: 'center',
     borderRadius: 10,
     borderWidth: 1.5,
+    height: 20,
     justifyContent: 'center',
-    alignItems: 'center',
+    marginRight: 10,
+    width: 20,
   },
   /* Option text */
   optionText: {
@@ -197,16 +197,16 @@ const styles = StyleSheet.create({
 
   /* Continue button styling, as in your other pages */
   continueButton: {
-    height: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#E4423F",
+    alignItems: 'center',
+    backgroundColor: '#E4423F',
     borderRadius: 30,
+    height: 50,
+    justifyContent: 'center',
     marginBottom: 50,
   },
   continueButtonText: {
-    color: "#FFF",
+    color: '#FFF',
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
 });

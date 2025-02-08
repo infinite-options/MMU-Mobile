@@ -107,7 +107,7 @@ const SelectionResults = () => {
   }
 
   if (noId) {
-    Alert.alert("Error", "User ID not found, redirecting...");
+    Alert.alert('Error', 'User ID not found, redirecting...');
     navigation.navigate('AccountSetup1Login');
     return null;
   }
@@ -152,68 +152,68 @@ const SelectionResults = () => {
 };
 
 const styles = StyleSheet.create({
-  safeArea:{
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginVertical: 10,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    color: '#E4423F',
-    fontWeight: 'bold',
-    marginVertical: 10,
-  },
-  userBox: {
-    flexDirection: 'row',
+  actionButton: {
     alignItems: 'center',
-    marginVertical: 10,
-    padding: 10,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 10,
-  },
-  userButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+    backgroundColor: '#E4423F',
+    borderRadius: 25,
+    paddingVertical: 10,
+    width: '40%',
   },
   avatar: {
-    width: 50,
-    height: 50,
     borderRadius: 25,
-  },
-  userInfo: {
-    marginLeft: 15,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  userDetails: {
-    fontSize: 14,
-    color: '#555',
+    height: 50,
+    width: 50,
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginVertical: 20,
   },
-  actionButton: {
-    width: '40%',
-    backgroundColor: '#E4423F',
-    paddingVertical: 10,
-    borderRadius: 25,
-    alignItems: 'center',
-  },
   buttonText: {
     color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  container: {
+    backgroundColor: '#fff',
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  safeArea:{
+    flex: 1,
+  },
+  sectionTitle: {
+    color: '#E4423F',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginVertical: 10,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginVertical: 10,
+  },
+  userBox: {
+    alignItems: 'center',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    flexDirection: 'row',
+    marginVertical: 10,
+    padding: 10,
+  },
+  userButton: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flex: 1,
+  },
+  userDetails: {
+    color: '#555',
+    fontSize: 14,
+  },
+  userInfo: {
+    marginLeft: 15,
+  },
+  userName: {
     fontSize: 16,
     fontWeight: 'bold',
   },

@@ -14,11 +14,11 @@ export default function MatchBegin() {
             if (Array.isArray(parsed)) {
                 return parsed.map(slot => [slot.day, slot.start_time, slot.end_time]);
             } else {
-                console.warn("Unexpected data format:", parsed);
+                console.warn('Unexpected data format:', parsed);
                 return [];
             }
         } catch (error) {
-            console.error("Error parsing available times:", error);
+            console.error('Error parsing available times:', error);
             return [];
         }
     };
@@ -59,8 +59,8 @@ export default function MatchBegin() {
 
     const commonAvailability = getCommonAvailability(userTimes, accountUserTimes);
 
-    const [selectedDay, setSelectedDay] = useState("");
-    const [selectedTime, setSelectedTime] = useState("");
+    const [selectedDay, setSelectedDay] = useState('');
+    const [selectedTime, setSelectedTime] = useState('');
     const [isDayModalVisible, setIsDayModalVisible] = useState(false);
     const [isTimeModalVisible, setIsTimeModalVisible] = useState(false);
 
@@ -94,11 +94,11 @@ export default function MatchBegin() {
                 </Text>
 
                 <TouchableOpacity style={styles.dropdown} onPress={() => setIsDayModalVisible(true)}>
-                    <Text style={styles.dropdownText}>{selectedDay || "Select Day"}</Text>
+                    <Text style={styles.dropdownText}>{selectedDay || 'Select Day'}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.dropdown} onPress={() => setIsTimeModalVisible(true)}>
-                    <Text style={styles.dropdownText}>{selectedTime || "Select Time"}</Text>
+                    <Text style={styles.dropdownText}>{selectedTime || 'Select Time'}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={handleNextButton} style={styles.nextButton}>
@@ -140,88 +140,88 @@ export default function MatchBegin() {
 }
 
 const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-        backgroundColor: '#FFF',
-    },
-    container: {
-        padding: 20,
-        alignItems: 'center',
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
     avatar: {
-        width: 50,
-        height: 50,
+        borderColor: 'white',
         borderRadius: 25,
         borderWidth: 2,
-        borderColor: 'white',
+        height: 50,
+        width: 50,
     },
     avatarOverlap: {
-        width: 50,
-        height: 50,
+        borderColor: 'white',
         borderRadius: 25,
         borderWidth: 2,
-        borderColor: 'white',
+        height: 50,
         marginLeft: -15,
-    },
-    username: {
-        fontSize: 20,
-        marginLeft: 10,
-    },
-    title: {
-        fontSize: 24,
-        textAlign: 'center',
-        color: '#E4423F',
-    },
-    instructions: {
-        textAlign: 'center',
-        marginVertical: 10,
-        fontSize: 14,
-    },
-    dropdown: {
-        backgroundColor: '#E8E8E8',
-        padding: 15,
-        borderRadius: 10,
-        marginVertical: 10,
-        width: '100%',
-    },
-    dropdownText: {
-        fontSize: 16,
-        color: '#333',
-    },
-    nextButton: {
-        backgroundColor: '#E4423F',
-        padding: 15,
-        borderRadius: 20,
-        marginTop: 20,
-        width: '80%',
-        alignItems: 'center',
+        width: 50,
     },
     buttonText: {
         color: 'white',
         fontSize: 18,
     },
+    container: {
+        alignItems: 'center',
+        padding: 20,
+    },
+    dropdown: {
+        backgroundColor: '#E8E8E8',
+        borderRadius: 10,
+        marginVertical: 10,
+        padding: 15,
+        width: '100%',
+    },
+    dropdownText: {
+        color: '#333',
+        fontSize: 16,
+    },
+    header: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        marginBottom: 20,
+    },
+    instructions: {
+        fontSize: 14,
+        marginVertical: 10,
+        textAlign: 'center',
+    },
     modalContainer: {
-        flex: 1,
-        justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(0,0,0,0.6)',
+        flex: 1,
+        justifyContent: 'center',
         paddingTop: 50,
     },
     modalItem: {
-        padding: 20,
-        backgroundColor: 'white',
-        width: 250,
         alignItems: 'center',
-        borderBottomWidth: 1,
+        backgroundColor: 'white',
         borderBottomColor: '#ddd',
+        borderBottomWidth: 1,
+        padding: 20,
+        width: 250,
     },
     modalText: {
-        fontSize: 16,
         color: '#333',
+        fontSize: 16,
+    },
+    nextButton: {
+        alignItems: 'center',
+        backgroundColor: '#E4423F',
+        borderRadius: 20,
+        marginTop: 20,
+        padding: 15,
+        width: '80%',
+    },
+    safeArea: {
+        backgroundColor: '#FFF',
+        flex: 1,
+    },
+    title: {
+        color: '#E4423F',
+        fontSize: 24,
+        textAlign: 'center',
+    },
+    username: {
+        fontSize: 20,
+        marginLeft: 10,
     },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,10 +9,10 @@ import {
   Pressable,
   SafeAreaView,
   Image,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import ProgressBar from "../src/Assets/Components/ProgressBar";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import ProgressBar from '../src/Assets/Components/ProgressBar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Helper functions to convert cm <-> ft & in
 function cmToFtIn(cm) {
@@ -40,13 +40,13 @@ export default function Height({ navigation }) {
   const [heightIn, setHeightIn] = useState(initialFtIn.inch);
 
   // "cm" or "ft"
-  const [selectedUnit, setSelectedUnit] = useState("cm"); // Default to cm
+  const [selectedUnit, setSelectedUnit] = useState('cm'); // Default to cm
 
   // Toggle between cm and ft/in, converting the value
   const handleUnitToggle = (newUnit) => {
     if (newUnit === selectedUnit) return; // no change needed
 
-    if (newUnit === "cm") {
+    if (newUnit === 'cm') {
       // Convert from ft/in -> cm
       const newCm = ftInToCm(heightFt, heightIn);
       setHeightCm(newCm);
@@ -76,8 +76,8 @@ export default function Height({ navigation }) {
   //  - "ft": (heightFt >= 1)
   //  - "cm": (heightCm >= 50) or however you decide
   const isFormComplete =
-    (selectedUnit === "ft" && heightFt >= 1) ||
-    (selectedUnit === "cm" && heightCm >= 50);
+    (selectedUnit === 'ft' && heightFt >= 1) ||
+    (selectedUnit === 'cm' && heightCm >= 50);
 
   const handleContinue = async () => {
     if (!isFormComplete) return;
@@ -88,7 +88,7 @@ export default function Height({ navigation }) {
     let inValue = heightIn;
 
     // If user is in ft mode, convert to cm so we can store both
-    if (selectedUnit === "ft") {
+    if (selectedUnit === 'ft') {
       cmValue = ftInToCm(heightFt, heightIn);
     } else {
       // If user is in cm mode, convert to ft/in so we have them all
@@ -98,16 +98,16 @@ export default function Height({ navigation }) {
     }
 
     try {
-      await AsyncStorage.setItem("user_height_cm", String(cmValue));
-      await AsyncStorage.setItem("user_height_ft", String(ftValue));
-      await AsyncStorage.setItem("user_height_in", String(inValue));
-      console.log("Height saved successfully");
+      await AsyncStorage.setItem('user_height_cm', String(cmValue));
+      await AsyncStorage.setItem('user_height_ft', String(ftValue));
+      await AsyncStorage.setItem('user_height_in', String(inValue));
+      console.log('Height saved successfully');
     } catch (error) {
-      console.error("Error saving height:", error);
+      console.error('Error saving height:', error);
     }
 
     // Move to next screen
-    navigation.navigate("HaveChildren");
+    navigation.navigate('HaveChildren');
   };
 
   return (
@@ -129,12 +129,12 @@ export default function Height({ navigation }) {
         <View style={styles.unitToggleContainer}>
           <TouchableOpacity
             style={styles.toggleSpacing}
-            onPress={() => handleUnitToggle("cm")}
+            onPress={() => handleUnitToggle('cm')}
           >
             <Text
               style={[
                 styles.unitToggleText,
-                selectedUnit === "cm" ? styles.unitToggleActive : null,
+                selectedUnit === 'cm' ? styles.unitToggleActive : null,
               ]}
             >
               cm
@@ -143,12 +143,12 @@ export default function Height({ navigation }) {
 
           <TouchableOpacity
             style={styles.toggleSpacing}
-            onPress={() => handleUnitToggle("ft")}
+            onPress={() => handleUnitToggle('ft')}
           >
             <Text
               style={[
                 styles.unitToggleText,
-                selectedUnit === "ft" ? styles.unitToggleActive : null,
+                selectedUnit === 'ft' ? styles.unitToggleActive : null,
               ]}
             >
               ft & in
@@ -157,7 +157,7 @@ export default function Height({ navigation }) {
         </View>
 
         {/* If user selects cm, show up/down arrows for cm */}
-        {selectedUnit === "cm" && (
+        {selectedUnit === 'cm' && (
           <View style={styles.selector}>
             <TouchableOpacity
               onPress={handleIncrementCm}
@@ -181,7 +181,7 @@ export default function Height({ navigation }) {
         )}
 
         {/* If user selects ft & in, show up/down arrows for ft & in */}
-        {selectedUnit === "ft" && (
+        {selectedUnit === 'ft' && (
           <View style={styles.ftInContainer}>
             {/* Feet Selector */}
             <View style={styles.selector}>
@@ -234,7 +234,7 @@ export default function Height({ navigation }) {
       <Pressable
         style={[
           styles.continueButton,
-        { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5" },
+        { backgroundColor: isFormComplete ? '#E4423F' : '#F5F5F5' },
         ]}
         onPress={handleContinue}
         disabled={!isFormComplete}
@@ -246,100 +246,100 @@ export default function Height({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 25,
-    backgroundColor: "#FFF",
-    justifyContent: "flex-start",
-    alignItems: "stretch",
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
-  },
-  backButton: {
-    alignSelf: "flex-start",
-    borderRadius: 20,
-    marginBottom: 20,
-    marginTop: 30,
-  },
-  progressBar: {
-    marginBottom: 30,
-  },
-  content: {
-    flex: 1,
-    justifyContent: "flex-start",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#000",
-    marginBottom: 20,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#888",
-    marginBottom: 50,
-  },
-  unitToggleContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginBottom: 40,
-  },
-  unitToggleText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#888",
-    marginHorizontal: 20,
-  },
-  unitToggleActive: {
-    color: "red",
-    borderBottomWidth: 2,
-    borderBottomColor: "red",
-  },
-  toggleSpacing: {
-    paddingVertical: 6,
-  },
-  selector: {
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 40,
-  },
-  ftInContainer: {
-    flexDirection: "row",
-    justifyContent: "space-evenly",
-    alignItems: "center",
-    marginBottom: 40,
-  },
   arrowButton: {
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
-  selectorValue: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    marginVertical: 8,
+  backButton: {
+    alignSelf: 'flex-start',
+    borderRadius: 20,
+    marginBottom: 20,
+    marginTop: 30,
   },
-  valueText: {
-    fontSize: 48,
-    fontWeight: "bold",
-    color: "#000",
+  container: {
+    alignItems: 'stretch',
+    backgroundColor: '#FFF',
+    flex: 1,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 25,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
-  unitText: {
-    fontSize: 20,
-    color: "#000",
-    marginLeft: 6,
-    marginBottom: 5,
+  content: {
+    flex: 1,
+    justifyContent: 'flex-start',
   },
   continueButton: {
-    height: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#E4423F",
+    alignItems: 'center',
+    backgroundColor: '#E4423F',
     borderRadius: 30,
+    height: 50,
+    justifyContent: 'center',
     marginBottom: 50,
   },
   continueButtonText: {
-    color: "#FFF",
+    color: '#FFF',
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: 'bold',
+  },
+  ftInContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    marginBottom: 40,
+  },
+  progressBar: {
+    marginBottom: 30,
+  },
+  selector: {
+    alignItems: 'center',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    marginBottom: 40,
+  },
+  selectorValue: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    marginVertical: 8,
+  },
+  subtitle: {
+    color: '#888',
+    fontSize: 14,
+    marginBottom: 50,
+  },
+  title: {
+    color: '#000',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  toggleSpacing: {
+    paddingVertical: 6,
+  },
+  unitText: {
+    color: '#000',
+    fontSize: 20,
+    marginBottom: 5,
+    marginLeft: 6,
+  },
+  unitToggleActive: {
+    borderBottomColor: 'red',
+    borderBottomWidth: 2,
+    color: 'red',
+  },
+  unitToggleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 40,
+  },
+  unitToggleText: {
+    color: '#888',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginHorizontal: 20,
+  },
+  valueText: {
+    color: '#000',
+    fontSize: 48,
+    fontWeight: 'bold',
   },
 });

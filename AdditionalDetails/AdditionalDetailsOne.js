@@ -121,64 +121,64 @@ export default function AdditionalDetailsOne({ navigation, route }) {
 
 // ----------------- STYLES -----------------
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    backgroundColor: '#FFF',
-    alignItems: 'stretch',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-  },
   backButton: {
     alignSelf: 'flex-start',
     backgroundColor: '#F5F5F5',
     borderRadius: 20,
-    padding: 8,
     marginBottom: 20,
     marginTop: 30,
+    padding: 8,
+  },
+  container: {
+    alignItems: 'stretch',
+    backgroundColor: '#FFF',
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   content: {
     flex: 1,
     justifyContent: 'flex-start',
   },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    textAlign: 'left',
-    color: '#000',
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: 'gray',
-    textAlign: 'left',
-    marginBottom: 20,
-  },
-  input: {
-    marginBottom: 15, // Space between input fields
-  },
-  textInputOutline: {
-    borderWidth: 0,
-    borderColor: '#F9F9F9',
-    borderRadius: 25,
-    flex: 1,
-    alignItems: 'center',
-    backgroundColor: '#F9F9F9',
-    paddingHorizontal: 15,
-    marginBottom: 20,
-    height: 60,
-  },
   continueButton: {
-    height: 60,
-    justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#E4423F',
     borderRadius: 25,
+    height: 60,
+    justifyContent: 'center',
     marginBottom: 20,
   },
   continueButtonText: {
     color: '#FFF',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  input: {
+    marginBottom: 15, // Space between input fields
+  },
+  subtitle: {
+    color: 'gray',
+    fontSize: 14,
+    marginBottom: 20,
+    textAlign: 'left',
+  },
+  textInputOutline: {
+    alignItems: 'center',
+    backgroundColor: '#F9F9F9',
+    borderColor: '#F9F9F9',
+    borderRadius: 25,
+    borderWidth: 0,
+    flex: 1,
+    height: 60,
+    marginBottom: 20,
+    paddingHorizontal: 15,
+  },
+  title: {
+    color: '#000',
+    fontSize: 26,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'left',
   },
 });

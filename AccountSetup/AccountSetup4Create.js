@@ -52,9 +52,9 @@ export default function AccountSetup4Create() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const userIdValue = await AsyncStorage.getItem("user_uid");
-        const userEmail = await AsyncStorage.getItem("user_email_id");
-        console.log("EMAILL",userEmail)
+        const userIdValue = await AsyncStorage.getItem('user_uid');
+        const userEmail = await AsyncStorage.getItem('user_email_id');
+        console.log('EMAILL',userEmail)
         if (userIdValue) {
           setUserEmail(userEmail);
           setUserId(userIdValue); // Set the userId in state
@@ -105,13 +105,13 @@ export default function AccountSetup4Create() {
         specificsForm
       );
       if (response.status === 200) {
-        console.log("HELLO",response.data);
+        console.log('HELLO',response.data);
       }
     } catch (err) {
       console.log('Error:', err);
     }
     //navigation.navigate("Location2")
-    navigation.navigate("AccountSetup5Create")
+    navigation.navigate('AccountSetup5Create')
   };
   const populateFormData = () => {
     const specificsForm = new FormData();
@@ -271,6 +271,24 @@ export default function AccountSetup4Create() {
 }
 
 const styles = StyleSheet.create({
+  button: {
+  alignItems: 'center',
+  backgroundColor: '#E4423F',
+  borderRadius: 25,
+  height: 45,
+  justifyContent: 'center',
+  width: 130,
+},
+  buttonContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    marginVertical: 40,
+},
+  buttonText: {
+  color: 'white',
+  fontSize: 18,
+},
   container: {
     flex: 1,
     padding: 20,
@@ -280,51 +298,33 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
   },
-  subHeaderText: {
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  specificButton: {
-    backgroundColor: '#ffffff',
-    padding: 15,
+  interestButton: {
+    backgroundColor: '#f0f0f0',
     borderRadius: 8,
     marginBottom: 10,
-    borderColor: '#ccc',
-    borderWidth: 1,
+    padding: 10,
   },
-  specificRow: {
+specificButton: {
+    backgroundColor: '#ffffff',
+    borderColor: '#ccc',
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 10,
+    padding: 15,
+  },
+specificRow: {
     flexDirection: 'row',
     justifyContent: 'space-between', // This keeps the label on the left and the value on the right
     alignItems: 'center', // Vertically align items in the center
   },
-  buttonContainer: {
-    marginTop: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 40,
-},
-textStyle:{
+subHeaderText: {
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  textStyle:{
     fontSize: 16,
     fontWeight: '400',
     color: '#E4423F', // Change the value to red
     textAlign: 'right', // Align v
 },
-button: {
-  width: 130,
-  backgroundColor: '#E4423F',
-  borderRadius: 25,
-  height: 45,
-  justifyContent: 'center',
-  alignItems: 'center',
-},
-buttonText: {
-  color: 'white',
-  fontSize: 18,
-},
-  interestButton: {
-    backgroundColor: '#f0f0f0',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
 });

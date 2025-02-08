@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, Image, TouchableOpacity, SafeAreaView, StyleSheet } from "react-native";
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, TouchableOpacity, SafeAreaView, StyleSheet } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Slider from '@react-native-community/slider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from "axios";
+import axios from 'axios';
 
 export default function DateSummary() {
     const navigation = useNavigation();
@@ -105,8 +105,8 @@ export default function DateSummary() {
                         step={1}
                         value={sliderValue}
                         onValueChange={handleSliderChange}
-                        thumbTintColor='white'
-                        minimumTrackTintColor='white'
+                        thumbTintColor="white"
+                        minimumTrackTintColor="white"
                     />
                     <Text style={styles.sliderText}>Slide to send</Text>
                 </View>
@@ -136,89 +136,90 @@ const EditableItem = ({ label, value }) => (
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
         alignItems: 'center',
+        flex: 1,
         padding: 20,
     },
-    userInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    profileImageLeft: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        borderWidth: 2,
-        borderColor: 'white',
-        marginRight: -15,
-        zIndex: 1,
-    },
-    profileImageRight: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        borderWidth: 2,
-        borderColor: 'white',
-        marginLeft: -15,
-        zIndex: 0,
-    },
-    userName: {
-        fontFamily: 'Lexend',
-        fontSize: 20,
-        marginLeft: 10,
-    },
-    meetingText: {
-        fontFamily: 'Lexend',
-        fontSize: 23,
-        textAlign: 'center',
-        marginVertical: 20,
-    },
-    editableItemsContainer: {
-        width: '100%',
+    editIcon: {
+        height: 14,
+        width: 14,
     },
     editableItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
         backgroundColor: '#f8f8f8',
         borderRadius: 20,
-        padding: 10,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         marginBottom: 10,
+        padding: 10,
+    },
+    editableItemsContainer: {
+        width: '100%',
     },
     editableLabel: {
         fontFamily: 'Lexend',
         fontSize: 14,
     },
-    editableValueContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
     editableValue: {
+        color: '#555',
         fontFamily: 'Lexend',
         fontSize: 14,
-        color: '#555',
         textAlign: 'right',
     },
-    editIcon: {
-        width: 14,
-        height: 14,
+    editableValueContainer: {
+        alignItems: 'center',
+        flexDirection: 'row',
+    },
+    meetingText: {
+        fontFamily: 'Lexend',
+        fontSize: 23,
+        marginVertical: 20,
+        textAlign: 'center',
+    },
+    messageButton: {
+        backgroundColor: '#E4423F',
+        borderRadius: 18,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+    },
+    messageButtonText: {
+        color: 'white',
+        fontFamily: 'Lexend',
+        fontSize: 16,
+    },
+    profileImageLeft: {
+        borderColor: 'white',
+        borderRadius: 25,
+        borderWidth: 2,
+        height: 50,
+        marginRight: -15,
+        width: 50,
+        zIndex: 1,
+    },
+    profileImageRight: {
+        borderColor: 'white',
+        borderRadius: 25,
+        borderWidth: 2,
+        height: 50,
+        marginLeft: -15,
+        width: 50,
+        zIndex: 0,
+    },
+    slider: {
+        color: 'white',
+        height: 50,
+        width: '100%',
     },
     sliderContainer: {
-        width: '100%',
-        maxWidth: 300,
         alignItems: 'center',
-        marginTop: 30,
-        marginBottom: 20,
         backgroundColor: '#E4423F',
         borderRadius: 25,
         height: 50,
         justifyContent: 'center',
-    },
-    slider: {
-        color: 'white',
+        marginBottom: 20,
+        marginTop: 30,
+        maxWidth: 300,
         width: '100%',
-        height: 50,
     },
     sliderText: {
         color: 'white',
@@ -227,15 +228,14 @@ const styles = StyleSheet.create({
         position: 'absolute',
         textAlign: 'center',
     },
-    messageButton: {
-        backgroundColor: '#E4423F',
-        borderRadius: 18,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
+    userInfo: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        marginBottom: 20,
     },
-    messageButtonText: {
+    userName: {
         fontFamily: 'Lexend',
-        fontSize: 16,
-        color: 'white',
+        fontSize: 20,
+        marginLeft: 10,
     },
 });

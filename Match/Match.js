@@ -32,7 +32,7 @@ const Match = () => {
                     await AsyncStorage.setItem('liked_by_user_ids', JSON.stringify(likedByUserIds));
                 }
             } catch (error) {
-                console.error("Error initializing data:", error);
+                console.error('Error initializing data:', error);
             }
         };
         initialize();
@@ -144,7 +144,7 @@ const Match = () => {
                                 )}
                                 <Text style={styles.userName}>{user.user_first_name} {user.user_last_name}</Text>
                                 <Text style={styles.userDetails}>{user.user_age} - {user.user_gender} - {user.user_suburb}</Text>
-                                <TouchableOpacity onPress={() => navigation.navigate("ViewProfile", { user })} style={styles.profileButton}>
+                                <TouchableOpacity onPress={() => navigation.navigate('ViewProfile', { user })} style={styles.profileButton}>
                                     <Text style={styles.flipText}>Tap to See Profile</Text>
                                 </TouchableOpacity>
                             </View>
@@ -174,82 +174,6 @@ const Match = () => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        padding: 20,
-        backgroundColor: '#f5f5f5',
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    cardContainer: {
-        marginBottom: 20,
-    },
-    card: {
-        backgroundColor: '#E4423F',
-        padding: 15,
-        borderRadius: 10,
-        alignItems: 'center',
-        width: '100%',
-        height: 400,
-        justifyContent: 'space-between',
-        position: 'relative',
-    },
-    profileImage: {
-        width: '100%',
-        height: '75%',
-        borderRadius: 10,
-    },
-    profileVideo: {
-        width: '100%',
-        height: '75%',
-        borderRadius: 10,
-        backgroundColor: 'black',
-    },
-    userName: {
-        fontSize: 20,
-        color: 'white',
-        marginTop: 10,
-    },
-    userDetails: {
-        fontSize: 12,
-        color: 'white',
-    },
-    flipText: {
-        color: 'white',
-        fontSize: 18,
-    },
-    likeButtonRight: {
-        position: 'absolute',
-        top: 10,
-        right: 10,
-        zIndex: 1,
-    },
-    likeButtonLeft: {
-        position: 'absolute',
-        top: 10,
-        left: 10,
-        zIndex: 1,
-        width: 30,
-        height: 30,
-    },
-    likeIcon: {
-        width: 30,
-        height: 30,
-    },
-    profileButton: {
-        backgroundColor: '#E4423F',
-        borderRadius: 10,
-        width: '100%',
-        alignItems: 'center',
-        paddingVertical: 10,
-    },
-    buttonContainer: {
-        flexDirection: 'column',
-        marginTop: 20,
-        alignItems: 'center', // Center align buttons horizontally
-    },
     button: {
         backgroundColor: '#E4423F', // Set button color to match the example
         paddingVertical: 15, // Vertical padding for button height
@@ -259,10 +183,86 @@ const styles = StyleSheet.create({
         width: 300, // Set width to a fixed size
         alignItems: 'center', // Center text horizontally within the button
     },
+    buttonContainer: {
+        alignItems: 'center',
+        flexDirection: 'column',
+        marginTop: 20, // Center align buttons horizontally
+    },
     buttonText: {
         color: 'white', // White text color
         fontSize: 18, // Font size for text
         fontWeight: 'bold', // Bold text for emphasis
+    },
+    card: {
+        alignItems: 'center',
+        backgroundColor: '#E4423F',
+        borderRadius: 10,
+        height: 400,
+        justifyContent: 'space-between',
+        padding: 15,
+        position: 'relative',
+        width: '100%',
+    },
+    cardContainer: {
+        marginBottom: 20,
+    },
+    container: {
+        backgroundColor: '#f5f5f5',
+        padding: 20,
+    },
+    flipText: {
+        color: 'white',
+        fontSize: 18,
+    },
+    likeButtonLeft: {
+        height: 30,
+        left: 10,
+        position: 'absolute',
+        top: 10,
+        width: 30,
+        zIndex: 1,
+    },
+    likeButtonRight: {
+        position: 'absolute',
+        right: 10,
+        top: 10,
+        zIndex: 1,
+    },
+    likeIcon: {
+        height: 30,
+        width: 30,
+    },
+    loadingContainer: {
+        alignItems: 'center',
+        flex: 1,
+        justifyContent: 'center',
+    },
+    profileButton: {
+        alignItems: 'center',
+        backgroundColor: '#E4423F',
+        borderRadius: 10,
+        paddingVertical: 10,
+        width: '100%',
+    },
+    profileImage: {
+        borderRadius: 10,
+        height: '75%',
+        width: '100%',
+    },
+    profileVideo: {
+        backgroundColor: 'black',
+        borderRadius: 10,
+        height: '75%',
+        width: '100%',
+    },
+    userDetails: {
+        color: 'white',
+        fontSize: 12,
+    },
+    userName: {
+        color: 'white',
+        fontSize: 20,
+        marginTop: 10,
     },
     
 });

@@ -45,15 +45,52 @@ const LandingPage = () => {
 };
 
 const styles = StyleSheet.create({
+  activeDot: {
+    backgroundColor: '#E4423F',
+    width: 16, // Elongated active dot
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: 4,
+  },
   backgroundImage: {
     flex: 1,
-    resizeMode: 'cover',
     justifyContent: 'flex-end',
     position: 'relative',
+    resizeMode: 'cover',
   },
-  redTint: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(228, 66, 63, 0.3)', // Red tint overlay
+  continueButton: {
+    alignItems: 'center',
+    backgroundColor: '#E4423F',
+    borderRadius: 30,
+    marginBottom: 15,
+    paddingVertical: 12,
+    width: '60%',
+  },
+  continueButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  description: {
+    color: '#666666',
+    fontSize: 16,
+    marginBottom: 50,
+    textAlign: 'center',
+  },
+  dot: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 4,
+    height: 8,
+    marginHorizontal: 4,
+    width: 8,
+  },
+  dotsContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    padding: 10,
+    position: 'absolute',
+    top: 15, // Moves dots to the top
   },
   overlay: {
     backgroundColor: 'rgba(255, 255, 255, 0.8)', // More opaque for a better look
@@ -67,60 +104,23 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: '2.5%', // Moves the card further up in the image
   },
-  dot: {
-    width: 8,
-    height: 8,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 4,
-    marginHorizontal: 4,
-  },
-  dotsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'absolute',
-    padding: 10,
-    top: 15, // Moves dots to the top
-  },
-  activeDot: {
-    backgroundColor: '#E4423F',
-    width: 16, // Elongated active dot
-    height: 8,
-    borderRadius: 4,
-    marginHorizontal: 4,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    padding: 10,
-    color: '#1A1A1A',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  description: {
-    fontSize: 16,
-    color: '#666666',
-    textAlign: 'center',
-    marginBottom: 50,
-  },
-  continueButton: {
-    backgroundColor: '#E4423F',
-    borderRadius: 30,
-    paddingVertical: 12,
-    alignItems: 'center',
-    width: '60%',
-    marginBottom: 15,
-  },
-  continueButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+  redTint: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(228, 66, 63, 0.3)', // Red tint overlay
   },
   signUpText: {
+    color: '#1A1A1A',
     fontSize: 18,
     textDecorationLine: 'underline',
-    color: '#1A1A1A',
 
+  },
+  title: {
+    color: '#1A1A1A',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    padding: 10,
+    textAlign: 'center',
   },
 });
 

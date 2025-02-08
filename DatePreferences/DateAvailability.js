@@ -61,9 +61,9 @@ const saveAvailabilityToAPI = async (availabilityData) => {
     const user_uid = await AsyncStorage.getItem('user_uid');
     const user_email_id = await AsyncStorage.getItem('user_email_id');
     const uploadData = new FormData();
-    uploadData.append("user_uid", user_uid);
-    uploadData.append("user_email_id", user_email_id);
-    uploadData.append("user_available_time", JSON.stringify(availabilityData));
+    uploadData.append('user_uid', user_uid);
+    uploadData.append('user_email_id', user_email_id);
+    uploadData.append('user_available_time', JSON.stringify(availabilityData));
     
     if (!user_uid) {
       Alert.alert('Error', 'User not logged in');
@@ -71,17 +71,17 @@ const saveAvailabilityToAPI = async (availabilityData) => {
     }
 
     const response = await axios.put(
-      "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo",
+      'https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo',
       uploadData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      { headers: { 'Content-Type': 'multipart/form-data' } }
   );
 
     if (response.status === 200) {
-            console.log("date uploaded successfully:", response.data);
-            Alert.alert("Success", "date uploaded successfully!");
+            console.log('date uploaded successfully:', response.data);
+            Alert.alert('Success', 'date uploaded successfully!');
         } else {
-            console.error("Failed to upload date:", response);
-            Alert.alert("Error", "Failed to upload date to the server.");
+            console.error('Failed to upload date:', response);
+            Alert.alert('Error', 'Failed to upload date to the server.');
         }
   } catch (error) {
     Alert.alert('Error', error.message);
@@ -538,117 +538,34 @@ export default function DateAvailability() {
 
 // -------------------- STYLES --------------------
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-  },
-  headerRow: {
+  actionRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
+    justifyContent: 'space-between',
     marginTop: 15,
-    marginBottom: 10,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: '600',
-    marginHorizontal: 20,
-    marginTop: 5,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: 'gray',
-    marginHorizontal: 20,
-    marginBottom: 15,
-  },
-  card: {
-    backgroundColor: '#F9F9F9',
-    marginHorizontal: 20,
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
-    elevation: 1,
-  },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  addButton: {
     alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderColor: 'red',
+    borderRadius: 20,
+    borderWidth: 1,
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
-  cardHeaderText: {
+  addButtonText: {
+    color: 'red',
     fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
-  },
-  daysRow: {
-    flexDirection: 'row',
-    marginTop: 10,
-    marginBottom: 10,
-  },
-  dayCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    marginRight: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dayCircleActive: {
-    backgroundColor: '#000',
-    borderColor: '#000',
-  },
-  dayLabel: {
-    fontSize: 12,
-    color: '#333',
-  },
-  dayLabelActive: {
-    color: '#FFF',
-  },
-  timeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 5,
-  },
-  timeColumn: {
-    flex: 1,
-    marginRight: 15,
-  },
-  timeLabel: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 5,
-  },
-  timeInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  timeInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 6,
-    padding: 5,
-    width: 50,
-    textAlign: 'center',
-    backgroundColor: '#FFF',
-  },
-  colon: {
-    fontSize: 20,
-    color: '#333',
-  },
-  ampmRow: {
-    flexDirection: 'row',
-    marginTop: 5,
+    marginLeft: 4,
   },
   ampmButton: {
-    borderWidth: 1,
     borderColor: '#ccc',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
     borderRadius: 6,
+    borderWidth: 1,
     marginRight: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   ampmButtonActive: {
     backgroundColor: '#000',
@@ -660,75 +577,158 @@ const styles = StyleSheet.create({
   ampmButtonTextActive: {
     color: '#FFF',
   },
-  actionRow: {
+  ampmRow: {
+    flexDirection: 'row',
+    marginTop: 5,
+  },
+  bottomContainer: {
+    backgroundColor: '#FFF',
+    bottom: 0,
+    padding: 20,
+    position: 'absolute',
+    width: '100%',
+  },
+  card: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 10,
+    elevation: 1,
+    marginBottom: 15,
+    marginHorizontal: 20,
+    padding: 15,
+  },
+  cardHeaderRow: {
+    alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 15,
+  },
+  cardHeaderText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  collapsedCard: {
+    alignItems: 'center',
+    backgroundColor: '#F9F9F9',
+    borderRadius: 10,
+    elevation: 1,
+    flexDirection: 'row',
+    marginBottom: 15,
+    marginHorizontal: 20,
+    padding: 15,
+  },
+  collapsedText: {
+    color: '#333',
+    fontSize: 16,
+    marginRight: 8,
+  },
+  colon: {
+    color: '#333',
+    fontSize: 20,
+  },
+  container: {
+    backgroundColor: '#FFF',
+    flex: 1,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
+  continueButton: {
+    alignItems: 'center',
+    backgroundColor: 'red',
+    borderRadius: 25,
+    height: 50,
+    justifyContent: 'center',
+  },
+  continueButtonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  dayCircle: {
+    alignItems: 'center',
+    borderColor: '#ccc',
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 32,
+    justifyContent: 'center',
+    marginRight: 8,
+    width: 32,
+  },
+  dayCircleActive: {
+    backgroundColor: '#000',
+    borderColor: '#000',
+  },
+  dayLabel: {
+    color: '#333',
+    fontSize: 12,
+  },
+  dayLabelActive: {
+    color: '#FFF',
+  },
+  daysRow: {
+    flexDirection: 'row',
+    marginBottom: 10,
+    marginTop: 10,
   },
   deleteText: {
     color: 'red',
     fontSize: 16,
   },
+  headerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: 10,
+    marginTop: 15,
+    paddingHorizontal: 20,
+  },
   saveButton: {
     backgroundColor: 'red',
     borderRadius: 20,
-    paddingVertical: 6,
     paddingHorizontal: 20,
+    paddingVertical: 6,
   },
   saveButtonText: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: '600',
   },
-  collapsedCard: {
-    backgroundColor: '#F9F9F9',
-    marginHorizontal: 20,
-    borderRadius: 10,
-    padding: 15,
+  subtitle: {
+    color: 'gray',
+    fontSize: 14,
     marginBottom: 15,
-    elevation: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  collapsedText: {
-    fontSize: 16,
-    color: '#333',
-    marginRight: 8,
-  },
-  addButton: {
-    borderWidth: 1,
-    borderColor: 'red',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    alignSelf: 'flex-start',
     marginHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
   },
-  addButtonText: {
-    color: 'red',
-    fontSize: 16,
-    marginLeft: 4,
+  timeColumn: {
+    flex: 1,
+    marginRight: 15,
   },
-  bottomContainer: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    padding: 20,
+  timeInput: {
     backgroundColor: '#FFF',
+    borderColor: '#ddd',
+    borderRadius: 6,
+    borderWidth: 1,
+    padding: 5,
+    textAlign: 'center',
+    width: 50,
   },
-  continueButton: {
-    backgroundColor: 'red',
-    borderRadius: 25,
-    height: 50,
-    justifyContent: 'center',
+  timeInputRow: {
     alignItems: 'center',
+    flexDirection: 'row',
   },
-  continueButtonText: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: 'bold',
+  timeLabel: {
+    color: '#333',
+    fontSize: 14,
+    marginBottom: 5,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 5,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '600',
+    marginBottom: 8,
+    marginHorizontal: 20,
+    marginTop: 5,
   },
 });
 

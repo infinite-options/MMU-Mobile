@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { Video } from "expo-av";
+import { Video } from 'expo-av';
 import { useFocusEffect } from '@react-navigation/native';
 import ProgressBar from '../src/Assets/Components/ProgressBar';
 import { getProfileSteps, getProfileCompletion } from './profileStepsState';
@@ -105,7 +105,7 @@ export default function MyProfile() {
             rawVideoUrl = JSON.parse(rawVideoUrl); 
             // e.g. "\"https://s3.us-west-1.amazonaws.com/...\"" -> "https://s3.us-west-1.amazonaws.com/..."
           } catch (err) {
-            console.warn("Could not JSON-parse user_video_url. Using as-is:", err);
+            console.warn('Could not JSON-parse user_video_url. Using as-is:', err);
           }
     
           // If there's still extra quotes, you can remove them manually:
@@ -117,7 +117,7 @@ export default function MyProfile() {
             rawVideoUrl = rawVideoUrl.slice(1, -1);
           }
     
-          console.log("Cleaned video url:", rawVideoUrl);
+          console.log('Cleaned video url:', rawVideoUrl);
           setVideoUri(rawVideoUrl);
         }
 
@@ -292,7 +292,7 @@ export default function MyProfile() {
     try {
       openToList = JSON.parse(user_open_to);
     } catch (error) {
-      console.error("Error parsing user_open_to:", error);
+      console.error('Error parsing user_open_to:', error);
       openToList = user_open_to.includes(',') ? user_open_to.split(',') : [user_open_to];
     }
   }
@@ -304,7 +304,7 @@ export default function MyProfile() {
       if (openToList.length === 1) return openToList[0];
       return openToList.slice(0, -1).join(', ') + ' and ' + openToList.slice(-1);
     } catch (error) {
-      console.error("Error parsing open_to:", error);
+      console.error('Error parsing open_to:', error);
       return openToString; // Fallback to the original string if parsing fails
     }
   };
@@ -337,7 +337,7 @@ export default function MyProfile() {
     try {
       return JSON.parse(interestsString);
     } catch (error) {
-      console.error("Error parsing interests:", error);
+      console.error('Error parsing interests:', error);
       return interestsString.split(',').map((interest) => interest.trim());
     }
   };
@@ -406,7 +406,7 @@ export default function MyProfile() {
                   setIsVideoPlaying(status.isPlaying);
                 }}
                 // Print errors to console
-  onError={(err) => console.log("VIDEO ERROR:", err)}
+  onError={(err) => console.log('VIDEO ERROR:', err)}
               />
               {/* Center play overlay if paused */}
               {!isVideoPlaying && (
@@ -684,34 +684,34 @@ export default function MyProfile() {
 // ----------------- STYLES -----------------
 const styles = StyleSheet.create({
   container: {
+    alignItems: 'stretch',
+    backgroundColor: '#FFF',
     flex: 1,
-    backgroundColor: "#FFF",
-    justifyContent: "flex-start",
-    alignItems: "stretch",
+    justifyContent: 'flex-start',
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   bottomNavContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 60,
-    backgroundColor: '#FFF',
-    borderTopWidth: 2,
-    borderTopColor: '#EEE',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
     alignItems: 'center',
+    backgroundColor: '#FFF',
+    borderTopColor: '#EEE',
+    borderTopWidth: 2,
+    bottom: 0,
+    flexDirection: 'row',
+    height: 60,
+    justifyContent: 'space-around',
+    left: 0,
+    position: 'absolute',
+    right: 0,
   },
   navButton: {},
   headerContainer: {
-    paddingHorizontal: 20,
-    marginTop: 20,
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 20,
     paddingBottom: 30,
+    paddingHorizontal: 20,
   },
   headerTitle: {
     fontSize: 22,
@@ -737,85 +737,85 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
   menuItem: {
+    color: '#000',
     fontSize: 16,
     paddingVertical: 8,
-    color: '#000',
   },
   mediaContainer: {
     marginBottom: 20,
   },
   // 326:428 => aspectRatio ~ 0.76
   videoWrapper: {
-    position: "relative",
-    width: "100%",
     aspectRatio: 0.76,
-    backgroundColor: "#000",
-    marginBottom: 15,
+    backgroundColor: '#000',
     borderRadius: 10,
-    overflow: "hidden",
+    marginBottom: 15,
+    overflow: 'hidden',
+    position: 'relative',
+    width: '100%',
   },
   video: {
-    width: "100%",
-    height: "100%",
+    height: '100%',
+    width: '100%',
   },
   playOverlay: {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: [{ translateX: -24 }, { translateY: -24 }],
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: 'rgba(0,0,0,0.3)',
     borderRadius: 50,
+    left: '50%',
     padding: 10,
+    position: 'absolute',
+    top: '50%',
+    transform: [{ translateX: -24 }, { translateY: -24 }],
   },
   removeIconTopRight: {
-    position: "absolute",
-    top: 5,
+    position: 'absolute',
     right: 5,
+    top: 5,
   },
   removeIconBackground: {
-    backgroundColor: "#E4423F",
+    backgroundColor: '#E4423F',
     borderRadius: 20,
     padding: 4,
   },
   uploadVideoButton: {
-    flexDirection: "row",
-    alignItems: "center",
+    alignItems: 'center',
+    borderColor: '#E4423F',
     borderRadius: 25,
     borderWidth: 2,
-    borderColor: "#E4423F",
-    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
     paddingHorizontal: 20,
-    justifyContent: "center",
+    paddingVertical: 12,
   },
   uploadVideoText: {
-    color: "#E4423F",
-    fontWeight: "bold",
+    color: '#E4423F',
     fontSize: 16,
+    fontWeight: 'bold',
     marginLeft: 8,
   },
 
   // Photo boxes in a row (3 boxes)
   photoBoxesRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 20,
   },
   photoBox: {
-    width: "30%",
     aspectRatio: 1,
+    backgroundColor: '#F5F5F5',
     borderRadius: 10,
-    backgroundColor: "#F5F5F5",
-    overflow: "hidden",
-    position: "relative",
+    overflow: 'hidden',
+    position: 'relative',
+    width: '30%',
   },
   emptyPhotoBox: {
+    alignItems: 'center',
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
   },
   photoImage: {
-    width: "100%",
-    height: "100%",
+    height: '100%',
+    width: '100%',
   },
 
   pageIndicator: {
@@ -824,11 +824,11 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
     backgroundColor: '#ccc',
+    borderRadius: 3,
+    height: 6,
     marginHorizontal: 4,
+    width: 6,
   },
   activeDot: {
     backgroundColor: 'red',
@@ -848,13 +848,13 @@ const styles = StyleSheet.create({
   },
   completionCard: {
     backgroundColor: '#F9F9F9',
-    marginHorizontal: 20,
-    padding: 15,
     borderRadius: 10,
-    shadowColor: '#000',
     elevation: 1,
-    marginTop: 15,
     marginBottom: 10,
+    marginHorizontal: 20,
+    marginTop: 15,
+    padding: 15,
+    shadowColor: '#000',
   },
   completionText: {
     fontSize: 16,
@@ -867,17 +867,17 @@ const styles = StyleSheet.create({
     marginVertical: 3,
   },
   sectionContainer: {
-    paddingHorizontal: 20,
     marginTop: 15,
+    paddingHorizontal: 20,
   },
   sectionTitle: {
+    color: 'gray',
     fontSize: 14,
     marginBottom: 10,
-    color: 'gray',
   },
   bioText: {
-    fontSize: 14,
     color: '#000',
+    fontSize: 14,
     lineHeight: 20,
     marginBottom: 10,
   },
@@ -886,40 +886,40 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   interestChip: {
-    borderWidth: 1,
     borderColor: '#1A1A1A',
     borderRadius: 100,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    marginRight: 8,
+    borderWidth: 1,
     marginBottom: 8,
+    marginRight: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   interestChipText: {
-    fontSize: 16,
     color: '#000',
+    fontSize: 16,
   },
   aboutItem: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     marginVertical: 5,
   },
   aboutItemText: {
-    marginLeft: 15,
     fontSize: 16,
+    marginLeft: 15,
   },
   findMatchButton: {
-    backgroundColor: '#E4423F',
-    marginTop: 30,
-    marginHorizontal: 20,
-    height: 60,
-    borderRadius: 10,
-    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#E4423F',
+    borderRadius: 10,
+    elevation: 5,
+    height: 60,
+    justifyContent: 'center',
+    marginHorizontal: 20,
+    marginTop: 30,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 3.84,
-    elevation: 5,
   },
   findMatchButtonText: {
     color: '#FFF',

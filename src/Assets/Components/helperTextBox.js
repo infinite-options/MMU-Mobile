@@ -1,39 +1,30 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
-import questionMark from '../Images/questionMarkBox.png';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { colors } from "../../../src/theme/theme";
 
-export default function HelperTextBox({ text }) {
-    return (
-        <View style={styles.container}>
-            <Image source={questionMark} style={styles.image} />
-            <View style={styles.textContainer}>
-                <Text style={styles.text}>{text}</Text>
-            </View>
-        </View>
-    );
-}
+const HelperTextBox = ({ text }) => {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.text}>{text}</Text>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
-    container: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 10,
-        backgroundColor: '#f0f0f0', 
-        borderRadius: 8,
-        marginBottom: 10,
-
-    },
-    image: {
-        width: 24,
-        height: 24,
-        marginRight: 8,
-    },
-    textContainer: {
-        flex: 1,
-    },
-    text: {
-        fontSize: 14,
-        color: '#333', 
-        fontFamily: 'sans-serif',
-    },
+  container: {
+    alignItems: "center",
+    backgroundColor: colors.gray[100],
+    borderRadius: 8,
+    justifyContent: "center",
+    marginVertical: 10,
+    padding: 15,
+    width: "100%",
+  },
+  text: {
+    color: colors.text.secondary,
+    fontSize: 14,
+    textAlign: "center",
+  },
 });
+
+export default HelperTextBox;

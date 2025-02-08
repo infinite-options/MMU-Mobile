@@ -18,7 +18,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 export default function DateType({ navigation }) {
   const route = useRoute();
   const matchedUserId = route.params?.matchedUserId || null;
-  console.log("--- matchedUserId ---", matchedUserId);
+  console.log('--- matchedUserId ---', matchedUserId);
   // Track which date type is selected
 
   const [selectedDateType, setSelectedDateType] = useState(null);
@@ -35,7 +35,7 @@ export default function DateType({ navigation }) {
         if (matchedUserId) {
           const response = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${matchedUserId}`);
           const data = await response.json();
-          console.log("--- data ---", data);
+          console.log('--- data ---', data);
           
           setMatchedUserName(data.result[0].user_first_name);
           // Parse user_date_interests as JSON and provide empty array fallback
@@ -188,8 +188,8 @@ export default function DateType({ navigation }) {
 const styles = StyleSheet.create({
   // Overall container
   container: {
-    flex: 1,
     backgroundColor: '#FFF',
+    flex: 1,
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
@@ -198,9 +198,9 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     backgroundColor: '#F5F5F5',
     borderRadius: 20,
-    padding: 8,
     marginBottom: 20,
     marginTop: 30,
+    padding: 8,
   },
   // Hearts container
   heartsContainer: {
@@ -228,31 +228,31 @@ const styles = StyleSheet.create({
   },
   // Title
   title: {
+    color: '#000',
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#000',
     marginBottom: 10,
   },
   // Subtitle
   subtitle: {
-    fontSize: 14,
     color: '#888',
+    fontSize: 14,
     marginBottom: 20,
   },
   // Option buttons (pill shape)
   optionButton: {
-    padding: 15,
-    borderWidth: 1,
-    borderRadius: 30,
-    marginVertical: 10,
     alignItems: 'center',
+    borderRadius: 30,
+    borderWidth: 1,
+    marginVertical: 10,
+    padding: 15,
   },
   // Continue button
   continueButton: {
-    height: 50,
-    justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 30,
+    height: 50,
+    justifyContent: 'center',
     marginBottom: 10, // so there's space for the dots
   },
   continueButtonText: {
@@ -268,9 +268,9 @@ const styles = StyleSheet.create({
   },
   // Single dot
   dot: {
-    width: 8,
-    height: 8,
     borderRadius: 4,
+    height: 8,
     marginHorizontal: 4,
+    width: 8,
   },
 });

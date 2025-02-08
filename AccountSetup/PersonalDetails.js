@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,13 +6,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   Pressable,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import ProgressBar from '../src/Assets/Components/ProgressBar';
 export default function PersonalInformation({ navigation }) {
   const [formData, setFormData] = useState({
-    fullName: "",
-    birthdate: "",
+    fullName: '',
+    birthdate: '',
     heightFt: 0,
     heightIn: 0,
     numChildren: 0,
@@ -30,7 +30,7 @@ export default function PersonalInformation({ navigation }) {
   };
 
   const isFormComplete =
-    formData.fullName !== "" && formData.birthdate !== "";
+    formData.fullName !== '' && formData.birthdate !== '';
 
   return (
     <View style={styles.container}>
@@ -73,14 +73,14 @@ export default function PersonalInformation({ navigation }) {
           <View style={styles.field}>
           <Text style={styles.fieldValue}>{formData.heightFt}</Text>
             <TouchableOpacity
-              onPress={() => handleDecrement("heightFt")}
+              onPress={() => handleDecrement('heightFt')}
               style={styles.fieldButton}
             >
               <Text style={styles.fieldButtonText}>−</Text>
             </TouchableOpacity>
             <View style={styles.separator} />
             <TouchableOpacity
-              onPress={() => handleIncrement("heightFt")}
+              onPress={() => handleIncrement('heightFt')}
               style={styles.fieldButton}
             >
               <Text style={styles.fieldButtonText}>+</Text>
@@ -92,7 +92,7 @@ export default function PersonalInformation({ navigation }) {
           <View style={styles.field}>
           <Text style={styles.fieldValue}>{formData.heightIn}</Text>
             <TouchableOpacity
-              onPress={() => handleDecrement("heightIn")}
+              onPress={() => handleDecrement('heightIn')}
               style={styles.fieldButton}
             >
               <Text style={styles.fieldButtonText}>−</Text>
@@ -100,7 +100,7 @@ export default function PersonalInformation({ navigation }) {
             
             <View style={styles.separator} />
             <TouchableOpacity
-              onPress={() => handleIncrement("heightIn")}
+              onPress={() => handleIncrement('heightIn')}
               style={styles.fieldButton}
             >
               <Text style={styles.fieldButtonText}>+</Text>
@@ -115,14 +115,14 @@ export default function PersonalInformation({ navigation }) {
         <View style={styles.field}>
         <Text style={styles.fieldValue}>{formData.numChildren}</Text>
           <TouchableOpacity
-            onPress={() => handleDecrement("numChildren")}
+            onPress={() => handleDecrement('numChildren')}
             style={styles.fieldButton}
           >
             <Text style={styles.fieldButtonText}>−</Text>
           </TouchableOpacity>
           <View style={styles.separator} />
           <TouchableOpacity
-            onPress={() => handleIncrement("numChildren")}
+            onPress={() => handleIncrement('numChildren')}
             style={styles.fieldButton}
           >
             <Text style={styles.fieldButtonText}>+</Text>
@@ -134,9 +134,9 @@ export default function PersonalInformation({ navigation }) {
       <Pressable
         style={[
           styles.continueButton,
-          { backgroundColor: isFormComplete ? "#E4423F" : "#ccc" },
+          { backgroundColor: isFormComplete ? '#E4423F' : '#ccc' },
         ]}
-        onPress={isFormComplete ? () => navigation.navigate("AssignedSex") : null}
+        onPress={isFormComplete ? () => navigation.navigate('AssignedSex') : null}
         disabled={!isFormComplete}
       >
         <Text style={styles.continueButtonText}>Continue</Text>
@@ -147,7 +147,15 @@ export default function PersonalInformation({ navigation }) {
 
 const styles = StyleSheet.create({
  
-  container: {
+  backButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 20,
+    marginBottom: 20,
+    marginTop: 30,
+    padding: 8,
+},
+container: {
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 20,
@@ -155,85 +163,77 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start', // Align content to the top
     alignItems: 'stretch',
 },
-backButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 20,
-    padding: 8,
-    marginBottom: 20,
-    marginTop: 30,
-},
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#000",
-    marginBottom: 10,
+  continueButton: {
+    alignItems: 'center',
+    borderRadius: 25,
+    marginTop: 20,
+    paddingVertical: 15,
   },
-  subtitle: {
-    fontSize: 14,
-    color: "#888",
-    marginBottom: 20,
+  continueButtonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
-  input: {
-    height: 50,
+  field: {
+    alignItems: 'center',
+    backgroundColor: '#F9F9F9',
     borderRadius: 10,
+    flexDirection: 'row',
+    height: 50,
+    justifyContent: 'flex-end',
     paddingHorizontal: 15,
-    backgroundColor: "#F9F9F9",
-    marginBottom: 15,
   },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 20,
+  fieldButton: {
+    paddingHorizontal: 10,
+  },
+  fieldButtonText: {
+    color: '#888',
+    fontSize: 20,
+  },
+  fieldLabel: {
+    color: '#888',
+    fontSize: 14,
+    marginBottom: 5,
+  },
+  fieldValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   fieldWrapper: {
     flex: 1,
     marginRight: 10,
   },
   fieldWrapperFull: {
-    width: "100%",
+    marginBottom: 20,
+    width: '100%',
+  },
+  input: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 10,
+    height: 50,
+    marginBottom: 15,
+    paddingHorizontal: 15,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 20,
   },
-  fieldLabel: {
-    fontSize: 14,
-    color: "#888",
-    marginBottom: 5,
-  },
-  field: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    backgroundColor: "#F9F9F9",
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    height: 50,
-  },
-  fieldValue: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  fieldButton: {
-    paddingHorizontal: 10,
-  },
-  fieldButtonText: {
-    fontSize: 20,
-    color: "#888",
-  },
   separator: {
+    backgroundColor: '#ccc',
+    height: '60%',
     width: 1,
-    height: "60%",
-    backgroundColor: "#ccc",
   },
-  continueButton: {
-    borderRadius: 25,
-    paddingVertical: 15,
-    alignItems: "center",
-    marginTop: 20,
+  subtitle: {
+    color: '#888',
+    fontSize: 14,
+    marginBottom: 20,
   },
-  continueButtonText: {
-    color: "#FFF",
-    fontSize: 18,
-    fontWeight: "bold",
+  title: {
+    color: '#000',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
 });
 

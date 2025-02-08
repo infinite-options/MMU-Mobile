@@ -44,7 +44,7 @@ export default function AdditionalDetailsEight({navigation, route}) {
             decrementStepCount(stepIndex);
         }
         // Navigate to the next step or save the data
-        navigation.navigate("MyProfile");
+        navigation.navigate('MyProfile');
     };
 
     return (
@@ -119,85 +119,85 @@ export default function AdditionalDetailsEight({navigation, route}) {
 
 // -------------------- STYLES --------------------
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#FFF',
-        alignItems: 'stretch',
-        paddingHorizontal: 20,
-        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-    },
     backButton: {
         alignSelf: 'flex-start',
         backgroundColor: '#F5F5F5',
         borderRadius: 20,
-        padding: 8,
         marginBottom: 20,
         marginTop: 30,
+        padding: 8,
+    },
+    bottomContainer: {
+        backgroundColor: '#FFF',
+        padding: 20,
+    },
+    container: {
+        alignItems: 'stretch',
+        backgroundColor: '#FFF',
+        flex: 1,
+        paddingHorizontal: 20,
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     },
     contentContainer: {
         flex: 1,
+        marginTop: 10,
         paddingHorizontal: 20,
-        marginTop: 10,
-    },
-    title: {
-        fontSize: 26,
-        fontWeight: 'bold',
-        textAlign: 'left',
-        color: '#000',
-        marginBottom: 10,
-    },
-    subtitle: {
-        fontSize: 14,
-        color: 'gray',
-        textAlign: 'left',
-        marginBottom: 20,
-    },
-    dropdown: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 15,
-        padding: 15,
-        backgroundColor: '#F9F9F9',
-    },
-    dropdownText: {
-        fontSize: 16,
-        color: '#333',
-    },
-    dropdownList: {
-        marginTop: 10,
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 15,
-        backgroundColor: '#F9F9F9',
-        elevation: 2,
-        marginBottom: 20,
-    },
-    dropdownItem: {
-        padding: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    dropdownItemText: {
-        fontSize: 16,
-        color: '#333',
-    },
-    bottomContainer: {
-        padding: 20,
-        backgroundColor: '#FFF',
     },
     continueButton: {
-        height: 50,
-        justifyContent: 'center',
         alignItems: 'center',
         borderRadius: 25,
+        height: 50,
+        justifyContent: 'center',
         marginBottom: 20,
     },
     continueButtonText: {
         color: '#FFF',
         fontSize: 18,
         fontWeight: 'bold',
+    },
+    dropdown: {
+        alignItems: 'center',
+        backgroundColor: '#F9F9F9',
+        borderColor: '#ddd',
+        borderRadius: 15,
+        borderWidth: 1,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        padding: 15,
+    },
+    dropdownItem: {
+        borderBottomColor: '#eee',
+        borderBottomWidth: 1,
+        padding: 15,
+    },
+    dropdownItemText: {
+        color: '#333',
+        fontSize: 16,
+    },
+    dropdownList: {
+        backgroundColor: '#F9F9F9',
+        borderColor: '#ddd',
+        borderRadius: 15,
+        borderWidth: 1,
+        elevation: 2,
+        marginBottom: 20,
+        marginTop: 10,
+    },
+    dropdownText: {
+        color: '#333',
+        fontSize: 16,
+    },
+    subtitle: {
+        color: 'gray',
+        fontSize: 14,
+        marginBottom: 20,
+        textAlign: 'left',
+    },
+    title: {
+        color: '#000',
+        fontSize: 26,
+        fontWeight: 'bold',
+        marginBottom: 10,
+        textAlign: 'left',
     },
 });

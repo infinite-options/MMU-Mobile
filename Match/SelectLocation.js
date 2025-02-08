@@ -46,7 +46,7 @@ export default function SelectLocation() {
             }
 
             const result = await response.json();
-            console.log("Success:", result);
+            console.log('Success:', result);
             return result;
         } catch (error) {
             console.error('API Error:', error);
@@ -121,74 +121,74 @@ export default function SelectLocation() {
 }
 
 const styles = StyleSheet.create({
-    safeArea:{
-        flex: 1,
-    },
-    container: {
-        padding: 20,
-        alignItems: 'center',
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
     avatar: {
-        width: 50,
-        height: 50,
+        borderColor: 'white',
         borderRadius: 25,
         borderWidth: 2,
-        borderColor: 'white',
+        height: 50,
+        width: 50,
     },
     avatarOverlap: {
         marginLeft: -15,
         zIndex: 1,
     },
-    username: {
-        fontSize: 20,
-        marginLeft: 10,
-        fontFamily: 'Lexend',
+    container: {
+        alignItems: 'center',
+        padding: 20,
     },
-    title: {
-        fontSize: 22,
-        textAlign: 'center',
-        marginVertical: 15,
-        fontFamily: 'Lexend',
+    header: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        marginBottom: 20,
     },
     highlightedText: {
         color: '#E4423F',
     },
-    textInputContainer: {
-        width: '100%',
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-    },
-    textInput: {
-        height: 44,
-        borderColor: '#DDD',
-        borderWidth: 1,
-        borderRadius: 10,
-        paddingHorizontal: 10,
-        fontSize: 16,
-        backgroundColor: '#FFFFFF',
-        color: '#333',
-    },
     map: {
-        width: '100%',
-        height: 300,
         borderRadius: 10,
+        height: 300,
         marginTop: 20,
+        width: '100%',
     },
     nextButton: {
         backgroundColor: '#E4423F',
-        paddingVertical: 15,
-        paddingHorizontal: 40,
         borderRadius: 20,
         marginTop: 20,
+        paddingHorizontal: 40,
+        paddingVertical: 15,
     },
     nextButtonText: {
         color: 'white',
-        fontSize: 18,
         fontFamily: 'Lexend',
+        fontSize: 18,
+    },
+    safeArea:{
+        flex: 1,
+    },
+    textInput: {
+        backgroundColor: '#FFFFFF',
+        borderColor: '#DDD',
+        borderRadius: 10,
+        borderWidth: 1,
+        color: '#333',
+        fontSize: 16,
+        height: 44,
+        paddingHorizontal: 10,
+    },
+    textInputContainer: {
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        width: '100%',
+    },
+    title: {
+        fontFamily: 'Lexend',
+        fontSize: 22,
+        marginVertical: 15,
+        textAlign: 'center',
+    },
+    username: {
+        fontFamily: 'Lexend',
+        fontSize: 20,
+        marginLeft: 10,
     },
 });

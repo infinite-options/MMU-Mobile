@@ -114,58 +114,46 @@ export default function VerifyPhoneNumber2({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-  },
   backButton: {
     alignSelf: 'flex-start',
     backgroundColor: '#F5F5F5',
     borderRadius: 20,
-    padding: 8,
     marginBottom: 20,
     marginTop: 30,
+    padding: 8,
   },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: 'gray',
-    marginBottom: 20,
+  codeInput: {
+    backgroundColor: '#F9F9F9',
+    borderColor: '#ddd',
+    borderRadius: 10,
+    borderWidth: 1,
+    fontSize: 18,
+    height: 50,
     textAlign: 'center',
+    width: 50,
   },
   codeInputContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '80%',
     marginBottom: 30,
+    width: '80%',
   },
-  codeInput: {
-    width: 50,
-    height: 50,
-    backgroundColor: '#F9F9F9',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    fontSize: 18,
-    textAlign: 'center',
+  container: {
+    backgroundColor: '#FFF',
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
+  content: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
   },
   continueButton: {
-    height: 50,
-    justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 25,
+    height: 50,
+    justifyContent: 'center',
     marginBottom: 20,
     marginHorizontal: 20,
   },
@@ -175,12 +163,24 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   resendText: {
-    textAlign: 'center',
     color: '#999',
     fontSize: 14,
+    textAlign: 'center',
   },
   resendTextLink: {
     color: 'red',
     fontWeight: 'bold',
+  },
+  subtitle: {
+    color: 'gray',
+    fontSize: 14,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  title: {
+    color: '#000',
+    fontSize: 26,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
 });

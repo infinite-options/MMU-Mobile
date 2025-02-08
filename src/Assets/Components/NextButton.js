@@ -1,47 +1,30 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React from "react";
+import { TouchableOpacity, Text, StyleSheet } from "react-native";
+import { colors } from "../../../src/theme/theme";
 
-const NextButton = ({ next, onPress }) => {
-    const navigation = useNavigation();
-
-    const handleNavigate = () => {
-        if (onPress) {
-            onPress();
-        }
-        navigation.navigate(next);
-    };
-
-    return (
-        <View style={styles.container}>
-            <TouchableOpacity
-                style={styles.button}
-                onPress={handleNavigate}
-            >
-                <Text style={styles.buttonText}>Next</Text>
-            </TouchableOpacity>
-        </View>
-    );
+const NextButton = ({ onPress, title = "Next" }) => {
+  return (
+    <TouchableOpacity style={styles.button} onPress={onPress}>
+      <Text style={styles.buttonText}>{title}</Text>
+    </TouchableOpacity>
+  );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginVertical: 40,
-    },
-    button: {
-        width: 130,
-        backgroundColor: '#E4423F',
-        borderRadius: 25,
-        height: 45,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    buttonText: {
-        color: 'white',
-        fontSize: 18,
-    },
+  button: {
+    alignItems: "center",
+    backgroundColor: colors.primary,
+    borderRadius: 25,
+    height: 50,
+    justifyContent: "center",
+    marginVertical: 10,
+    width: "100%",
+  },
+  buttonText: {
+    color: colors.text.light,
+    fontSize: 16,
+    fontWeight: "600",
+  },
 });
 
 export default NextButton;

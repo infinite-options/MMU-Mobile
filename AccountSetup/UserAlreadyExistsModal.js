@@ -1,5 +1,5 @@
-import React from "react";
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import React from 'react';
+import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 const UserAlreadyExistsModal = ({ isOpen, onCancel, email }) => {
   return (
@@ -26,46 +26,46 @@ const UserAlreadyExistsModal = ({ isOpen, onCancel, email }) => {
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  button: {
+    backgroundColor: '#007bff',
+    borderRadius: 5,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
-  modalContainer: {
-    width: 300,
-    padding: 20,
-    backgroundColor: "white",
-    borderRadius: 10,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 15,
+  email: {
+    fontWeight: 'bold',
   },
   message: {
     fontSize: 16,
-    textAlign: "center",
     marginBottom: 20,
+    textAlign: 'center',
   },
-  email: {
-    fontWeight: "bold",
+  modalContainer: {
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    elevation: 5,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    width: 300,
   },
-  button: {
-    backgroundColor: "#007bff",
-    borderRadius: 5,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+  modalOverlay: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    flex: 1,
+    justifyContent: 'center',
   },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
   },
 });
 

@@ -1,13 +1,13 @@
-import React, { useState } from "react";
-import { SafeAreaView, Platform, StatusBar, View, StyleSheet, TouchableOpacity, Pressable, Alert, Image } from "react-native";
-import { Text, TextInput } from "react-native-paper";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import ProgressBar from "../src/Assets/Components/ProgressBar";
+import React, { useState } from 'react';
+import { SafeAreaView, Platform, StatusBar, View, StyleSheet, TouchableOpacity, Pressable, Alert, Image } from 'react-native';
+import { Text, TextInput } from 'react-native-paper';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import ProgressBar from '../src/Assets/Components/ProgressBar';
 
 // Helper to calculate age from "dd/mm/yyyy"
 function calculateAge(birthdateString) {
-  const [day, month, year] = birthdateString.split("/").map(Number);
+  const [day, month, year] = birthdateString.split('/').map(Number);
   const today = new Date();
   const birthDate = new Date(year, month - 1, day); // JS months are 0-indexed
   let age = today.getFullYear() - birthDate.getFullYear();
@@ -25,22 +25,22 @@ function calculateAge(birthdateString) {
 // Helper to add slashes as the user types
 function formatBirthdate(input) {
   // Remove non-digit characters
-  const digitsOnly = input.replace(/\D/g, "");
+  const digitsOnly = input.replace(/\D/g, '');
 
   // Build up "DD/MM/YYYY" format step by step
   let formatted = digitsOnly;
   if (digitsOnly.length > 2) {
-    formatted = digitsOnly.slice(0, 2) + "/" + digitsOnly.slice(2);
+    formatted = digitsOnly.slice(0, 2) + '/' + digitsOnly.slice(2);
   }
   if (digitsOnly.length > 4) {
-    formatted = digitsOnly.slice(0, 2) + "/" + digitsOnly.slice(2, 4) + "/" + digitsOnly.slice(4, 8); // limit to 8 digits total
+    formatted = digitsOnly.slice(0, 2) + '/' + digitsOnly.slice(2, 4) + '/' + digitsOnly.slice(4, 8); // limit to 8 digits total
   }
   return formatted;
 }
 
 export default function BirthdayInput({ navigation }) {
-  const [birthdate, setBirthdate] = useState("");
-  const [warning, setWarning] = useState("");
+  const [birthdate, setBirthdate] = useState('');
+  const [warning, setWarning] = useState('');
   const [isValid, setIsValid] = useState(false);
 
   // Simple regex to check dd/mm/yyyy format
@@ -56,14 +56,14 @@ export default function BirthdayInput({ navigation }) {
 
     // 2) If length < 10, user hasn't typed a full "dd/mm/yyyy" yet
     if (formatted.length < 10) {
-      setWarning("");
+      setWarning('');
       setIsValid(false);
       return;
     }
 
     // 3) Validate format
     if (!isValidDate(formatted)) {
-      setWarning("Please enter a valid date in dd/mm/yyyy.");
+      setWarning('Please enter a valid date in dd/mm/yyyy.');
       setIsValid(false);
       return;
     }
@@ -71,13 +71,13 @@ export default function BirthdayInput({ navigation }) {
     // 4) Check if user is at least 18
     const age = calculateAge(formatted);
     if (age < 18) {
-      setWarning("You must be 18+ to use MeetMeUp.");
+      setWarning('You must be 18+ to use MeetMeUp.');
       setIsValid(false);
       return;
     }
 
     // 5) If all checks pass, clear warning and mark valid
-    setWarning("");
+    setWarning('');
     setIsValid(true);
   };
 
@@ -90,23 +90,23 @@ export default function BirthdayInput({ navigation }) {
 
     try {
       // Store both age and verification status
-      await AsyncStorage.setItem("user_age", age.toString());
-      await AsyncStorage.setItem("user_birthdate", birthdate);
-      await AsyncStorage.setItem("userIsVerified", "true");
+      await AsyncStorage.setItem('user_age', age.toString());
+      await AsyncStorage.setItem('user_birthdate', birthdate);
+      await AsyncStorage.setItem('userIsVerified', 'true');
     } catch (error) {
-      console.error("Error storing user data:", error);
-      Alert.alert("Storage Error", "Could not save your information.");
+      console.error('Error storing user data:', error);
+      Alert.alert('Storage Error', 'Could not save your information.');
       return;
     }
 
-    navigation.navigate("Height");
+    navigation.navigate('Height');
   };
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Image source={require("../assets/icons/backarrow.png")} />
+        <Image source={require('../assets/icons/backarrow.png')} />
       </TouchableOpacity>
 
       {/* Progress Bar */}
@@ -119,103 +119,103 @@ export default function BirthdayInput({ navigation }) {
 
         {/* Input Field */}
         <TextInput
-          label='dd/mm/yyyy'
+          label="dd/mm/yyyy"
           value={birthdate}
           onChangeText={handleInputChange}
-          mode='outlined'
+          mode="outlined"
           style={styles.input}
-          keyboardType='numeric'
-          outlineStyle={[styles.textInputOutline, warning !== "" && { borderColor: "#E4423F", borderWidth: 2, borderRadius: 10 }]}
+          keyboardType="numeric"
+          outlineStyle={[styles.textInputOutline, warning !== '' && { borderColor: '#E4423F', borderWidth: 2, borderRadius: 10 }]}
           maxLength={10} // dd/mm/yyyy -> 10 characters
         />
 
         {/* Warning Section */}
-        {warning !== "" && (
+        {warning !== '' && (
           <View style={styles.warningContainer}>
-            <MaterialIcons name='error-outline' size={20} color='red' />
+            <MaterialIcons name="error-outline" size={20} color="red" />
             <Text style={styles.warningText}>{warning}</Text>
           </View>
         )}
       </View>
 
       {/* Continue Button */}
-      <Pressable style={[styles.continueButton, { backgroundColor: isValid ? "#E4423F" : "#F5F5F5" }]} onPress={handleContinue} disabled={!isValid}>
-        <Text style={[styles.continueButtonText, { color: isValid ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
+      <Pressable style={[styles.continueButton, { backgroundColor: isValid ? '#E4423F' : '#F5F5F5' }]} onPress={handleContinue} disabled={!isValid}>
+        <Text style={[styles.continueButtonText, { color: isValid ? '#FFF' : 'rgba(26, 26, 26, 0.25)' }]}>Continue</Text>
       </Pressable>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 25,
-    backgroundColor: "#FFF",
-    justifyContent: "flex-start",
-    alignItems: "stretch",
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
-  },
   backButton: {
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
     borderRadius: 20,
     marginBottom: 20,
     marginTop: 30,
   },
-  progressBar: {
-    marginBottom: 30,
+  container: {
+    alignItems: 'stretch',
+    backgroundColor: '#FFF',
+    flex: 1,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 25,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   content: {
     flex: 1,
-    justifyContent: "flex-start",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#000",
-    marginBottom: 20,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#888",
-    marginBottom: 50,
-  },
-  input: {
-    backgroundColor: "#FFF",
-    marginBottom: 10,
-    borderRadius: 10,
-  },
-  textInputOutline: {
-    borderWidth: 0,
-    borderColor: "#F9F9F9",
-    borderRadius: 10,
-    flex: 1,
-    alignItems: "center",
-    backgroundColor: "#F9F9F9",
-    paddingHorizontal: 15,
-    marginBottom: 20,
-    height: 50,
-  },
-  warningContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  warningText: {
-    color: "red",
-    fontSize: 14,
-    marginLeft: 8,
+    justifyContent: 'flex-start',
   },
   continueButton: {
-    height: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#E4423F",
+    alignItems: 'center',
+    backgroundColor: '#E4423F',
     borderRadius: 30,
+    height: 50,
+    justifyContent: 'center',
     marginBottom: 50,
   },
   continueButtonText: {
-    color: "#FFF",
+    color: '#FFF',
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: 'bold',
+  },
+  input: {
+    backgroundColor: '#FFF',
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  progressBar: {
+    marginBottom: 30,
+  },
+  subtitle: {
+    color: '#888',
+    fontSize: 14,
+    marginBottom: 50,
+  },
+  textInputOutline: {
+    alignItems: 'center',
+    backgroundColor: '#F9F9F9',
+    borderColor: '#F9F9F9',
+    borderRadius: 10,
+    borderWidth: 0,
+    flex: 1,
+    height: 50,
+    marginBottom: 20,
+    paddingHorizontal: 15,
+  },
+  title: {
+    color: '#000',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  warningContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginTop: 10,
+  },
+  warningText: {
+    color: 'red',
+    fontSize: 14,
+    marginLeft: 8,
   },
 });

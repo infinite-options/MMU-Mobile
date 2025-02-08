@@ -26,8 +26,8 @@ export default function EnableLocationScreen({ navigation }) {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         // If they deny, just store "False" in user_location_service
-        await updateLocationServiceInDB("False");
-        navigation.navigate("EnableNotificationsScreen");
+        await updateLocationServiceInDB('False');
+        navigation.navigate('EnableNotificationsScreen');
         return;
       }
 
@@ -36,29 +36,29 @@ export default function EnableLocationScreen({ navigation }) {
       setLocation(currentPosition.coords);
 
       // 3) user_location_service => "True"
-      await updateLocationServiceInDB("True");
+      await updateLocationServiceInDB('True');
 
       // 4) Navigate to the next screen
-      navigation.navigate("EnableNotificationsScreen");
+      navigation.navigate('EnableNotificationsScreen');
     } catch (error) {
       console.error('Error enabling location:', error);
       // If there's an error, still store "False" or handle differently
-      await updateLocationServiceInDB("False");
-      navigation.navigate("EnableNotificationsScreen");
+      await updateLocationServiceInDB('False');
+      navigation.navigate('EnableNotificationsScreen');
     }
   };
 
   // Called if user taps "Maybe Later"
   const handleMaybeLater = async () => {
     // user_location_service => "False"
-    await updateLocationServiceInDB("False");
-    navigation.navigate("EnableNotificationsScreen");
+    await updateLocationServiceInDB('False');
+    navigation.navigate('EnableNotificationsScreen');
   };
 
   // Helper to store user_location_service in DB
   const updateLocationServiceInDB = async (value) => {
     // Build a FormData with user_location_service = True or False
-    const url = "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo";
+    const url = 'https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo';
     const formData = new FormData();
     const uid = await AsyncStorage.getItem('user_uid');
     const email = await AsyncStorage.getItem('user_email_id');
@@ -67,15 +67,15 @@ export default function EnableLocationScreen({ navigation }) {
     formData.append('user_location_service', value);
     try {
       const response = await fetch(url, {
-        method: "PUT",
+        method: 'PUT',
         body: formData,
       });
       if (response.ok) {
         const result = await response.json();
-        console.log("Response from server:", result);
+        console.log('Response from server:', result);
       }
     } catch (error) {
-      console.log("Error updating user data:", error);
+      console.log('Error updating user data:', error);
     }
   };
 
@@ -119,61 +119,61 @@ export default function EnableLocationScreen({ navigation }) {
 
 // STYLES
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF',
-    justifyContent: 'flex-start',
-    alignItems: 'stretch',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-  },
   backButton: {
     alignSelf: 'flex-start',
     backgroundColor: '#F5F5F5',
     borderRadius: 20,
-    padding: 8,
-    marginTop: 30,
     marginBottom: 20,
+    marginTop: 30,
+    padding: 8,
+  },
+  container: {
+    alignItems: 'stretch',
+    backgroundColor: '#FFF',
+    flex: 1,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   content: {
+    alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-  locationIcon: {
-    marginBottom: 30,
-    width: 100,
-    height: 100,
-    tintColor: "#CCC",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: 'gray',
-    textAlign: 'center',
-    marginHorizontal: 40,
-    marginBottom: 50,
   },
   enableButton: {
     backgroundColor: '#E4423F',
     borderRadius: 25,
-    paddingVertical: 15,
-    paddingHorizontal: 30,
     marginBottom: 20,
+    paddingHorizontal: 30,
+    paddingVertical: 15,
   },
   enableButtonText: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
   },
+  locationIcon: {
+    height: 100,
+    marginBottom: 30,
+    tintColor: '#CCC',
+    width: 100,
+  },
   maybeLaterText: {
-    fontSize: 16,
     color: '#000',
+    fontSize: 16,
     textDecorationLine: 'underline',
+  },
+  subtitle: {
+    color: 'gray',
+    fontSize: 14,
+    marginBottom: 50,
+    marginHorizontal: 40,
+    textAlign: 'center',
+  },
+  title: {
+    color: '#000',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
 });

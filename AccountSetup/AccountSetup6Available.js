@@ -67,13 +67,13 @@ const AccountSetup6Available = () => {
   const handleNext = async () => {
     const userId = await AsyncStorage.getItem('user_uid');
     const emailId = await AsyncStorage.getItem('user_email_id');
-    const url = "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo";
+    const url = 'https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo';
 
     const formDataToSend = new FormData();
-    formDataToSend.append("user_uid", userId);
-    formDataToSend.append("user_email_id", emailId);
-    formDataToSend.append("user_date_interests", formData.dates.join(', '));
-    formDataToSend.append("user_available_time", JSON.stringify(times));
+    formDataToSend.append('user_uid', userId);
+    formDataToSend.append('user_email_id', emailId);
+    formDataToSend.append('user_date_interests', formData.dates.join(', '));
+    formDataToSend.append('user_available_time', JSON.stringify(times));
 
     try {
       const response = await axios.put(url, formDataToSend);
@@ -127,30 +127,30 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
   },
-  headerText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  dateButton: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
     marginBottom: 10,
+    padding: 10,
   },
-  subHeaderText: {
-    fontSize: 14,
-    marginBottom: 20,
+  dateText: {
+    fontSize: 16,
   },
   gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-around',
   },
-  dateButton: {
-    backgroundColor: '#f0f0f0',
-    padding: 10,
-    borderRadius: 8,
+  headerText: {
+    fontSize: 18,
+    fontWeight: 'bold',
     marginBottom: 10,
-  },
-  dateText: {
-    fontSize: 16,
   },
   selectedDateText: {
     color: 'red',
+  },
+  subHeaderText: {
+    fontSize: 14,
+    marginBottom: 20,
   },
 });

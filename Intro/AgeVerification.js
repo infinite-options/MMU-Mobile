@@ -1,11 +1,11 @@
 // AgeVerification.js
-import React, { useState, useEffect } from "react";
-import { View, Text, Button, StyleSheet, Alert, ActivityIndicator } from "react-native";
-import { Picker } from "@react-native-picker/picker";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useState, useEffect } from 'react';
+import { View, Text, Button, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AgeVerification = ({ navigation }) => {
-  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
   const startYear = 1900;
   const currentYear = new Date().getFullYear();
@@ -29,23 +29,23 @@ const AgeVerification = ({ navigation }) => {
   useEffect(() => {
     const checkVerifiedStatus = async () => {
       try {
-        const isVerified = await AsyncStorage.getItem("userIsVerified");
-        const hasCompletedOnboarding = await AsyncStorage.getItem("hasCompletedOnboarding");
+        const isVerified = await AsyncStorage.getItem('userIsVerified');
+        const hasCompletedOnboarding = await AsyncStorage.getItem('hasCompletedOnboarding');
 
-        if (isVerified === "true") {
+        if (isVerified === 'true') {
           // If they've completed onboarding before, skip to main app
-          if (hasCompletedOnboarding === "true") {
-            navigation.replace("MatchProfileDisplay");
+          if (hasCompletedOnboarding === 'true') {
+            navigation.replace('MatchProfileDisplay');
           } else {
             // they've verified age but haven't completed onboarding
-            navigation.replace("LandingPage");
+            navigation.replace('LandingPage');
           }
         } else {
           // not verified, show the normal UI
           setLoading(false);
         }
       } catch (err) {
-        console.warn("Error reading AsyncStorage:", err);
+        console.warn('Error reading AsyncStorage:', err);
         setLoading(false);
       }
     };
@@ -71,7 +71,7 @@ const AgeVerification = ({ navigation }) => {
   const handleSubmit = async () => {
     const birthDate = new Date(selectedYear, selectedMonth, selectedDay);
     if (isNaN(birthDate.getTime())) {
-      Alert.alert("Invalid Date", "Please select a valid date.");
+      Alert.alert('Invalid Date', 'Please select a valid date.');
       return;
     }
 
@@ -83,16 +83,16 @@ const AgeVerification = ({ navigation }) => {
     }
 
     if (age < 18) {
-      Alert.alert("Underage", "You must be 18 years or older to continue.");
+      Alert.alert('Underage', 'You must be 18 years or older to continue.');
     } else {
       try {
         // Store verified status in AsyncStorage
-        await AsyncStorage.setItem("userIsVerified", "true");
+        await AsyncStorage.setItem('userIsVerified', 'true');
         // Then navigate to the next screen
-        navigation.replace("LandingPage");
+        navigation.replace('LandingPage');
       } catch (error) {
-        console.warn("Error setting AsyncStorage:", error);
-        Alert.alert("Error", "Could not save verification status. Please try again later.");
+        console.warn('Error setting AsyncStorage:', error);
+        Alert.alert('Error', 'Could not save verification status. Please try again later.');
       }
     }
   };
@@ -101,7 +101,7 @@ const AgeVerification = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size='large' color='#999' />
+        <ActivityIndicator size="large" color="#999" />
       </View>
     );
   }
@@ -136,7 +136,7 @@ const AgeVerification = ({ navigation }) => {
       </View>
 
       <View style={styles.buttonContainer}>
-        <Button title='Submit' onPress={handleSubmit} color='#65a844' />
+        <Button title="Submit" onPress={handleSubmit} color="#65a844" />
       </View>
     </View>
   );
@@ -145,40 +145,40 @@ const AgeVerification = ({ navigation }) => {
 export default AgeVerification;
 
 const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+  buttonContainer: {
+    alignSelf: 'center',
+    marginTop: 20,
+    width: '50%',
   },
   container: {
+    backgroundColor: '#ffffff',
     flex: 1,
-    backgroundColor: "#ffffff",
+    justifyContent: 'center',
     padding: 20,
-    justifyContent: "center",
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  subtext: {
-    fontSize: 16,
-    textAlign: "center",
-    marginBottom: 4,
+  loadingContainer: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
   },
   pickerContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
     marginTop: 16,
   },
   pickerStyle: {
     flex: 1,
     height: 50,
   },
-  buttonContainer: {
-    marginTop: 20,
-    alignSelf: "center",
-    width: "50%",
+  subtext: {
+    fontSize: 16,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
   },
 });

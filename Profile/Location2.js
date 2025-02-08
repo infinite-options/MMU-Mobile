@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { postUserData } from "../Api.js";
+import { postUserData } from '../Api.js';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const LocationPage2 = () => {
@@ -69,80 +69,80 @@ const LocationPage2 = () => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#E4423F',
-  },
-  container: {
-    flexGrow: 1,
-    backgroundColor: '#E4423F',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    paddingVertical: 20,
-    paddingHorizontal: 10,
-  },
   arrowIcon: {
-    width: 30,
     height: 30,
     marginRight: 10,
+    width: 30,
   },
-  headerText: {
-    fontSize: 22,
+  bodyText: {
     color: '#FFFFFF',
-    fontWeight: 'normal',
+    fontSize: 16,
+    marginBottom: 32,
+    textAlign: 'center',
+  },
+  buttonContainer: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  buttonText: {
+    color: '#000000',
+    fontSize: 18,
+  },
+  container: {
+    alignItems: 'center',
+    backgroundColor: '#E4423F',
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
   },
   contentContainer: {
     alignItems: 'center',
     marginTop: 20,
   },
+  headerText: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: 'normal',
+  },
   icon: {
-    width: 70,
     height: 70,
     marginBottom: 16,
-  },
-  mainTitle: {
-    fontSize: 22,
-    fontWeight: '600',
-    textAlign: 'center',
-    color: '#FFFFFF',
-    marginBottom: 16,
-  },
-  bodyText: {
-    fontSize: 16,
-    textAlign: 'center',
-    color: '#FFFFFF',
-    marginBottom: 32,
-  },
-  buttonContainer: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  yesButton: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 25,
-    width: 150,
-    height: 45,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
+    width: 70,
   },
   laterButton: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  buttonText: {
-    fontSize: 18,
-    color: '#000000',
-  },
   laterButtonText: {
-    fontSize: 18,
     color: '#FFFFFF',
+    fontSize: 18,
+  },
+  mainTitle: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '600',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  safeArea: {
+    backgroundColor: '#E4423F',
+    flex: 1,
+  },
+  topBar: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    paddingHorizontal: 10,
+    paddingVertical: 20,
+    width: '100%',
+  },
+  yesButton: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 25,
+    height: 45,
+    justifyContent: 'center',
+    marginBottom: 16,
+    width: 150,
   },
 });
 

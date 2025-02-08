@@ -61,42 +61,42 @@ export default BodyScroll;
 
 // Styles for the component
 const styles = StyleSheet.create({
+  completeButton: {
+    alignItems: 'center',
+    backgroundColor: 'red',
+    borderRadius: 5,
+    marginTop: 20,
+    padding: 10,
+  },
+  completeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
   container: {
+    alignItems: 'flex-end',
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'flex-end',
   },
   modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  pickerContainer: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
-    width: '150%',
-  },
-  pickerTitle: {
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    flex: 1,
+    justifyContent: 'flex-end',
   },
   picker: {
     height: 150,
     width: '100%',
   },
-  completeButton: {
-    backgroundColor: 'red',
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 20,
-    alignItems: 'center',
+  pickerContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    width: '150%',
   },
-  completeButtonText: {
-    color: '#fff',
-    fontSize: 16,
+  pickerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
   },
 });

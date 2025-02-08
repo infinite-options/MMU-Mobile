@@ -53,7 +53,7 @@ export default function AccountSetup2Create() {
         try {
           await AsyncStorage.setItem(key, value);
         } catch (error) {
-          console.error("Error saving user data", error);
+          console.error('Error saving user data', error);
         }
       };
     const getUserData = async (key) => {
@@ -61,14 +61,14 @@ export default function AccountSetup2Create() {
         const value = await AsyncStorage.getItem(key);
         return value;
     } catch (error) {
-        console.error("Error retrieving user data", error);
+        console.error('Error retrieving user data', error);
         return null;
     }
     };
       
 
     const handleContinue = async () => {
-        const url = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/CreateAccount/MMU";
+        const url = 'https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/CreateAccount/MMU';
         if (!formData.email || !formData.password || !formData.confirmPassword) {
             Alert.alert('Error', 'Please fill in all fields.');
             return;
@@ -78,8 +78,8 @@ export default function AccountSetup2Create() {
             return;
         }
         let data = new FormData();
-        data.append("email", formData['email']);
-        data.append("password", formData['password']);
+        data.append('email', formData['email']);
+        data.append('password', formData['password']);
         // data.append("phone_number", formData['phone_number']);
         try {
             const response = await fetch(url, {
@@ -94,7 +94,7 @@ export default function AccountSetup2Create() {
 
             const result = await response.json();
 
-            if (result.message === "User already exists") {
+            if (result.message === 'User already exists') {
                 setExisting(true);
                 Alert.alert('User Already Exists');
                 return;
@@ -105,12 +105,12 @@ export default function AccountSetup2Create() {
                 await AsyncStorage.setItem('user_email_id', formData['email']);
                 navigation.navigate('NameInput');
             } else {
-                console.error("Unexpected API response structure:", result);
-                Alert.alert("Error", "Unexpected response from server. Please try again.");
+                console.error('Unexpected API response structure:', result);
+                Alert.alert('Error', 'Unexpected response from server. Please try again.');
             }
         } catch (error) {
-            console.error("Error occurred:", error);
-            Alert.alert("Error", "There was an issue creating your account. Please try again.");
+            console.error('Error occurred:', error);
+            Alert.alert('Error', 'There was an issue creating your account. Please try again.');
         }
     };
 
@@ -175,7 +175,7 @@ export default function AccountSetup2Create() {
                 <TextInput
                     style={styles.input}
                     label="Email"
-                    mode='outlined'
+                    mode="outlined"
                     keyboardType="email-address"
                     value={formData.email}
                     onChangeText={(text) => handleInputChange('email', text)}
@@ -327,21 +327,21 @@ const styles = StyleSheet.create({
     //     marginTop: 30,
     // },
     progressBar: {
-        marginTop: 110,
         marginBottom: 30,
+        marginTop: 110,
     },
     title: {
+        color: '#000',
         fontSize: 26,
         fontWeight: 'bold',
-        textAlign: 'left',
-        color: '#000',
         marginBottom: 10,
+        textAlign: 'left',
     },
     subtitle: {
-        fontSize: 14,
         color: 'gray',
-        textAlign: 'left',
+        fontSize: 14,
         marginBottom: 20,
+        textAlign: 'left',
     },
     inputContainer: {
         marginBottom: 30,
@@ -352,20 +352,20 @@ const styles = StyleSheet.create({
     strengthBarContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginTop: 10,
         marginBottom: 5,
+        marginTop: 10,
     },
     strengthSegment: {
+        borderRadius: 3,
         flex: 1,
         height: 6,
         marginHorizontal: 2,
-        borderRadius: 3,
     },
     strengthLabel: {
         fontSize: 14,
         fontWeight: 'bold',
-        textAlign: 'right',
         marginTop: 5,
+        textAlign: 'right',
     },
     mismatchText: {
         color: 'red',
@@ -373,11 +373,11 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     continueButton: {
-        height: 50,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#E4423F",
+        alignItems: 'center',
+        backgroundColor: '#E4423F',
         borderRadius: 30,
+        height: 50,
+        justifyContent: 'center',
         marginBottom: 20,
     },
     continueButtonText: {
@@ -386,19 +386,19 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     orSeparator: {
-        flexDirection: 'row',
         alignItems: 'center',
+        flexDirection: 'row',
         marginVertical: 20,
     },
     separatorLine: {
+        backgroundColor: '#E0E0E0',
         flex: 1,
         height: 1,
-        backgroundColor: '#E0E0E0',
     },
     orText: {
-        marginHorizontal: 10,
-        fontSize: 14,
         color: 'gray',
+        fontSize: 14,
+        marginHorizontal: 10,
     },
     socialContainer: {
         flexDirection: 'row',
@@ -406,39 +406,39 @@ const styles = StyleSheet.create({
         marginBottom: 25,
     },
     socialLoginButton: {
+        alignItems: 'center',
         backgroundColor: '#F5F5F5',
         borderRadius: 50,
-        padding: 15,
-        marginHorizontal: 10,
-        alignItems: 'center',
         justifyContent: 'center',
+        marginHorizontal: 10,
+        padding: 15,
     },
     footerText: {
-        textAlign: 'center',
         color: 'gray',
         fontSize: 16,
+        textAlign: 'center',
     },
     loginLink: {
         color: '#E4423F',
         fontWeight: 'bold',
     },
     googleLogo: {
-        width: 45,
         height: 45,
+        width: 45,
     },
     appleLogo: {
-        width: 45,
         height: 45,
+        width: 45,
     },
     textInputOutline: {
-        borderWidth: 0,
-        borderColor: '#F9F9F9',
-        borderRadius: 10,
-        flex: 1,
         alignItems: 'center',
         backgroundColor: '#F9F9F9',
-        paddingHorizontal: 15,
+        borderColor: '#F9F9F9',
+        borderRadius: 10,
+        borderWidth: 0,
+        flex: 1,
         height: 50,
+        paddingHorizontal: 15,
     },
     input: {
         marginBottom: 15, // Space between input fields

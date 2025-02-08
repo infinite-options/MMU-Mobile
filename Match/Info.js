@@ -12,8 +12,8 @@ const Info = ({ img, info }) => {
 
 const styles = StyleSheet.create({
     container: {
-        flexDirection: 'row',
         alignItems: 'center',
+        flexDirection: 'row',
         marginBottom: 10,
     },
     icon: {

@@ -24,10 +24,10 @@ export default function AdditionalDetailsFive({ navigation, route }) {
 
   // Single-select options for smoking frequency
   const options = [
-    "I don’t smoke",
-    "I smoke socially",
-    "I smoke casually",
-    "I smoke regularly",
+    'I don’t smoke',
+    'I smoke socially',
+    'I smoke casually',
+    'I smoke regularly',
   ];
 
   // Keep track of user’s choice
@@ -116,64 +116,64 @@ export default function AdditionalDetailsFive({ navigation, route }) {
 
 // -------------------- STYLES --------------------
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF',
-    alignItems: 'stretch',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-  },
   backButton: {
     alignSelf: 'flex-start',
     backgroundColor: '#F5F5F5',
     borderRadius: 20,
-    padding: 8,
     marginBottom: 20,
     marginTop: 30,
+    padding: 8,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    textAlign: 'left',
-    color: '#000',
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: 'gray',
-    textAlign: 'left',
-    marginBottom: 20,
-  },
-  optionContainer: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 25,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-  },
-  optionSelected: {
-    backgroundColor: '#000',
-    borderColor: '#000',
-  },
-  optionText: {
-    fontSize: 16,
-    color: '#333',
-    textAlign: 'center',
-  },
-  optionTextSelected: {
-    color: '#FFF',
+  container: {
+    alignItems: 'stretch',
+    backgroundColor: '#FFF',
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   continueButton: {
-    height: 60,
-    justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 25,
+    height: 60,
+    justifyContent: 'center',
     marginBottom: 20,
   },
   continueButtonText: {
     color: '#FFF',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  optionContainer: {
+    borderColor: '#ccc',
+    borderRadius: 25,
+    borderWidth: 1,
+    marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  optionSelected: {
+    backgroundColor: '#000',
+    borderColor: '#000',
+  },
+  optionText: {
+    color: '#333',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  optionTextSelected: {
+    color: '#FFF',
+  },
+  subtitle: {
+    color: 'gray',
+    fontSize: 14,
+    marginBottom: 20,
+    textAlign: 'left',
+  },
+  title: {
+    color: '#000',
+    fontSize: 26,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'left',
   },
 });

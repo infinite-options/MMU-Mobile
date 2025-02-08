@@ -56,14 +56,14 @@ export default function LocationScreen({ navigation }) {
         const uid = await AsyncStorage.getItem('user_uid');
         const email = await AsyncStorage.getItem('user_email_id');
         if (!uid || !email) {
-          Alert.alert("Error", "User credentials not found in AsyncStorage.");
+          Alert.alert('Error', 'User credentials not found in AsyncStorage.');
           navigation.goBack();
           return;
         }
         setUserUid(uid);
         setUserEmail(email);
       } catch (error) {
-        console.error("Error fetching user credentials:", error);
+        console.error('Error fetching user credentials:', error);
       }
     };
     fetchUserCredentials();
@@ -150,26 +150,26 @@ export default function LocationScreen({ navigation }) {
   // Continue => Save lat/long to server
   const handleContinue = async () => {
     if (location) {
-      const url = "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo";
+      const url = 'https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo';
     const fd = new FormData();
 
-    fd.append("user_uid", userUid);
-    fd.append("user_email_id", userEmail);
-    fd.append("user_latitude", location.latitude);
-    fd.append("user_longitude", location.longitude);
-    fd.append("user_address", address);
+    fd.append('user_uid', userUid);
+    fd.append('user_email_id', userEmail);
+    fd.append('user_latitude', location.latitude);
+    fd.append('user_longitude', location.longitude);
+    fd.append('user_address', address);
     
       try {
         const response = await fetch(url, {
-          method: "PUT",
+          method: 'PUT',
           body: fd,
         });
         if (response.ok) {
           const result = await response.json();
-          console.log("Response from server:", result);
+          console.log('Response from server:', result);
         }
       } catch (error) {
-        console.log("Error updating user data:", error);
+        console.log('Error updating user data:', error);
       }
       // Then navigate to the next screen
       navigation.navigate('EnableLocationScreen', { location });
@@ -266,33 +266,97 @@ export default function LocationScreen({ navigation }) {
 
 // STYLES
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF',
-    justifyContent: 'flex-start',
-    alignItems: 'stretch',
-    paddingHorizontal: 25,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-  },
   backButton: {
     alignSelf: 'flex-start',
     borderRadius: 20,
     marginBottom: 20,
     marginTop: 30,
   },
+  container: {
+    alignItems: 'stretch',
+    backgroundColor: '#FFF',
+    flex: 1,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 25,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
+  continueButton: {
+    alignItems: 'center',
+    borderRadius: 30,
+    height: 50,
+    justifyContent: 'center',
+    marginBottom: 50,
+  },
+  continueButtonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  link: {
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
+  },
+  map: {
+    flex: 1,
+  },
+  mapContainer: {
+    borderRadius: 10,
+    height: 250,
+    marginBottom: 20,
+    overflow: 'hidden',
+    width: '100%',
+  },
   progressBar: {
     marginBottom: 30,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  searchIconWrapper: {
+    position: 'absolute',
+    right: 15,
+  },
+  searchInput: {
     color: '#000',
-    marginBottom: 20,
+    fontSize: 16,
+    height: 48,
+  },
+  searchRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  searchWrapper: {
+    borderColor: '#CCC',
+    borderRadius: 25,
+    borderWidth: 1,
+    flex: 1,
+    paddingHorizontal: 15,
   },
   subtitle: {
-    fontSize: 14,
     color: 'gray',
+    fontSize: 14,
     marginBottom: 50,
+  },
+  suggestionItem: {
+    borderBottomColor: '#EEE',
+    borderBottomWidth: 1,
+    padding: 10,
+  },
+  suggestionsContainer: {
+    backgroundColor: '#FFF',
+    borderColor: '#CCC',
+    borderRadius: 5,
+    borderWidth: 1,
+    marginBottom: 5,
+  },
+  title: {
+    color: '#000',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  trialBody: {
+    color: '#000',
+    fontSize: 14,
+    lineHeight: 20,
   },
   trialBox: {
     marginBottom: 20,
@@ -302,69 +366,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 5,
     textTransform: 'uppercase',
-  },
-  trialBody: {
-    fontSize: 14,
-    color: '#000',
-    lineHeight: 20,
-  },
-  link: {
-    fontWeight: 'bold',
-    textDecorationLine: 'underline',
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  searchWrapper: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#CCC',
-    borderRadius: 25,
-    paddingHorizontal: 15,
-  },
-  searchInput: {
-    height: 48,
-    fontSize: 16,
-    color: '#000',
-  },
-  searchIconWrapper: {
-    position: 'absolute',
-    right: 15,
-  },
-  suggestionsContainer: {
-    backgroundColor: '#FFF',
-    borderColor: '#CCC',
-    borderWidth: 1,
-    borderRadius: 5,
-    marginBottom: 5,
-  },
-  suggestionItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEE',
-  },
-  mapContainer: {
-    width: '100%',
-    height: 250,
-    borderRadius: 10,
-    overflow: 'hidden',
-    marginBottom: 20,
-  },
-  map: {
-    flex: 1,
-  },
-  continueButton: {
-    height: 50,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 50,
-  },
-  continueButtonText: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: 'bold',
   },
 });

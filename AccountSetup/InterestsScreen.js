@@ -88,7 +88,7 @@ export default function InterestsScreen({ navigation }) {
   // Helper to store user_location_service in DB
   const updateUserInfoServiceInDB = async () => {
     // Build a FormData with user_location_service = True or False
-    const url = "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo";
+    const url = 'https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo';
     const formData = new FormData();
     const uid = await AsyncStorage.getItem('user_uid');
     const email = await AsyncStorage.getItem('user_email_id');
@@ -116,18 +116,18 @@ export default function InterestsScreen({ navigation }) {
     formData.append('user_sexuality', sexuality);
     formData.append('user_open_to', openTo);
     formData.append('user_general_interests', interests);
-    console.log("Form data from InterestsScreen:", formData);
+    console.log('Form data from InterestsScreen:', formData);
     try {
       const response = await fetch(url, {
-        method: "PUT",
+        method: 'PUT',
         body: formData,
       });
       if (response.ok) {
         const result = await response.json();
-        console.log("Response from server:", result);
+        console.log('Response from server:', result);
       }
     } catch (error) {
-      console.log("Error updating user data:", error);
+      console.log('Error updating user data:', error);
     }
   };
 
@@ -241,17 +241,17 @@ const styles = StyleSheet.create({
   // Title
   content: {
     flex: 1,
-    justifyContent: "flex-start",
+    justifyContent: 'flex-start',
   },
   title: {
+    color: '#000',
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#000",
+    fontWeight: 'bold',
     marginBottom: 20,
   },
   subtitle: {
+    color: '#888',
     fontSize: 14,
-    color: "#888",
     marginBottom: 50,
   },
   // Container for the interests, wrapping them onto multiple lines
@@ -263,40 +263,40 @@ const styles = StyleSheet.create({
   },
   // The pill-shaped interest button
   interestButton: {
-    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
     borderRadius: 30,
+    borderWidth: 1,
+    flexDirection: 'row',
     margin: 5,
-    paddingVertical: 8,
     paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   interestText: {
-    marginLeft: 5,
     fontSize: 16,
     fontWeight: 500,
+    marginLeft: 5,
   },
   // The small circle on the left
   circle: {
-    width: 20,
-    height: 20,
-    borderWidth: 1,
-    borderRadius: 10,
     alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    height: 20,
     justifyContent: 'center',
+    width: 20,
   },
   // Continue button
   continueButton: {
-    height: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#E4423F",
+    alignItems: 'center',
+    backgroundColor: '#E4423F',
     borderRadius: 30,
+    height: 50,
+    justifyContent: 'center',
     marginBottom: 50,
   },
   continueButtonText: {
-    color: "#FFF",
+    color: '#FFF',
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
 });

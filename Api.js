@@ -19,7 +19,7 @@ export async function postUserData(formData){
     } catch (error) {
            // console.log('Error--: ' + error.message);
     } 
-};
+}
 
 export async function fetchUserInfo(user_uid) {
     try {
@@ -32,10 +32,10 @@ export async function fetchUserInfo(user_uid) {
       }
       const data = await response.json();
       //console.log('data.result[0]',data.result[0]);
-      console.log("TESTINGGG",data.result[0])
+      console.log('TESTINGGG',data.result[0])
       return data.result[0];
         
     } catch (error) {
         console.error('Error fetching userInfo:', error); 
     } 
-  }; 
+  } 

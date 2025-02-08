@@ -43,7 +43,7 @@ const ViewProfile = ({ setIsFlipped, liked, onClick, isLiked, showPopup, Account
     const flag = user?.user_nationality || 'Unknown Nationality';
     const popupRef = useRef(null);
     const navigation = useNavigation();
-    console.log("User Data:", user);  // Log the user data to debug
+    console.log('User Data:', user);  // Log the user data to debug
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
@@ -115,91 +115,6 @@ const ViewProfile = ({ setIsFlipped, liked, onClick, isLiked, showPopup, Account
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flexGrow: 1,
-        paddingHorizontal: 20,
-        paddingVertical: 20,
-    },
-    popup: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    },
-    popupContent: {
-        backgroundColor: '#fff',
-        padding: 20,
-        borderRadius: 10,
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        marginBottom: 20,
-    },
-    likedIcon: {
-        position: 'absolute',
-        left: '5%',
-        top: '1%',
-        width: 30,
-        height: 30,
-    },
-    likeIcon: {
-        position: 'absolute',
-        right: '5%',
-        top: '1%',
-        width: 30,
-        height: 30,
-    },
-    imageContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 20,
-    },
-    image: {
-        width: '48%',
-        height: 200,
-    },
-    nameText: {
-        fontSize: 30,
-        fontFamily: 'Lexend',
-        textAlign: 'center',
-        marginBottom: 10,
-    },
-    detailsText: {
-        fontSize: 20,
-        textAlign: 'center',
-        marginBottom: 20,
-    },
-    interestsSection: {
-        marginBottom: 20,
-    },
-    sectionTitle: {
-        fontSize: 18,
-        marginBottom: 10,
-    },
-    interestsContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        marginBottom: 20,
-    },
-    descriptionText: {
-        fontSize: 14,
-        marginBottom: 20,
-    },
-    videoSection: {
-        alignItems: 'center',
-        marginTop: 20,
-    },
-    videoText: {
-        fontSize: 18,
-        fontFamily: 'Lexend',
-        marginTop: 10,
-    },
     button: {
         width: 130,
         backgroundColor: '#E4423F',
@@ -212,6 +127,91 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontFamily: 'Segoe UI',
         
+    },
+    container: {
+        flexGrow: 1,
+        paddingHorizontal: 20,
+        paddingVertical: 20,
+    },
+    descriptionText: {
+        fontSize: 14,
+        marginBottom: 20,
+    },
+    detailsText: {
+        fontSize: 20,
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        marginBottom: 20,
+    },
+    image: {
+        height: 200,
+        width: '48%',
+    },
+    imageContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 20,
+    },
+    interestsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        marginBottom: 20,
+    },
+    interestsSection: {
+        marginBottom: 20,
+    },
+    likeIcon: {
+        height: 30,
+        position: 'absolute',
+        right: '5%',
+        top: '1%',
+        width: 30,
+    },
+    likedIcon: {
+        height: 30,
+        left: '5%',
+        position: 'absolute',
+        top: '1%',
+        width: 30,
+    },
+    nameText: {
+        fontFamily: 'Lexend',
+        fontSize: 30,
+        marginBottom: 10,
+        textAlign: 'center',
+    },
+    popup: {
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        bottom: 0,
+        justifyContent: 'center',
+        left: 0,
+        position: 'absolute',
+        right: 0,
+        top: 0,
+    },
+    popupContent: {
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        padding: 20,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        marginBottom: 10,
+    },
+    videoSection: {
+        alignItems: 'center',
+        marginTop: 20,
+    },
+    videoText: {
+        fontFamily: 'Lexend',
+        fontSize: 18,
+        marginTop: 10,
     },
 });
 

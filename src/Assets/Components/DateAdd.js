@@ -85,37 +85,37 @@ function DateAdd({ onAddTime, onRemoveTime, times }) {
 export default DateAdd;
 
 const styles = StyleSheet.create({
+  addButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+  },
+  label: {
+    color: 'black',
+    fontFamily: 'Lexend',
+    fontSize: 12,
+    marginBottom: 5,
+  },
+  picker: {
+    backgroundColor: '#CECECE',
+    height: 50,
+  },
   pickerContainer: {
+    alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     marginVertical: 20,
   },
   pickerWrapper: {
     flex: 1,
     marginHorizontal: 5,
   },
-  timePickerWrapper: {
-    flex: 1,
-    marginHorizontal: 5,
-  },
-  picker: {
-    height: 50,
-    backgroundColor: '#CECECE',
-  },
-  label: {
-    fontSize: 12,
-    fontFamily: 'Lexend',
-    color: 'black',
-    marginBottom: 5,
-  },
   timePicker: {
     backgroundColor: '#CECECE',
   },
-  addButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 10,
+  timePickerWrapper: {
+    flex: 1,
+    marginHorizontal: 5,
   },
 
 });

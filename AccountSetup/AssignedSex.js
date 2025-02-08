@@ -11,7 +11,7 @@ import {
   Image
 } from 'react-native';
 import ProgressBar from '../src/Assets/Components/ProgressBar';
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // <-- Import AsyncStorage
 
 export default function AssignedSex({ navigation }) {
@@ -21,10 +21,10 @@ export default function AssignedSex({ navigation }) {
     if (selectedOption) {
       try {
         // Store the user's assigned sex in AsyncStorage
-        await AsyncStorage.setItem("user_gender", selectedOption);
-        console.log("Sex assigned at birth stored:", selectedOption);
+        await AsyncStorage.setItem('user_gender', selectedOption);
+        console.log('Sex assigned at birth stored:', selectedOption);
       } catch (error) {
-        console.error("Error storing user_gender:", error);
+        console.error('Error storing user_gender:', error);
       }
 
       // Navigate to the next screen
@@ -70,7 +70,7 @@ export default function AssignedSex({ navigation }) {
       <Pressable
         style={[
           styles.continueButton,
-          { backgroundColor: selectedOption ? "#E4423F" : "#F5F5F5" },
+          { backgroundColor: selectedOption ? '#E4423F' : '#F5F5F5' },
         ]}
         onPress={handleContinue}
         disabled={!selectedOption}
@@ -82,61 +82,61 @@ export default function AssignedSex({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 25,
-    backgroundColor: '#FFF',
-    justifyContent: 'flex-start',
-    alignItems: 'stretch',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-  },
   backButton: {
     alignSelf: 'flex-start',
     borderRadius: 20,
     marginBottom: 20,
     marginTop: 30,
   },
-  progressBar: {
-    marginBottom: 30,
+  container: {
+    alignItems: 'stretch',
+    backgroundColor: '#FFF',
+    flex: 1,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 25,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   content: {
     flex: 1,
-    justifyContent: "flex-start",
+    justifyContent: 'flex-start',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#000",
-    marginBottom: 20,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#888",
+  continueButton: {
+    alignItems: 'center',
+    backgroundColor: '#E4423F',
+    borderRadius: 30,
+    height: 50,
+    justifyContent: 'center',
     marginBottom: 50,
   },
+  continueButtonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
   optionButton: {
-    padding: 15,
-    borderWidth: 1,
+    alignItems: 'center',
     borderColor: '#CCC',
     borderRadius: 30,
+    borderWidth: 1,
     marginVertical: 5,
-    alignItems: 'center',
+    padding: 15,
   },
   optionText: {
     fontSize: 16,
     fontWeight: 500,
   },
-  continueButton: {
-    height: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#E4423F",
-    borderRadius: 30,
+  progressBar: {
+    marginBottom: 30,
+  },
+  subtitle: {
+    color: '#888',
+    fontSize: 14,
     marginBottom: 50,
   },
-  continueButtonText: {
-    color: "#FFF",
-    fontSize: 18,
-    fontWeight: "bold",
+  title: {
+    color: '#000',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
   },
 });

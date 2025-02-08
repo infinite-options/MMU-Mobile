@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
-import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, Pressable, Image, Platform, StatusBar, Alert, ActivityIndicator, ScrollView } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import ProgressBar from "../src/Assets/Components/ProgressBar";
-import * as ImagePicker from "expo-image-picker";
-import { Video } from "expo-av";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
-import { useFocusEffect } from "@react-navigation/native";
+import React, { useState, useEffect, useRef } from 'react';
+import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, Pressable, Image, Platform, StatusBar, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import ProgressBar from '../src/Assets/Components/ProgressBar';
+import * as ImagePicker from 'expo-image-picker';
+import { Video } from 'expo-av';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function AddMediaScreen({ navigation }) {
   // Basic user info from AsyncStorage
@@ -43,25 +43,25 @@ export default function AddMediaScreen({ navigation }) {
     const requestPermissionsAndFetchUserData = async () => {
       // 1) Ask for photo library permissions
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission Required", "This app needs permission to access your photo library.");
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'This app needs permission to access your photo library.');
       }
 
       // 2) Get user info from AsyncStorage
       try {
-        const storedUserId = await AsyncStorage.getItem("user_uid");
-        const storedUserEmail = await AsyncStorage.getItem("user_email_id");
-        console.log("Stored user data:", storedUserId, storedUserEmail);
+        const storedUserId = await AsyncStorage.getItem('user_uid');
+        const storedUserEmail = await AsyncStorage.getItem('user_email_id');
+        console.log('Stored user data:', storedUserId, storedUserEmail);
         if (storedUserId && storedUserEmail) {
           setUserId(storedUserId);
           setUserEmail(storedUserEmail);
           await fetchUserData(storedUserId);
         } else {
-          Alert.alert("User data not found", "Please log in again.");
-          navigation.navigate("Login");
+          Alert.alert('User data not found', 'Please log in again.');
+          navigation.navigate('Login');
         }
       } catch (e) {
-        console.error("Error fetching user data from AsyncStorage", e);
+        console.error('Error fetching user data from AsyncStorage', e);
       }
     };
 
@@ -73,7 +73,7 @@ export default function AddMediaScreen({ navigation }) {
     try {
       const response = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${uid}`);
       const fetchedData = response.data.result[0] || {};
-      console.log("Fetched user data:", fetchedData);
+      console.log('Fetched user data:', fetchedData);
 
       // ========== Photo handling (unchanged) ==========
       if (fetchedData.user_photo_url) {
@@ -83,7 +83,7 @@ export default function AddMediaScreen({ navigation }) {
         imageArray.forEach((uri, idx) => {
           if (idx < 3) newPhotos[idx] = uri;
         });
-        console.log("fetched photos:", newPhotos);
+        console.log('fetched photos:', newPhotos);
         setPhotos(newPhotos);
       }
 
@@ -96,20 +96,20 @@ export default function AddMediaScreen({ navigation }) {
           rawVideoUrl = JSON.parse(rawVideoUrl);
           // e.g. "\"https://s3.us-west-1.amazonaws.com/...\"" -> "https://s3.us-west-1.amazonaws.com/..."
         } catch (err) {
-          console.warn("Could not JSON-parse user_video_url. Using as-is:", err);
+          console.warn('Could not JSON-parse user_video_url. Using as-is:', err);
         }
 
         // If there's still extra quotes, you can remove them manually:
-        if (typeof rawVideoUrl === "string" && rawVideoUrl.startsWith('"') && rawVideoUrl.endsWith('"')) {
+        if (typeof rawVideoUrl === 'string' && rawVideoUrl.startsWith('"') && rawVideoUrl.endsWith('"')) {
           rawVideoUrl = rawVideoUrl.slice(1, -1);
         }
 
-        console.log("Cleaned fetched video url:", rawVideoUrl);
+        console.log('Cleaned fetched video url:', rawVideoUrl);
         setVideoUri(rawVideoUrl);
       }
     } catch (error) {
-      console.error("Error fetching user data", error);
-      Alert.alert("Error", "Failed to fetch existing media. Please try again later.");
+      console.error('Error fetching user data', error);
+      Alert.alert('Error', 'Failed to fetch existing media. Please try again later.');
     }
   };
 
@@ -128,8 +128,8 @@ export default function AddMediaScreen({ navigation }) {
         setPhotos(newPhotos);
       }
     } catch (error) {
-      console.error("Error picking image:", error);
-      Alert.alert("Error", "There was an issue processing the image.");
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'There was an issue processing the image.');
     }
   };
 
@@ -154,26 +154,26 @@ export default function AddMediaScreen({ navigation }) {
       });
 
       if (!result.canceled && result.assets?.[0]?.uri) {
-        console.log("Video recording success:", result.assets[0]);
+        console.log('Video recording success:', result.assets[0]);
         setVideoUri(result.assets[0].uri);
         setIsVideoPlaying(false);
       } else {
-        console.log("Video recording cancelled or no URI returned");
+        console.log('Video recording cancelled or no URI returned');
       }
     } catch (error) {
-      console.error("Error details:", error);
-      Alert.alert("Video Recording Error", "There was an issue recording the video. Please ensure you have granted camera and microphone permissions and try again.", [
+      console.error('Error details:', error);
+      Alert.alert('Video Recording Error', 'There was an issue recording the video. Please ensure you have granted camera and microphone permissions and try again.', [
         {
-          text: "Check Permissions",
+          text: 'Check Permissions',
           onPress: async () => {
             const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
             const micStatus = await ImagePicker.requestMicrophonePermissionsAsync();
-            if (cameraStatus.status !== "granted" || micStatus.status !== "granted") {
-              Alert.alert("Permissions Required", "Please enable camera and microphone permissions in your device settings to record video.");
+            if (cameraStatus.status !== 'granted' || micStatus.status !== 'granted') {
+              Alert.alert('Permissions Required', 'Please enable camera and microphone permissions in your device settings to record video.');
             }
           },
         },
-        { text: "OK" },
+        { text: 'OK' },
       ]);
     }
   };
@@ -199,22 +199,22 @@ export default function AddMediaScreen({ navigation }) {
   // Upload images and video to backend
   const uploadMediaToBackend = async () => {
     if (!userId || !userEmail) {
-      Alert.alert("Error", "User ID or email missing. Please log in again.");
+      Alert.alert('Error', 'User ID or email missing. Please log in again.');
       return;
     }
 
     setIsLoading(true);
 
     const uploadData = new FormData();
-    uploadData.append("user_uid", userId);
-    uploadData.append("user_email_id", userEmail);
+    uploadData.append('user_uid', userId);
+    uploadData.append('user_email_id', userEmail);
 
     // Append each photo if it exists
     photos.forEach((uri, index) => {
       if (uri) {
         uploadData.append(`img_${index}`, {
           uri,
-          type: "image/jpeg", // Ensure this matches the actual image type
+          type: 'image/jpeg', // Ensure this matches the actual image type
           name: `img_${index}.jpg`,
         });
         console.log(`Appending photo img_${index}:`, uri);
@@ -223,35 +223,35 @@ export default function AddMediaScreen({ navigation }) {
 
     // Append video if it exists
     if (videoUri) {
-      uploadData.append("user_video", {
+      uploadData.append('user_video', {
         uri: videoUri,
-        type: "video/mp4",
-        name: "video_filename.mp4",
+        type: 'video/mp4',
+        name: 'video_filename.mp4',
       });
-      console.log("Appending user_video:", videoUri);
+      console.log('Appending user_video:', videoUri);
     }
 
     try {
-      const response = await axios.put("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo", uploadData, { headers: { "Content-Type": "multipart/form-data" } });
+      const response = await axios.put('https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo', uploadData, { headers: { 'Content-Type': 'multipart/form-data' } });
 
       if (response.status === 200) {
-        console.log("Media uploaded successfully:", response.data);
-        Alert.alert("Success", "Media uploaded successfully!");
+        console.log('Media uploaded successfully:', response.data);
+        Alert.alert('Success', 'Media uploaded successfully!');
       } else {
-        console.error("Failed to upload media:", response);
-        Alert.alert("Error", "Failed to upload media to the server.");
+        console.error('Failed to upload media:', response);
+        Alert.alert('Error', 'Failed to upload media to the server.');
       }
     } catch (error) {
-      console.error("Upload Error:", error);
+      console.error('Upload Error:', error);
       if (error.response) {
-        console.error("Error Response:", error.response);
-        Alert.alert("Error", `Error: ${error.response.status} - ${error.response.statusText}`);
+        console.error('Error Response:', error.response);
+        Alert.alert('Error', `Error: ${error.response.status} - ${error.response.statusText}`);
       } else if (error.request) {
-        console.error("Error Request:", error.request);
-        Alert.alert("Error", "Network error. Please check your internet connection.");
+        console.error('Error Request:', error.request);
+        Alert.alert('Error', 'Network error. Please check your internet connection.');
       } else {
-        console.error("Error Message:", error.message);
-        Alert.alert("Error", "Something went wrong while uploading.");
+        console.error('Error Message:', error.message);
+        Alert.alert('Error', 'Something went wrong while uploading.');
       }
     } finally {
       setIsLoading(false);
@@ -263,7 +263,7 @@ export default function AddMediaScreen({ navigation }) {
   const handleContinue = async () => {
     if (isFormComplete) {
       await uploadMediaToBackend();
-      navigation.navigate("LocationScreen", { photos, videoUri });
+      navigation.navigate('LocationScreen', { photos, videoUri });
     }
   };
 
@@ -272,14 +272,14 @@ export default function AddMediaScreen({ navigation }) {
       <ScrollView style={{ flex: 1 }}>
         {isLoading && (
           <View style={styles.loadingOverlay}>
-            <ActivityIndicator size='large' color='#E4423F' />
-            <Text style={{ color: "#E4423F", marginTop: 10 }}>Uploading...</Text>
+            <ActivityIndicator size="large" color="#E4423F" />
+            <Text style={{ color: '#E4423F', marginTop: 10 }}>Uploading...</Text>
           </View>
         )}
 
         {/* Back Button */}
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Image source={require("../assets/icons/backarrow.png")} />
+          <Image source={require('../assets/icons/backarrow.png')} />
         </TouchableOpacity>
 
         {/* Progress Bar */}
@@ -294,8 +294,8 @@ export default function AddMediaScreen({ navigation }) {
           <View style={styles.trialVersion}>
             <Text style={styles.trialHeading}>TRIAL VERSION</Text>
             <Text style={styles.trialBody}>
-              For the testing phase, please keep your video <Text style={styles.bold}>short</Text>.{"\n"}Example: "Hi! I'm Hannah and I enjoy outdoor activities."
-              {"\n\n"}We are also unable to crop your photos for the testing phase, so please use <Text style={styles.bold}>centered photos</Text>.
+              For the testing phase, please keep your video <Text style={styles.bold}>short</Text>.{'\n'}Example: "Hi! I'm Hannah and I enjoy outdoor activities."
+              {'\n\n'}We are also unable to crop your photos for the testing phase, so please use <Text style={styles.bold}>centered photos</Text>.
             </Text>
           </View>
 
@@ -307,7 +307,7 @@ export default function AddMediaScreen({ navigation }) {
                   ref={videoRef}
                   source={{ uri: videoUri }}
                   style={styles.video}
-                  resizeMode='cover'
+                  resizeMode="cover"
                   // Let the video have built-in controls:
                   useNativeControls
                   // Attempt to auto-play
@@ -317,24 +317,24 @@ export default function AddMediaScreen({ navigation }) {
                     setIsVideoPlaying(status.isPlaying);
                   }}
                   // Print errors to console
-                  onError={(err) => console.log("VIDEO ERROR:", err)}
+                  onError={(err) => console.log('VIDEO ERROR:', err)}
                 />
                 {/* Center play overlay if paused */}
                 {!isVideoPlaying && (
                   <TouchableOpacity style={styles.playOverlay} onPress={handlePlayPause}>
-                    <Ionicons name='play' size={48} color='#FFF' />
+                    <Ionicons name="play" size={48} color="#FFF" />
                   </TouchableOpacity>
                 )}
                 {/* "X" in top-right */}
                 <TouchableOpacity onPress={handleRemoveVideo} style={styles.removeIconTopRight}>
                   <View style={styles.removeIconBackground}>
-                    <Ionicons name='close' size={20} color='#FFF' />
+                    <Ionicons name="close" size={20} color="#FFF" />
                   </View>
                 </TouchableOpacity>
               </View>
             ) : (
               <TouchableOpacity onPress={handleVideoUpload} style={styles.uploadVideoButton}>
-                <Image source={require("../assets/icons/record.png")} />
+                <Image source={require('../assets/icons/record.png')} />
                 <Text style={styles.uploadVideoText}>Record Video</Text>
               </TouchableOpacity>
             )}
@@ -350,14 +350,14 @@ export default function AddMediaScreen({ navigation }) {
                     {/* "X" in top-right */}
                     <TouchableOpacity onPress={() => handleRemovePhoto(idx)} style={styles.removeIconTopRight}>
                       <View style={styles.removeIconBackground}>
-                        <Ionicons name='close' size={20} color='#FFF' />
+                        <Ionicons name="close" size={20} color="#FFF" />
                       </View>
                     </TouchableOpacity>
                   </>
                 ) : (
                   <View style={styles.emptyPhotoBox}>
                     <TouchableOpacity style={styles.addButton} onPress={() => handlePickImage(idx)}>
-                      <Ionicons name='add' size={24} color='#E4423F' />
+                      <Ionicons name="add" size={24} color="#E4423F" />
                     </TouchableOpacity>
                   </View>
                 )}
@@ -368,8 +368,8 @@ export default function AddMediaScreen({ navigation }) {
       </ScrollView>
 
       {/* Continue Button */}
-      <Pressable style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5" }]} onPress={handleContinue} disabled={!isFormComplete || isLoading}>
-        <Text style={[styles.continueButtonText, { color: isFormComplete ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
+      <Pressable style={[styles.continueButton, { backgroundColor: isFormComplete ? '#E4423F' : '#F5F5F5' }]} onPress={handleContinue} disabled={!isFormComplete || isLoading}>
+        <Text style={[styles.continueButtonText, { color: isFormComplete ? '#FFF' : 'rgba(26, 26, 26, 0.25)' }]}>Continue</Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -378,43 +378,43 @@ export default function AddMediaScreen({ navigation }) {
 // STYLES
 const styles = StyleSheet.create({
   container: {
+    alignItems: 'stretch',
+    backgroundColor: '#FFF',
     flex: 1,
-    backgroundColor: "#FFF",
-    justifyContent: "flex-start",
-    alignItems: "stretch",
+    justifyContent: 'flex-start',
     paddingHorizontal: 25,
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   loadingOverlay: {
-    position: "absolute",
-    zIndex: 999,
-    top: 0,
-    left: 0,
-    right: 0,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.7)',
     bottom: 0,
-    backgroundColor: "rgba(255,255,255,0.7)",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 999,
   },
   backButton: {
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
     borderRadius: 20,
     marginBottom: 20,
     marginTop: 30,
   },
   content: {
     flex: 1,
-    justifyContent: "flex-start",
+    justifyContent: 'flex-start',
   },
   title: {
+    color: '#000',
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#000",
+    fontWeight: 'bold',
     marginBottom: 20,
   },
   subtitle: {
+    color: '#888',
     fontSize: 14,
-    color: "#888",
     marginBottom: 50,
   },
   trialVersion: {
@@ -422,114 +422,114 @@ const styles = StyleSheet.create({
   },
   trialHeading: {
     fontSize: 14,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     marginBottom: 8,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   trialBody: {
+    color: '#1A1A1A',
     fontSize: 14,
-    color: "#1A1A1A",
     lineHeight: 20,
     marginBottom: 20,
   },
   bold: {
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
   mediaContainer: {
     marginBottom: 20,
   },
   // 326:428 => aspectRatio ~ 0.76
   videoWrapper: {
-    position: "relative",
-    width: "100%",
     aspectRatio: 0.76,
-    backgroundColor: "#000",
-    marginBottom: 15,
+    backgroundColor: '#000',
     borderRadius: 10,
-    overflow: "hidden",
+    marginBottom: 15,
+    overflow: 'hidden',
+    position: 'relative',
+    width: '100%',
   },
   video: {
-    width: "100%",
-    height: "100%",
+    height: '100%',
+    width: '100%',
   },
   playOverlay: {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: [{ translateX: -24 }, { translateY: -24 }],
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: 'rgba(0,0,0,0.3)',
     borderRadius: 50,
+    left: '50%',
     padding: 10,
+    position: 'absolute',
+    top: '50%',
+    transform: [{ translateX: -24 }, { translateY: -24 }],
   },
   removeIconTopRight: {
-    position: "absolute",
-    top: 5,
+    position: 'absolute',
     right: 5,
+    top: 5,
   },
   removeIconBackground: {
-    backgroundColor: "#E4423F",
+    backgroundColor: '#E4423F',
     borderRadius: 20,
     padding: 4,
   },
   uploadVideoButton: {
-    flexDirection: "row",
-    alignItems: "center",
+    alignItems: 'center',
+    borderColor: '#E4423F',
     borderRadius: 25,
     borderWidth: 2,
-    borderColor: "#E4423F",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    justifyContent: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
     marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
   uploadVideoText: {
-    color: "#E4423F",
-    fontWeight: "bold",
+    color: '#E4423F',
     fontSize: 16,
+    fontWeight: 'bold',
     marginLeft: 15,
   },
 
   // Photo boxes in a row (3 boxes)
   photoBoxesRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 20,
   },
   photoBox: {
-    width: "30%",
     aspectRatio: 1,
+    backgroundColor: '#F5F5F5',
     borderRadius: 10,
-    backgroundColor: "#F5F5F5",
-    overflow: "hidden",
-    position: "relative",
+    overflow: 'hidden',
+    position: 'relative',
+    width: '30%',
   },
   emptyPhotoBox: {
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F5F5F5",
+    justifyContent: 'center',
   },
   addButton: {
-    backgroundColor: "#FFF",
+    backgroundColor: '#FFF',
     borderRadius: 20,
     padding: 5,
   },
   photoImage: {
-    width: "100%",
-    height: "100%",
+    height: '100%',
+    width: '100%',
   },
 
   continueButton: {
-    height: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#E4423F",
+    alignItems: 'center',
+    backgroundColor: '#E4423F',
     borderRadius: 30,
+    height: 50,
+    justifyContent: 'center',
     marginBottom: 50,
   },
   continueButtonText: {
-    color: "#FFF",
+    color: '#FFF',
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
 });

@@ -1,6 +1,6 @@
-import React from "react";
-import { View, Text, Modal, TouchableOpacity, StyleSheet } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import React from 'react';
+import { View, Text, Modal, TouchableOpacity, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 export default function UserDoesNotExistModal(props) {
   const { isOpen, onCancel, email } = props;
@@ -25,7 +25,7 @@ export default function UserDoesNotExistModal(props) {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.button, styles.signupButton]}
-              onPress={() => navigation.navigate("AccountSetup1Login")}
+              onPress={() => navigation.navigate('AccountSetup1Login')}
             >
               <Text style={styles.buttonText}>Signup</Text>
             </TouchableOpacity>
@@ -37,53 +37,53 @@ export default function UserDoesNotExistModal(props) {
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  actions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-  modalContainer: {
-    width: 300,
-    padding: 20,
-    backgroundColor: "white",
-    borderRadius: 10,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+  button: {
+    backgroundColor: '#007bff',
+    borderRadius: 5,
+    marginHorizontal: 5,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 15,
-    textAlign: "center",
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    textAlign: 'center',
   },
   message: {
     fontSize: 16,
-    textAlign: "center",
     marginBottom: 20,
+    textAlign: 'center',
   },
-  actions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  modalContainer: {
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    elevation: 5,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    width: 300,
   },
-  button: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    backgroundColor: "#007bff",
-    marginHorizontal: 5,
+  modalOverlay: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    flex: 1,
+    justifyContent: 'center',
   },
   signupButton: {
-    backgroundColor: "#28a745",
+    backgroundColor: '#28a745',
   },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
-    textAlign: "center",
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
   },
 });
 

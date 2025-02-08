@@ -131,26 +131,26 @@ const styles = StyleSheet.create({
   // Title
   content: {
     flex: 1,
-    justifyContent: "flex-start",
+    justifyContent: 'flex-start',
   },
   title: {
+    color: '#000',
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#000",
+    fontWeight: 'bold',
     marginBottom: 20,
   },
   subtitle: {
+    color: '#888',
     fontSize: 14,
-    color: "#888",
     marginBottom: 50,
   },
   // Each option button (pill-shaped)
   optionButton: {
-    padding: 15,
-    borderWidth: 1,
-    borderRadius: 30,
-    marginVertical: 5,
     alignItems: 'center',
+    borderRadius: 30,
+    borderWidth: 1,
+    marginVertical: 5,
+    padding: 15,
   },
   optionText: {
     fontSize: 16,
@@ -158,16 +158,16 @@ const styles = StyleSheet.create({
   },
   // Continue button styling
   continueButton: {
-    height: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#E4423F",
+    alignItems: 'center',
+    backgroundColor: '#E4423F',
     borderRadius: 30,
+    height: 50,
+    justifyContent: 'center',
     marginBottom: 50,
   },
   continueButtonText: {
-    color: "#FFF",
+    color: '#FFF',
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
 });

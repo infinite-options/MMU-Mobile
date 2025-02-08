@@ -8,9 +8,9 @@ export default function SelectPlace() {
     const route = useRoute();
     const { user, selectedDay, selectedTime, AccountUser = [], accountUserData = [] } = route.params || {};
 
-    const [selectedButton, setSelectedButton] = useState("");
+    const [selectedButton, setSelectedButton] = useState('');
 
-    const dateIdeas = ["Dinner", "Drinks", "Coffee", "Lunch", "Movies", "Custom", "Ask Date To Suggest"];
+    const dateIdeas = ['Dinner', 'Drinks', 'Coffee', 'Lunch', 'Movies', 'Custom', 'Ask Date To Suggest'];
     const userInterests = user?.user_date_interests ? user.user_date_interests.split(',') : [];
 
     const handleButtonClick = (buttonName) => {
@@ -90,58 +90,35 @@ export default function SelectPlace() {
 }
 
 const styles = StyleSheet.create({
-    safeArea: {
-        flex:1,
-    },
-    container: {
-        padding: 20,
-        alignItems: 'center',
-        flex: 1,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
     avatar: {
-        width: 50,
-        height: 50,
+        borderColor: 'white',
         borderRadius: 25,
         borderWidth: 2,
-        borderColor: 'white',
+        height: 50,
+        width: 50,
     },
     avatarOverlap: {
         marginLeft: -15,
         zIndex: 1,
     },
-    username: {
-        fontSize: 20,
-        marginLeft: 10,
-        fontFamily: 'Lexend',
-    },
-    title: {
-        fontSize: 22,
-        textAlign: 'center',
-        marginVertical: 15,
-        fontFamily: 'Lexend',
-    },
-    highlightedText: {
-        color: '#E4423F',
-    },
-    subtitle: {
-        textAlign: 'center',
-        fontSize: 14,
-        fontFamily: 'Lexend',
-        marginBottom: 20,
-    },
     buttonContainer: {
-        flexDirection: 'column',
         alignItems: 'center',
+        flexDirection: 'column',
         paddingBottom: 20,
     },
     buttonRow: {
         justifyContent: 'space-around',
         marginBottom: 10,
+    },
+    buttonText: {
+        color: '#000',
+        fontFamily: 'Lexend',
+        fontSize: 16,
+    },
+    container: {
+        alignItems: 'center',
+        flex: 1,
+        padding: 20,
     },
     dateIdeaButton: {
         margin: 10,
@@ -159,34 +136,57 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 3,
     },
-    selectedButton: {
-        backgroundColor: '#E4423F',
+    header: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        marginBottom: 20,
+    },
+    highlightedText: {
+        color: '#E4423F',
     },
     interestBorder: {
-        borderWidth: 2,
         borderColor: '#E4423F',
+        borderWidth: 2,
     },
-    buttonText: {
-        fontSize: 16,
+    nextButton: {
+        alignItems: 'center',
+        backgroundColor: '#E4423F',
+        borderRadius: 20,
+        marginTop: 20,
+        paddingHorizontal: 40,
+        paddingVertical: 15,
+        width: '80%',
+    },
+    nextButtonText: {
+        color: 'white',
         fontFamily: 'Lexend',
-        color: '#000',
+        fontSize: 18,
+    },
+    safeArea: {
+        flex:1,
+    },
+    selectedButton: {
+        backgroundColor: '#E4423F',
     },
     selectedButtonText: {
         color: '#FFF',
     },
-    nextButton: {
-        backgroundColor: '#E4423F',
-        paddingVertical: 15,
-        paddingHorizontal: 40,
-        borderRadius: 20,
-        marginTop: 20,
-        width: '80%',
-        alignItems: 'center',
-    },
-    nextButtonText: {
-        color: 'white',
-        fontSize: 18,
+    subtitle: {
         fontFamily: 'Lexend',
+        fontSize: 14,
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    title: {
+        fontFamily: 'Lexend',
+        fontSize: 22,
+        marginVertical: 15,
+        textAlign: 'center',
+    },
+    username: {
+        fontFamily: 'Lexend',
+        fontSize: 20,
+        marginLeft: 10,
     },
 });
 

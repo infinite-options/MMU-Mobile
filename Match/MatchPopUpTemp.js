@@ -1,7 +1,7 @@
 import { StyleSheet, Button, View, Text, Animated, PanResponder, Dimensions, ScrollView } from 'react-native';
 import { Video } from 'expo-av';
 import React, { useRef, useState, useEffect } from 'react';
-import { fetchUserInfo } from "../Api.js";
+import { fetchUserInfo } from '../Api.js';
 
 export default function MatchPopUpTemp() {
   const video = useRef(null);
@@ -27,9 +27,9 @@ export default function MatchPopUpTemp() {
     const fetchData = async () => {
       try {
         const uid = '100-000004';
-        console.log("Fetching user UID:", uid);
+        console.log('Fetching user UID:', uid);
         const data = await fetchUserInfo(uid);
-        console.log("Fetched Data:", data);
+        console.log('Fetched Data:', data);
         if (isMounted) {
           setUserInfo(data);
         }
@@ -54,7 +54,7 @@ export default function MatchPopUpTemp() {
   useEffect(() => {
     // Debugging: Log the video URL after userInfo updates
     if (userInfo) {
-      console.log("Video URL:", userInfo.user_video_url);
+      console.log('Video URL:', userInfo.user_video_url);
     }
   }, [userInfo]);
 
@@ -108,7 +108,7 @@ export default function MatchPopUpTemp() {
             color="#fff"
           />
           <Button
-            title={status.isLooping ? "Set to not loop" : "Set to loop"}
+            title={status.isLooping ? 'Set to not loop' : 'Set to loop'}
             onPress={() => video.current.setIsLoopingAsync(!status.isLooping)}
             color="#fff"
           />
@@ -119,35 +119,35 @@ export default function MatchPopUpTemp() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
   backgroundVideo: {
+    bottom: 0,
+    left: 0,
     position: 'absolute',
+    right: 0,
     top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
   },
-  scrollableLayer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(120, 120, 120, 0.8)',
-    zIndex: 1,
-    maxHeight: Dimensions.get('window').height * 0.5,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  overlay: {
-    padding: 20,
-    justifyContent: 'flex-start',
+  container: {
+    backgroundColor: 'transparent',
+    flex: 1,
   },
   infoText: {
-    fontSize: 18,
     color: '#fff',
+    fontSize: 18,
     marginBottom: 10,
+  },
+  overlay: {
+    justifyContent: 'flex-start',
+    padding: 20,
+  },
+  scrollableLayer: {
+    backgroundColor: 'rgba(120, 120, 120, 0.8)',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    bottom: 0,
+    left: 0,
+    maxHeight: Dimensions.get('window').height * 0.5,
+    position: 'absolute',
+    right: 0,
+    zIndex: 1,
   },
 });

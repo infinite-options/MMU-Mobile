@@ -257,102 +257,63 @@ export default function DateLocation({ navigation}) {
 
 // Styles
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  askButton: {
+    alignItems: 'center',
+    borderRadius: 30,
+    height: 50,
+    justifyContent: 'center',
+    marginHorizontal: 20,
+  },
+  askButtonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   backButton: {
     alignSelf: 'flex-start',
     backgroundColor: '#F5F5F5',
     borderRadius: 20,
-    padding: 8,
-    marginTop: 30,
     marginBottom: 20,
+    marginTop: 30,
+    padding: 8,
+  },
+  container: {
+    backgroundColor: '#FFF',
+    flex: 1,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
+  dot: {
+    borderRadius: 4,
+    height: 8,
+    marginHorizontal: 4,
+    width: 8,
+  },
+  heartImage: {
+    borderColor: '#FF4081',
+    borderRadius: 30,
+    borderWidth: 2,
+    height: 60,
+    resizeMode: 'cover',
+    width: 60,
+  },
+  heartOverlap: {
+    marginLeft: -20,
   },
   heartsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginBottom: 20,
   },
-  heartImage: {
-    width: 60,
-    height: 60,
-    resizeMode: 'cover',
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: '#FF4081',
-  },
-  heartOverlap: {
-    marginLeft: -20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#888',
-    marginBottom: 20,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  searchWrapper: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#CCC',
-    borderRadius: 25,
-    paddingHorizontal: 15,
-  },
-  searchInput: {
-    height: 48,
-    fontSize: 16,
-    color: '#000',
-  },
-  searchIconWrapper: {
-    position: 'absolute',
-    right: 15,
-    // top or bottom if needed for alignment
-  },
-  suggestionsContainer: {
-    backgroundColor: '#FFF',
-    borderColor: '#CCC',
-    borderWidth: 1,
-    borderRadius: 5,
-    marginTop: 5,
-    marginBottom: 15,
-  },
-  suggestionItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEE',
+  map: {
+    height: '100%',
+    width: '100%',
   },
   mapContainer: {
-    flex: 1,
-    marginHorizontal: 20,
     borderRadius: 10,
-    overflow: 'hidden',
+    flex: 1,
     marginBottom: 20,
-  },
-  map: {
-    width: '100%',
-    height: '100%',
-  },
-  askButton: {
-    height: 50,
     marginHorizontal: 20,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  askButtonText: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: 'bold',
+    overflow: 'hidden',
   },
   progressDotsContainer: {
     flexDirection: 'row',
@@ -360,10 +321,49 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     marginTop: 10,
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginHorizontal: 4,
+  searchIconWrapper: {
+    position: 'absolute',
+    right: 15,
+    // top or bottom if needed for alignment
+  },
+  searchInput: {
+    color: '#000',
+    fontSize: 16,
+    height: 48,
+  },
+  searchRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  searchWrapper: {
+    borderColor: '#CCC',
+    borderRadius: 25,
+    borderWidth: 1,
+    flex: 1,
+    paddingHorizontal: 15,
+  },
+  subtitle: {
+    color: '#888',
+    fontSize: 14,
+    marginBottom: 20,
+  },
+  suggestionItem: {
+    borderBottomColor: '#EEE',
+    borderBottomWidth: 1,
+    padding: 10,
+  },
+  suggestionsContainer: {
+    backgroundColor: '#FFF',
+    borderColor: '#CCC',
+    borderRadius: 5,
+    borderWidth: 1,
+    marginBottom: 15,
+    marginTop: 5,
+  },
+  title: {
+    color: '#000',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
 });

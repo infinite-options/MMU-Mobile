@@ -75,33 +75,9 @@ const AccountDetails3 = () => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  container: {
-    flexGrow: 1,
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    paddingTop: 20, // Ensures content does not overlap the status bar
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 32,
-    color: '#1A1A1A',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '400',
-    color: '#1A1A1A',
-    marginBottom: 16,
-  },
-  description: {
-    fontSize: 14,
-    color: '#757575',
-    marginBottom: 32,
+  arrowIcon: {
+    width: 24, // Adjust the size of the arrow icon
+    height: 24,
   },
   backButton: {
     marginRight: 16,
@@ -115,27 +91,51 @@ const styles = StyleSheet.create({
     borderRadius: 20, // Circular button
     backgroundColor: '#f0f0f0',
   },
-  arrowIcon: {
-    width: 24, // Adjust the size of the arrow icon
-    height: 24,
+  container: {
+    backgroundColor: '#FFFFFF',
+    flexGrow: 1,
+    padding: 16,
+    paddingTop: 20, // Ensures content does not overlap the status bar
+  },
+  description: {
+    color: '#757575',
+    fontSize: 14,
+    marginBottom: 32,
+  },
+  input: {
+    backgroundColor: 'rgba(226, 226, 226, 0.5)',
+    borderColor: '#CECECE',
+    borderRadius: 10,
+    borderWidth: 1,
+    color: '#1A1A1A',
+    fontSize: 14,
+    padding: 12,
   },
   inputContainer: {
     marginBottom: 16,
   },
   inputLabel: {
-    fontSize: 14,
     color: '#E4423F',
+    fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 5,
   },
-  input: {
-    backgroundColor: 'rgba(226, 226, 226, 0.5)',
-    padding: 12,
-    borderRadius: 10,
-    borderColor: '#CECECE',
-    borderWidth: 1,
-    fontSize: 14,
+  safeArea: {
+    backgroundColor: '#FFFFFF',
+    flex: 1,
+  },
+  sectionTitle: {
     color: '#1A1A1A',
+    fontSize: 18,
+    fontWeight: '400',
+    marginBottom: 16,
+  },
+  title: {
+    color: '#1A1A1A',
+    fontSize: 24,
+    fontWeight: '600',
+    marginBottom: 32,
+    textAlign: 'center',
   },
 });
 

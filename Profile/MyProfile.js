@@ -1,41 +1,33 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  View,
-  Text,
-  StyleSheet,
-  Platform,
-  StatusBar,
-  TouchableOpacity,
-  Image,
-  Pressable,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useIsFocused } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
+import React, { useState, useEffect, useRef } from "react";
+import { SafeAreaView, ScrollView, View, Text, StyleSheet, Platform, StatusBar, TouchableOpacity, Image, Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation, useIsFocused } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 import { Video } from "expo-av";
-import { useFocusEffect } from '@react-navigation/native';
-import ProgressBar from '../src/Assets/Components/ProgressBar';
-import { getProfileSteps, getProfileCompletion } from './profileStepsState';
+import { useFocusEffect } from "@react-navigation/native";
+import ProgressBar from "../src/Assets/Components/ProgressBar";
+import { getProfileSteps, getProfileCompletion } from "./profileStepsState";
+
+const GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_API_KEY;
+console.log(GOOGLE_API_KEY);
 
 // Example placeholders for bottom navigation icons
 const BottomNav = () => {
   const navigation = useNavigation();
   return (
     <View style={styles.bottomNavContainer}>
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Preferences')}>
-        <Image source={require('../assets/icons/search.png')} />
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Preferences")}>
+        <Image source={require("../assets/icons/search.png")} />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('MatchResultsPage')}>
-        <Image source={require('../assets/icons/twohearts.png')}  />
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("MatchResultsPage")}>
+        <Image source={require("../assets/icons/twohearts.png")} />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Chat')}>
-        <Image source={require('../assets/icons/chat.png')}  />
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Chat")}>
+        <Image source={require("../assets/icons/chat.png")} />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('MyProfile')}>
-        <Image source={require('../assets/icons/profile.png')}  />
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("MyProfile")}>
+        <Image source={require("../assets/icons/profile.png")} />
       </TouchableOpacity>
     </View>
   );
@@ -48,7 +40,7 @@ export default function MyProfile() {
   // user data from DB
   const [userData, setUserData] = useState({});
   // For user media
-  const [photos, setPhotos] = useState([null,null,null]); // array of photo URIs
+  const [photos, setPhotos] = useState([null, null, null]); // array of photo URIs
   const [videoUri, setVideoUri] = useState(null); // single video URI
 
   const [profileSteps, setProfileSteps] = useState([]);
@@ -59,31 +51,29 @@ export default function MyProfile() {
   // Menu popup
   const [menuVisible, setMenuVisible] = useState(false);
   useFocusEffect(
-      React.useCallback(() => {
-        // Runs on every focus
-        if (videoRef.current) {
-          // Pause & reset the playback to 0 if you want a fresh start
-          videoRef.current.setPositionAsync(0); // optional: jump to start
-          videoRef.current.pauseAsync();
-          setIsVideoPlaying(false);
-        }
-      }, [])
-    );
+    React.useCallback(() => {
+      // Runs on every focus
+      if (videoRef.current) {
+        // Pause & reset the playback to 0 if you want a fresh start
+        videoRef.current.setPositionAsync(0); // optional: jump to start
+        videoRef.current.pauseAsync();
+        setIsVideoPlaying(false);
+      }
+    }, [])
+  );
   // Fetch user data on mount/focus
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
-        const uid = await AsyncStorage.getItem('user_uid');
+        const uid = await AsyncStorage.getItem("user_uid");
         if (!uid) {
-          console.log('No user_uid in AsyncStorage');
+          console.log("No user_uid in AsyncStorage");
           return;
         }
         // GET user info
-        const response = await axios.get(
-          `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${uid}`
-        );
+        const response = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${uid}`);
         const fetched = response.data.result[0];
-        console.log('Fetched user info:', fetched);
+        console.log("Fetched user info:", fetched);
 
         setUserData(fetched || {});
         if (fetched.user_photo_url) {
@@ -95,34 +85,29 @@ export default function MyProfile() {
           });
           setPhotos(newPhotos);
         }
-    
+
         // ========== Video handling (Option B) ==========
         if (fetched.user_video_url) {
           let rawVideoUrl = fetched.user_video_url;
-    
+
           // Attempt to parse if it looks like a JSON string
           try {
-            rawVideoUrl = JSON.parse(rawVideoUrl); 
+            rawVideoUrl = JSON.parse(rawVideoUrl);
             // e.g. "\"https://s3.us-west-1.amazonaws.com/...\"" -> "https://s3.us-west-1.amazonaws.com/..."
           } catch (err) {
             console.warn("Could not JSON-parse user_video_url. Using as-is:", err);
           }
-    
+
           // If there's still extra quotes, you can remove them manually:
-          if (
-            typeof rawVideoUrl === 'string' &&
-            rawVideoUrl.startsWith('"') &&
-            rawVideoUrl.endsWith('"')
-          ) {
+          if (typeof rawVideoUrl === "string" && rawVideoUrl.startsWith('"') && rawVideoUrl.endsWith('"')) {
             rawVideoUrl = rawVideoUrl.slice(1, -1);
           }
-    
+
           console.log("Cleaned video url:", rawVideoUrl);
           setVideoUri(rawVideoUrl);
         }
-
       } catch (error) {
-        console.log('Error fetching user info:', error);
+        console.log("Error fetching user info:", error);
       }
     };
 
@@ -153,62 +138,58 @@ export default function MyProfile() {
   // Press a link in the profile steps card
   const handlePressLink = (index) => {
     const step = profileSteps[index];
-  
-    if (step.title === 'your date preferences') {
+
+    if (step.title === "your date preferences") {
       // 2 sub-pages
       if (step.count === 2) {
-        navigation.navigate('DateAvailability', { stepIndex: index });
+        navigation.navigate("DateAvailability", { stepIndex: index });
       } else if (step.count === 1) {
-        navigation.navigate('TypeOfDate', { stepIndex: index });
+        navigation.navigate("TypeOfDate", { stepIndex: index });
       }
-    }
-    else if (step.title === 'a few more details about you') {
+    } else if (step.title === "a few more details about you") {
       // 8 sub-pages
       switch (step.count) {
         case 8:
-          navigation.navigate('AdditionalDetailsOne', { stepIndex: index });
+          navigation.navigate("AdditionalDetailsOne", { stepIndex: index });
           break;
         case 7:
-          navigation.navigate('AdditionalDetailsTwo', { stepIndex: index });
+          navigation.navigate("AdditionalDetailsTwo", { stepIndex: index });
           break;
         case 6:
-          navigation.navigate('AdditionalDetailsThree', { stepIndex: index });
+          navigation.navigate("AdditionalDetailsThree", { stepIndex: index });
           break;
         case 5:
-          navigation.navigate('AdditionalDetailsFour', { stepIndex: index });
+          navigation.navigate("AdditionalDetailsFour", { stepIndex: index });
           break;
         case 4:
-          navigation.navigate('AdditionalDetailsFive', { stepIndex: index });
+          navigation.navigate("AdditionalDetailsFive", { stepIndex: index });
           break;
         case 3:
-          navigation.navigate('AdditionalDetailsSix', { stepIndex: index });
+          navigation.navigate("AdditionalDetailsSix", { stepIndex: index });
           break;
         case 2:
-          navigation.navigate('AdditionalDetailsSeven', { stepIndex: index });
+          navigation.navigate("AdditionalDetailsSeven", { stepIndex: index });
           break;
         case 1:
-          navigation.navigate('AdditionalDetailsEight', { stepIndex: index });
+          navigation.navigate("AdditionalDetailsEight", { stepIndex: index });
           break;
         default:
           // If count is 0 or some unexpected value, do nothing or handle error
           break;
       }
-    }
-    else if (step.title === 'profile bio') {
+    } else if (step.title === "profile bio") {
       // 1 sub-page
       if (step.count === 1) {
-        navigation.navigate('ProfileBio', { stepIndex: index });
+        navigation.navigate("ProfileBio", { stepIndex: index });
       }
-    }
-    else if (step.title === 'verify your account') {
+    } else if (step.title === "verify your account") {
       // 2 sub-pages
       if (step.count === 2) {
-        navigation.navigate('VerifyPhoneNumber1', { stepIndex: index });
+        navigation.navigate("VerifyPhoneNumber1", { stepIndex: index });
       } else if (step.count === 1) {
-        navigation.navigate('AddDriversLicense', { stepIndex: index });
+        navigation.navigate("AddDriversLicense", { stepIndex: index });
       }
-    }
-    else {
+    } else {
       // Fallback or other steps
       // e.g. navigation.navigate(step.route, { stepIndex: index });
     }
@@ -222,22 +203,22 @@ export default function MyProfile() {
   const handleMenuItemPress = (item) => {
     setMenuVisible(false);
     switch (item) {
-      case 'Edit Profile':
-        navigation.navigate('EditProfile');
+      case "Edit Profile":
+        navigation.navigate("EditProfile");
         break;
-      case 'Settings':
-        navigation.navigate('SettingsScreen');
+      case "Settings":
+        navigation.navigate("SettingsScreen");
         break;
-      case 'Manage Membership':
-        navigation.navigate('MembershipScreen');
+      case "Manage Membership":
+        navigation.navigate("MembershipScreen");
         break;
-      case 'Hide Profile':
+      case "Hide Profile":
         // handle hide
         break;
-      case 'Delete Account':
+      case "Delete Account":
         // handle delete
         break;
-      case 'Logout':
+      case "Logout":
         logoutUser();
         break;
       default:
@@ -252,48 +233,48 @@ export default function MyProfile() {
       await AsyncStorage.clear();
 
       // Redirect to your welcome or login screen
-      navigation.navigate('Login');
+      navigation.navigate("Login");
     } catch (error) {
-      console.error('Error clearing AsyncStorage:', error);
+      console.error("Error clearing AsyncStorage:", error);
     }
   };
 
   // If user data is loaded, pull needed fields
   const {
-    user_first_name = '',
-    user_last_name = '',
-    user_email_id = '',
-    user_profile_bio = '',
-    user_gender = '',
-    user_identity = '',
-    user_age = '',
-    user_birthdate = '',
-    user_kids = '',
-    user_height = '',
-    user_sexuality = '',
-    user_open_to = '',
-    user_address = '',
-    user_general_interests = '',
-    user_date_interests = '',
-    user_suburb = '',
-    user_nationality = '',
-    user_religion = '',
-    user_body_composition = '',
-    user_education = '',
-    user_job = '',
-    user_drinking = '',
-    user_smoking = '',
-    user_star_sign = '',
+    user_first_name = "",
+    user_last_name = "",
+    user_email_id = "",
+    user_profile_bio = "",
+    user_gender = "",
+    user_identity = "",
+    user_age = "",
+    user_birthdate = "",
+    user_kids = "",
+    user_height = "",
+    user_sexuality = "",
+    user_open_to = "",
+    user_address = "",
+    user_general_interests = "",
+    user_date_interests = "",
+    user_suburb = "",
+    user_nationality = "",
+    user_religion = "",
+    user_body_composition = "",
+    user_education = "",
+    user_job = "",
+    user_drinking = "",
+    user_smoking = "",
+    user_star_sign = "",
   } = userData;
 
   // Convert open_to string or parse JSON if needed
   let openToList = [];
-  if (typeof user_open_to === 'string' && user_open_to) {
+  if (typeof user_open_to === "string" && user_open_to) {
     try {
       openToList = JSON.parse(user_open_to);
     } catch (error) {
       console.error("Error parsing user_open_to:", error);
-      openToList = user_open_to.includes(',') ? user_open_to.split(',') : [user_open_to];
+      openToList = user_open_to.includes(",") ? user_open_to.split(",") : [user_open_to];
     }
   }
 
@@ -302,7 +283,7 @@ export default function MyProfile() {
     try {
       const openToList = JSON.parse(openToString);
       if (openToList.length === 1) return openToList[0];
-      return openToList.slice(0, -1).join(', ') + ' and ' + openToList.slice(-1);
+      return openToList.slice(0, -1).join(", ") + " and " + openToList.slice(-1);
     } catch (error) {
       console.error("Error parsing open_to:", error);
       return openToString; // Fallback to the original string if parsing fails
@@ -311,25 +292,25 @@ export default function MyProfile() {
 
   const parseDate = (dateString) => {
     if (!dateString) return null;
-    const [day, month, year] = dateString.split('/');
+    const [day, month, year] = dateString.split("/");
     return new Date(year, month - 1, day);
   };
 
   const formatDate = (dateString) => {
     const date = parseDate(dateString);
     if (!date || isNaN(date.getTime())) {
-      return 'Invalid Date';
+      return "Invalid Date";
     }
-    return date.toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
+    return date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
   const currentYear = new Date().getFullYear();
 
-  const birthYear = user_birthdate ? parseDate(user_birthdate)?.getFullYear() : 'Unknown';
+  const birthYear = user_birthdate ? parseDate(user_birthdate)?.getFullYear() : "Unknown";
 
   // Interests / Date interests
   const parseInterests = (interestsString) => {
@@ -338,7 +319,7 @@ export default function MyProfile() {
       return JSON.parse(interestsString);
     } catch (error) {
       console.error("Error parsing interests:", error);
-      return interestsString.split(',').map((interest) => interest.trim());
+      return interestsString.split(",").map((interest) => interest.trim());
     }
   };
 
@@ -353,12 +334,12 @@ export default function MyProfile() {
           <Text style={styles.headerTitle}>My Profile</Text>
           <View style={styles.headerIcons}>
             <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="notifications-outline" size={24} color="gray" />
+              <Ionicons name='notifications-outline' size={24} color='gray' />
             </TouchableOpacity>
 
             {/* Menu button */}
             <TouchableOpacity style={styles.iconButton} onPress={toggleMenu}>
-              <Ionicons name="ellipsis-vertical" size={24} color="gray" />
+              <Ionicons name='ellipsis-vertical' size={24} color='gray' />
             </TouchableOpacity>
           </View>
         </View>
@@ -366,22 +347,22 @@ export default function MyProfile() {
         {/* Popup Menu */}
         {menuVisible && (
           <View style={styles.menuContainer}>
-            <TouchableOpacity onPress={() => handleMenuItemPress('Edit Profile')}>
+            <TouchableOpacity onPress={() => handleMenuItemPress("Edit Profile")}>
               <Text style={styles.menuItem}>Edit Profile</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleMenuItemPress('Settings')}>
+            <TouchableOpacity onPress={() => handleMenuItemPress("Settings")}>
               <Text style={styles.menuItem}>Settings</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleMenuItemPress('Manage Membership')}>
+            <TouchableOpacity onPress={() => handleMenuItemPress("Manage Membership")}>
               <Text style={styles.menuItem}>Manage Membership</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleMenuItemPress('Hide Profile')}>
+            <TouchableOpacity onPress={() => handleMenuItemPress("Hide Profile")}>
               <Text style={styles.menuItem}>Hide Profile</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleMenuItemPress('Delete Account')}>
+            <TouchableOpacity onPress={() => handleMenuItemPress("Delete Account")}>
               <Text style={styles.menuItem}>Delete Account</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleMenuItemPress('Logout')}>
+            <TouchableOpacity onPress={() => handleMenuItemPress("Logout")}>
               <Text style={styles.menuItem}>Logout</Text>
             </TouchableOpacity>
           </View>
@@ -389,38 +370,37 @@ export default function MyProfile() {
 
         {/* Top media section */}
         <View style={styles.mediaContainer}>
-        {videoUri ? (
+          {videoUri ? (
             <View style={styles.videoWrapper}>
               <Video
                 ref={videoRef}
                 source={{ uri: videoUri }}
                 style={styles.video}
-                resizeMode="cover"
+                resizeMode='cover'
                 // Let the video have built-in controls:
-  useNativeControls
-
-  // Attempt to auto-play
-  shouldPlay={false}
+                useNativeControls
+                // Attempt to auto-play
+                shouldPlay={false}
                 onPlaybackStatusUpdate={(status) => {
                   if (!status.isLoaded) return;
                   setIsVideoPlaying(status.isPlaying);
                 }}
                 // Print errors to console
-  onError={(err) => console.log("VIDEO ERROR:", err)}
+                onError={(err) => console.log("VIDEO ERROR:", err)}
               />
               {/* Center play overlay if paused */}
               {!isVideoPlaying && (
                 <TouchableOpacity style={styles.playOverlay} onPress={handlePlayPause}>
-                  <Ionicons name="play" size={48} color="#FFF" />
+                  <Ionicons name='play' size={48} color='#FFF' />
                 </TouchableOpacity>
               )}
             </View>
-            ) : (
-                        <TouchableOpacity  style={styles.uploadVideoButton}>
-                          <Ionicons name="cloud-upload-outline" size={20} color="#E4423F" />
-                          <Text style={styles.uploadVideoText}>Upload Video File</Text>
-                        </TouchableOpacity>
-                      )}
+          ) : (
+            <TouchableOpacity style={styles.uploadVideoButton}>
+              <Ionicons name='cloud-upload-outline' size={20} color='#E4423F' />
+              <Text style={styles.uploadVideoText}>Upload Video File</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Photos Section (3 boxes) */}
@@ -430,13 +410,10 @@ export default function MyProfile() {
               {photoUri ? (
                 <>
                   <Image source={{ uri: photoUri }} style={styles.photoImage} />
-                  
                 </>
               ) : (
-                <Pressable
-                  style={styles.emptyPhotoBox}
-                >
-                  <Ionicons name="add" size={24} color="red" />
+                <Pressable style={styles.emptyPhotoBox}>
+                  <Ionicons name='add' size={24} color='red' />
                 </Pressable>
               )}
             </View>
@@ -461,9 +438,7 @@ export default function MyProfile() {
         {/* Profile completion card */}
         {!isProfileComplete && (
           <View style={styles.completionCard}>
-            <Text style={styles.completionText}>
-              Profile: {profileCompletion}% complete
-            </Text>
+            <Text style={styles.completionText}>Profile: {profileCompletion}% complete</Text>
             <ProgressBar startProgress={0} endProgress={profileCompletion} />
 
             {profileSteps.map((step, index) => (
@@ -484,7 +459,7 @@ export default function MyProfile() {
         ) : null}
 
         {/* Interests / Date interests */}
-        {user_general_interests  ? (
+        {user_general_interests ? (
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>My interests</Text>
             <View style={styles.interestsRow}>
@@ -503,7 +478,7 @@ export default function MyProfile() {
             <Text style={styles.sectionTitle}>My interests</Text>
             <View style={styles.interestsRow}>
               {dateInterests.map((dateInt, i) => (
-                <View key={'date' + i} style={styles.interestChip}>
+                <View key={"date" + i} style={styles.interestChip}>
                   <Text style={styles.interestChipText}>{dateInt}</Text>
                 </View>
               ))}
@@ -517,10 +492,7 @@ export default function MyProfile() {
 
           {user_age ? (
             <View style={styles.aboutItem}>
-              <Image
-                source={require('../assets/icons/dob.png')}
-                style={{ width: 14, height: 16, }}
-              />
+              <Image source={require("../assets/icons/dob.png")} style={{ width: 14, height: 16 }} />
               <Text style={styles.aboutItemText}>
                 Born on {formatDate(user_birthdate)} (Age: {user_age})
               </Text>
@@ -529,148 +501,95 @@ export default function MyProfile() {
 
           {user_height ? (
             <View style={styles.aboutItem}>
-              <Image
-                source={require('../assets/icons/height.png')}
-                style={{ width: 14, height: 16, }}
-              />
+              <Image source={require("../assets/icons/height.png")} style={{ width: 14, height: 16 }} />
               <Text style={styles.aboutItemText}>{user_height}</Text>
             </View>
           ) : null}
 
           {user_kids ? (
             <View style={styles.aboutItem}>
-              <Image
-                source={require('../assets/icons/kids.png')}
-                style={{ width: 14, height: 16 }}
-              />
+              <Image source={require("../assets/icons/kids.png")} style={{ width: 14, height: 16 }} />
               <Text style={styles.aboutItemText}>{user_kids} children</Text>
             </View>
           ) : null}
 
           {user_gender ? (
             <View style={styles.aboutItem}>
-              <Image
-                source={require('../assets/icons/gender.png')}
-                style={{ width: 14, height: 16, }}
-              />
+              <Image source={require("../assets/icons/gender.png")} style={{ width: 14, height: 16 }} />
               <Text style={styles.aboutItemText}>Sex assigned at birth was {user_gender}</Text>
             </View>
           ) : null}
 
           {user_identity ? (
             <View style={styles.aboutItem}>
-              <Image
-                source={require('../assets/icons/user_identity.png')}
-                style={{ width: 14, height: 16, }}
-              />
+              <Image source={require("../assets/icons/user_identity.png")} style={{ width: 14, height: 16 }} />
               <Text style={styles.aboutItemText}>Identifies as {user_identity}</Text>
             </View>
           ) : null}
 
           {user_sexuality ? (
             <View style={styles.aboutItem}>
-              <Image
-                source={require('../assets/icons/sexuality.png')}
-                style={{ width: 14, height: 16, }}
-              />
+              <Image source={require("../assets/icons/sexuality.png")} style={{ width: 14, height: 16 }} />
               <Text style={styles.aboutItemText}>{user_sexuality}</Text>
             </View>
           ) : null}
 
           {user_open_to ? (
             <View style={styles.aboutItem}>
-              <Image
-                source={require('../assets/icons/opento.png')}
-                style={{ width: 14, height: 16, }}
-              />
-              <Text style={styles.aboutItemText}>
-                Open to {formatOpenTo(user_open_to)}
-              </Text>
+              <Image source={require("../assets/icons/opento.png")} style={{ width: 14, height: 16 }} />
+              <Text style={styles.aboutItemText}>Open to {formatOpenTo(user_open_to)}</Text>
             </View>
           ) : null}
 
           {user_address ? (
             <View style={styles.aboutItem}>
-              <Image
-                source={require('../assets/icons/location.png')}
-                style={{ width: 14, height: 16, }}
-              />
+              <Image source={require("../assets/icons/location.png")} style={{ width: 14, height: 16 }} />
               <Text style={styles.aboutItemText}>{user_address}</Text>
             </View>
           ) : null}
 
           {/* Add more fields as needed */}
           <View style={styles.aboutItem}>
-            <Image
-                source={require('../assets/icons/flag.png')}
-                style={{ width: 14, height: 16, }}
-              />
+            <Image source={require("../assets/icons/flag.png")} style={{ width: 14, height: 16 }} />
             <Text style={styles.aboutItemText}>Coming in Live Version</Text>
           </View>
 
           <View style={styles.aboutItem}>
-            <Image
-                source={require('../assets/icons/ethnicity.png')}
-                style={{ width: 14, height: 16, }}
-              />
+            <Image source={require("../assets/icons/ethnicity.png")} style={{ width: 14, height: 16 }} />
             <Text style={styles.aboutItemText}>Coming in Live Version</Text>
           </View>
           <View style={styles.aboutItem}>
-            <Image
-                source={require('../assets/icons/bodytype.png')}
-                style={{ width: 14, height: 16, }}
-              />
+            <Image source={require("../assets/icons/bodytype.png")} style={{ width: 14, height: 16 }} />
             <Text style={styles.aboutItemText}>Coming in Live Version</Text>
           </View>
           <View style={styles.aboutItem}>
-            <Image
-                source={require('../assets/icons/education.png')}
-                style={{ width: 14, height: 16, }}
-              />
+            <Image source={require("../assets/icons/education.png")} style={{ width: 14, height: 16 }} />
             <Text style={styles.aboutItemText}>Coming in Live Version</Text>
           </View>
           <View style={styles.aboutItem}>
-            <Image
-                source={require('../assets/icons/job.png')}
-                style={{ width: 14, height: 16, }}
-              />
+            <Image source={require("../assets/icons/job.png")} style={{ width: 14, height: 16 }} />
             <Text style={styles.aboutItemText}>Coming in Live Version</Text>
           </View>
           <View style={styles.aboutItem}>
-            <Image
-                source={require('../assets/icons/smoke.png')}
-                style={{ width: 14, height: 16, }}
-              />
+            <Image source={require("../assets/icons/smoke.png")} style={{ width: 14, height: 16 }} />
             <Text style={styles.aboutItemText}>Coming in Live Version</Text>
           </View>
           <View style={styles.aboutItem}>
-            <Image
-                source={require('../assets/icons/drink.png')}
-                style={{ width: 14, height: 16, }}
-              />
+            <Image source={require("../assets/icons/drink.png")} style={{ width: 14, height: 16 }} />
             <Text style={styles.aboutItemText}>Coming in Live Version</Text>
           </View>
           <View style={styles.aboutItem}>
-            <Image
-                source={require('../assets/icons/religion.png')}
-                style={{ width: 14, height: 16, }}
-              />
+            <Image source={require("../assets/icons/religion.png")} style={{ width: 14, height: 16 }} />
             <Text style={styles.aboutItemText}>Coming in Live Version</Text>
           </View>
           <View style={styles.aboutItem}>
-            <Image
-                source={require('../assets/icons/star.png')}
-                style={{ width: 14, height: 16, }}
-              />
+            <Image source={require("../assets/icons/star.png")} style={{ width: 14, height: 16 }} />
             <Text style={styles.aboutItemText}>Coming in Live Version</Text>
           </View>
         </View>
 
         {/* Find My Match Button */}
-        <TouchableOpacity
-          style={styles.findMatchButton}
-          onPress={() => navigation.navigate('Preferences')} 
-        >
+        <TouchableOpacity style={styles.findMatchButton} onPress={() => navigation.navigate("Preferences")}>
           <Text style={styles.findMatchButtonText}>Find my match!</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -692,45 +611,45 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   bottomNavContainer: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
     height: 60,
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
     borderTopWidth: 2,
-    borderTopColor: '#EEE',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    borderTopColor: "#EEE",
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
   },
   navButton: {},
   headerContainer: {
     paddingHorizontal: 20,
     marginTop: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingBottom: 30,
   },
   headerTitle: {
     fontSize: 22,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   headerIcons: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   iconButton: {
     marginLeft: 18,
   },
   menuContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 60, // approximate offset from top
     right: 10,
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
     padding: 10,
     borderRadius: 6,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     elevation: 5,
@@ -739,7 +658,7 @@ const styles = StyleSheet.create({
   menuItem: {
     fontSize: 16,
     paddingVertical: 8,
-    color: '#000',
+    color: "#000",
   },
   mediaContainer: {
     marginBottom: 20,
@@ -819,50 +738,50 @@ const styles = StyleSheet.create({
   },
 
   pageIndicator: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginVertical: 10,
   },
   dot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#ccc',
+    backgroundColor: "#ccc",
     marginHorizontal: 4,
   },
   activeDot: {
-    backgroundColor: 'red',
+    backgroundColor: "red",
   },
   userInfo: {
-    alignItems: 'center',
+    alignItems: "center",
     marginVertical: 10,
   },
   userName: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   userEmail: {
-    color: 'gray',
+    color: "gray",
     fontSize: 14,
     marginTop: 4,
   },
   completionCard: {
-    backgroundColor: '#F9F9F9',
+    backgroundColor: "#F9F9F9",
     marginHorizontal: 20,
     padding: 15,
     borderRadius: 10,
-    shadowColor: '#000',
+    shadowColor: "#000",
     elevation: 1,
     marginTop: 15,
     marginBottom: 10,
   },
   completionText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 10,
   },
   completionLink: {
-    color: 'red',
+    color: "red",
     fontSize: 14,
     marginVertical: 3,
   },
@@ -873,21 +792,21 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     marginBottom: 10,
-    color: 'gray',
+    color: "gray",
   },
   bioText: {
     fontSize: 14,
-    color: '#000',
+    color: "#000",
     lineHeight: 20,
     marginBottom: 10,
   },
   interestsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
   interestChip: {
     borderWidth: 1,
-    borderColor: '#1A1A1A',
+    borderColor: "#1A1A1A",
     borderRadius: 100,
     paddingVertical: 6,
     paddingHorizontal: 12,
@@ -896,11 +815,11 @@ const styles = StyleSheet.create({
   },
   interestChipText: {
     fontSize: 16,
-    color: '#000',
+    color: "#000",
   },
   aboutItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: 5,
   },
   aboutItemText: {
@@ -908,24 +827,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   findMatchButton: {
-    backgroundColor: '#E4423F',
+    backgroundColor: "#E4423F",
     marginTop: 30,
     marginHorizontal: 20,
     height: 60,
     borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 3.84,
     elevation: 5,
   },
   findMatchButtonText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 20,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
+    fontWeight: "bold",
+    textTransform: "uppercase",
   },
 });
-

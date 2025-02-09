@@ -8,8 +8,9 @@ import { Video } from "expo-av";
 import { useFocusEffect } from "@react-navigation/native";
 import ProgressBar from "../src/Assets/Components/ProgressBar";
 import { getProfileSteps, getProfileCompletion } from "./profileStepsState";
+import { REACT_APP_GOOGLE_API_KEY } from "@env";
 
-const GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_API_KEY;
+const GOOGLE_API_KEY = REACT_APP_GOOGLE_API_KEY;
 console.log(GOOGLE_API_KEY);
 
 // Example placeholders for bottom navigation icons

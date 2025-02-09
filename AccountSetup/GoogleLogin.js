@@ -4,8 +4,9 @@ import axios from "axios";
 import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
 import { useNavigation } from "@react-navigation/native";
 import UserDoesNotExistModal from "./UserDoesNotExistModal";
+import { REACT_APP_GOOGLE_CLIENT_ID } from "@env";
 
-const CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+const CLIENT_ID = REACT_APP_GOOGLE_CLIENT_ID;
 
 function GoogleLogin(props) {
   const navigation = useNavigation();
@@ -45,7 +46,7 @@ function GoogleLogin(props) {
           setNewEmail(emailAddress);
           setLoginSuccessful(true);
           setUserDoesntExist(false);
-          navigation.navigate("AccountSetup2Create"); 
+          navigation.navigate("AccountSetup2Create");
         } else {
           setUserDoesntExist(true);
         }
@@ -72,22 +73,14 @@ function GoogleLogin(props) {
 
   return (
     <View style={styles.container}>
-      {userDoesntExist && (
-        <UserDoesNotExistModal
-          isOpen={userDoesntExist}
-          onCancel={onCancelModal}
-          email={newEmail}
-        />
-      )}
+      {userDoesntExist && <UserDoesNotExistModal isOpen={userDoesntExist} onCancel={onCancelModal} email={newEmail} />}
       <Text style={styles.title}>Google Login</Text>
       {loginSuccessful ? (
         <Text>Login Successful! Redirecting...</Text>
       ) : (
         <View>
-          <Button title="Sign in with Google" onPress={handleGoogleSignIn} />
-          {showSpinner && (
-            <ActivityIndicator size="large" color="#0000ff" style={styles.spinner} />
-          )}
+          <Button title='Sign in with Google' onPress={handleGoogleSignIn} />
+          {showSpinner && <ActivityIndicator size='large' color='#0000ff' style={styles.spinner} />}
         </View>
       )}
     </View>

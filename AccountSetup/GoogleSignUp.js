@@ -4,15 +4,12 @@ import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-si
 import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
 import { formatPhoneNumber } from "./helper";
+import { REACT_APP_GOOGLE_CLIENT_ID, REACT_APP_GOOGLE_CLIENT_SECRET, REACT_APP_GOOGLE_LOGIN } from "@env";
 
-const CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
-const CLIENT_SECRET = process.env.REACT_APP_GOOGLE_CLIENT_SECRET;
-const GOOGLE_LOGIN = process.env.REACT_APP_GOOGLE_LOGIN;
-const SCOPES = [
-  "https://www.googleapis.com/auth/calendar",
-  "https://www.googleapis.com/auth/userinfo.profile",
-  "https://www.googleapis.com/auth/userinfo.email"
-];
+const CLIENT_ID = REACT_APP_GOOGLE_CLIENT_ID;
+const CLIENT_SECRET = REACT_APP_GOOGLE_CLIENT_SECRET;
+const GOOGLE_LOGIN = REACT_APP_GOOGLE_LOGIN;
+const SCOPES = ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"];
 
 function GoogleSignup() {
   const navigation = useNavigation();
@@ -71,7 +68,7 @@ function GoogleSignup() {
       };
 
       const formBody = Object.keys(details)
-        .map(key => encodeURIComponent(key) + "=" + encodeURIComponent(details[key]))
+        .map((key) => encodeURIComponent(key) + "=" + encodeURIComponent(details[key]))
         .join("&");
 
       const response = await fetch(authorization_url, {
@@ -88,9 +85,7 @@ function GoogleSignup() {
       setAccessToken(at);
       setRefreshToken(rt);
 
-      const userResponse = await axios.get(
-        `https://www.googleapis.com/oauth2/v2/userinfo?alt=json&access_token=${at}`
-      );
+      const userResponse = await axios.get(`https://www.googleapis.com/oauth2/v2/userinfo?alt=json&access_token=${at}`);
       const userData = userResponse.data;
 
       setEmail(userData.email);
@@ -105,19 +100,14 @@ function GoogleSignup() {
         social_id: userData.id,
       };
 
-      axios
-        .post(
-          "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/MMU",
-          user
-        )
-        .then((response) => {
-          if (response.data.message === "User already exists") {
-            setUserAlreadyExists(true);
-          } else {
-            setSignupSuccessful(true);
-          }
-          setLoading(false);
-        });
+      axios.post("https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/MMU", user).then((response) => {
+        if (response.data.message === "User already exists") {
+          setUserAlreadyExists(true);
+        } else {
+          setSignupSuccessful(true);
+        }
+        setLoading(false);
+      });
     } catch (error) {
       console.error("Error fetching tokens:", error);
       setLoading(false);
@@ -134,41 +124,25 @@ function GoogleSignup() {
       {signupSuccessful ? (
         <View>
           <Text style={styles.successMessage}>Signup Successful</Text>
-          <Button title="Login" onPress={() => navigation.navigate("AccountSetup1Login")} />
+          <Button title='Login' onPress={() => navigation.navigate("AccountSetup1Login")} />
         </View>
       ) : (
         <>
           <View style={styles.inputGroup}>
-            <TextInput
-              style={styles.input}
-              placeholder="First Name"
-              value={firstName}
-              onChangeText={setFirstName}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Last Name"
-              value={lastName}
-              onChangeText={setLastName}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Phone Number"
-              value={phoneNumber}
-              onChangeText={(value) => setPhoneNumber(formatPhoneNumber(value))}
-              keyboardType="phone-pad"
-            />
+            <TextInput style={styles.input} placeholder='First Name' value={firstName} onChangeText={setFirstName} />
+            <TextInput style={styles.input} placeholder='Last Name' value={lastName} onChangeText={setLastName} />
+            <TextInput style={styles.input} placeholder='Phone Number' value={phoneNumber} onChangeText={(value) => setPhoneNumber(formatPhoneNumber(value))} keyboardType='phone-pad' />
           </View>
           <View style={styles.signUpButton}>
-            <Button title="Sign Up with Google" onPress={handleGoogleSignup} />
+            <Button title='Sign Up with Google' onPress={handleGoogleSignup} />
           </View>
-          {loading && <ActivityIndicator size="large" color="#0000ff" />}
+          {loading && <ActivityIndicator size='large' color='#0000ff' />}
         </>
       )}
-      <Modal visible={userAlreadyExists} transparent animationType="slide">
+      <Modal visible={userAlreadyExists} transparent animationType='slide'>
         <View style={styles.modalView}>
           <Text>User Already Exists</Text>
-          <Button title="Cancel" onPress={onCancel} />
+          <Button title='Cancel' onPress={onCancel} />
         </View>
       </Modal>
     </View>

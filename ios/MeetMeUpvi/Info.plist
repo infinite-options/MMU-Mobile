@@ -21,7 +21,11 @@
     <key>CFBundleIdentifier</key>
     <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>Your location is needed to find matches near you.</string>
+    <string>MeetMeUp needs your location to show nearby matches and meeting places</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>MeetMeUp needs your location to show nearby matches and meeting places</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>MeetMeUp needs your location to show nearby matches and meeting places</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
@@ -42,7 +46,7 @@
       </dict>
     </array>
     <key>CFBundleVersion</key>
-    <string>10</string>
+    <string>11</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>NSAppTransportSecurity</key>

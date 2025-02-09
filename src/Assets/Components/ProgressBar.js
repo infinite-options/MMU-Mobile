@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, Easing } from 'react-native';
+import React, { useEffect, useRef } from "react";
+import { View, StyleSheet, Animated, Easing } from "react-native";
 
 const ProgressBar = ({ startProgress, endProgress, style }) => {
   const animatedProgress = useRef(new Animated.Value(startProgress)).current; // Initialize with startProgress
@@ -19,7 +19,7 @@ const ProgressBar = ({ startProgress, endProgress, style }) => {
   // Interpolate the animated value to convert it into a width percentage
   const animatedWidth = animatedProgress.interpolate({
     inputRange: [0, 100],
-    outputRange: ['0%', '100%'], // Map progress value to percentage width
+    outputRange: ["0%", "100%"], // Map progress value to percentage width
   });
 
   return (
@@ -30,16 +30,16 @@ const ProgressBar = ({ startProgress, endProgress, style }) => {
 };
 
 const styles = StyleSheet.create({
-  progressBarContainer: {
-    height: 6,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginVertical: 20,
-  },
   progress: {
-    height: '100%',
-    backgroundColor: '#000',
+    backgroundColor: "#000",
+    height: "100%",
+  },
+  progressBarContainer: {
+    backgroundColor: "#E0E0E0",
+    borderRadius: 3,
+    height: 6,
+    marginVertical: 20,
+    overflow: "hidden",
   },
 });
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { SafeAreaView, Platform, StatusBar, View, StyleSheet, TouchableOpacity, Pressable, Alert, Image } from "react-native";
+import { SafeAreaView, Platform, StatusBar, View, StyleSheet, TouchableOpacity, Pressable, Alert, Image, TouchableWithoutFeedback, Keyboard } from "react-native";
 import { Text, TextInput } from "react-native-paper";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -103,46 +103,50 @@ export default function BirthdayInput({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Back Button */}
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Image source={require("../assets/icons/backarrow.png")} />
-      </TouchableOpacity>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <SafeAreaView style={styles.container}>
+        {/* Back Button */}
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Image source={require("../assets/icons/backarrow.png")} />
+        </TouchableOpacity>
 
-      {/* Progress Bar */}
-      <ProgressBar startProgress={20} endProgress={30} style={styles.progressBar} />
+        {/* Progress Bar */}
+        <ProgressBar startProgress={20} endProgress={30} style={styles.progressBar} />
 
-      {/* Content */}
-      <View style={styles.content}>
-        <Text style={styles.title}>When's your birthday?</Text>
-        <Text style={styles.subtitle}>Your age will be public.</Text>
+        {/* Content */}
+        <View style={styles.content}>
+          <Text style={styles.title}>When's your birthday?</Text>
+          <Text style={styles.subtitle}>Your age will be public.</Text>
 
-        {/* Input Field */}
-        <TextInput
-          label='dd/mm/yyyy'
-          value={birthdate}
-          onChangeText={handleInputChange}
-          mode='outlined'
-          style={styles.input}
-          keyboardType='numeric'
-          outlineStyle={[styles.textInputOutline, warning !== "" && { borderColor: "#E4423F", borderWidth: 2, borderRadius: 10 }]}
-          maxLength={10} // dd/mm/yyyy -> 10 characters
-        />
+          {/* Input Field */}
+          <TextInput
+            label='dd/mm/yyyy'
+            value={birthdate}
+            onChangeText={handleInputChange}
+            mode='outlined'
+            style={styles.input}
+            keyboardType='numeric'
+            outlineStyle={[styles.textInputOutline, warning !== "" && { borderColor: "#E4423F", borderWidth: 2, borderRadius: 10 }]}
+            maxLength={10} // dd/mm/yyyy -> 10 characters
+            onSubmitEditing={Keyboard.dismiss}
+            blurOnSubmit={true}
+          />
 
-        {/* Warning Section */}
-        {warning !== "" && (
-          <View style={styles.warningContainer}>
-            <MaterialIcons name='error-outline' size={20} color='red' />
-            <Text style={styles.warningText}>{warning}</Text>
-          </View>
-        )}
-      </View>
+          {/* Warning Section */}
+          {warning !== "" && (
+            <View style={styles.warningContainer}>
+              <MaterialIcons name='error-outline' size={20} color='red' />
+              <Text style={styles.warningText}>{warning}</Text>
+            </View>
+          )}
+        </View>
 
-      {/* Continue Button */}
-      <Pressable style={[styles.continueButton, { backgroundColor: isValid ? "#E4423F" : "#F5F5F5" }]} onPress={handleContinue} disabled={!isValid}>
-        <Text style={[styles.continueButtonText, { color: isValid ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
-      </Pressable>
-    </SafeAreaView>
+        {/* Continue Button */}
+        <Pressable style={[styles.continueButton, { backgroundColor: isValid ? "#E4423F" : "#F5F5F5" }]} onPress={handleContinue} disabled={!isValid}>
+          <Text style={[styles.continueButtonText, { color: isValid ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
+        </Pressable>
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 }
 

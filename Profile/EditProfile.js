@@ -57,6 +57,29 @@ export default function EditProfile() {
     { label: "Other", value: "Other" },
   ]);
 
+  // Gender
+  const [genderOpen, setGenderOpen] = useState(false);
+  const [genderValue, setGenderValue] = useState(null);
+  const [genderItems, setGenderItems] = useState([
+    { label: "Male", value: "Male" },
+    { label: "Female", value: "Female" },
+    { label: "Non-binary", value: "Non-binary" },
+    { label: "Other", value: "Other" },
+  ]);
+
+  // Identity
+  const [identityOpen, setIdentityOpen] = useState(false);
+  const [identityValue, setIdentityValue] = useState(null);
+  const [identityItems, setIdentityItems] = useState([
+    { label: "Man", value: "Man" },
+    { label: "Woman", value: "Woman" },
+    { label: "Non-binary", value: "Non-binary" },
+    { label: "Transgender Man", value: "Transgender Man" },
+    { label: "Transgender Woman", value: "Transgender Woman" },
+    { label: "Genderqueer", value: "Genderqueer" },
+    { label: "Other", value: "Other" },
+  ]);
+
   // Orientation
   const [orientationOpen, setOrientationOpen] = useState(false);
   const [orientationValue, setOrientationValue] = useState(null);
@@ -177,15 +200,6 @@ export default function EditProfile() {
   const [modalVisible, setModalVisible] = useState(false);
   const [newEntryText, setNewEntryText] = useState("");
   const [entryType, setEntryType] = useState("interest"); // 'interest' or 'dateType'
-
-  const [genderOpen, setGenderOpen] = useState(false);
-  const [genderValue, setGenderValue] = useState(null);
-  const [genderItems, setGenderItems] = useState([
-    { label: "Male", value: "Male" },
-    { label: "Female", value: "Female" },
-    { label: "Non-binary", value: "Non-binary" },
-    { label: "Other", value: "Other" },
-  ]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -624,7 +638,7 @@ export default function EditProfile() {
           <ActivityIndicator size='large' color='#E4423F' />
         </View>
       ) : (
-        <ScrollView style={{ flex: 1 }}>
+        <ScrollView style={{ flex: 1, paddingHorizontal: 20 }}>
           {/* Header */}
           <View style={styles.headerContainer}>
             <Text style={styles.headerTitle}>Editing My Profile</Text>
@@ -849,7 +863,7 @@ export default function EditProfile() {
             />
 
             {/* Gender */}
-            <Text style={styles.label}>Gender</Text>
+            <Text style={styles.label}>Gender assigned at birth</Text>
             <DropDownPicker
               open={genderOpen}
               value={genderValue}
@@ -857,7 +871,7 @@ export default function EditProfile() {
               setOpen={setGenderOpen}
               setValue={setGenderValue}
               setItems={setGenderItems}
-              placeholder='Select Gender'
+              placeholder='Select Gender assigned at birth'
               style={{
                 backgroundColor: "#F9F9F9",
                 borderColor: "#E4423F",
@@ -884,16 +898,43 @@ export default function EditProfile() {
               }}
             />
 
-            <TextInput
-              label='Identity'
-              mode='outlined'
-              style={styles.inputField}
-              value={formValues.identity}
-              onChangeText={(text) => setFormValues({ ...formValues, identity: text })}
-              outlineStyle={styles.textInputOutline}
+            {/* Identity */}
+            <Text style={styles.label}>Identity</Text>
+            <DropDownPicker
+              open={identityOpen}
+              value={identityValue}
+              items={identityItems}
+              setOpen={setIdentityOpen}
+              setValue={setIdentityValue}
+              setItems={setIdentityItems}
+              placeholder='Select Identity'
+              style={{
+                backgroundColor: "#F9F9F9",
+                borderColor: "#E4423F",
+                marginBottom: identityOpen ? 100 : 15,
+                zIndex: 9500,
+                elevation: 9500,
+              }}
+              listMode='SCROLLVIEW'
+              scrollViewProps={{
+                nestedScrollEnabled: true,
+              }}
+              textStyle={{
+                fontSize: 16,
+              }}
+              dropDownContainerStyle={{
+                backgroundColor: "#F9F9F9",
+                borderColor: "#E4423F",
+                position: "absolute",
+                zIndex: 9500,
+                elevation: 9500,
+              }}
+              onChangeValue={(value) => {
+                setFormValues((prev) => ({ ...prev, identity: value }));
+              }}
             />
 
-            {/* Orientation */}
+            {/* Commenting out Sexual Orientation section
             <Text style={styles.label}>Sexual Orientation</Text>
             <DropDownPicker
               open={orientationOpen}
@@ -921,6 +962,7 @@ export default function EditProfile() {
               }}
               onChangeValue={(value) => setFormValues((prev) => ({ ...prev, orientation: value }))}
             />
+            */}
 
             {/* Open To */}
             <Text style={styles.label}>Open To</Text>
@@ -1085,12 +1127,7 @@ export default function EditProfile() {
                   if (details) {
                     const { lat, lng } = details.geometry.location;
                     setLocation({ latitude: lat, longitude: lng });
-                    setRegion({
-                      latitude: lat,
-                      longitude: lng,
-                      latitudeDelta: 0.06,
-                      longitudeDelta: 0.06,
-                    });
+                    setRegion((prev) => ({ ...prev, latitude: lat, longitude: lng }));
                     setFormValues((prev) => ({
                       ...prev,
                       address: data.description,
@@ -1247,7 +1284,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     justifyContent: "flex-start",
     alignItems: "stretch",
-    paddingHorizontal: 20,
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   loadingContainer: {

@@ -568,17 +568,24 @@ export default function EditProfile() {
     uploadData.append("user_uid", userData.user_uid);
     uploadData.append("user_email_id", userData.user_email_id);
 
-    // If you want to actually upload photos in form-data, do so here.
-    // This is commented out because your code had placeholders:
-    // photos.forEach((uri, index) => {
-    //   if (uri) {
-    //     uploadData.append(`img_${index}`, {
-    //       uri,
-    //       type: 'image/jpeg',
-    //       name: `img_${index}.jpg`,
-    //     });
-    //   }
-    // });
+    // Add photo URLs array to track which photos to keep
+    const photoUrls = photos.filter((uri) => uri !== null);
+    uploadData.append("user_photo_url", JSON.stringify(photoUrls));
+
+    // Upload photos
+    photos.forEach((uri, index) => {
+      if (uri) {
+        const filename = uri.split("/").pop();
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : "image/jpeg";
+
+        uploadData.append(`img_${index}`, {
+          uri,
+          type,
+          name: filename,
+        });
+      }
+    });
 
     // Upload video if any
     if (videoUri) {

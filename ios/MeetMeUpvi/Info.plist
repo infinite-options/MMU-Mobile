@@ -17,7 +17,7 @@
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>GMSApiKey</key>
-    <string>AIzaSyDNnAgWzY172kCYQlw6KMuxzETjhJCTFQo</string>
+    <string>AIzaSyDLmcCHhr3U6d5mf10f9NELlrtGweoxzjE</string>
     <key>CFBundleIdentifier</key>
     <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
     <key>NSLocationWhenInUseUsageDescription</key>

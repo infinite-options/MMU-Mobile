@@ -538,7 +538,14 @@ export default function MyProfile() {
           {user_open_to ? (
             <View style={styles.aboutItem}>
               <Image source={require("../assets/icons/opento.png")} style={{ width: 14, height: 16 }} />
-              <Text style={styles.aboutItemText}>Open to {formatOpenTo(user_open_to)}</Text>
+              <View style={styles.aboutItemText}>
+                <Text style={styles.openToLabel}>Open to:</Text>
+                {openToList.map((item, index) => (
+                  <Text key={index} style={styles.openToItem}>
+                    • {item}
+                  </Text>
+                ))}
+              </View>
             </View>
           ) : null}
 
@@ -820,12 +827,13 @@ const styles = StyleSheet.create({
   },
   aboutItem: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginVertical: 5,
   },
   aboutItemText: {
     marginLeft: 15,
     fontSize: 16,
+    flex: 1,
   },
   findMatchButton: {
     backgroundColor: "#E4423F",
@@ -846,5 +854,14 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     textTransform: "uppercase",
+  },
+  openToLabel: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  openToItem: {
+    fontSize: 16,
+    marginLeft: 10,
+    marginVertical: 2,
   },
 });

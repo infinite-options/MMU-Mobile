@@ -73,11 +73,15 @@ export default function EditProfile() {
 
   // Open To
   const [openToOpen, setOpenToOpen] = useState(false);
-  const [openToValue, setOpenToValue] = useState(null);
+  const [openToValue, setOpenToValue] = useState([]); // Changed to array for multiple selections
   const [openToItems, setOpenToItems] = useState([
     { label: "Men", value: "Men" },
     { label: "Women", value: "Women" },
-    { label: "Men & Women", value: "Men & Women" },
+    { label: "Men (transgender)", value: "Men (transgender)" },
+    { label: "Women (transgender)", value: "Women (transgender)" },
+    { label: "Non-binary", value: "Non-binary" },
+    { label: "Genderqueer", value: "Genderqueer" },
+    { label: "Other", value: "Other" },
     { label: "Everyone", value: "Everyone" },
   ]);
 
@@ -207,14 +211,18 @@ export default function EditProfile() {
         const fetched = response.data.result[0];
 
         // Safely parse open_to field
-        let parsedOpenTo = fetched.user_open_to;
+        let parsedOpenTo = [];
         try {
-          if (typeof fetched.user_open_to === "string") {
-            parsedOpenTo = JSON.parse(fetched.user_open_to);
+          if (fetched.user_open_to) {
+            if (typeof fetched.user_open_to === "string") {
+              parsedOpenTo = JSON.parse(fetched.user_open_to);
+            } else if (Array.isArray(fetched.user_open_to)) {
+              parsedOpenTo = fetched.user_open_to;
+            }
           }
         } catch (error) {
           console.log("Error parsing open_to:", error);
-          parsedOpenTo = fetched.user_open_to || "";
+          parsedOpenTo = [];
         }
 
         // Safely parse interests
@@ -271,7 +279,7 @@ export default function EditProfile() {
         // Set initial values for dropdowns
         setGenderValue(fetched.user_gender || null);
         setOrientationValue(fetched.user_sexuality || null);
-        setOpenToValue(typeof parsedOpenTo === "string" ? parsedOpenTo : null);
+        setOpenToValue(parsedOpenTo);
         setBodyTypeValue(fetched.user_body_composition || null);
         setSmokingValue(fetched.user_smoking || null);
         setDrinkingValue(fetched.user_drinking || null);
@@ -580,7 +588,7 @@ export default function EditProfile() {
     uploadData.append("user_gender", formValues.gender || "-");
     uploadData.append("user_identity", formValues.identity);
     uploadData.append("user_sexuality", formValues.orientation);
-    uploadData.append("user_open_to", formValues.openTo);
+    uploadData.append("user_open_to", JSON.stringify(openToValue || []));
     uploadData.append("user_address", formValues.address);
     uploadData.append("user_nationality", formValues.nationality);
     uploadData.append("user_body_composition", formValues.bodyType);
@@ -916,32 +924,31 @@ export default function EditProfile() {
 
             {/* Open To */}
             <Text style={styles.label}>Open To</Text>
-            <DropDownPicker
-              open={openToOpen}
-              value={openToValue}
-              items={openToItems}
-              setOpen={setOpenToOpen}
-              setValue={setOpenToValue}
-              setItems={setOpenToItems}
-              placeholder='Select Open To'
-              listMode='SCROLLVIEW'
-              scrollViewProps={{
-                nestedScrollEnabled: true,
-              }}
-              style={{
-                ...styles.dropdownStyle,
-                zIndex: 8000,
-                elevation: 8000,
-              }}
-              textStyle={styles.dropdownTextStyle}
-              dropDownContainerStyle={{
-                ...styles.dropdownContainerStyle,
-                position: "absolute",
-                zIndex: 8000,
-                elevation: 8000,
-              }}
-              onChangeValue={(value) => setFormValues((prev) => ({ ...prev, openTo: value }))}
-            />
+            <View style={[styles.dropdownWrapper, openToOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+              <DropDownPicker
+                open={openToOpen}
+                value={openToValue}
+                items={openToItems}
+                setOpen={setOpenToOpen}
+                setValue={setOpenToValue}
+                setItems={setOpenToItems}
+                placeholder='Select Open To (Multiple)'
+                multiple={true}
+                mode='BADGE'
+                badgeDotColors={["#E4423F"]}
+                listMode='SCROLLVIEW'
+                scrollViewProps={{
+                  nestedScrollEnabled: true,
+                }}
+                style={styles.dropdownStyle}
+                textStyle={styles.dropdownTextStyle}
+                dropDownContainerStyle={{
+                  ...styles.dropdownContainerStyle,
+                  position: "absolute",
+                }}
+                onChangeValue={(value) => setFormValues((prev) => ({ ...prev, openTo: value }))}
+              />
+            </View>
 
             {/* Smoking */}
             <Text style={styles.label}>Smoking</Text>
@@ -1579,5 +1586,15 @@ const styles = StyleSheet.create({
   },
   dropdownWrapper: {
     marginBottom: 15,
+  },
+  selectedOptionsContainer: {
+    marginTop: 10,
+    marginLeft: 5,
+  },
+  selectedOptionItem: {
+    fontSize: 16,
+    color: "#333",
+    marginVertical: 5,
+    paddingLeft: 10,
   },
 });

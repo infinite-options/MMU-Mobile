@@ -8,10 +8,11 @@ import axios from "axios";
 import { useFocusEffect } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { Video } from "expo-av";
-import { Picker } from "@react-native-picker/picker"; // <--- ADD THIS
+import { Picker } from "@react-native-picker/picker";
 import MapView, { Marker } from "react-native-maps";
 import { REACT_APP_GOOGLE_API_KEY } from "@env";
-import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete"; // Fixed import
+import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
+import DropDownPicker from "react-native-dropdown-picker";
 
 const GOOGLE_API_KEY = REACT_APP_GOOGLE_API_KEY;
 
@@ -45,15 +46,98 @@ export default function EditProfile() {
   const [heightIn, setHeightIn] = useState(11);
 
   // Replace these text-based fields with pickers for Gender, Body Type, etc.
-  const [genderOptions] = useState(["Male", "Female", "Non-binary", "Other"]);
-  const [bodyTypeOptions] = useState(["Slim", "Athletic", "Curvy", "Average", "Other"]);
-  const [orientationOptions] = useState(["Straight", "Gay", "Bisexual", "Asexual", "Pansexual", "Queer", "Questioning", "Other"]);
-  const [openToOptions] = useState(["Men", "Women", "Men & Women", "Everyone"]);
-  const [smokingOptions] = useState(["I don't smoke", "Social smoker", "Regular smoker"]);
-  const [drinkingOptions] = useState(["I don't drink", "Social drinker", "Regular drinker"]);
-  const [religionOptions] = useState(["No religion", "Christianity", "Islam", "Hinduism", "Buddhism", "Other"]);
-  const [starSignOptions] = useState(["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"]);
-  const [educationOptions] = useState(["", "High School", "Bachelor's Degree", "Master's Degree", "PhD"]);
+  // Body Type
+  const [bodyTypeOpen, setBodyTypeOpen] = useState(false);
+  const [bodyTypeValue, setBodyTypeValue] = useState(null);
+  const [bodyTypeItems, setBodyTypeItems] = useState([
+    { label: "Slim", value: "Slim" },
+    { label: "Athletic", value: "Athletic" },
+    { label: "Curvy", value: "Curvy" },
+    { label: "Average", value: "Average" },
+    { label: "Other", value: "Other" },
+  ]);
+
+  // Orientation
+  const [orientationOpen, setOrientationOpen] = useState(false);
+  const [orientationValue, setOrientationValue] = useState(null);
+  const [orientationItems, setOrientationItems] = useState([
+    { label: "Straight", value: "Straight" },
+    { label: "Gay", value: "Gay" },
+    { label: "Bisexual", value: "Bisexual" },
+    { label: "Asexual", value: "Asexual" },
+    { label: "Pansexual", value: "Pansexual" },
+    { label: "Queer", value: "Queer" },
+    { label: "Questioning", value: "Questioning" },
+    { label: "Other", value: "Other" },
+  ]);
+
+  // Open To
+  const [openToOpen, setOpenToOpen] = useState(false);
+  const [openToValue, setOpenToValue] = useState(null);
+  const [openToItems, setOpenToItems] = useState([
+    { label: "Men", value: "Men" },
+    { label: "Women", value: "Women" },
+    { label: "Men & Women", value: "Men & Women" },
+    { label: "Everyone", value: "Everyone" },
+  ]);
+
+  // Smoking
+  const [smokingOpen, setSmokingOpen] = useState(false);
+  const [smokingValue, setSmokingValue] = useState(null);
+  const [smokingItems, setSmokingItems] = useState([
+    { label: "I don't smoke", value: "I don't smoke" },
+    { label: "Social smoker", value: "Social smoker" },
+    { label: "Regular smoker", value: "Regular smoker" },
+  ]);
+
+  // Drinking
+  const [drinkingOpen, setDrinkingOpen] = useState(false);
+  const [drinkingValue, setDrinkingValue] = useState(null);
+  const [drinkingItems, setDrinkingItems] = useState([
+    { label: "I don't drink", value: "I don't drink" },
+    { label: "Social drinker", value: "Social drinker" },
+    { label: "Regular drinker", value: "Regular drinker" },
+  ]);
+
+  // Religion
+  const [religionOpen, setReligionOpen] = useState(false);
+  const [religionValue, setReligionValue] = useState(null);
+  const [religionItems, setReligionItems] = useState([
+    { label: "No religion", value: "No religion" },
+    { label: "Christianity", value: "Christianity" },
+    { label: "Islam", value: "Islam" },
+    { label: "Hinduism", value: "Hinduism" },
+    { label: "Buddhism", value: "Buddhism" },
+    { label: "Other", value: "Other" },
+  ]);
+
+  // Star Sign
+  const [starSignOpen, setStarSignOpen] = useState(false);
+  const [starSignValue, setStarSignValue] = useState(null);
+  const [starSignItems, setStarSignItems] = useState([
+    { label: "Aries", value: "Aries" },
+    { label: "Taurus", value: "Taurus" },
+    { label: "Gemini", value: "Gemini" },
+    { label: "Cancer", value: "Cancer" },
+    { label: "Leo", value: "Leo" },
+    { label: "Virgo", value: "Virgo" },
+    { label: "Libra", value: "Libra" },
+    { label: "Scorpio", value: "Scorpio" },
+    { label: "Sagittarius", value: "Sagittarius" },
+    { label: "Capricorn", value: "Capricorn" },
+    { label: "Aquarius", value: "Aquarius" },
+    { label: "Pisces", value: "Pisces" },
+  ]);
+
+  // Education
+  const [educationOpen, setEducationOpen] = useState(false);
+  const [educationValue, setEducationValue] = useState(null);
+  const [educationItems, setEducationItems] = useState([
+    { label: "High School", value: "High School" },
+    { label: "Bachelor's Degree", value: "Bachelor's Degree" },
+    { label: "Master's Degree", value: "Master's Degree" },
+    { label: "PhD", value: "PhD" },
+  ]);
 
   // Interests and date interests as arrays of strings => displayed as chips
   const [interests, setInterests] = useState([]);
@@ -90,6 +174,15 @@ export default function EditProfile() {
   const [newEntryText, setNewEntryText] = useState("");
   const [entryType, setEntryType] = useState("interest"); // 'interest' or 'dateType'
 
+  const [genderOpen, setGenderOpen] = useState(false);
+  const [genderValue, setGenderValue] = useState(null);
+  const [genderItems, setGenderItems] = useState([
+    { label: "Male", value: "Male" },
+    { label: "Female", value: "Female" },
+    { label: "Non-binary", value: "Non-binary" },
+    { label: "Other", value: "Other" },
+  ]);
+
   useFocusEffect(
     React.useCallback(() => {
       if (videoRef.current) {
@@ -113,6 +206,39 @@ export default function EditProfile() {
         const response = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${uid}`);
         const fetched = response.data.result[0];
 
+        // Safely parse open_to field
+        let parsedOpenTo = fetched.user_open_to;
+        try {
+          if (typeof fetched.user_open_to === "string") {
+            parsedOpenTo = JSON.parse(fetched.user_open_to);
+          }
+        } catch (error) {
+          console.log("Error parsing open_to:", error);
+          parsedOpenTo = fetched.user_open_to || "";
+        }
+
+        // Safely parse interests
+        let parsedInterests = [];
+        try {
+          if (fetched.user_general_interests) {
+            parsedInterests = JSON.parse(fetched.user_general_interests);
+          }
+        } catch (error) {
+          console.log("Error parsing interests:", error);
+          parsedInterests = [];
+        }
+
+        // Safely parse date interests
+        let parsedDateInterests = [];
+        try {
+          if (fetched.user_date_interests) {
+            parsedDateInterests = JSON.parse(fetched.user_date_interests);
+          }
+        } catch (error) {
+          console.log("Error parsing date interests:", error);
+          parsedDateInterests = [];
+        }
+
         setUserData(fetched || {});
         setFormValues({
           firstName: fetched.user_first_name || "",
@@ -121,15 +247,11 @@ export default function EditProfile() {
           bio: fetched.user_profile_bio || "",
           availableTimes: fetched.user_available_time ? JSON.parse(fetched.user_available_time) : [],
           birthdate: fetched.user_birthdate || "",
-          // We'll store the numeric height into our separate states (example)
-          // If your actual data is stored as 5ft 11in or something, parse them:
-          // for demonstration, I'm just using 5 and 11 as defaults
-          // children:
           children: fetched.user_kids || 0,
           gender: fetched.user_gender || "",
           identity: fetched.user_identity || "",
           orientation: fetched.user_sexuality || "",
-          openTo: fetched.user_open_to || "",
+          openTo: parsedOpenTo,
           address: fetched.user_address || "",
           nationality: fetched.user_nationality || "",
           bodyType: fetched.user_body_composition || "",
@@ -143,34 +265,47 @@ export default function EditProfile() {
           longitude: fetched.user_longitude || null,
         });
 
-        // If the DB stored interests in a JSON array string
-        if (fetched.user_general_interests) {
-          setInterests(JSON.parse(fetched.user_general_interests));
-        }
-        if (fetched.user_date_interests) {
-          setDateTypes(JSON.parse(fetched.user_date_interests));
-        }
+        setInterests(parsedInterests);
+        setDateTypes(parsedDateInterests);
 
-        // Photos
+        // Set initial values for dropdowns
+        setGenderValue(fetched.user_gender || null);
+        setOrientationValue(fetched.user_sexuality || null);
+        setOpenToValue(typeof parsedOpenTo === "string" ? parsedOpenTo : null);
+        setBodyTypeValue(fetched.user_body_composition || null);
+        setSmokingValue(fetched.user_smoking || null);
+        setDrinkingValue(fetched.user_drinking || null);
+        setReligionValue(fetched.user_religion || null);
+        setStarSignValue(fetched.user_star_sign || null);
+        setEducationValue(fetched.user_education || null);
+
+        // Handle photos
         if (fetched.user_photo_url) {
-          const photoArray = JSON.parse(fetched.user_photo_url);
-          const newPhotos = [null, null, null];
-          photoArray.forEach((uri, idx) => {
-            if (idx < 3) newPhotos[idx] = uri;
-          });
-          setPhotos(newPhotos);
+          try {
+            const photoArray = JSON.parse(fetched.user_photo_url);
+            const newPhotos = [null, null, null];
+            photoArray.forEach((uri, idx) => {
+              if (idx < 3) newPhotos[idx] = uri;
+            });
+            setPhotos(newPhotos);
+          } catch (error) {
+            console.log("Error parsing photo URLs:", error);
+            setPhotos([null, null, null]);
+          }
         }
 
-        // Video
+        // Handle video
         if (fetched.user_video_url) {
           let rawVideoUrl = fetched.user_video_url;
           try {
-            rawVideoUrl = JSON.parse(rawVideoUrl);
+            if (typeof rawVideoUrl === "string" && (rawVideoUrl.startsWith('"') || rawVideoUrl.startsWith("["))) {
+              rawVideoUrl = JSON.parse(rawVideoUrl);
+            }
+            if (Array.isArray(rawVideoUrl)) {
+              rawVideoUrl = rawVideoUrl[0];
+            }
           } catch (err) {
-            console.warn("Could not JSON-parse user_video_url. Using as-is:", err);
-          }
-          if (typeof rawVideoUrl === "string" && rawVideoUrl.startsWith('"') && rawVideoUrl.endsWith('"')) {
-            rawVideoUrl = rawVideoUrl.slice(1, -1);
+            console.log("Could not parse video URL:", err);
           }
           setVideoUri(rawVideoUrl);
         }
@@ -185,6 +320,8 @@ export default function EditProfile() {
           setHeightFt(feet.toString());
           setHeightIn(inches.toString());
         }
+
+        setGenderValue(fetched.user_gender || null);
       } catch (error) {
         console.log("Error fetching user info:", error);
       } finally {
@@ -705,14 +842,39 @@ export default function EditProfile() {
 
             {/* Gender */}
             <Text style={styles.label}>Gender</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker selectedValue={formValues.gender || null} onValueChange={(value) => setFormValues({ ...formValues, gender: value })}>
-                <Picker.Item label='-' value={""} />
-                {genderOptions.map((option, idx) => (
-                  <Picker.Item key={idx} label={option} value={option} />
-                ))}
-              </Picker>
-            </View>
+            <DropDownPicker
+              open={genderOpen}
+              value={genderValue}
+              items={genderItems}
+              setOpen={setGenderOpen}
+              setValue={setGenderValue}
+              setItems={setGenderItems}
+              placeholder='Select Gender'
+              style={{
+                backgroundColor: "#F9F9F9",
+                borderColor: "#E4423F",
+                marginBottom: genderOpen ? 100 : 15,
+                zIndex: 10000,
+                elevation: 10000,
+              }}
+              listMode='SCROLLVIEW'
+              scrollViewProps={{
+                nestedScrollEnabled: true,
+              }}
+              textStyle={{
+                fontSize: 16,
+              }}
+              dropDownContainerStyle={{
+                backgroundColor: "#F9F9F9",
+                borderColor: "#E4423F",
+                position: "absolute",
+                zIndex: 10000,
+                elevation: 10000,
+              }}
+              onChangeValue={(value) => {
+                setFormValues((prev) => ({ ...prev, gender: value }));
+              }}
+            />
 
             <TextInput
               label='Identity'
@@ -725,90 +887,253 @@ export default function EditProfile() {
 
             {/* Orientation */}
             <Text style={styles.label}>Sexual Orientation</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker selectedValue={formValues.orientation || null} onValueChange={(value) => setFormValues({ ...formValues, orientation: value })}>
-                <Picker.Item label='-' value={""} />
-                {orientationOptions.map((opt, idx) => (
-                  <Picker.Item key={idx} label={opt} value={opt} />
-                ))}
-              </Picker>
-            </View>
+            <DropDownPicker
+              open={orientationOpen}
+              value={orientationValue}
+              items={orientationItems}
+              setOpen={setOrientationOpen}
+              setValue={setOrientationValue}
+              setItems={setOrientationItems}
+              placeholder='Select Orientation'
+              listMode='SCROLLVIEW'
+              scrollViewProps={{
+                nestedScrollEnabled: true,
+              }}
+              style={{
+                ...styles.dropdownStyle,
+                zIndex: 9000,
+                elevation: 9000,
+              }}
+              textStyle={styles.dropdownTextStyle}
+              dropDownContainerStyle={{
+                ...styles.dropdownContainerStyle,
+                position: "absolute",
+                zIndex: 9000,
+                elevation: 9000,
+              }}
+              onChangeValue={(value) => setFormValues((prev) => ({ ...prev, orientation: value }))}
+            />
 
             {/* Open To */}
             <Text style={styles.label}>Open To</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker selectedValue={formValues.openTo || null} onValueChange={(val) => setFormValues({ ...formValues, openTo: val })}>
-                <Picker.Item label='-' value={""} />
-                {openToOptions.map((opt, idx) => (
-                  <Picker.Item key={idx} label={opt} value={opt} />
-                ))}
-              </Picker>
+            <DropDownPicker
+              open={openToOpen}
+              value={openToValue}
+              items={openToItems}
+              setOpen={setOpenToOpen}
+              setValue={setOpenToValue}
+              setItems={setOpenToItems}
+              placeholder='Select Open To'
+              listMode='SCROLLVIEW'
+              scrollViewProps={{
+                nestedScrollEnabled: true,
+              }}
+              style={{
+                ...styles.dropdownStyle,
+                zIndex: 8000,
+                elevation: 8000,
+              }}
+              textStyle={styles.dropdownTextStyle}
+              dropDownContainerStyle={{
+                ...styles.dropdownContainerStyle,
+                position: "absolute",
+                zIndex: 8000,
+                elevation: 8000,
+              }}
+              onChangeValue={(value) => setFormValues((prev) => ({ ...prev, openTo: value }))}
+            />
+
+            {/* Smoking */}
+            <Text style={styles.label}>Smoking</Text>
+            <View style={[styles.dropdownWrapper, smokingOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+              <DropDownPicker
+                open={smokingOpen}
+                value={smokingValue}
+                items={smokingItems}
+                setOpen={setSmokingOpen}
+                setValue={setSmokingValue}
+                setItems={setSmokingItems}
+                placeholder='Select Smoking Preference'
+                listMode='SCROLLVIEW'
+                scrollViewProps={{
+                  nestedScrollEnabled: true,
+                }}
+                style={styles.dropdownStyle}
+                textStyle={styles.dropdownTextStyle}
+                dropDownContainerStyle={{
+                  ...styles.dropdownContainerStyle,
+                  position: "absolute",
+                }}
+                onChangeValue={(value) => setFormValues((prev) => ({ ...prev, smoking: value }))}
+              />
+            </View>
+
+            {/* Drinking */}
+            <Text style={styles.label}>Drinking</Text>
+            <View style={[styles.dropdownWrapper, drinkingOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+              <DropDownPicker
+                open={drinkingOpen}
+                value={drinkingValue}
+                items={drinkingItems}
+                setOpen={setDrinkingOpen}
+                setValue={setDrinkingValue}
+                setItems={setDrinkingItems}
+                placeholder='Select Drinking Preference'
+                listMode='SCROLLVIEW'
+                scrollViewProps={{
+                  nestedScrollEnabled: true,
+                }}
+                style={styles.dropdownStyle}
+                textStyle={styles.dropdownTextStyle}
+                dropDownContainerStyle={{
+                  ...styles.dropdownContainerStyle,
+                  position: "absolute",
+                }}
+                onChangeValue={(value) => setFormValues((prev) => ({ ...prev, drinking: value }))}
+              />
+            </View>
+
+            {/* Religion */}
+            <Text style={styles.label}>Religion</Text>
+            <View style={[styles.dropdownWrapper, religionOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+              <DropDownPicker
+                open={religionOpen}
+                value={religionValue}
+                items={religionItems}
+                setOpen={setReligionOpen}
+                setValue={setReligionValue}
+                setItems={setReligionItems}
+                placeholder='Select Religion'
+                listMode='SCROLLVIEW'
+                scrollViewProps={{
+                  nestedScrollEnabled: true,
+                }}
+                style={styles.dropdownStyle}
+                textStyle={styles.dropdownTextStyle}
+                dropDownContainerStyle={{
+                  ...styles.dropdownContainerStyle,
+                  position: "absolute",
+                }}
+                onChangeValue={(value) => setFormValues((prev) => ({ ...prev, religion: value }))}
+              />
+            </View>
+
+            {/* Star Sign */}
+            <Text style={styles.label}>Star Sign</Text>
+            <View style={[styles.dropdownWrapper, starSignOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+              <DropDownPicker
+                open={starSignOpen}
+                value={starSignValue}
+                items={starSignItems}
+                setOpen={setStarSignOpen}
+                setValue={setStarSignValue}
+                setItems={setStarSignItems}
+                placeholder='Select Star Sign'
+                listMode='SCROLLVIEW'
+                scrollViewProps={{
+                  nestedScrollEnabled: true,
+                }}
+                style={styles.dropdownStyle}
+                textStyle={styles.dropdownTextStyle}
+                dropDownContainerStyle={{
+                  ...styles.dropdownContainerStyle,
+                  position: "absolute",
+                }}
+                onChangeValue={(value) => setFormValues((prev) => ({ ...prev, starSign: value }))}
+              />
+            </View>
+
+            {/* Education */}
+            <Text style={styles.label}>Education</Text>
+            <View style={[styles.dropdownWrapper, educationOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+              <DropDownPicker
+                open={educationOpen}
+                value={educationValue}
+                items={educationItems}
+                setOpen={setEducationOpen}
+                setValue={setEducationValue}
+                setItems={setEducationItems}
+                placeholder='Select Education'
+                listMode='SCROLLVIEW'
+                scrollViewProps={{
+                  nestedScrollEnabled: true,
+                }}
+                style={styles.dropdownStyle}
+                textStyle={styles.dropdownTextStyle}
+                dropDownContainerStyle={{
+                  ...styles.dropdownContainerStyle,
+                  position: "absolute",
+                }}
+                onChangeValue={(value) => setFormValues((prev) => ({ ...prev, education: value }))}
+              />
             </View>
 
             {/* Location */}
             <Text style={styles.label}>Address / Location</Text>
-            <GooglePlacesAutocomplete
-              placeholder='Search your location...'
-              fetchDetails={true}
-              onPress={(data, details = null) => {
-                if (details) {
-                  const { lat, lng } = details.geometry.location;
-                  setLocation({ latitude: lat, longitude: lng });
-                  setRegion({
-                    latitude: lat,
-                    longitude: lng,
-                    latitudeDelta: 0.06,
-                    longitudeDelta: 0.06,
-                  });
-                  setFormValues((prev) => ({
-                    ...prev,
-                    address: data.description,
-                    latitude: lat,
-                    longitude: lng,
-                  }));
-                }
-              }}
-              query={{
-                key: GOOGLE_API_KEY,
-                language: "en",
-                components: "country:us",
-              }}
-              styles={{
-                container: {
-                  flex: 0,
-                  marginBottom: 15,
-                },
-                textInputContainer: {
-                  width: "100%",
-                  backgroundColor: "rgba(0,0,0,0)",
-                  borderTopWidth: 0,
-                  borderBottomWidth: 0,
-                },
-                textInput: {
-                  marginLeft: 0,
-                  marginRight: 0,
-                  height: 48,
-                  color: "#000",
-                  fontSize: 16,
-                  borderWidth: 1,
-                  borderColor: "#CCC",
-                  borderRadius: 25,
-                  paddingHorizontal: 15,
-                  backgroundColor: "#F9F9F9",
-                },
-                listView: {
-                  backgroundColor: "#FFF",
-                  borderWidth: 1,
-                  borderColor: "#DDD",
-                  borderRadius: 5,
-                  marginTop: 5,
-                },
-                row: {
-                  padding: 13,
-                  height: 44,
-                },
-              }}
-            />
+            <View style={styles.autocompleteContainer}>
+              <GooglePlacesAutocomplete
+                placeholder='Search your location...'
+                fetchDetails={true}
+                onPress={(data, details = null) => {
+                  if (details) {
+                    const { lat, lng } = details.geometry.location;
+                    setLocation({ latitude: lat, longitude: lng });
+                    setRegion({
+                      latitude: lat,
+                      longitude: lng,
+                      latitudeDelta: 0.06,
+                      longitudeDelta: 0.06,
+                    });
+                    setFormValues((prev) => ({
+                      ...prev,
+                      address: data.description,
+                      latitude: lat,
+                      longitude: lng,
+                    }));
+                  }
+                }}
+                query={{
+                  key: GOOGLE_API_KEY,
+                  language: "en",
+                  components: "country:us",
+                }}
+                enablePoweredByContainer={false}
+                styles={{
+                  container: {
+                    flex: 0,
+                  },
+                  textInputContainer: {
+                    width: "100%",
+                  },
+                  textInput: {
+                    height: 48,
+                    color: "#000",
+                    fontSize: 16,
+                    borderWidth: 1,
+                    borderColor: "#CCC",
+                    borderRadius: 25,
+                    paddingHorizontal: 15,
+                    backgroundColor: "#F9F9F9",
+                  },
+                  listView: {
+                    position: "absolute",
+                    top: 50,
+                    left: 0,
+                    right: 0,
+                    backgroundColor: "#FFF",
+                    borderWidth: 1,
+                    borderColor: "#DDD",
+                    borderRadius: 5,
+                    zIndex: 1000,
+                    elevation: 1000,
+                  },
+                  row: {
+                    padding: 13,
+                    height: 44,
+                  },
+                }}
+              />
+            </View>
 
             {/* Map View */}
             <View style={styles.mapContainer}>
@@ -828,24 +1153,27 @@ export default function EditProfile() {
 
             {/* Body Type */}
             <Text style={styles.label}>Body Type</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker selectedValue={formValues.bodyType || null} onValueChange={(val) => setFormValues({ ...formValues, bodyType: val })}>
-                <Picker.Item label='-' value={""} />
-                {bodyTypeOptions.map((opt, idx) => (
-                  <Picker.Item key={idx} label={opt} value={opt} />
-                ))}
-              </Picker>
-            </View>
-
-            {/* Education */}
-            <Text style={styles.label}>Education Level</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker selectedValue={formValues.education || null} onValueChange={(val) => setFormValues({ ...formValues, education: val })}>
-                <Picker.Item label='-' value={""} />
-                {educationOptions.map((opt, idx) => (
-                  <Picker.Item key={idx} label={opt} value={opt} />
-                ))}
-              </Picker>
+            <View style={[styles.dropdownWrapper, bodyTypeOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+              <DropDownPicker
+                open={bodyTypeOpen}
+                value={bodyTypeValue}
+                items={bodyTypeItems}
+                setOpen={setBodyTypeOpen}
+                setValue={setBodyTypeValue}
+                setItems={setBodyTypeItems}
+                placeholder='Select Body Type'
+                listMode='SCROLLVIEW'
+                scrollViewProps={{
+                  nestedScrollEnabled: true,
+                }}
+                style={styles.dropdownStyle}
+                textStyle={styles.dropdownTextStyle}
+                dropDownContainerStyle={{
+                  ...styles.dropdownContainerStyle,
+                  position: "absolute",
+                }}
+                onChangeValue={(value) => setFormValues((prev) => ({ ...prev, bodyType: value }))}
+              />
             </View>
 
             {/* Job */}
@@ -857,50 +1185,6 @@ export default function EditProfile() {
               onChangeText={(text) => setFormValues({ ...formValues, job: text })}
               outlineStyle={styles.textInputOutline}
             />
-
-            {/* Smoking */}
-            <Text style={styles.label}>Smoking Habits</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker selectedValue={formValues.smoking || null} onValueChange={(val) => setFormValues({ ...formValues, smoking: val })}>
-                <Picker.Item label='-' value={""} />
-                {smokingOptions.map((opt, idx) => (
-                  <Picker.Item key={idx} label={opt} value={opt} />
-                ))}
-              </Picker>
-            </View>
-
-            {/* Drinking */}
-            <Text style={styles.label}>Drinking Habits</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker selectedValue={formValues.drinking || null} onValueChange={(val) => setFormValues({ ...formValues, drinking: val })}>
-                <Picker.Item label='-' value={""} />
-                {drinkingOptions.map((opt, idx) => (
-                  <Picker.Item key={idx} label={opt} value={opt} />
-                ))}
-              </Picker>
-            </View>
-
-            {/* Religion */}
-            <Text style={styles.label}>Religion</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker selectedValue={formValues.religion || null} onValueChange={(val) => setFormValues({ ...formValues, religion: val })}>
-                <Picker.Item label='-' value={""} />
-                {religionOptions.map((opt, idx) => (
-                  <Picker.Item key={idx} label={opt} value={opt} />
-                ))}
-              </Picker>
-            </View>
-
-            {/* Star Sign */}
-            <Text style={styles.label}>Star Sign</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker selectedValue={formValues.starSign || null} onValueChange={(val) => setFormValues({ ...formValues, starSign: val })}>
-                <Picker.Item label='-' value={""} />
-                {starSignOptions.map((opt, idx) => (
-                  <Picker.Item key={idx} label={opt} value={opt} />
-                ))}
-              </Picker>
-            </View>
           </View>
 
           {/* Save Changes Button */}
@@ -1270,5 +1554,30 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+  },
+  dropdownStyle: {
+    backgroundColor: "#F9F9F9",
+    borderWidth: 0,
+    borderRadius: 10,
+    minHeight: 50,
+  },
+  dropdownTextStyle: {
+    fontSize: 16,
+  },
+  dropdownContainerStyle: {
+    backgroundColor: "#FFF",
+    borderColor: "#E4423F",
+    borderWidth: 1,
+    borderRadius: 10,
+  },
+  autocompleteContainer: {
+    flex: 0,
+    position: "relative",
+    zIndex: 1,
+    backgroundColor: "white",
+    paddingBottom: 200, // Add padding to account for the dropdown list
+  },
+  dropdownWrapper: {
+    marginBottom: 15,
   },
 });

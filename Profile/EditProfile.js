@@ -11,7 +11,7 @@ import { Video } from "expo-av";
 import { Picker } from "@react-native-picker/picker"; // <--- ADD THIS
 import MapView, { Marker } from "react-native-maps";
 import { REACT_APP_GOOGLE_API_KEY } from "@env";
-import GooglePlacesAutocomplete from "react-native-google-places-autocomplete";
+import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete"; // Fixed import
 
 const GOOGLE_API_KEY = REACT_APP_GOOGLE_API_KEY;
 

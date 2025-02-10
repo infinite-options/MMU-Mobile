@@ -366,11 +366,19 @@ export default function EditProfile() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      quality: 0.5,
+      quality: 0.7,
+      allowsMultipleSelection: true,
+      selectionLimit: 3,
     });
-    if (!result.canceled && result.assets?.[0]?.uri) {
+
+    if (!result.canceled && result.assets?.length > 0) {
       const newPhotos = [...photos];
-      newPhotos[slotIndex] = result.assets[0].uri;
+      result.assets.forEach((asset, index) => {
+        const targetIndex = slotIndex + index;
+        if (targetIndex < 3) {
+          newPhotos[targetIndex] = asset.uri;
+        }
+      });
       setPhotos(newPhotos);
     }
   };
@@ -385,7 +393,10 @@ export default function EditProfile() {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
         allowsEditing: true,
-        quality: 0.5,
+        quality: 0.7,
+        videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium,
+        maxDuration: 60,
+        videoExportPreset: ImagePicker.VideoExportPreset.MediumQuality,
       });
       if (!result.canceled && result.assets?.[0]?.uri) {
         setVideoUri(result.assets[0].uri);

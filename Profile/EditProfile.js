@@ -1618,7 +1618,7 @@ const styles = StyleSheet.create({
     position: "relative",
     zIndex: 1,
     backgroundColor: "white",
-    paddingBottom: 200, // Add padding to account for the dropdown list
+    marginBottom: 10,
   },
   dropdownWrapper: {
     marginBottom: 15,

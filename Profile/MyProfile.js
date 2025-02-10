@@ -559,40 +559,40 @@ export default function MyProfile() {
           {/* Add more fields as needed */}
           <View style={styles.aboutItem}>
             <Image source={require("../assets/icons/flag.png")} style={{ width: 14, height: 16 }} />
-            <Text style={styles.aboutItemText}>Coming in Live Version</Text>
+            <Text style={[styles.aboutItemText, !user_nationality && { color: "gray" }]}>{user_nationality || "Not Provided"}</Text>
           </View>
 
           <View style={styles.aboutItem}>
             <Image source={require("../assets/icons/ethnicity.png")} style={{ width: 14, height: 16 }} />
-            <Text style={styles.aboutItemText}>Coming in Live Version</Text>
+            <Text style={[styles.aboutItemText, { color: "gray" }]}>Not Provided</Text>
           </View>
           <View style={styles.aboutItem}>
             <Image source={require("../assets/icons/bodytype.png")} style={{ width: 14, height: 16 }} />
-            <Text style={styles.aboutItemText}>Coming in Live Version</Text>
+            <Text style={[styles.aboutItemText, !user_body_composition && { color: "gray" }]}>{user_body_composition || "Not Provided"}</Text>
           </View>
           <View style={styles.aboutItem}>
             <Image source={require("../assets/icons/education.png")} style={{ width: 14, height: 16 }} />
-            <Text style={styles.aboutItemText}>Coming in Live Version</Text>
+            <Text style={[styles.aboutItemText, !user_education && { color: "gray" }]}>{user_education || "Not Provided"}</Text>
           </View>
           <View style={styles.aboutItem}>
             <Image source={require("../assets/icons/job.png")} style={{ width: 14, height: 16 }} />
-            <Text style={styles.aboutItemText}>Coming in Live Version</Text>
+            <Text style={[styles.aboutItemText, !user_job && { color: "gray" }]}>{user_job || "Not Provided"}</Text>
           </View>
           <View style={styles.aboutItem}>
             <Image source={require("../assets/icons/smoke.png")} style={{ width: 14, height: 16 }} />
-            <Text style={styles.aboutItemText}>Coming in Live Version</Text>
+            <Text style={[styles.aboutItemText, !user_smoking && { color: "gray" }]}>{user_smoking || "Not Provided"}</Text>
           </View>
           <View style={styles.aboutItem}>
             <Image source={require("../assets/icons/drink.png")} style={{ width: 14, height: 16 }} />
-            <Text style={styles.aboutItemText}>Coming in Live Version</Text>
+            <Text style={[styles.aboutItemText, !user_drinking && { color: "gray" }]}>{user_drinking || "Not Provided"}</Text>
           </View>
           <View style={styles.aboutItem}>
             <Image source={require("../assets/icons/religion.png")} style={{ width: 14, height: 16 }} />
-            <Text style={styles.aboutItemText}>Coming in Live Version</Text>
+            <Text style={[styles.aboutItemText, !user_religion && { color: "gray" }]}>{user_religion || "Not Provided"}</Text>
           </View>
           <View style={styles.aboutItem}>
             <Image source={require("../assets/icons/star.png")} style={{ width: 14, height: 16 }} />
-            <Text style={styles.aboutItemText}>Coming in Live Version</Text>
+            <Text style={[styles.aboutItemText, !user_star_sign && { color: "gray" }]}>{user_star_sign || "Not Provided"}</Text>
           </View>
         </View>
 

@@ -6,7 +6,8 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.4",
@@ -38,8 +39,6 @@
     "js-sha256": "^0.11.0",
     "react": "18.2.0",
     "react-native": "0.74.5",
-    "react-native-camera": "^4.2.1",
-    "react-native-camera-kit": "^13.0.0",
     "react-native-date-picker": "^5.0.7",
     "react-native-dotenv": "^3.4.11",
     "react-native-dropdown-picker": "^5.4.6",
@@ -63,13 +62,14 @@
     "react-native-uuid": "^2.0.2",
     "react-native-vector-icons": "^10.2.0",
     "react-native-video": "^6.6.4",
-    "react-native-vision-camera": "^4.5.3",
     "react-native-webview": "^13.12.3",
     "typescript": "~5.3.3",
     "watchman": "^1.0.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0"
+    "@babel/core": "^7.20.0",
+    "patch-package": "^8.0.0",
+    "postinstall-postinstall": "^2.1.0"
   },
   "private": true
 }

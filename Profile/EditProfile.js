@@ -1,5 +1,22 @@
 import React, { useState, useEffect, useRef } from "react";
-import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity, Alert, Platform, StatusBar, Image, Pressable, Keyboard, FlatList, ActivityIndicator, Text as RNText, Modal } from "react-native";
+import {
+  SafeAreaView,
+  ScrollView,
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Platform,
+  StatusBar,
+  Image,
+  Pressable,
+  Keyboard,
+  FlatList,
+  ActivityIndicator,
+  Text as RNText,
+  Modal,
+  Linking,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { TextInput, Text } from "react-native-paper";
 import { useNavigation, useIsFocused } from "@react-navigation/native";
@@ -15,6 +32,10 @@ import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplet
 import DropDownPicker from "react-native-dropdown-picker";
 
 const GOOGLE_API_KEY = REACT_APP_GOOGLE_API_KEY;
+
+// Add axios default configuration
+axios.defaults.timeout = 10000; // 10 seconds timeout
+axios.defaults.headers.common["Content-Type"] = "application/json";
 
 export default function EditProfile() {
   const navigation = useNavigation();
@@ -221,7 +242,17 @@ export default function EditProfile() {
           console.log("No user_uid in AsyncStorage");
           return;
         }
-        const response = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${uid}`);
+
+        // Create axios instance with specific config
+        const api = axios.create({
+          baseURL: "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev",
+          timeout: 10000,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        const response = await api.get(`/userinfo/${uid}`);
         const fetched = response.data.result[0];
 
         // Safely parse open_to field
@@ -345,7 +376,8 @@ export default function EditProfile() {
 
         setGenderValue(fetched.user_gender || null);
       } catch (error) {
-        console.log("Error fetching user info:", error);
+        console.log("Error fetching user info:", error.response || error);
+        Alert.alert("Error", "Failed to load profile data. Please check your internet connection and try again.");
       } finally {
         setIsLoading(false);
       }
@@ -361,25 +393,47 @@ export default function EditProfile() {
     setSearchText(formValues.address);
   }, [formValues.address]);
 
+  // Platform-specific video quality
+  const getVideoQuality = () => {
+    if (Platform.OS === "ios") {
+      return ImagePicker.UIImagePickerControllerQualityType.Medium;
+    }
+    return "720p";
+  };
+
   // Handle picking images
   const handlePickImage = async (slotIndex) => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 0.7,
-      allowsMultipleSelection: true,
-      selectionLimit: 3,
-    });
+    try {
+      // Request media library permissions
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert("Permission Required", "Please allow access to your photo library to select images.");
+        return;
+      }
 
-    if (!result.canceled && result.assets?.length > 0) {
-      const newPhotos = [...photos];
-      result.assets.forEach((asset, index) => {
-        const targetIndex = slotIndex + index;
-        if (targetIndex < 3) {
-          newPhotos[targetIndex] = asset.uri;
-        }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        selectionLimit: 3,
+        quality: Platform.OS === "ios" ? 0.8 : 1, // iOS handles quality differently
+        allowsEditing: false,
+        base64: false,
+        exif: false,
       });
-      setPhotos(newPhotos);
+
+      if (!result.canceled && result.assets?.length > 0) {
+        const newPhotos = [...photos];
+        result.assets.forEach((asset, index) => {
+          const targetIndex = slotIndex + index;
+          if (targetIndex < 3) {
+            newPhotos[targetIndex] = asset.uri;
+          }
+        });
+        setPhotos(newPhotos);
+      }
+    } catch (error) {
+      console.error("Error picking images:", error);
+      Alert.alert("Error", "There was an issue selecting the images. Please try again.");
     }
   };
   const handleRemovePhoto = (slotIndex) => {
@@ -390,21 +444,58 @@ export default function EditProfile() {
   // Handle picking a video
   const handleVideoUpload = async () => {
     try {
+      // Platform-specific permission handling
+      if (Platform.OS === "ios") {
+        const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+        const microphonePermission = await ImagePicker.requestMicrophonePermissionsAsync();
+
+        if (cameraPermission.status !== "granted" || microphonePermission.status !== "granted") {
+          Alert.alert("Permission Required", "Camera and microphone access is required to record video. Please enable it in your device settings.", [
+            { text: "Cancel", style: "cancel" },
+            { text: "Settings", onPress: () => Linking.openSettings() },
+          ]);
+          return;
+        }
+      } else {
+        // Android permissions
+        const permissions = await Promise.all([ImagePicker.requestCameraPermissionsAsync(), ImagePicker.requestMicrophonePermissionsAsync(), ImagePicker.requestMediaLibraryPermissionsAsync()]);
+
+        if (permissions.some((permission) => permission.status !== "granted")) {
+          Alert.alert("Permission Required", "Camera, microphone, and storage access are required to record video. Please enable them in your device settings.", [
+            { text: "Cancel", style: "cancel" },
+            { text: "Settings", onPress: () => Linking.openSettings() },
+          ]);
+          return;
+        }
+      }
+
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-        allowsEditing: true,
-        quality: 0.7,
-        videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium,
+        allowsEditing: Platform.OS === "ios", // Video editing only works well on iOS
+        quality: 1,
+        videoQuality: getVideoQuality(),
         maxDuration: 60,
-        videoExportPreset: ImagePicker.VideoExportPreset.MediumQuality,
+        saveToPhotos: true, // Save to device camera roll
+        presentationStyle: Platform.OS === "ios" ? "fullScreen" : undefined,
+        androidRecordAudioPermissionOptions:
+          Platform.OS === "android"
+            ? {
+                title: "Permission to use audio recording",
+                message: "We need your permission to use your audio",
+              }
+            : undefined,
       });
+
       if (!result.canceled && result.assets?.[0]?.uri) {
-        setVideoUri(result.assets[0].uri);
+        // Handle platform-specific video path
+        const videoUri = Platform.OS === "ios" ? result.assets[0].uri.replace("file://", "") : result.assets[0].uri;
+
+        setVideoUri(videoUri);
         setIsVideoPlaying(false);
       }
     } catch (error) {
       console.error("Error picking video:", error);
-      Alert.alert("Error", "There was an issue processing the video.");
+      Alert.alert("Error", "There was an issue recording the video. Please try again.");
     }
   };
   const handleRemoveVideo = () => {
@@ -561,89 +652,98 @@ export default function EditProfile() {
       Alert.alert("Error", "Please fill in your full name and phone number.");
       return;
     }
-    setIsLoading(true);
-    await AsyncStorage.setItem("user_uid", userData.user_uid);
-
-    // Convert feet/inches to centimeters
-    const totalInches = parseInt(heightFt || 0) * 12 + parseInt(heightIn || 0);
-    const heightCm = Math.round(totalInches * 2.54);
-
-    // Convert interests and date interests to JSON
-    const userInterestsJSON = JSON.stringify(interests);
-    const userDateInterestsJSON = JSON.stringify(dateTypes);
-
-    // We'll combine the feet + inches into a single string or numeric
-    const combinedHeight = `${heightFt}' ${heightIn}"`;
-
-    const uploadData = new FormData();
-    uploadData.append("user_uid", userData.user_uid);
-    uploadData.append("user_email_id", userData.user_email_id);
-
-    // Add photo URLs array to track which photos to keep
-    const photoUrls = photos.filter((uri) => uri !== null);
-    uploadData.append("user_photo_url", JSON.stringify(photoUrls));
-
-    // Upload photos
-    photos.forEach((uri, index) => {
-      if (uri) {
-        const filename = uri.split("/").pop();
-        const match = /\.(\w+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : "image/jpeg";
-
-        uploadData.append(`img_${index}`, {
-          uri,
-          type,
-          name: filename,
-        });
-      }
-    });
-
-    // Upload video if any
-    if (videoUri) {
-      uploadData.append("user_video", {
-        uri: videoUri,
-        type: "video/mp4",
-        name: "video_filename.mp4",
-      });
-    }
-
-    // Append other form data
-    uploadData.append("user_first_name", formValues.firstName || "");
-    uploadData.append("user_last_name", formValues.lastName || "");
-    uploadData.append("user_profile_bio", formValues.bio);
-    uploadData.append("user_general_interests", userInterestsJSON);
-    uploadData.append("user_date_interests", userDateInterestsJSON);
-    uploadData.append("user_available_time", JSON.stringify(formValues.availableTimes));
-    uploadData.append("user_birthdate", formValues.birthdate);
-    uploadData.append("user_height", heightCm.toString());
-    uploadData.append("user_kids", formValues.children.toString());
-    uploadData.append("user_gender", formValues.gender || "-");
-    uploadData.append("user_identity", formValues.identity);
-    uploadData.append("user_sexuality", formValues.orientation);
-    uploadData.append("user_open_to", JSON.stringify(openToValue || []));
-    uploadData.append("user_address", formValues.address);
-    uploadData.append("user_nationality", formValues.nationality);
-    uploadData.append("user_body_composition", formValues.bodyType);
-    uploadData.append("user_education", formValues.education);
-    uploadData.append("user_job", formValues.job);
-    uploadData.append("user_smoking", formValues.smoking);
-    uploadData.append("user_drinking", formValues.drinking);
-    uploadData.append("user_religion", formValues.religion);
-    uploadData.append("user_star_sign", formValues.starSign);
-    uploadData.append("user_latitude", formValues.latitude?.toString() || "");
-    uploadData.append("user_longitude", formValues.longitude?.toString() || "");
 
     try {
-      const response = await axios.put("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo", uploadData, { headers: { "Content-Type": "multipart/form-data" } });
+      setIsLoading(true);
+      const uid = await AsyncStorage.getItem("user_uid");
+      if (!uid) {
+        Alert.alert("Error", "User ID not found");
+        return;
+      }
+
+      // Create FormData and add headers
+      const uploadData = new FormData();
+      uploadData.append("user_uid", userData.user_uid);
+      uploadData.append("user_email_id", userData.user_email_id);
+
+      // Add photo URLs array to track which photos to keep
+      const photoUrls = photos.filter((uri) => uri !== null);
+      uploadData.append("user_photo_url", JSON.stringify(photoUrls));
+
+      // Upload photos
+      photos.forEach((uri, index) => {
+        if (uri) {
+          const filename = uri.split("/").pop();
+          const match = /\.(\w+)$/.exec(filename);
+          const type = match ? `image/${match[1]}` : "image/jpeg";
+
+          uploadData.append(`img_${index}`, {
+            uri,
+            type,
+            name: filename,
+          });
+        }
+      });
+
+      // Upload video if any
+      if (videoUri) {
+        uploadData.append("user_video", {
+          uri: videoUri,
+          type: "video/mp4",
+          name: "video_filename.mp4",
+        });
+      }
+
+      // Append other form data
+      uploadData.append("user_first_name", formValues.firstName || "");
+      uploadData.append("user_last_name", formValues.lastName || "");
+      uploadData.append("user_profile_bio", formValues.bio);
+      uploadData.append("user_general_interests", JSON.stringify(interests));
+      uploadData.append("user_date_interests", JSON.stringify(dateTypes));
+      uploadData.append("user_available_time", JSON.stringify(formValues.availableTimes));
+      uploadData.append("user_birthdate", formValues.birthdate);
+
+      // Convert feet/inches to centimeters
+      const totalInches = parseInt(heightFt || 0) * 12 + parseInt(heightIn || 0);
+      const heightCm = Math.round(totalInches * 2.54);
+      uploadData.append("user_height", heightCm.toString());
+
+      uploadData.append("user_kids", formValues.children.toString());
+      uploadData.append("user_gender", formValues.gender || "-");
+      uploadData.append("user_identity", formValues.identity);
+      uploadData.append("user_sexuality", formValues.orientation);
+      uploadData.append("user_open_to", JSON.stringify(openToValue || []));
+      uploadData.append("user_address", formValues.address);
+      uploadData.append("user_nationality", formValues.nationality);
+      uploadData.append("user_body_composition", formValues.bodyType);
+      uploadData.append("user_education", formValues.education);
+      uploadData.append("user_job", formValues.job);
+      uploadData.append("user_smoking", formValues.smoking);
+      uploadData.append("user_drinking", formValues.drinking);
+      uploadData.append("user_religion", formValues.religion);
+      uploadData.append("user_star_sign", formValues.starSign);
+      uploadData.append("user_latitude", formValues.latitude?.toString() || "");
+      uploadData.append("user_longitude", formValues.longitude?.toString() || "");
+
+      const api = axios.create({
+        baseURL: "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev",
+        timeout: 10000,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      const response = await api.put("/userinfo", uploadData);
+
       if (response.status === 200) {
         Alert.alert("Success", "Your profile has been updated!");
         navigation.goBack();
       } else {
-        Alert.alert("Error", "Failed to update your profile.");
+        throw new Error("Update failed");
       }
     } catch (error) {
-      console.log("Error uploading profile:", error.response ? error.response.data : error);
-      Alert.alert("Error", "There was an issue updating your profile.");
+      console.log("Error uploading profile:", error.response?.data || error);
+      Alert.alert("Error", "Failed to update profile. Please check your internet connection and try again.");
     } finally {
       setIsLoading(false);
     }

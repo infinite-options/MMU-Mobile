@@ -44,7 +44,7 @@ if (getRNMinorVersion() >= 75) {
   }
 }
 
-rootProject.name = 'MeetMeUpvi'
+rootProject.name = 'MMU App'
 
 dependencyResolutionManagement {
   versionCatalogs {

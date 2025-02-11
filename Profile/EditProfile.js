@@ -954,20 +954,48 @@ export default function EditProfile() {
 
           {/* Form Section */}
           <View style={styles.formContainer}>
+            {/* <TextInput
+              label='First Name'
+              mode='outlined'
+              style={styles.inputField}
+              value={formValues.firstName}
+              onChangeText={(text) =>
+                setFormValues((prev) => ({
+                  ...prev,
+                  firstName: text,
+                }))
+              }
+              outlineStyle={styles.textInputOutline}
+            /> */}
             <TextInput
               label='First Name'
               mode='outlined'
               style={styles.inputField}
               value={formValues.firstName}
-              onChangeText={(text) => setFormValues({ ...formValues, firstName: text })}
+              onChangeText={(text) =>
+                setFormValues((prev) => ({
+                  ...prev,
+                  firstName: text.trim(),
+                }))
+              }
+              autoCorrect={false}
+              autoCapitalize='none'
               outlineStyle={styles.textInputOutline}
             />
+
             <TextInput
               label='Last Name'
               mode='outlined'
               style={styles.inputField}
               value={formValues.lastName}
-              onChangeText={(text) => setFormValues({ ...formValues, lastName: text })}
+              onChangeText={(text) =>
+                setFormValues((prev) => ({
+                  ...prev,
+                  lastName: text.trim(),
+                }))
+              }
+              autoCorrect={false}
+              autoCapitalize='none'
               outlineStyle={styles.textInputOutline}
             />
             <TextInput
@@ -975,7 +1003,14 @@ export default function EditProfile() {
               mode='outlined'
               style={styles.inputField}
               value={formValues.phoneNumber}
-              onChangeText={(text) => setFormValues({ ...formValues, phoneNumber: text })}
+              onChangeText={(text) =>
+                setFormValues((prev) => ({
+                  ...prev,
+                  phoneNumber: text.trim(),
+                }))
+              }
+              autoCorrect={false}
+              autoCapitalize='none'
               outlineStyle={styles.textInputOutline}
             />
             <TextInput
@@ -984,7 +1019,14 @@ export default function EditProfile() {
               style={styles.inputField}
               multiline
               value={formValues.bio}
-              onChangeText={(text) => setFormValues({ ...formValues, bio: text })}
+              onChangeText={(text) =>
+                setFormValues((prev) => ({
+                  ...prev,
+                  bio: text.trim(),
+                }))
+              }
+              autoCorrect={false}
+              autoCapitalize='none'
               outlineStyle={styles.textInputOutline}
             />
 
@@ -1439,7 +1481,12 @@ export default function EditProfile() {
               mode='outlined'
               style={styles.inputField}
               value={formValues.nationality}
-              onChangeText={(text) => setFormValues({ ...formValues, nationality: text })}
+              onChangeText={(text) =>
+                setFormValues((prev) => ({
+                  ...prev,
+                  nationality: text.replace(/\s+/g, " ").trim(),
+                }))
+              }
               outlineStyle={styles.textInputOutline}
             />
 
@@ -1474,7 +1521,12 @@ export default function EditProfile() {
               mode='outlined'
               style={styles.inputField}
               value={formValues.job}
-              onChangeText={(text) => setFormValues({ ...formValues, job: text })}
+              onChangeText={(text) =>
+                setFormValues((prev) => ({
+                  ...prev,
+                  job: text.replace(/\s+/g, " ").trim(),
+                }))
+              }
               outlineStyle={styles.textInputOutline}
             />
           </View>

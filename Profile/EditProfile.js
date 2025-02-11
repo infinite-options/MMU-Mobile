@@ -30,6 +30,8 @@ import MapView, { Marker } from "react-native-maps";
 import { REACT_APP_GOOGLE_API_KEY } from "@env";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import DropDownPicker from "react-native-dropdown-picker";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { allInterests } from "../src/config/interests";
 
 const GOOGLE_API_KEY = REACT_APP_GOOGLE_API_KEY;
 
@@ -197,21 +199,21 @@ export default function EditProfile() {
     phoneNumber: "",
     bio: "",
     availableTimes: [],
-    birthdate: "26/04/2001",
+    birthdate: "",
     children: 0,
-    gender: "Male",
-    identity: "Man",
-    orientation: "Bisexual",
-    openTo: "Men & Women",
-    address: "123 Main St, Anytown, USA",
-    nationality: "American",
-    bodyType: "Curvy",
-    education: "Bachelor's Degree",
-    job: "UI/UX Designer & Graphic Designer",
-    smoking: "I don't smoke",
-    drinking: "I don't drink",
-    religion: "I do not practice any religion",
-    starSign: "Taurus",
+    gender: "",
+    identity: "",
+    orientation: "",
+    openTo: [],
+    address: "",
+    nationality: "",
+    bodyType: "",
+    education: "",
+    job: "",
+    smoking: "",
+    drinking: "",
+    religion: "",
+    starSign: "",
     latitude: null,
     longitude: null,
   });
@@ -222,6 +224,9 @@ export default function EditProfile() {
   const [newEntryText, setNewEntryText] = useState("");
   const [entryType, setEntryType] = useState("interest"); // 'interest' or 'dateType'
 
+  const [hasChanges, setHasChanges] = useState(false);
+  const [originalValues, setOriginalValues] = useState(null);
+
   useFocusEffect(
     React.useCallback(() => {
       if (videoRef.current) {
@@ -231,6 +236,23 @@ export default function EditProfile() {
       }
     }, [])
   );
+
+  // Permission check on component mount
+  useEffect(() => {
+    (async () => {
+      const { status: existingStatus } = await ImagePicker.getMediaLibraryPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      if (existingStatus !== "granted") {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus !== "granted") {
+        console.log("Media library permission not granted");
+      }
+    })();
+  }, []);
 
   // Fetch user data from the server when this screen is opened
   useEffect(() => {
@@ -293,7 +315,7 @@ export default function EditProfile() {
         }
 
         setUserData(fetched || {});
-        setFormValues({
+        const newFormValues = {
           firstName: fetched.user_first_name || "",
           lastName: fetched.user_last_name || "",
           phoneNumber: fetched.user_phone_number || "",
@@ -316,13 +338,17 @@ export default function EditProfile() {
           starSign: fetched.user_star_sign || "",
           latitude: fetched.user_latitude || null,
           longitude: fetched.user_longitude || null,
-        });
+        };
+
+        setFormValues(newFormValues);
+        setOriginalValues({ ...newFormValues });
 
         setInterests(parsedInterests);
         setDateTypes(parsedDateInterests);
 
         // Set initial values for dropdowns
         setGenderValue(fetched.user_gender || null);
+        setIdentityValue(fetched.user_identity || null);
         setOrientationValue(fetched.user_sexuality || null);
         setOpenToValue(parsedOpenTo);
         setBodyTypeValue(fetched.user_body_composition || null);
@@ -401,21 +427,32 @@ export default function EditProfile() {
     return "720p";
   };
 
-  // Handle picking images
+  // Updated image picker function with better permission handling
   const handlePickImage = async (slotIndex) => {
     try {
-      // Request media library permissions
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permissionResult.granted) {
-        Alert.alert("Permission Required", "Please allow access to your photo library to select images.");
-        return;
+      const { status: existingStatus } = await ImagePicker.getMediaLibraryPermissionsAsync();
+
+      if (existingStatus !== "granted") {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert("Permission Required", "Photo library access is required to select images. Would you like to open settings to grant permission?", [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Open Settings",
+              onPress: () => {
+                Platform.OS === "ios" ? Linking.openURL("app-settings:") : Linking.openSettings();
+              },
+            },
+          ]);
+          return;
+        }
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsMultipleSelection: true,
         selectionLimit: 3,
-        quality: Platform.OS === "ios" ? 0.8 : 1, // iOS handles quality differently
+        quality: Platform.OS === "ios" ? 0.8 : 1,
         allowsEditing: false,
         base64: false,
         exif: false,
@@ -423,17 +460,29 @@ export default function EditProfile() {
 
       if (!result.canceled && result.assets?.length > 0) {
         const newPhotos = [...photos];
-        result.assets.forEach((asset, index) => {
-          const targetIndex = slotIndex + index;
+        for (const asset of result.assets) {
+          const targetIndex = slotIndex + result.assets.indexOf(asset);
           if (targetIndex < 3) {
             newPhotos[targetIndex] = asset.uri;
+            // Log image details when selected
+            const size = await getFileSize(asset.uri);
+            console.log(`Image selected: ${asset.uri.split("/").pop()}`);
+            console.log(`Original size: ${(size / 1024 / 1024).toFixed(2)} MB`);
           }
-        });
+        }
         setPhotos(newPhotos);
       }
     } catch (error) {
       console.error("Error picking images:", error);
-      Alert.alert("Error", "There was an issue selecting the images. Please try again.");
+      Alert.alert("Error", "There was an issue accessing your photos. Please check your permissions and try again.", [
+        { text: "OK" },
+        {
+          text: "Open Settings",
+          onPress: () => {
+            Platform.OS === "ios" ? Linking.openURL("app-settings:") : Linking.openSettings();
+          },
+        },
+      ]);
     }
   };
   const handleRemovePhoto = (slotIndex) => {
@@ -610,44 +659,10 @@ export default function EditProfile() {
     }
   };
 
-  // Adding and removing "chips" for interests
-  const handleAddInterest = () => {
-    setEntryType("interest");
-    setModalVisible(true);
-  };
-
-  // Adding and removing "chips" for date types
-  const handleAddDateType = () => {
-    setEntryType("dateType");
-    setModalVisible(true);
-  };
-  const handleRemoveInterest = (index) => {
-    const updated = [...interests];
-    updated.splice(index, 1);
-    setInterests(updated);
-  };
-  const handleRemoveDateType = (index) => {
-    const updated = [...dateTypes];
-    updated.splice(index, 1);
-    setDateTypes(updated);
-  };
-
-  // Increment/Decrement Height
-  const decrementFeet = () => {
-    if (heightFt > 0) setHeightFt(heightFt - 1);
-  };
-  const incrementFeet = () => {
-    setHeightFt(heightFt + 1);
-  };
-  const decrementInches = () => {
-    if (heightIn > 0) setHeightIn(heightIn - 1);
-  };
-  const incrementInches = () => {
-    if (heightIn < 11) setHeightIn(heightIn + 1);
-  };
-
-  // Save changes
+  // Updated handleSaveChanges function
   const handleSaveChanges = async () => {
+    console.log("\n=== Starting Profile Update ===");
+    console.log("Creating new FormData object");
     if (!formValues.firstName || !formValues.lastName) {
       Alert.alert("Error", "Please fill in your full name and phone number.");
       return;
@@ -661,85 +676,118 @@ export default function EditProfile() {
         return;
       }
 
-      // Create FormData and add headers
+      // Filter out null photos and only include actual photo URIs
+      const originalPhotos = userData.user_photo_url ? JSON.parse(userData.user_photo_url) : [];
+      const photoUrls = photos.filter((uri) => uri !== null && uri !== undefined);
+
+      // Create FormData object
       const uploadData = new FormData();
       uploadData.append("user_uid", userData.user_uid);
       uploadData.append("user_email_id", userData.user_email_id);
 
-      // Add photo URLs array to track which photos to keep
-      const photoUrls = photos.filter((uri) => uri !== null);
-      uploadData.append("user_photo_url", JSON.stringify(photoUrls));
+      // Check if photos have changed
+      if (JSON.stringify(originalPhotos) !== JSON.stringify(photoUrls)) {
+        uploadData.append("user_photo_url", JSON.stringify(photoUrls));
+      }
 
-      // Upload photos
-      photos.forEach((uri, index) => {
-        if (uri) {
-          const filename = uri.split("/").pop();
-          const match = /\.(\w+)$/.exec(filename);
-          const type = match ? `image/${match[1]}` : "image/jpeg";
+      // Create an object of the original values from userData
+      const originalValues = {
+        user_first_name: userData.user_first_name || "",
+        user_last_name: userData.user_last_name || "",
+        user_phone_number: userData.user_phone_number || "",
+        user_profile_bio: userData.user_profile_bio || "",
+        user_general_interests: userData.user_general_interests ? JSON.parse(userData.user_general_interests) : [],
+        user_date_interests: userData.user_date_interests ? JSON.parse(userData.user_date_interests) : [],
+        user_available_time: userData.user_available_time ? JSON.parse(userData.user_available_time) : [],
+        user_birthdate: userData.user_birthdate || "",
+        user_height: userData.user_height || "",
+        user_kids: userData.user_kids?.toString() || "0",
+        user_gender: userData.user_gender || "",
+        user_identity: userData.user_identity || "",
+        user_sexuality: userData.user_sexuality || "",
+        user_open_to: userData.user_open_to ? JSON.parse(userData.user_open_to) : [],
+        user_address: userData.user_address || "",
+        user_nationality: userData.user_nationality || "",
+        user_body_composition: userData.user_body_composition || "",
+        user_education: userData.user_education || "",
+        user_job: userData.user_job || "",
+        user_smoking: userData.user_smoking || "",
+        user_drinking: userData.user_drinking || "",
+        user_religion: userData.user_religion || "",
+        user_star_sign: userData.user_star_sign || "",
+        user_latitude: userData.user_latitude?.toString() || "",
+        user_longitude: userData.user_longitude?.toString() || "",
+      };
 
-          uploadData.append(`img_${index}`, {
-            uri,
-            type,
-            name: filename,
-          });
+      // Create an object of the new values
+      const newValues = {
+        user_first_name: formValues.firstName,
+        user_last_name: formValues.lastName,
+        user_phone_number: formValues.phoneNumber,
+        user_profile_bio: formValues.bio,
+        user_general_interests: interests,
+        user_date_interests: dateTypes,
+        user_available_time: formValues.availableTimes,
+        user_birthdate: formValues.birthdate,
+        user_height: Math.round((parseInt(heightFt || 0) * 12 + parseInt(heightIn || 0)) * 2.54).toString(),
+        user_kids: formValues.children.toString(),
+        user_gender: genderValue,
+        user_identity: identityValue,
+        user_sexuality: orientationValue,
+        user_open_to: openToValue,
+        user_address: formValues.address,
+        user_nationality: formValues.nationality,
+        user_body_composition: bodyTypeValue,
+        user_education: educationValue,
+        user_job: formValues.job,
+        user_smoking: smokingValue,
+        user_drinking: drinkingValue,
+        user_religion: religionValue,
+        user_star_sign: starSignValue,
+        user_latitude: formValues.latitude?.toString(),
+        user_longitude: formValues.longitude?.toString(),
+      };
+
+      // Debug log for values before sending
+      console.log("\n=== Original Values ===");
+      console.log(JSON.stringify(originalValues, null, 2));
+      console.log("\n=== New Values ===");
+      console.log(JSON.stringify(newValues, null, 2));
+
+      // Only add fields that have changed to the FormData
+      console.log("\n=== Changed Fields ===");
+      Object.entries(newValues).forEach(([key, value]) => {
+        const originalValue = originalValues[key];
+        const newValueStr = typeof value === "object" ? JSON.stringify(value) : value;
+        const originalValueStr = typeof originalValue === "object" ? JSON.stringify(originalValue) : originalValue;
+
+        if (newValueStr !== originalValueStr) {
+          console.log(`${key}: ${originalValueStr} -> ${newValueStr}`);
+          uploadData.append(key, newValueStr);
         }
       });
 
-      // Upload video if any
-      if (videoUri) {
-        uploadData.append("user_video", {
-          uri: videoUri,
-          type: "video/mp4",
-          name: "video_filename.mp4",
-        });
+      // Log the final FormData contents
+      console.log("\n=== Final FormData Contents ===");
+      for (let [key, value] of uploadData._parts) {
+        console.log(`${key}: ${value}`);
       }
 
-      // Append other form data
-      uploadData.append("user_first_name", formValues.firstName || "");
-      uploadData.append("user_last_name", formValues.lastName || "");
-      uploadData.append("user_profile_bio", formValues.bio);
-      uploadData.append("user_general_interests", JSON.stringify(interests));
-      uploadData.append("user_date_interests", JSON.stringify(dateTypes));
-      uploadData.append("user_available_time", JSON.stringify(formValues.availableTimes));
-      uploadData.append("user_birthdate", formValues.birthdate);
-
-      // Convert feet/inches to centimeters
-      const totalInches = parseInt(heightFt || 0) * 12 + parseInt(heightIn || 0);
-      const heightCm = Math.round(totalInches * 2.54);
-      uploadData.append("user_height", heightCm.toString());
-
-      uploadData.append("user_kids", formValues.children.toString());
-      uploadData.append("user_gender", formValues.gender || "-");
-      uploadData.append("user_identity", formValues.identity);
-      uploadData.append("user_sexuality", formValues.orientation);
-      uploadData.append("user_open_to", JSON.stringify(openToValue || []));
-      uploadData.append("user_address", formValues.address);
-      uploadData.append("user_nationality", formValues.nationality);
-      uploadData.append("user_body_composition", formValues.bodyType);
-      uploadData.append("user_education", formValues.education);
-      uploadData.append("user_job", formValues.job);
-      uploadData.append("user_smoking", formValues.smoking);
-      uploadData.append("user_drinking", formValues.drinking);
-      uploadData.append("user_religion", formValues.religion);
-      uploadData.append("user_star_sign", formValues.starSign);
-      uploadData.append("user_latitude", formValues.latitude?.toString() || "");
-      uploadData.append("user_longitude", formValues.longitude?.toString() || "");
-
-      const api = axios.create({
-        baseURL: "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev",
-        timeout: 10000,
+      // Make the upload request
+      const response = await axios.put("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo", uploadData, {
         headers: {
           "Content-Type": "multipart/form-data",
+          Accept: "application/json",
         },
+        timeout: 60000,
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
       });
 
-      const response = await api.put("/userinfo", uploadData);
-
       if (response.status === 200) {
+        console.log("Upload successful!");
         Alert.alert("Success", "Your profile has been updated!");
         navigation.goBack();
-      } else {
-        throw new Error("Update failed");
       }
     } catch (error) {
       console.log("Error uploading profile:", error.response?.data || error);
@@ -749,6 +797,65 @@ export default function EditProfile() {
     }
   };
 
+  // Remove the compression utility functions
+  const getFileSize = async (uri) => {
+    try {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      return blob.size;
+    } catch (error) {
+      console.error("Error getting file size:", error);
+      return 0;
+    }
+  };
+
+  // Toggle a single interest
+  const toggleInterest = (interest) => {
+    if (interests.includes(interest)) {
+      // If it's already selected, remove it
+      setInterests(interests.filter((item) => item !== interest));
+    } else {
+      // Otherwise, add it
+      setInterests([...interests, interest]);
+    }
+  };
+
+  // Handle adding and removing date types
+  const handleAddDateType = () => {
+    setEntryType("dateType");
+    setModalVisible(true);
+  };
+
+  const handleRemoveDateType = (index) => {
+    setDateTypes((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Add this effect to check for changes
+  useEffect(() => {
+    if (originalValues) {
+      console.log("\n=== Checking for Changes ===");
+      console.log("Original Values:", originalValues);
+      console.log("Current Form Values:", formValues);
+      console.log("Original Photos:", JSON.parse(userData.user_photo_url || "[]"));
+      console.log(
+        "Current Photos:",
+        photos.filter((p) => p !== null)
+      );
+      console.log("Original Video:", userData.user_video_url);
+      console.log("Current Video:", videoUri);
+
+      const hasAnyChanges =
+        JSON.stringify(formValues) !== JSON.stringify(originalValues) ||
+        JSON.stringify(photos.filter((p) => p !== null)) !== JSON.stringify(JSON.parse(userData.user_photo_url || "[]")) ||
+        videoUri !== userData.user_video_url;
+
+      console.log("Has Changes:", hasAnyChanges);
+      console.log("=== End Check ===\n");
+
+      setHasChanges(hasAnyChanges);
+    }
+  }, [formValues, photos, videoUri, originalValues]);
+
   return (
     <SafeAreaView style={styles.container}>
       {isLoading ? (
@@ -756,7 +863,14 @@ export default function EditProfile() {
           <ActivityIndicator size='large' color='#E4423F' />
         </View>
       ) : (
-        <ScrollView style={{ flex: 1, paddingHorizontal: 20 }}>
+        <KeyboardAwareScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingHorizontal: 20 }}
+          nestedScrollEnabled={true}
+          keyboardShouldPersistTaps='handled'
+          enableOnAndroid={true}
+          enableResetScrollToCoords={false}
+        >
           {/* Header */}
           <View style={styles.headerContainer}>
             <Text style={styles.headerTitle}>Editing My Profile</Text>
@@ -876,20 +990,26 @@ export default function EditProfile() {
 
             {/* Interests as Tag Buttons */}
             <Text style={styles.label}>My Interests</Text>
-            <View style={styles.tagContainer}>
-              {interests.map((interest, index) => (
-                <View key={index} style={styles.tag}>
-                  <RNText style={styles.tagText}>{interest}</RNText>
-                  <TouchableOpacity onPress={() => handleRemoveInterest(index)} style={styles.tagClose}>
-                    <Ionicons name='close' size={14} color='#FFF' />
+            <View style={styles.interestsContainer}>
+              {allInterests.map((interest) => {
+                const isSelected = interests.includes(interest);
+                return (
+                  <TouchableOpacity
+                    key={interest}
+                    onPress={() => toggleInterest(interest)}
+                    style={[
+                      styles.interestButton,
+                      {
+                        borderColor: isSelected ? "rgba(26, 26, 26, 1)" : "rgba(26, 26, 26, 0.5)",
+                        backgroundColor: isSelected ? "#000" : "#FFF",
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.interestText, { color: isSelected ? "#FFF" : "rgba(26, 26, 26, 0.5)" }]}>{interest}</Text>
                   </TouchableOpacity>
-                </View>
-              ))}
+                );
+              })}
             </View>
-            <TouchableOpacity style={styles.addTagButton} onPress={handleAddInterest}>
-              <Ionicons name='add' size={14} color='#E4423F' />
-              <Text style={styles.addTagButtonText}>Add Interest</Text>
-            </TouchableOpacity>
 
             {/* Kinds of Date I Enjoy as Tag Buttons */}
             <Text style={styles.label}>Kinds of Date I Enjoy</Text>
@@ -1237,6 +1357,12 @@ export default function EditProfile() {
 
             {/* Location */}
             <Text style={styles.label}>Address / Location</Text>
+            {formValues.address && (
+              <View style={styles.currentAddressContainer}>
+                <Text style={styles.currentAddressText}>Current Address:</Text>
+                <Text style={styles.addressValue}>{formValues.address}</Text>
+              </View>
+            )}
             <View style={styles.autocompleteContainer}>
               <GooglePlacesAutocomplete
                 placeholder='Search your location...'
@@ -1263,6 +1389,7 @@ export default function EditProfile() {
                 styles={{
                   container: {
                     flex: 0,
+                    zIndex: 2000,
                   },
                   textInputContainer: {
                     width: "100%",
@@ -1286,14 +1413,17 @@ export default function EditProfile() {
                     borderWidth: 1,
                     borderColor: "#DDD",
                     borderRadius: 5,
-                    zIndex: 1000,
-                    elevation: 1000,
+                    zIndex: 2000,
+                    elevation: 2000,
                   },
                   row: {
                     padding: 13,
                     height: 44,
                   },
                 }}
+                listViewDisplayed={false}
+                keyboardShouldPersistTaps='handled'
+                nestedScrollEnabled={true}
               />
             </View>
 
@@ -1350,8 +1480,8 @@ export default function EditProfile() {
           </View>
 
           {/* Save Changes Button */}
-          <TouchableOpacity onPress={handleSaveChanges} style={styles.saveButton}>
-            <Text style={styles.saveButtonText}>Save Changes</Text>
+          <TouchableOpacity onPress={hasChanges ? handleSaveChanges : () => navigation.goBack()} style={styles.saveButton}>
+            <Text style={styles.saveButtonText}>{hasChanges ? "Save Changes" : "Return to Profile"}</Text>
           </TouchableOpacity>
 
           <Modal visible={modalVisible} animationType='slide' transparent={true} onRequestClose={() => setModalVisible(false)}>
@@ -1389,7 +1519,7 @@ export default function EditProfile() {
               </View>
             </View>
           </Modal>
-        </ScrollView>
+        </KeyboardAwareScrollView>
       )}
     </SafeAreaView>
   );
@@ -1750,5 +1880,41 @@ const styles = StyleSheet.create({
     color: "#333",
     marginVertical: 5,
     paddingLeft: 10,
+  },
+  currentAddressContainer: {
+    marginBottom: 10,
+    padding: 10,
+    backgroundColor: "#F9F9F9",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E4423F",
+  },
+  currentAddressText: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 4,
+  },
+  addressValue: {
+    fontSize: 16,
+    color: "#000",
+  },
+  interestsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "flex-start",
+    marginBottom: 20,
+  },
+  interestButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 30,
+    margin: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  interestText: {
+    fontSize: 16,
+    fontWeight: "500",
   },
 });

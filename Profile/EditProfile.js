@@ -888,28 +888,32 @@ export default function EditProfile() {
   // Add this effect to check for changes
   useEffect(() => {
     if (originalValues) {
-      console.log("\n=== Checking for Changes ===");
-      console.log("Original Values:", originalValues);
-      console.log("Current Form Values:", formValues);
-      console.log("Original Photos:", JSON.parse(userData.user_photo_url || "[]"));
-      console.log(
-        "Current Photos:",
-        photos.filter((p) => p !== null)
-      );
-      console.log("Original Video:", userData.user_video_url);
-      console.log("Current Video:", videoUri);
+      // Convert original photos, interests, and date types if present:
+      const originalPhotos = userData.user_photo_url ? JSON.parse(userData.user_photo_url) : [];
+      const originalInterests = userData.user_general_interests ? JSON.parse(userData.user_general_interests) : [];
+      const originalDateTypes = userData.user_date_interests ? JSON.parse(userData.user_date_interests) : [];
+      // Get original height in cm (make sure to cast to string for comparison)
+      const originalHeight = userData.user_height ? userData.user_height.toString() : "";
+      const heightChanged = heightCm !== originalHeight;
 
       const hasAnyChanges =
+        // Compare all form input values
         JSON.stringify(formValues) !== JSON.stringify(originalValues) ||
-        JSON.stringify(photos.filter((p) => p !== null)) !== JSON.stringify(JSON.parse(userData.user_photo_url || "[]")) ||
-        videoUri !== userData.user_video_url;
+        // Compare photos (filtering out null values)
+        JSON.stringify(photos.filter((p) => p !== null)) !== JSON.stringify(originalPhotos) ||
+        // Compare video URI change
+        videoUri !== userData.user_video_url ||
+        // Compare interests array
+        JSON.stringify(interests) !== JSON.stringify(originalInterests) ||
+        // Compare date types array
+        JSON.stringify(dateTypes) !== JSON.stringify(originalDateTypes) ||
+        // Check if the height (in cm) has changed
+        heightChanged;
 
       console.log("Has Changes:", hasAnyChanges);
-      console.log("=== End Check ===\n");
-
       setHasChanges(hasAnyChanges);
     }
-  }, [formValues, photos, videoUri, originalValues]);
+  }, [formValues, photos, videoUri, interests, dateTypes, heightCm, originalValues, userData]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -1253,75 +1257,59 @@ export default function EditProfile() {
 
             {/* Gender */}
             <Text style={styles.label}>Gender assigned at birth</Text>
-            <DropDownPicker
-              open={genderOpen}
-              value={genderValue}
-              items={genderItems}
-              setOpen={setGenderOpen}
-              setValue={setGenderValue}
-              setItems={setGenderItems}
-              placeholder='Select Gender assigned at birth'
-              style={{
-                backgroundColor: "#F9F9F9",
-                borderColor: "#E4423F",
-                marginBottom: genderOpen ? 100 : 15,
-                zIndex: 10000,
-                elevation: 10000,
-              }}
-              listMode='SCROLLVIEW'
-              scrollViewProps={{
-                nestedScrollEnabled: true,
-              }}
-              textStyle={{
-                fontSize: 16,
-              }}
-              dropDownContainerStyle={{
-                backgroundColor: "#F9F9F9",
-                borderColor: "#E4423F",
-                position: "absolute",
-                zIndex: 10000,
-                elevation: 10000,
-              }}
-              onChangeValue={(value) => {
-                setFormValues((prev) => ({ ...prev, gender: value }));
-              }}
-            />
+            <View style={[styles.dropdownWrapper, genderOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+              
+              <DropDownPicker
+                open={genderOpen}
+                value={genderValue}
+                items={genderItems}
+                setOpen={setGenderOpen}
+                setValue={setGenderValue}
+                setItems={setGenderItems}
+                placeholder="Select Gender assigned at birth"
+                style={styles.dropdownStyle}
+                listMode="SCROLLVIEW"
+                scrollViewProps={{
+                  nestedScrollEnabled: true,
+                }}
+                textStyle={styles.dropdownTextStyle}
+                dropDownContainerStyle={{
+                  ...styles.dropdownContainerStyle,
+                  position: "absolute",
+                }}
+                onChangeValue={(value) =>
+                  setFormValues((prev) => ({ ...prev, gender: value }))
+                }
+              />
+            </View>
 
             {/* Identity */}
             <Text style={styles.label}>Identity</Text>
-            <DropDownPicker
-              open={identityOpen}
-              value={identityValue}
-              items={identityItems}
-              setOpen={setIdentityOpen}
-              setValue={setIdentityValue}
-              setItems={setIdentityItems}
-              placeholder='Select Identity'
-              style={{
-                backgroundColor: "#F9F9F9",
-                borderColor: "#E4423F",
-                marginBottom: identityOpen ? 100 : 15,
-                zIndex: 9500,
-                elevation: 9500,
-              }}
-              listMode='SCROLLVIEW'
-              scrollViewProps={{
-                nestedScrollEnabled: true,
-              }}
-              textStyle={{
-                fontSize: 16,
-              }}
-              dropDownContainerStyle={{
-                backgroundColor: "#F9F9F9",
-                borderColor: "#E4423F",
-                position: "absolute",
-                zIndex: 9500,
-                elevation: 9500,
-              }}
-              onChangeValue={(value) => {
-                setFormValues((prev) => ({ ...prev, identity: value }));
-              }}
-            />
+            <View style={[styles.dropdownWrapper, identityOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+              
+              <DropDownPicker
+                open={identityOpen}
+                value={identityValue}
+                items={identityItems}
+                setOpen={setIdentityOpen}
+                setValue={setIdentityValue}
+                setItems={setIdentityItems}
+                placeholder="Select Identity"
+                style={styles.dropdownStyle}
+                listMode="SCROLLVIEW"
+                scrollViewProps={{
+                  nestedScrollEnabled: true,
+                }}
+                textStyle={styles.dropdownTextStyle}
+                dropDownContainerStyle={{
+                  ...styles.dropdownContainerStyle,
+                  position: "absolute",
+                }}
+                onChangeValue={(value) =>
+                  setFormValues((prev) => ({ ...prev, identity: value }))
+                }
+              />
+            </View>
 
             {/* Commenting out Sexual Orientation section
             <Text style={styles.label}>Sexual Orientation</Text>

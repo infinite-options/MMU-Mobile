@@ -18,6 +18,12 @@
     <string>$(EXECUTABLE_NAME)</string>
     <key>GMSApiKey</key>
     <string>AIzaSyDLmcCHhr3U6d5mf10f9NELlrtGweoxzjE</string>
+    <key>GMSPlacesApiKey</key>
+    <string>AIzaSyDLmcCHhr3U6d5mf10f9NELlrtGweoxzjE</string>
+    <key>GMSServicesApiKey</key>
+    <string>AIzaSyDLmcCHhr3U6d5mf10f9NELlrtGweoxzjE</string>
+    <key>GMSPlacesClientApiKey</key>
+    <string>AIzaSyDLmcCHhr3U6d5mf10f9NELlrtGweoxzjE</string>
     <key>CFBundleIdentifier</key>
     <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
     <key>NSLocationWhenInUseUsageDescription</key>
@@ -46,7 +52,7 @@
       </dict>
     </array>
     <key>CFBundleVersion</key>
-    <string>13</string>
+    <string>14</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>NSAppTransportSecurity</key>

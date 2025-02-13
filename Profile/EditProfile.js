@@ -45,6 +45,9 @@ export default function EditProfile() {
 
   const [userData, setUserData] = useState({});
   const [photos, setPhotos] = useState([null, null, null]); // array of photo URIs
+  const [coverPhotoIndex, setCoverPhotoIndex] = useState(0); // track which photo is the cover
+  const [deletedPhotos, setDeletedPhotos] = useState([]); // track deleted S3 URLs
+  const [newPhotos, setNewPhotos] = useState([]); // track newly added photos
   const [videoUri, setVideoUri] = useState(null); // single video URI
   const [imageLicense, setImageLicense] = useState(null);
   const videoRef = useRef(null);
@@ -363,13 +366,23 @@ export default function EditProfile() {
           try {
             const photoArray = JSON.parse(fetched.user_photo_url);
             const newPhotos = [null, null, null];
-            photoArray.forEach((uri, idx) => {
+            // Filter out any null or empty values and assign to first slots
+            const validPhotos = photoArray.filter((uri) => uri);
+            validPhotos.forEach((uri, idx) => {
               if (idx < 3) newPhotos[idx] = uri;
             });
             setPhotos(newPhotos);
+
+            // Set cover photo index if it exists, otherwise default to 0
+            if (fetched.cover_photo_index !== undefined) {
+              setCoverPhotoIndex(parseInt(fetched.cover_photo_index));
+            } else {
+              setCoverPhotoIndex(0);
+            }
           } catch (error) {
             console.log("Error parsing photo URLs:", error);
             setPhotos([null, null, null]);
+            setCoverPhotoIndex(0);
           }
         }
 
@@ -428,7 +441,7 @@ export default function EditProfile() {
   };
 
   // Updated image picker function with better permission handling
-  const handlePickImage = async (slotIndex) => {
+  const handlePickImage = async () => {
     try {
       const { status: existingStatus } = await ImagePicker.getMediaLibraryPermissionsAsync();
 
@@ -448,10 +461,17 @@ export default function EditProfile() {
         }
       }
 
+      // Count current non-null photos
+      const currentPhotoCount = photos.filter((photo) => photo !== null).length;
+      if (currentPhotoCount >= 3) {
+        Alert.alert("Maximum Photos", "You can only have up to 3 photos. Please remove some photos before adding more.");
+        return;
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsMultipleSelection: true,
-        selectionLimit: 3,
+        selectionLimit: 3 - currentPhotoCount,
         quality: Platform.OS === "ios" ? 0.8 : 1,
         allowsEditing: false,
         base64: false,
@@ -459,35 +479,59 @@ export default function EditProfile() {
       });
 
       if (!result.canceled && result.assets?.length > 0) {
-        const newPhotos = [...photos];
-        for (const asset of result.assets) {
-          const targetIndex = slotIndex + result.assets.indexOf(asset);
-          if (targetIndex < 3) {
-            newPhotos[targetIndex] = asset.uri;
-            // Log image details when selected
-            const size = await getFileSize(asset.uri);
-            console.log(`Image selected: ${asset.uri.split("/").pop()}`);
-            console.log(`Original size: ${(size / 1024 / 1024).toFixed(2)} MB`);
+        const newPhotoUris = result.assets.map((asset) => asset.uri);
+
+        // Add new photos to the first available slots
+        const updatedPhotos = [...photos];
+        let newPhotoIndex = 0;
+        for (let i = 0; i < updatedPhotos.length && newPhotoIndex < newPhotoUris.length; i++) {
+          if (updatedPhotos[i] === null) {
+            updatedPhotos[i] = newPhotoUris[newPhotoIndex];
+            // Track new photos separately
+            setNewPhotos((prev) => [...prev, { uri: newPhotoUris[newPhotoIndex], index: i }]);
+            newPhotoIndex++;
           }
         }
-        setPhotos(newPhotos);
+        setPhotos(updatedPhotos);
       }
     } catch (error) {
       console.error("Error picking images:", error);
-      Alert.alert("Error", "There was an issue accessing your photos. Please check your permissions and try again.", [
-        { text: "OK" },
-        {
-          text: "Open Settings",
-          onPress: () => {
-            Platform.OS === "ios" ? Linking.openURL("app-settings:") : Linking.openSettings();
-          },
-        },
-      ]);
+      Alert.alert("Error", "There was an issue accessing your photos. Please check your permissions and try again.");
     }
   };
+
   const handleRemovePhoto = (slotIndex) => {
-    const newPhotos = photos.map((photo, index) => (index === slotIndex ? null : photo));
-    setPhotos(newPhotos);
+    const photoToDelete = photos[slotIndex];
+
+    // If it's an S3 URL, add it to deletedPhotos
+    if (photoToDelete && !photoToDelete.startsWith("file://")) {
+      setDeletedPhotos((prev) => [...prev, photoToDelete]);
+    }
+
+    // Remove from newPhotos if it was a new photo
+    if (photoToDelete && photoToDelete.startsWith("file://")) {
+      setNewPhotos((prev) => prev.filter((p) => p.uri !== photoToDelete));
+    }
+
+    // Update photos array
+    const updatedPhotos = [...photos];
+    updatedPhotos[slotIndex] = null;
+
+    // Compact the array to fill empty slots
+    const compactedPhotos = [null, null, null];
+    const validPhotos = updatedPhotos.filter((photo) => photo !== null);
+    validPhotos.forEach((photo, index) => {
+      compactedPhotos[index] = photo;
+    });
+
+    setPhotos(compactedPhotos);
+
+    // Update cover photo index if needed
+    if (slotIndex === coverPhotoIndex) {
+      setCoverPhotoIndex(0);
+    } else if (coverPhotoIndex > slotIndex) {
+      setCoverPhotoIndex(coverPhotoIndex - 1);
+    }
   };
 
   // Handle picking a video
@@ -662,7 +706,6 @@ export default function EditProfile() {
   // Updated handleSaveChanges function
   const handleSaveChanges = async () => {
     console.log("\n=== Starting Profile Update ===");
-    console.log("Creating new FormData object");
     if (!formValues.firstName || !formValues.lastName) {
       Alert.alert("Error", "Please fill in your full name and phone number.");
       return;
@@ -676,18 +719,35 @@ export default function EditProfile() {
         return;
       }
 
-      // Filter out null photos and only include actual photo URIs
-      const originalPhotos = userData.user_photo_url ? JSON.parse(userData.user_photo_url) : [];
-      const photoUrls = photos.filter((uri) => uri !== null && uri !== undefined);
-
-      // Create FormData object
       const uploadData = new FormData();
       uploadData.append("user_uid", userData.user_uid);
       uploadData.append("user_email_id", userData.user_email_id);
 
-      // Check if photos have changed
-      if (JSON.stringify(originalPhotos) !== JSON.stringify(photoUrls)) {
-        uploadData.append("user_photo_url", JSON.stringify(photoUrls));
+      // Add deleted photos if any
+      if (deletedPhotos.length > 0) {
+        uploadData.append("user_delete_photo", JSON.stringify(deletedPhotos));
+      }
+
+      // Get all non-null photos
+      const validPhotos = photos.filter((photo) => photo !== null);
+
+      // Add photos sequentially
+      validPhotos.forEach((photoUri, index) => {
+        if (photoUri.startsWith("file://")) {
+          // This is a new photo that needs to be uploaded
+          const filename = photoUri.split("/").pop();
+          uploadData.append(`img_${index}`, {
+            uri: photoUri,
+            type: "image/jpeg",
+            name: filename,
+          });
+        }
+      });
+
+      // Add favorite photo selection
+      const coverPhoto = photos[coverPhotoIndex];
+      if (coverPhoto) {
+        uploadData.append("user_favorite_photo", coverPhoto);
       }
 
       // Create an object of the original values from userData
@@ -924,6 +984,11 @@ export default function EditProfile() {
                         <Ionicons name='close' size={20} color='#FFF' />
                       </View>
                     </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setCoverPhotoIndex(idx)} style={styles.heartIconTopLeft}>
+                      <View style={[styles.heartIconBackground, coverPhotoIndex === idx && styles.heartIconBackgroundSelected]}>
+                        <Ionicons name={coverPhotoIndex === idx ? "heart" : "heart-outline"} size={20} color={coverPhotoIndex === idx ? "white" : "red"} />
+                      </View>
+                    </TouchableOpacity>
                   </>
                 ) : (
                   <Pressable style={styles.emptyPhotoBox} onPress={() => handlePickImage(idx)}>
@@ -965,6 +1030,8 @@ export default function EditProfile() {
                   firstName: text,
                 }))
               }
+              autoCorrect={false}
+              autoCapitalize='none'
               outlineStyle={styles.textInputOutline}
             /> */}
             <TextInput
@@ -1968,5 +2035,19 @@ const styles = StyleSheet.create({
   interestText: {
     fontSize: 16,
     fontWeight: "500",
+  },
+  heartIconTopLeft: {
+    position: "absolute",
+    top: 5,
+    left: 5,
+    zIndex: 1,
+  },
+  heartIconBackground: {
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 4,
+  },
+  heartIconBackgroundSelected: {
+    backgroundColor: "red",
   },
 });

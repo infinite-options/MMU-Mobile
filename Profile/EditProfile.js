@@ -64,9 +64,50 @@ export default function EditProfile() {
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // We'll store height in two separate numeric fields for +/– usage
-  const [heightFt, setHeightFt] = useState(5);
-  const [heightIn, setHeightIn] = useState(11);
+  // -------------------------------
+  // HEIGHT STATES & CONVERSION
+  // -------------------------------
+  // We store height as feet & inches (for the UI) as well as centimeters.
+  // The endpoint always receives height in cm.
+  const [heightFt, setHeightFt] = useState("5"); // stored as string
+  const [heightIn, setHeightIn] = useState("11");
+  const defaultCm = Math.round((5 * 12 + 11) * 2.54);
+  const [heightCm, setHeightCm] = useState(defaultCm.toString());
+  // heightUnit can be either "in" (for feet/inches) or "cm" (for centimeters)
+  const [heightUnit, setHeightUnit] = useState("in");
+
+  // -------------------------------
+  // Other form states and dropdown states (e.g., gender, openTo, etc.)
+  const [formValues, setFormValues] = useState({
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
+    bio: "",
+    availableTimes: [],
+    birthdate: "",
+    children: 0,
+    gender: "",
+    identity: "",
+    orientation: "",
+    openTo: [],
+    address: "",
+    nationality: "",
+    bodyType: "",
+    education: "",
+    job: "",
+    smoking: "",
+    drinking: "",
+    religion: "",
+    starSign: "",
+    latitude: null,
+    longitude: null,
+  });
+  const [searchText, setSearchText] = useState(formValues.address || "");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newEntryText, setNewEntryText] = useState("");
+  const [entryType, setEntryType] = useState("interest"); // 'interest' or 'dateType'
+  const [hasChanges, setHasChanges] = useState(false);
+  const [originalValues, setOriginalValues] = useState(null);
 
   // Replace these text-based fields with pickers for Gender, Body Type, etc.
   // Body Type
@@ -193,39 +234,52 @@ export default function EditProfile() {
   const [interests, setInterests] = useState([]);
   const [dateTypes, setDateTypes] = useState([]);
 
-  const [formValues, setFormValues] = useState({
-    firstName: "",
-    lastName: "",
-    phoneNumber: "",
-    bio: "",
-    availableTimes: [],
-    birthdate: "",
-    children: 0,
-    gender: "",
-    identity: "",
-    orientation: "",
-    openTo: [],
-    address: "",
-    nationality: "",
-    bodyType: "",
-    education: "",
-    job: "",
-    smoking: "",
-    drinking: "",
-    religion: "",
-    starSign: "",
-    latitude: null,
-    longitude: null,
-  });
+  // -------------------------------
+  // HEIGHT CONVERSION HELPER FUNCTIONS
+  // -------------------------------
+  // Updates both inches UI and stored cm value.
+  const updateHeightFromInches = (ft, inVal) => {
+    const totalInch = ft * 12 + inVal;
+    const normalizedFt = Math.floor(totalInch / 12);
+    const normalizedIn = totalInch % 12;
+    setHeightFt(normalizedFt.toString());
+    setHeightIn(normalizedIn.toString());
+    const cmValue = Math.round(totalInch * 2.54);
+    setHeightCm(cmValue.toString());
+  };
 
-  const [searchText, setSearchText] = useState(formValues.address || "");
+  // Updates both cm state and converts to inches.
+  const updateHeightFromCm = (cmValue) => {
+    setHeightCm(cmValue.toString());
+    const totalIn = cmValue / 2.54;
+    const ft = Math.floor(totalIn / 12);
+    const inVal = Math.round(totalIn - ft * 12);
+    setHeightFt(ft.toString());
+    setHeightIn(inVal.toString());
+  };
 
-  const [modalVisible, setModalVisible] = useState(false);
-  const [newEntryText, setNewEntryText] = useState("");
-  const [entryType, setEntryType] = useState("interest"); // 'interest' or 'dateType'
-
-  const [hasChanges, setHasChanges] = useState(false);
-  const [originalValues, setOriginalValues] = useState(null);
+  // Toggle the height unit between "in" and "cm" and convert appropriately.
+  const toggleHeightUnit = (unit) => {
+    if (unit === heightUnit) return;
+    if (unit === "cm") {
+      // Convert current inches to cm.
+      const ft = parseInt(heightFt) || 0;
+      const inVal = parseInt(heightIn) || 0;
+      const totalIn = ft * 12 + inVal;
+      const cmValue = Math.round(totalIn * 2.54);
+      setHeightCm(cmValue.toString());
+      setHeightUnit("cm");
+    } else if (unit === "in") {
+      // Convert current cm to inches.
+      const cmValue = parseInt(heightCm) || 0;
+      const totalIn = cmValue / 2.54;
+      const ft = Math.floor(totalIn / 12);
+      const inVal = Math.round(totalIn - ft * 12);
+      setHeightFt(ft.toString());
+      setHeightIn(inVal.toString());
+      setHeightUnit("in");
+    }
+  };
 
   useFocusEffect(
     React.useCallback(() => {
@@ -398,6 +452,7 @@ export default function EditProfile() {
 
           setHeightFt(feet.toString());
           setHeightIn(inches.toString());
+          setHeightCm(cm.toString());
         }
 
         setGenderValue(fetched.user_gender || null);
@@ -729,7 +784,7 @@ export default function EditProfile() {
         user_date_interests: dateTypes,
         user_available_time: formValues.availableTimes,
         user_birthdate: formValues.birthdate,
-        user_height: Math.round((parseInt(heightFt || 0) * 12 + parseInt(heightIn || 0)) * 2.54).toString(),
+        user_height: heightCm,
         user_kids: formValues.children.toString(),
         user_gender: genderValue,
         user_identity: identityValue,
@@ -1103,32 +1158,86 @@ export default function EditProfile() {
 
             {/* Height Input */}
             <View style={styles.inputField}>
-              <Text variant='bodyMedium' style={styles.inputLabel}>
+              {/* Toggle Pill Container */}
+              <View style={styles.heightToggleContainer}>
+                <TouchableOpacity
+                  style={[styles.togglePill, heightUnit === "in" && styles.togglePillActive]}
+                  onPress={() => toggleHeightUnit("in")}
+                >
+                  <Text style={[styles.togglePillText, heightUnit === "in" && styles.togglePillActiveText]}>
+                    Inches
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.togglePill, heightUnit === "cm" && styles.togglePillActive]}
+                  onPress={() => toggleHeightUnit("cm")}
+                >
+                  <Text style={[styles.togglePillText, heightUnit === "cm" && styles.togglePillActiveText]}>
+                    Centimeters
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <Text variant="bodyMedium" style={styles.inputLabel}>
                 Height
               </Text>
-              <View style={styles.heightContainer}>
-                {/* Feet Controls */}
-                <View style={styles.heightControlGroup}>
-                  <TouchableOpacity style={styles.heightButton} onPress={() => setHeightFt(Math.max(0, parseInt(heightFt || 0) - 1).toString())}>
-                    <Text style={styles.buttonText}>-</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.heightValue}>{heightFt || 0} ft</Text>
-                  <TouchableOpacity style={styles.heightButton} onPress={() => setHeightFt((parseInt(heightFt || 0) + 1).toString())}>
-                    <Text style={styles.buttonText}>+</Text>
-                  </TouchableOpacity>
+              {heightUnit === "in" ? (
+                <View style={styles.heightContainer}>
+                  {/* Feet Controls */}
+                  <View style={styles.heightControlGroup}>
+                    <TouchableOpacity
+                      style={styles.heightButton}
+                      onPress={() =>
+                        updateHeightFromInches(Math.max(0, parseInt(heightFt) - 1), parseInt(heightIn))
+                      }
+                    >
+                      <Text style={styles.buttonText}>-</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.heightValue}>{heightFt} ft</Text>
+                    <TouchableOpacity
+                      style={styles.heightButton}
+                      onPress={() => updateHeightFromInches(parseInt(heightFt) + 1, parseInt(heightIn))}
+                    >
+                      <Text style={styles.buttonText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                  {/* Inches Controls */}
+                  <View style={styles.heightControlGroup}>
+                    <TouchableOpacity
+                      style={styles.heightButton}
+                      onPress={() =>
+                        updateHeightFromInches(parseInt(heightFt), Math.max(0, parseInt(heightIn) - 1))
+                      }
+                    >
+                      <Text style={styles.buttonText}>-</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.heightValue}>{heightIn} in</Text>
+                    <TouchableOpacity
+                      style={styles.heightButton}
+                      onPress={() => updateHeightFromInches(parseInt(heightFt), parseInt(heightIn) + 1)}
+                    >
+                      <Text style={styles.buttonText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-
-                {/* Inches Controls */}
-                <View style={styles.heightControlGroup}>
-                  <TouchableOpacity style={styles.heightButton} onPress={() => setHeightIn(Math.max(0, parseInt(heightIn || 0) - 1).toString())}>
-                    <Text style={styles.buttonText}>-</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.heightValue}>{heightIn || 0} in</Text>
-                  <TouchableOpacity style={styles.heightButton} onPress={() => setHeightIn((parseInt(heightIn || 0) + 1).toString())}>
-                    <Text style={styles.buttonText}>+</Text>
-                  </TouchableOpacity>
+              ) : (
+                <View style={styles.heightContainer}>
+                  <View style={styles.heightControlGroup}>
+                    <TouchableOpacity
+                      style={styles.heightButton}
+                      onPress={() => updateHeightFromCm(Math.max(0, parseInt(heightCm) - 1))}
+                    >
+                      <Text style={styles.buttonText}>-</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.heightValue}>{heightCm} cm</Text>
+                    <TouchableOpacity
+                      style={styles.heightButton}
+                      onPress={() => updateHeightFromCm(parseInt(heightCm) + 1)}
+                    >
+                      <Text style={styles.buttonText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
+              )}
             </View>
 
             {/* # of Children */}
@@ -1787,6 +1896,29 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   // Height Input
+  heightToggleContainer: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginBottom: 8,
+  },
+  togglePill: {
+    borderWidth: 1,
+    borderColor: "#E4423F",
+    borderRadius: 20,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    marginLeft: 8,
+  },
+  togglePillActive: {
+    backgroundColor: "#E4423F",
+  },
+  togglePillText: {
+    fontSize: 14,
+    color: "#E4423F",
+  },
+  togglePillActiveText: {
+    color: "#FFF",
+  },
   heightContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1881,15 +2013,7 @@ const styles = StyleSheet.create({
     marginLeft: 15,
   },
   addButton: {
-    backgroundColor: "#E4423F",
-    borderRadius: 5,
-  },
-  modalButtonText: {
-    color: "#E4423F",
-    fontWeight: "bold",
-  },
-  addButtonText: {
-    color: "white",
+    // Additional styling for the add button (if needed)
   },
   mapContainer: {
     height: 200,

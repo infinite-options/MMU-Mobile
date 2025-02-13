@@ -16,6 +16,7 @@ import {
   Text as RNText,
   Modal,
   Linking,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { TextInput, Text } from "react-native-paper";
@@ -917,759 +918,779 @@ export default function EditProfile() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color='#E4423F' />
-        </View>
-      ) : (
-        <KeyboardAwareScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingHorizontal: 20 }}
-          nestedScrollEnabled={true}
-          keyboardShouldPersistTaps='handled'
-          enableOnAndroid={true}
-          enableResetScrollToCoords={false}
-        >
-          {/* Header */}
-          <View style={styles.headerContainer}>
-            <Text style={styles.headerTitle}>Editing My Profile</Text>
+      {/* Overlay to catch taps when a dropdown is open */}
+      {(genderOpen || identityOpen) && (
+        <TouchableOpacity
+          style={styles.dropdownOverlay}
+          activeOpacity={1}
+          onPress={() => {
+            setGenderOpen(false);
+            setIdentityOpen(false);
+          }}
+        />
+      )}
+
+      <TouchableWithoutFeedback
+        onPress={() => {
+          setGenderOpen(false);
+          setIdentityOpen(false);
+          Keyboard.dismiss();
+        }}
+      >
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#E4423F" />
           </View>
-
-          {/* Profile Video */}
-          <View style={styles.mediaContainer}>
-            {videoUri ? (
-              <View style={styles.videoWrapper}>
-                <Video
-                  ref={videoRef}
-                  source={{ uri: videoUri }}
-                  style={styles.video}
-                  resizeMode='cover'
-                  useNativeControls
-                  shouldPlay={false}
-                  onPlaybackStatusUpdate={(status) => {
-                    if (!status.isLoaded) return;
-                    setIsVideoPlaying(status.isPlaying);
-                  }}
-                  onError={(err) => console.log("VIDEO ERROR:", err)}
-                />
-                {!isVideoPlaying && (
-                  <TouchableOpacity style={styles.playOverlay} onPress={handlePlayPause}>
-                    <Ionicons name='play' size={48} color='#FFF' />
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity onPress={handleRemoveVideo} style={styles.removeIconTopRight}>
-                  <View style={styles.removeIconBackground}>
-                    <Ionicons name='close' size={20} color='#FFF' />
-                  </View>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <TouchableOpacity onPress={handleVideoUpload} style={styles.uploadVideoButton}>
-                <Ionicons name='cloud-upload-outline' size={20} color='#E4423F' />
-                <Text style={styles.uploadVideoText}>Upload Video</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Photos Section */}
-          <View style={styles.photoBoxesRow}>
-            {photos.map((photoUri, idx) => (
-              <View key={idx} style={styles.photoBox}>
-                {photoUri ? (
-                  <>
-                    <Image source={{ uri: photoUri }} style={styles.photoImage} />
-                    <TouchableOpacity onPress={() => handleRemovePhoto(idx)} style={styles.removeIconTopRight}>
-                      <View style={styles.removeIconBackground}>
-                        <Ionicons name='close' size={20} color='#FFF' />
-                      </View>
-                    </TouchableOpacity>
-                  </>
-                ) : (
-                  <Pressable style={styles.emptyPhotoBox} onPress={() => handlePickImage(idx)}>
-                    <Ionicons name='add' size={24} color='red' />
-                  </Pressable>
-                )}
-              </View>
-            ))}
-          </View>
-
-          {/* Driver's License */}
-          <TouchableOpacity style={styles.uploadButton} onPress={handleLicenseUpload}>
-            <Ionicons name='cloud-upload-outline' size={24} color='red' />
-            <Text style={styles.uploadButtonText}>Upload Picture File</Text>
-          </TouchableOpacity>
-          {imageLicense && (
-            <View style={styles.imageContainer}>
-              <Image source={{ uri: imageLicense.uri }} style={styles.image} />
-              <View style={styles.imageDetails}>
-                <Text style={styles.imageFilename}>{imageLicense.uri.split("/").pop()}</Text>
-                {/* If you have imageLicense.fileSize, you could show that. */}
-                <TouchableOpacity onPress={handleRemoveImage}>
-                  <Ionicons name='trash-outline' size={24} color='red' />
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          {/* Form Section */}
-          <View style={styles.formContainer}>
-            {/* <TextInput
-              label='First Name'
-              mode='outlined'
-              style={styles.inputField}
-              value={formValues.firstName}
-              onChangeText={(text) =>
-                setFormValues((prev) => ({
-                  ...prev,
-                  firstName: text,
-                }))
-              }
-              outlineStyle={styles.textInputOutline}
-            /> */}
-            <TextInput
-              label='First Name'
-              mode='outlined'
-              style={styles.inputField}
-              value={formValues.firstName}
-              onChangeText={(text) =>
-                setFormValues((prev) => ({
-                  ...prev,
-                  firstName: text.trim(),
-                }))
-              }
-              autoCorrect={false}
-              autoCapitalize='none'
-              outlineStyle={styles.textInputOutline}
-            />
-
-            <TextInput
-              label='Last Name'
-              mode='outlined'
-              style={styles.inputField}
-              value={formValues.lastName}
-              onChangeText={(text) =>
-                setFormValues((prev) => ({
-                  ...prev,
-                  lastName: text.trim(),
-                }))
-              }
-              autoCorrect={false}
-              autoCapitalize='none'
-              outlineStyle={styles.textInputOutline}
-            />
-            <TextInput
-              label='Phone Number'
-              mode='outlined'
-              style={styles.inputField}
-              value={formValues.phoneNumber}
-              onChangeText={(text) =>
-                setFormValues((prev) => ({
-                  ...prev,
-                  phoneNumber: text.trim(),
-                }))
-              }
-              autoCorrect={false}
-              autoCapitalize='none'
-              outlineStyle={styles.textInputOutline}
-            />
-            <TextInput
-              label='Bio'
-              mode='outlined'
-              style={styles.inputField}
-              multiline
-              value={formValues.bio}
-              onChangeText={(text) =>
-                setFormValues((prev) => ({
-                  ...prev,
-                  bio: text.trim(),
-                }))
-              }
-              autoCorrect={false}
-              autoCapitalize='none'
-              outlineStyle={styles.textInputOutline}
-            />
-
-            {/* Interests as Tag Buttons */}
-            <Text style={styles.label}>My Interests</Text>
-            <View style={styles.interestsContainer}>
-              {allInterests.map((interest) => {
-                const isSelected = interests.includes(interest);
-                return (
-                  <TouchableOpacity
-                    key={interest}
-                    onPress={() => toggleInterest(interest)}
-                    style={[
-                      styles.interestButton,
-                      {
-                        borderColor: isSelected ? "rgba(26, 26, 26, 1)" : "rgba(26, 26, 26, 0.5)",
-                        backgroundColor: isSelected ? "#000" : "#FFF",
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.interestText, { color: isSelected ? "#FFF" : "rgba(26, 26, 26, 0.5)" }]}>{interest}</Text>
-                  </TouchableOpacity>
-                );
-              })}
+        ) : (
+          <KeyboardAwareScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingHorizontal: 20 }}
+            nestedScrollEnabled={true}
+            keyboardShouldPersistTaps="always"
+            enableOnAndroid={true}
+            enableResetScrollToCoords={false}
+          >
+            {/* Header */}
+            <View style={styles.headerContainer}>
+              <Text style={styles.headerTitle}>Editing My Profile</Text>
             </View>
 
-            {/* Kinds of Date I Enjoy as Tag Buttons */}
-            <Text style={styles.label}>Kinds of Date I Enjoy</Text>
-            <View style={styles.tagContainer}>
-              {dateTypes.map((item, index) => (
-                <View key={index} style={styles.tag}>
-                  <RNText style={styles.tagText}>{item}</RNText>
-                  <TouchableOpacity onPress={() => handleRemoveDateType(index)} style={styles.tagClose}>
-                    <Ionicons name='close' size={14} color='#FFF' />
+            {/* Profile Video */}
+            <View style={styles.mediaContainer}>
+              {videoUri ? (
+                <View style={styles.videoWrapper}>
+                  <Video
+                    ref={videoRef}
+                    source={{ uri: videoUri }}
+                    style={styles.video}
+                    resizeMode='cover'
+                    useNativeControls
+                    shouldPlay={false}
+                    onPlaybackStatusUpdate={(status) => {
+                      if (!status.isLoaded) return;
+                      setIsVideoPlaying(status.isPlaying);
+                    }}
+                    onError={(err) => console.log("VIDEO ERROR:", err)}
+                  />
+                  {!isVideoPlaying && (
+                    <TouchableOpacity style={styles.playOverlay} onPress={handlePlayPause}>
+                      <Ionicons name='play' size={48} color='#FFF' />
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity onPress={handleRemoveVideo} style={styles.removeIconTopRight}>
+                    <View style={styles.removeIconBackground}>
+                      <Ionicons name='close' size={20} color='#FFF' />
+                    </View>
                   </TouchableOpacity>
-                </View>
-              ))}
-            </View>
-            <TouchableOpacity style={styles.addTagButton} onPress={handleAddDateType}>
-              <Ionicons name='add' size={14} color='#E4423F' />
-              <Text style={styles.addTagButtonText}>Add Date Type</Text>
-            </TouchableOpacity>
-
-            {/* My Availability */}
-            <TextInput
-              label='My Availability'
-              mode='outlined'
-              style={styles.inputField}
-              placeholder='Example: Mon: 9 AM - 5 PM, Tue: 10 AM - 6 PM'
-              value={formValues.availableTimes.map((t) => `${t.day}: ${t.start_time} - ${t.end_time}`).join(", ")}
-              onChangeText={(text) => {
-                const times = text.split(", ").map((entry) => {
-                  const [dayPart, timeRange] = entry.split(": ");
-                  const [start, end] = timeRange?.split(" - ") || [];
-                  return {
-                    day: dayPart?.trim() || "",
-                    start_time: start?.trim() || "",
-                    end_time: end?.trim() || "",
-                  };
-                });
-                setFormValues({ ...formValues, availableTimes: times });
-              }}
-              outlineStyle={styles.textInputOutline}
-            />
-
-            <TextInput
-              label='Birthdate'
-              mode='outlined'
-              style={styles.inputField}
-              value={formValues.birthdate}
-              onChangeText={(text) => setFormValues({ ...formValues, birthdate: text })}
-              outlineStyle={styles.textInputOutline}
-            />
-
-            {/* Height Input */}
-            <View style={styles.inputField}>
-              {/* Toggle Pill Container */}
-              <View style={styles.heightToggleContainer}>
-                <TouchableOpacity
-                  style={[styles.togglePill, heightUnit === "in" && styles.togglePillActive]}
-                  onPress={() => toggleHeightUnit("in")}
-                >
-                  <Text style={[styles.togglePillText, heightUnit === "in" && styles.togglePillActiveText]}>
-                    Inches
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.togglePill, heightUnit === "cm" && styles.togglePillActive]}
-                  onPress={() => toggleHeightUnit("cm")}
-                >
-                  <Text style={[styles.togglePillText, heightUnit === "cm" && styles.togglePillActiveText]}>
-                    Centimeters
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <Text variant="bodyMedium" style={styles.inputLabel}>
-                Height
-              </Text>
-              {heightUnit === "in" ? (
-                <View style={styles.heightContainer}>
-                  {/* Feet Controls */}
-                  <View style={styles.heightControlGroup}>
-                    <TouchableOpacity
-                      style={styles.heightButton}
-                      onPress={() =>
-                        updateHeightFromInches(Math.max(0, parseInt(heightFt) - 1), parseInt(heightIn))
-                      }
-                    >
-                      <Text style={styles.buttonText}>-</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.heightValue}>{heightFt} ft</Text>
-                    <TouchableOpacity
-                      style={styles.heightButton}
-                      onPress={() => updateHeightFromInches(parseInt(heightFt) + 1, parseInt(heightIn))}
-                    >
-                      <Text style={styles.buttonText}>+</Text>
-                    </TouchableOpacity>
-                  </View>
-                  {/* Inches Controls */}
-                  <View style={styles.heightControlGroup}>
-                    <TouchableOpacity
-                      style={styles.heightButton}
-                      onPress={() =>
-                        updateHeightFromInches(parseInt(heightFt), Math.max(0, parseInt(heightIn) - 1))
-                      }
-                    >
-                      <Text style={styles.buttonText}>-</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.heightValue}>{heightIn} in</Text>
-                    <TouchableOpacity
-                      style={styles.heightButton}
-                      onPress={() => updateHeightFromInches(parseInt(heightFt), parseInt(heightIn) + 1)}
-                    >
-                      <Text style={styles.buttonText}>+</Text>
-                    </TouchableOpacity>
-                  </View>
                 </View>
               ) : (
-                <View style={styles.heightContainer}>
-                  <View style={styles.heightControlGroup}>
-                    <TouchableOpacity
-                      style={styles.heightButton}
-                      onPress={() => updateHeightFromCm(Math.max(0, parseInt(heightCm) - 1))}
-                    >
-                      <Text style={styles.buttonText}>-</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.heightValue}>{heightCm} cm</Text>
-                    <TouchableOpacity
-                      style={styles.heightButton}
-                      onPress={() => updateHeightFromCm(parseInt(heightCm) + 1)}
-                    >
-                      <Text style={styles.buttonText}>+</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
+                <TouchableOpacity onPress={handleVideoUpload} style={styles.uploadVideoButton}>
+                  <Ionicons name='cloud-upload-outline' size={20} color='#E4423F' />
+                  <Text style={styles.uploadVideoText}>Upload Video</Text>
+                </TouchableOpacity>
               )}
             </View>
 
-            {/* # of Children */}
-            <TextInput
-              label='# of Children'
-              mode='outlined'
-              style={styles.inputField}
-              value={formValues.children.toString()}
-              onChangeText={(text) => setFormValues({ ...formValues, children: parseInt(text) })}
-              keyboardType='numeric'
-              outlineStyle={styles.textInputOutline}
-            />
-
-            {/* Gender */}
-            <Text style={styles.label}>Gender assigned at birth</Text>
-            <View style={[styles.dropdownWrapper, genderOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
-              
-              <DropDownPicker
-                open={genderOpen}
-                value={genderValue}
-                items={genderItems}
-                setOpen={setGenderOpen}
-                setValue={setGenderValue}
-                setItems={setGenderItems}
-                placeholder="Select Gender assigned at birth"
-                style={styles.dropdownStyle}
-                listMode="SCROLLVIEW"
-                scrollViewProps={{
-                  nestedScrollEnabled: true,
-                }}
-                textStyle={styles.dropdownTextStyle}
-                dropDownContainerStyle={{
-                  ...styles.dropdownContainerStyle,
-                  position: "absolute",
-                }}
-                onChangeValue={(value) =>
-                  setFormValues((prev) => ({ ...prev, gender: value }))
-                }
-              />
+            {/* Photos Section */}
+            <View style={styles.photoBoxesRow}>
+              {photos.map((photoUri, idx) => (
+                <View key={idx} style={styles.photoBox}>
+                  {photoUri ? (
+                    <>
+                      <Image source={{ uri: photoUri }} style={styles.photoImage} />
+                      <TouchableOpacity onPress={() => handleRemovePhoto(idx)} style={styles.removeIconTopRight}>
+                        <View style={styles.removeIconBackground}>
+                          <Ionicons name='close' size={20} color='#FFF' />
+                        </View>
+                      </TouchableOpacity>
+                    </>
+                  ) : (
+                    <Pressable style={styles.emptyPhotoBox} onPress={() => handlePickImage(idx)}>
+                      <Ionicons name='add' size={24} color='red' />
+                    </Pressable>
+                  )}
+                </View>
+              ))}
             </View>
 
-            {/* Identity */}
-            <Text style={styles.label}>Identity</Text>
-            <View style={[styles.dropdownWrapper, identityOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
-              
-              <DropDownPicker
-                open={identityOpen}
-                value={identityValue}
-                items={identityItems}
-                setOpen={setIdentityOpen}
-                setValue={setIdentityValue}
-                setItems={setIdentityItems}
-                placeholder="Select Identity"
-                style={styles.dropdownStyle}
-                listMode="SCROLLVIEW"
-                scrollViewProps={{
-                  nestedScrollEnabled: true,
-                }}
-                textStyle={styles.dropdownTextStyle}
-                dropDownContainerStyle={{
-                  ...styles.dropdownContainerStyle,
-                  position: "absolute",
-                }}
-                onChangeValue={(value) =>
-                  setFormValues((prev) => ({ ...prev, identity: value }))
-                }
-              />
-            </View>
-
-            {/* Commenting out Sexual Orientation section
-            <Text style={styles.label}>Sexual Orientation</Text>
-            <DropDownPicker
-              open={orientationOpen}
-              value={orientationValue}
-              items={orientationItems}
-              setOpen={setOrientationOpen}
-              setValue={setOrientationValue}
-              setItems={setOrientationItems}
-              placeholder='Select Orientation'
-              listMode='SCROLLVIEW'
-              scrollViewProps={{
-                nestedScrollEnabled: true,
-              }}
-              style={{
-                ...styles.dropdownStyle,
-                zIndex: 9000,
-                elevation: 9000,
-              }}
-              textStyle={styles.dropdownTextStyle}
-              dropDownContainerStyle={{
-                ...styles.dropdownContainerStyle,
-                position: "absolute",
-                zIndex: 9000,
-                elevation: 9000,
-              }}
-              onChangeValue={(value) => setFormValues((prev) => ({ ...prev, orientation: value }))}
-            />
-            */}
-
-            {/* Open To */}
-            <Text style={styles.label}>Open To</Text>
-            <View style={[styles.dropdownWrapper, openToOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
-              <DropDownPicker
-                open={openToOpen}
-                value={openToValue}
-                items={openToItems}
-                setOpen={setOpenToOpen}
-                setValue={setOpenToValue}
-                setItems={setOpenToItems}
-                placeholder='Select Open To (Multiple)'
-                multiple={true}
-                mode='BADGE'
-                badgeDotColors={["#E4423F"]}
-                listMode='SCROLLVIEW'
-                scrollViewProps={{
-                  nestedScrollEnabled: true,
-                }}
-                style={styles.dropdownStyle}
-                textStyle={styles.dropdownTextStyle}
-                dropDownContainerStyle={{
-                  ...styles.dropdownContainerStyle,
-                  position: "absolute",
-                }}
-                onChangeValue={(value) => setFormValues((prev) => ({ ...prev, openTo: value }))}
-              />
-            </View>
-
-            {/* Smoking */}
-            <Text style={styles.label}>Smoking</Text>
-            <View style={[styles.dropdownWrapper, smokingOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
-              <DropDownPicker
-                open={smokingOpen}
-                value={smokingValue}
-                items={smokingItems}
-                setOpen={setSmokingOpen}
-                setValue={setSmokingValue}
-                setItems={setSmokingItems}
-                placeholder='Select Smoking Preference'
-                listMode='SCROLLVIEW'
-                scrollViewProps={{
-                  nestedScrollEnabled: true,
-                }}
-                style={styles.dropdownStyle}
-                textStyle={styles.dropdownTextStyle}
-                dropDownContainerStyle={{
-                  ...styles.dropdownContainerStyle,
-                  position: "absolute",
-                }}
-                onChangeValue={(value) => setFormValues((prev) => ({ ...prev, smoking: value }))}
-              />
-            </View>
-
-            {/* Drinking */}
-            <Text style={styles.label}>Drinking</Text>
-            <View style={[styles.dropdownWrapper, drinkingOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
-              <DropDownPicker
-                open={drinkingOpen}
-                value={drinkingValue}
-                items={drinkingItems}
-                setOpen={setDrinkingOpen}
-                setValue={setDrinkingValue}
-                setItems={setDrinkingItems}
-                placeholder='Select Drinking Preference'
-                listMode='SCROLLVIEW'
-                scrollViewProps={{
-                  nestedScrollEnabled: true,
-                }}
-                style={styles.dropdownStyle}
-                textStyle={styles.dropdownTextStyle}
-                dropDownContainerStyle={{
-                  ...styles.dropdownContainerStyle,
-                  position: "absolute",
-                }}
-                onChangeValue={(value) => setFormValues((prev) => ({ ...prev, drinking: value }))}
-              />
-            </View>
-
-            {/* Religion */}
-            <Text style={styles.label}>Religion</Text>
-            <View style={[styles.dropdownWrapper, religionOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
-              <DropDownPicker
-                open={religionOpen}
-                value={religionValue}
-                items={religionItems}
-                setOpen={setReligionOpen}
-                setValue={setReligionValue}
-                setItems={setReligionItems}
-                placeholder='Select Religion'
-                listMode='SCROLLVIEW'
-                scrollViewProps={{
-                  nestedScrollEnabled: true,
-                }}
-                style={styles.dropdownStyle}
-                textStyle={styles.dropdownTextStyle}
-                dropDownContainerStyle={{
-                  ...styles.dropdownContainerStyle,
-                  position: "absolute",
-                }}
-                onChangeValue={(value) => setFormValues((prev) => ({ ...prev, religion: value }))}
-              />
-            </View>
-
-            {/* Star Sign */}
-            <Text style={styles.label}>Star Sign</Text>
-            <View style={[styles.dropdownWrapper, starSignOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
-              <DropDownPicker
-                open={starSignOpen}
-                value={starSignValue}
-                items={starSignItems}
-                setOpen={setStarSignOpen}
-                setValue={setStarSignValue}
-                setItems={setStarSignItems}
-                placeholder='Select Star Sign'
-                listMode='SCROLLVIEW'
-                scrollViewProps={{
-                  nestedScrollEnabled: true,
-                }}
-                style={styles.dropdownStyle}
-                textStyle={styles.dropdownTextStyle}
-                dropDownContainerStyle={{
-                  ...styles.dropdownContainerStyle,
-                  position: "absolute",
-                }}
-                onChangeValue={(value) => setFormValues((prev) => ({ ...prev, starSign: value }))}
-              />
-            </View>
-
-            {/* Education */}
-            <Text style={styles.label}>Education</Text>
-            <View style={[styles.dropdownWrapper, educationOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
-              <DropDownPicker
-                open={educationOpen}
-                value={educationValue}
-                items={educationItems}
-                setOpen={setEducationOpen}
-                setValue={setEducationValue}
-                setItems={setEducationItems}
-                placeholder='Select Education'
-                listMode='SCROLLVIEW'
-                scrollViewProps={{
-                  nestedScrollEnabled: true,
-                }}
-                style={styles.dropdownStyle}
-                textStyle={styles.dropdownTextStyle}
-                dropDownContainerStyle={{
-                  ...styles.dropdownContainerStyle,
-                  position: "absolute",
-                }}
-                onChangeValue={(value) => setFormValues((prev) => ({ ...prev, education: value }))}
-              />
-            </View>
-
-            {/* Location */}
-            <Text style={styles.label}>Address / Location</Text>
-            {formValues.address && (
-              <View style={styles.currentAddressContainer}>
-                <Text style={styles.currentAddressText}>Current Address:</Text>
-                <Text style={styles.addressValue}>{formValues.address}</Text>
-              </View>
-            )}
-            <View style={styles.autocompleteContainer}>
-              <GooglePlacesAutocomplete
-                placeholder='Search your location...'
-                fetchDetails={true}
-                onPress={(data, details = null) => {
-                  if (details) {
-                    const { lat, lng } = details.geometry.location;
-                    setLocation({ latitude: lat, longitude: lng });
-                    setRegion((prev) => ({ ...prev, latitude: lat, longitude: lng }));
-                    setFormValues((prev) => ({
-                      ...prev,
-                      address: data.description,
-                      latitude: lat,
-                      longitude: lng,
-                    }));
-                  }
-                }}
-                query={{
-                  key: GOOGLE_API_KEY,
-                  language: "en",
-                  components: "country:us",
-                }}
-                enablePoweredByContainer={false}
-                styles={{
-                  container: {
-                    flex: 0,
-                    zIndex: 2000,
-                  },
-                  textInputContainer: {
-                    width: "100%",
-                  },
-                  textInput: {
-                    height: 48,
-                    color: "#000",
-                    fontSize: 16,
-                    borderWidth: 1,
-                    borderColor: "#CCC",
-                    borderRadius: 25,
-                    paddingHorizontal: 15,
-                    backgroundColor: "#F9F9F9",
-                  },
-                  listView: {
-                    position: "absolute",
-                    top: 50,
-                    left: 0,
-                    right: 0,
-                    backgroundColor: "#FFF",
-                    borderWidth: 1,
-                    borderColor: "#DDD",
-                    borderRadius: 5,
-                    zIndex: 2000,
-                    elevation: 2000,
-                  },
-                  row: {
-                    padding: 13,
-                    height: 44,
-                  },
-                }}
-                listViewDisplayed={false}
-                keyboardShouldPersistTaps='handled'
-                nestedScrollEnabled={true}
-              />
-            </View>
-
-            {/* Map View */}
-            <View style={styles.mapContainer}>
-              <MapView style={styles.map} region={region} onRegionChangeComplete={(newRegion) => setRegion(newRegion)}>
-                {location && <Marker coordinate={location} title='Selected Location' pinColor='red' />}
-              </MapView>
-            </View>
-
-            <TextInput
-              label='Nationality'
-              mode='outlined'
-              style={styles.inputField}
-              value={formValues.nationality}
-              onChangeText={(text) =>
-                setFormValues((prev) => ({
-                  ...prev,
-                  nationality: text.replace(/\s+/g, " ").trim(),
-                }))
-              }
-              outlineStyle={styles.textInputOutline}
-            />
-
-            {/* Body Type */}
-            <Text style={styles.label}>Body Type</Text>
-            <View style={[styles.dropdownWrapper, bodyTypeOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
-              <DropDownPicker
-                open={bodyTypeOpen}
-                value={bodyTypeValue}
-                items={bodyTypeItems}
-                setOpen={setBodyTypeOpen}
-                setValue={setBodyTypeValue}
-                setItems={setBodyTypeItems}
-                placeholder='Select Body Type'
-                listMode='SCROLLVIEW'
-                scrollViewProps={{
-                  nestedScrollEnabled: true,
-                }}
-                style={styles.dropdownStyle}
-                textStyle={styles.dropdownTextStyle}
-                dropDownContainerStyle={{
-                  ...styles.dropdownContainerStyle,
-                  position: "absolute",
-                }}
-                onChangeValue={(value) => setFormValues((prev) => ({ ...prev, bodyType: value }))}
-              />
-            </View>
-
-            {/* Job */}
-            <TextInput
-              label='Job'
-              mode='outlined'
-              style={styles.inputField}
-              value={formValues.job}
-              onChangeText={(text) =>
-                setFormValues((prev) => ({
-                  ...prev,
-                  job: text.replace(/\s+/g, " ").trim(),
-                }))
-              }
-              outlineStyle={styles.textInputOutline}
-            />
-          </View>
-
-          {/* Save Changes Button */}
-          <TouchableOpacity onPress={hasChanges ? handleSaveChanges : () => navigation.goBack()} style={styles.saveButton}>
-            <Text style={styles.saveButtonText}>{hasChanges ? "Save Changes" : "Return to Profile"}</Text>
-          </TouchableOpacity>
-
-          <Modal visible={modalVisible} animationType='slide' transparent={true} onRequestClose={() => setModalVisible(false)}>
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Add {entryType === "interest" ? "Interest" : "Date Type"}</Text>
-                <TextInput style={styles.modalInput} placeholder={`Enter ${entryType === "interest" ? "interest" : "date type"}`} value={newEntryText} onChangeText={setNewEntryText} autoFocus />
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity
-                    style={styles.modalButton}
-                    onPress={() => {
-                      setModalVisible(false);
-                      setNewEntryText("");
-                    }}
-                  >
-                    <Text style={styles.modalButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.addButton]}
-                    onPress={() => {
-                      if (newEntryText.trim()) {
-                        if (entryType === "interest") {
-                          setInterests((prev) => [...prev, newEntryText.trim()]);
-                        } else {
-                          setDateTypes((prev) => [...prev, newEntryText.trim()]);
-                        }
-                      }
-                      setModalVisible(false);
-                      setNewEntryText("");
-                    }}
-                  >
-                    <Text style={styles.modalButtonText}>Add</Text>
+            {/* Driver's License */}
+            <TouchableOpacity style={styles.uploadButton} onPress={handleLicenseUpload}>
+              <Ionicons name='cloud-upload-outline' size={24} color='red' />
+              <Text style={styles.uploadButtonText}>Upload Picture File</Text>
+            </TouchableOpacity>
+            {imageLicense && (
+              <View style={styles.imageContainer}>
+                <Image source={{ uri: imageLicense.uri }} style={styles.image} />
+                <View style={styles.imageDetails}>
+                  <Text style={styles.imageFilename}>{imageLicense.uri.split("/").pop()}</Text>
+                  {/* If you have imageLicense.fileSize, you could show that. */}
+                  <TouchableOpacity onPress={handleRemoveImage}>
+                    <Ionicons name='trash-outline' size={24} color='red' />
                   </TouchableOpacity>
                 </View>
               </View>
+            )}
+
+            {/* Form Section */}
+            <View style={styles.formContainer}>
+              {/* <TextInput
+                label='First Name'
+                mode='outlined'
+                style={styles.inputField}
+                value={formValues.firstName}
+                onChangeText={(text) =>
+                  setFormValues((prev) => ({
+                    ...prev,
+                    firstName: text,
+                  }))
+                }
+                outlineStyle={styles.textInputOutline}
+              /> */}
+              <TextInput
+                label='First Name'
+                mode='outlined'
+                style={styles.inputField}
+                value={formValues.firstName}
+                onChangeText={(text) =>
+                  setFormValues((prev) => ({
+                    ...prev,
+                    firstName: text.trim(),
+                  }))
+                }
+                autoCorrect={false}
+                autoCapitalize='none'
+                outlineStyle={styles.textInputOutline}
+              />
+
+              <TextInput
+                label='Last Name'
+                mode='outlined'
+                style={styles.inputField}
+                value={formValues.lastName}
+                onChangeText={(text) =>
+                  setFormValues((prev) => ({
+                    ...prev,
+                    lastName: text.trim(),
+                  }))
+                }
+                autoCorrect={false}
+                autoCapitalize='none'
+                outlineStyle={styles.textInputOutline}
+              />
+              <TextInput
+                label='Phone Number'
+                mode='outlined'
+                style={styles.inputField}
+                value={formValues.phoneNumber}
+                onChangeText={(text) =>
+                  setFormValues((prev) => ({
+                    ...prev,
+                    phoneNumber: text.trim(),
+                  }))
+                }
+                autoCorrect={false}
+                autoCapitalize='none'
+                outlineStyle={styles.textInputOutline}
+              />
+              <TextInput
+                label='Bio'
+                mode='outlined'
+                style={styles.inputField}
+                multiline
+                value={formValues.bio}
+                onChangeText={(text) =>
+                  setFormValues((prev) => ({
+                    ...prev,
+                    bio: text.trim(),
+                  }))
+                }
+                autoCorrect={false}
+                autoCapitalize='none'
+                outlineStyle={styles.textInputOutline}
+              />
+
+              {/* Interests as Tag Buttons */}
+              <Text style={styles.label}>My Interests</Text>
+              <View style={styles.interestsContainer}>
+                {allInterests.map((interest) => {
+                  const isSelected = interests.includes(interest);
+                  return (
+                    <TouchableOpacity
+                      key={interest}
+                      onPress={() => toggleInterest(interest)}
+                      style={[
+                        styles.interestButton,
+                        {
+                          borderColor: isSelected ? "rgba(26, 26, 26, 1)" : "rgba(26, 26, 26, 0.5)",
+                          backgroundColor: isSelected ? "#000" : "#FFF",
+                        },
+                      ]}
+                    >
+                      <Text style={[styles.interestText, { color: isSelected ? "#FFF" : "rgba(26, 26, 26, 0.5)" }]}>{interest}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Kinds of Date I Enjoy as Tag Buttons */}
+              <Text style={styles.label}>Kinds of Date I Enjoy</Text>
+              <View style={styles.tagContainer}>
+                {dateTypes.map((item, index) => (
+                  <View key={index} style={styles.tag}>
+                    <RNText style={styles.tagText}>{item}</RNText>
+                    <TouchableOpacity onPress={() => handleRemoveDateType(index)} style={styles.tagClose}>
+                      <Ionicons name='close' size={14} color='#FFF' />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+              <TouchableOpacity style={styles.addTagButton} onPress={handleAddDateType}>
+                <Ionicons name='add' size={14} color='#E4423F' />
+                <Text style={styles.addTagButtonText}>Add Date Type</Text>
+              </TouchableOpacity>
+
+              {/* My Availability */}
+              <TextInput
+                label='My Availability'
+                mode='outlined'
+                style={styles.inputField}
+                placeholder='Example: Mon: 9 AM - 5 PM, Tue: 10 AM - 6 PM'
+                value={formValues.availableTimes.map((t) => `${t.day}: ${t.start_time} - ${t.end_time}`).join(", ")}
+                onChangeText={(text) => {
+                  const times = text.split(", ").map((entry) => {
+                    const [dayPart, timeRange] = entry.split(": ");
+                    const [start, end] = timeRange?.split(" - ") || [];
+                    return {
+                      day: dayPart?.trim() || "",
+                      start_time: start?.trim() || "",
+                      end_time: end?.trim() || "",
+                    };
+                  });
+                  setFormValues({ ...formValues, availableTimes: times });
+                }}
+                outlineStyle={styles.textInputOutline}
+              />
+
+              <TextInput
+                label='Birthdate'
+                mode='outlined'
+                style={styles.inputField}
+                value={formValues.birthdate}
+                onChangeText={(text) => setFormValues({ ...formValues, birthdate: text })}
+                outlineStyle={styles.textInputOutline}
+              />
+
+              {/* Height Input */}
+              <View style={styles.inputField}>
+                {/* Toggle Pill Container */}
+                <View style={styles.heightToggleContainer}>
+                  <TouchableOpacity
+                    style={[styles.togglePill, heightUnit === "in" && styles.togglePillActive]}
+                    onPress={() => toggleHeightUnit("in")}
+                  >
+                    <Text style={[styles.togglePillText, heightUnit === "in" && styles.togglePillActiveText]}>
+                      Inches
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.togglePill, heightUnit === "cm" && styles.togglePillActive]}
+                    onPress={() => toggleHeightUnit("cm")}
+                  >
+                    <Text style={[styles.togglePillText, heightUnit === "cm" && styles.togglePillActiveText]}>
+                      Centimeters
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <Text variant="bodyMedium" style={styles.inputLabel}>
+                  Height
+                </Text>
+                {heightUnit === "in" ? (
+                  <View style={styles.heightContainer}>
+                    {/* Feet Controls */}
+                    <View style={styles.heightControlGroup}>
+                      <TouchableOpacity
+                        style={styles.heightButton}
+                        onPress={() =>
+                          updateHeightFromInches(Math.max(0, parseInt(heightFt) - 1), parseInt(heightIn))
+                        }
+                      >
+                        <Text style={styles.buttonText}>-</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.heightValue}>{heightFt} ft</Text>
+                      <TouchableOpacity
+                        style={styles.heightButton}
+                        onPress={() => updateHeightFromInches(parseInt(heightFt) + 1, parseInt(heightIn))}
+                      >
+                        <Text style={styles.buttonText}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+                    {/* Inches Controls */}
+                    <View style={styles.heightControlGroup}>
+                      <TouchableOpacity
+                        style={styles.heightButton}
+                        onPress={() =>
+                          updateHeightFromInches(parseInt(heightFt), Math.max(0, parseInt(heightIn) - 1))
+                        }
+                      >
+                        <Text style={styles.buttonText}>-</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.heightValue}>{heightIn} in</Text>
+                      <TouchableOpacity
+                        style={styles.heightButton}
+                        onPress={() => updateHeightFromInches(parseInt(heightFt), parseInt(heightIn) + 1)}
+                      >
+                        <Text style={styles.buttonText}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.heightContainer}>
+                    <View style={styles.heightControlGroup}>
+                      <TouchableOpacity
+                        style={styles.heightButton}
+                        onPress={() => updateHeightFromCm(Math.max(0, parseInt(heightCm) - 1))}
+                      >
+                        <Text style={styles.buttonText}>-</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.heightValue}>{heightCm} cm</Text>
+                      <TouchableOpacity
+                        style={styles.heightButton}
+                        onPress={() => updateHeightFromCm(parseInt(heightCm) + 1)}
+                      >
+                        <Text style={styles.buttonText}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </View>
+
+              {/* # of Children */}
+              <TextInput
+                label='# of Children'
+                mode='outlined'
+                style={styles.inputField}
+                value={formValues.children.toString()}
+                onChangeText={(text) => setFormValues({ ...formValues, children: parseInt(text) })}
+                keyboardType='numeric'
+                outlineStyle={styles.textInputOutline}
+              />
+
+              {/* Gender */}
+              <Text style={styles.label}>Gender assigned at birth</Text>
+              <View style={[styles.dropdownWrapper, genderOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+                <DropDownPicker
+                  disableAbsolutePositioning={true}
+                  open={genderOpen}
+                  value={genderValue}
+                  items={genderItems}
+                  setOpen={setGenderOpen}
+                  setValue={setGenderValue}
+                  setItems={setGenderItems}
+                  placeholder="Select Gender assigned at birth"
+                  style={styles.dropdownStyle}
+                  textStyle={styles.dropdownTextStyle}
+                  listMode="SCROLLVIEW"
+                  scrollViewProps={{
+                    nestedScrollEnabled: true,
+                  }}
+                  dropDownContainerStyle={{
+                    ...styles.dropdownContainerStyle,
+                    position: "absolute",
+                  }}
+                  onChangeValue={(value) =>
+                    setFormValues((prev) => ({ ...prev, gender: value }))
+                  }
+                />
+              </View>
+
+              {/* Identity */}
+              <Text style={styles.label}>Identity</Text>
+              <View style={[styles.dropdownWrapper, identityOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+                <DropDownPicker
+                  disableAbsolutePositioning={true}
+                  open={identityOpen}
+                  value={identityValue}
+                  items={identityItems}
+                  setOpen={setIdentityOpen}
+                  setValue={setIdentityValue}
+                  setItems={setIdentityItems}
+                  placeholder="Select Identity"
+                  style={styles.dropdownStyle}
+                  listMode="SCROLLVIEW"
+                  scrollViewProps={{
+                    nestedScrollEnabled: true,
+                  }}
+                  textStyle={styles.dropdownTextStyle}
+                  dropDownContainerStyle={{
+                    ...styles.dropdownContainerStyle,
+                    position: "absolute",
+                  }}
+                  onChangeValue={(value) =>
+                    setFormValues((prev) => ({ ...prev, identity: value }))
+                  }
+                />
+              </View>
+
+              {/* Commenting out Sexual Orientation section
+              <Text style={styles.label}>Sexual Orientation</Text>
+              <DropDownPicker
+                open={orientationOpen}
+                value={orientationValue}
+                items={orientationItems}
+                setOpen={setOrientationOpen}
+                setValue={setOrientationValue}
+                setItems={setOrientationItems}
+                placeholder='Select Orientation'
+                listMode='SCROLLVIEW'
+                scrollViewProps={{
+                  nestedScrollEnabled: true,
+                }}
+                style={{
+                  ...styles.dropdownStyle,
+                  zIndex: 9000,
+                  elevation: 9000,
+                }}
+                textStyle={styles.dropdownTextStyle}
+                dropDownContainerStyle={{
+                  ...styles.dropdownContainerStyle,
+                  position: "absolute",
+                  zIndex: 9000,
+                  elevation: 9000,
+                }}
+                onChangeValue={(value) => setFormValues((prev) => ({ ...prev, orientation: value }))}
+              />
+              */}
+
+              {/* Open To */}
+              <Text style={styles.label}>Open To</Text>
+              <View style={[styles.dropdownWrapper, openToOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+                <DropDownPicker
+                  open={openToOpen}
+                  value={openToValue}
+                  items={openToItems}
+                  setOpen={setOpenToOpen}
+                  setValue={setOpenToValue}
+                  setItems={setOpenToItems}
+                  placeholder='Select Open To (Multiple)'
+                  multiple={true}
+                  mode='BADGE'
+                  badgeDotColors={["#E4423F"]}
+                  listMode='SCROLLVIEW'
+                  scrollViewProps={{
+                    nestedScrollEnabled: true,
+                  }}
+                  style={styles.dropdownStyle}
+                  textStyle={styles.dropdownTextStyle}
+                  dropDownContainerStyle={{
+                    ...styles.dropdownContainerStyle,
+                    position: "absolute",
+                  }}
+                  onChangeValue={(value) => setFormValues((prev) => ({ ...prev, openTo: value }))}
+                />
+              </View>
+
+              {/* Smoking */}
+              <Text style={styles.label}>Smoking</Text>
+              <View style={[styles.dropdownWrapper, smokingOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+                <DropDownPicker
+                  open={smokingOpen}
+                  value={smokingValue}
+                  items={smokingItems}
+                  setOpen={setSmokingOpen}
+                  setValue={setSmokingValue}
+                  setItems={setSmokingItems}
+                  placeholder='Select Smoking Preference'
+                  listMode='SCROLLVIEW'
+                  scrollViewProps={{
+                    nestedScrollEnabled: true,
+                  }}
+                  style={styles.dropdownStyle}
+                  textStyle={styles.dropdownTextStyle}
+                  dropDownContainerStyle={{
+                    ...styles.dropdownContainerStyle,
+                    position: "absolute",
+                  }}
+                  onChangeValue={(value) => setFormValues((prev) => ({ ...prev, smoking: value }))}
+                />
+              </View>
+
+              {/* Drinking */}
+              <Text style={styles.label}>Drinking</Text>
+              <View style={[styles.dropdownWrapper, drinkingOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+                <DropDownPicker
+                  open={drinkingOpen}
+                  value={drinkingValue}
+                  items={drinkingItems}
+                  setOpen={setDrinkingOpen}
+                  setValue={setDrinkingValue}
+                  setItems={setDrinkingItems}
+                  placeholder='Select Drinking Preference'
+                  listMode='SCROLLVIEW'
+                  scrollViewProps={{
+                    nestedScrollEnabled: true,
+                  }}
+                  style={styles.dropdownStyle}
+                  textStyle={styles.dropdownTextStyle}
+                  dropDownContainerStyle={{
+                    ...styles.dropdownContainerStyle,
+                    position: "absolute",
+                  }}
+                  onChangeValue={(value) => setFormValues((prev) => ({ ...prev, drinking: value }))}
+                />
+              </View>
+
+              {/* Religion */}
+              <Text style={styles.label}>Religion</Text>
+              <View style={[styles.dropdownWrapper, religionOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+                <DropDownPicker
+                  open={religionOpen}
+                  value={religionValue}
+                  items={religionItems}
+                  setOpen={setReligionOpen}
+                  setValue={setReligionValue}
+                  setItems={setReligionItems}
+                  placeholder='Select Religion'
+                  listMode='SCROLLVIEW'
+                  scrollViewProps={{
+                    nestedScrollEnabled: true,
+                  }}
+                  style={styles.dropdownStyle}
+                  textStyle={styles.dropdownTextStyle}
+                  dropDownContainerStyle={{
+                    ...styles.dropdownContainerStyle,
+                    position: "absolute",
+                  }}
+                  onChangeValue={(value) => setFormValues((prev) => ({ ...prev, religion: value }))}
+                />
+              </View>
+
+              {/* Star Sign */}
+              <Text style={styles.label}>Star Sign</Text>
+              <View style={[styles.dropdownWrapper, starSignOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+                <DropDownPicker
+                  open={starSignOpen}
+                  value={starSignValue}
+                  items={starSignItems}
+                  setOpen={setStarSignOpen}
+                  setValue={setStarSignValue}
+                  setItems={setStarSignItems}
+                  placeholder='Select Star Sign'
+                  listMode='SCROLLVIEW'
+                  scrollViewProps={{
+                    nestedScrollEnabled: true,
+                  }}
+                  style={styles.dropdownStyle}
+                  textStyle={styles.dropdownTextStyle}
+                  dropDownContainerStyle={{
+                    ...styles.dropdownContainerStyle,
+                    position: "absolute",
+                  }}
+                  onChangeValue={(value) => setFormValues((prev) => ({ ...prev, starSign: value }))}
+                />
+              </View>
+
+              {/* Education */}
+              <Text style={styles.label}>Education</Text>
+              <View style={[styles.dropdownWrapper, educationOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+                <DropDownPicker
+                  open={educationOpen}
+                  value={educationValue}
+                  items={educationItems}
+                  setOpen={setEducationOpen}
+                  setValue={setEducationValue}
+                  setItems={setEducationItems}
+                  placeholder='Select Education'
+                  listMode='SCROLLVIEW'
+                  scrollViewProps={{
+                    nestedScrollEnabled: true,
+                  }}
+                  style={styles.dropdownStyle}
+                  textStyle={styles.dropdownTextStyle}
+                  dropDownContainerStyle={{
+                    ...styles.dropdownContainerStyle,
+                    position: "absolute",
+                  }}
+                  onChangeValue={(value) => setFormValues((prev) => ({ ...prev, education: value }))}
+                />
+              </View>
+
+              {/* Location */}
+              <Text style={styles.label}>Address / Location</Text>
+              {formValues.address && (
+                <View style={styles.currentAddressContainer}>
+                  <Text style={styles.currentAddressText}>Current Address:</Text>
+                  <Text style={styles.addressValue}>{formValues.address}</Text>
+                </View>
+              )}
+              <View style={styles.autocompleteContainer}>
+                <GooglePlacesAutocomplete
+                  placeholder='Search your location...'
+                  fetchDetails={true}
+                  onPress={(data, details = null) => {
+                    if (details) {
+                      const { lat, lng } = details.geometry.location;
+                      setLocation({ latitude: lat, longitude: lng });
+                      setRegion((prev) => ({ ...prev, latitude: lat, longitude: lng }));
+                      setFormValues((prev) => ({
+                        ...prev,
+                        address: data.description,
+                        latitude: lat,
+                        longitude: lng,
+                      }));
+                    }
+                  }}
+                  query={{
+                    key: GOOGLE_API_KEY,
+                    language: "en",
+                    components: "country:us",
+                  }}
+                  enablePoweredByContainer={false}
+                  styles={{
+                    container: {
+                      flex: 0,
+                      zIndex: 2000,
+                    },
+                    textInputContainer: {
+                      width: "100%",
+                    },
+                    textInput: {
+                      height: 48,
+                      color: "#000",
+                      fontSize: 16,
+                      borderWidth: 1,
+                      borderColor: "#CCC",
+                      borderRadius: 25,
+                      paddingHorizontal: 15,
+                      backgroundColor: "#F9F9F9",
+                    },
+                    listView: {
+                      position: "absolute",
+                      top: 50,
+                      left: 0,
+                      right: 0,
+                      backgroundColor: "#FFF",
+                      borderWidth: 1,
+                      borderColor: "#DDD",
+                      borderRadius: 5,
+                      zIndex: 2000,
+                      elevation: 2000,
+                    },
+                    row: {
+                      padding: 13,
+                      height: 44,
+                    },
+                  }}
+                  listViewDisplayed={false}
+                  keyboardShouldPersistTaps='handled'
+                  nestedScrollEnabled={true}
+                />
+              </View>
+
+              {/* Map View */}
+              <View style={styles.mapContainer}>
+                <MapView style={styles.map} region={region} onRegionChangeComplete={(newRegion) => setRegion(newRegion)}>
+                  {location && <Marker coordinate={location} title='Selected Location' pinColor='red' />}
+                </MapView>
+              </View>
+
+              <TextInput
+                label='Nationality'
+                mode='outlined'
+                style={styles.inputField}
+                value={formValues.nationality}
+                onChangeText={(text) =>
+                  setFormValues((prev) => ({
+                    ...prev,
+                    nationality: text.replace(/\s+/g, " ").trim(),
+                  }))
+                }
+                outlineStyle={styles.textInputOutline}
+              />
+
+              {/* Body Type */}
+              <Text style={styles.label}>Body Type</Text>
+              <View style={[styles.dropdownWrapper, bodyTypeOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+                <DropDownPicker
+                  open={bodyTypeOpen}
+                  value={bodyTypeValue}
+                  items={bodyTypeItems}
+                  setOpen={setBodyTypeOpen}
+                  setValue={setBodyTypeValue}
+                  setItems={setBodyTypeItems}
+                  placeholder='Select Body Type'
+                  listMode='SCROLLVIEW'
+                  scrollViewProps={{
+                    nestedScrollEnabled: true,
+                  }}
+                  style={styles.dropdownStyle}
+                  textStyle={styles.dropdownTextStyle}
+                  dropDownContainerStyle={{
+                    ...styles.dropdownContainerStyle,
+                    position: "absolute",
+                  }}
+                  onChangeValue={(value) => setFormValues((prev) => ({ ...prev, bodyType: value }))}
+                />
+              </View>
+
+              {/* Job */}
+              <TextInput
+                label='Job'
+                mode='outlined'
+                style={styles.inputField}
+                value={formValues.job}
+                onChangeText={(text) =>
+                  setFormValues((prev) => ({
+                    ...prev,
+                    job: text.replace(/\s+/g, " ").trim(),
+                  }))
+                }
+                outlineStyle={styles.textInputOutline}
+              />
             </View>
-          </Modal>
-        </KeyboardAwareScrollView>
-      )}
+
+            {/* Save Changes Button */}
+            <TouchableOpacity onPress={hasChanges ? handleSaveChanges : () => navigation.goBack()} style={styles.saveButton}>
+              <Text style={styles.saveButtonText}>{hasChanges ? "Save Changes" : "Return to Profile"}</Text>
+            </TouchableOpacity>
+
+            <Modal visible={modalVisible} animationType='slide' transparent={true} onRequestClose={() => setModalVisible(false)}>
+              <View style={styles.modalContainer}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Add {entryType === "interest" ? "Interest" : "Date Type"}</Text>
+                  <TextInput style={styles.modalInput} placeholder={`Enter ${entryType === "interest" ? "interest" : "date type"}`} value={newEntryText} onChangeText={setNewEntryText} autoFocus />
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity
+                      style={styles.modalButton}
+                      onPress={() => {
+                        setModalVisible(false);
+                        setNewEntryText("");
+                      }}
+                    >
+                      <Text style={styles.modalButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.modalButton, styles.addButton]}
+                      onPress={() => {
+                        if (newEntryText.trim()) {
+                          if (entryType === "interest") {
+                            setInterests((prev) => [...prev, newEntryText.trim()]);
+                          } else {
+                            setDateTypes((prev) => [...prev, newEntryText.trim()]);
+                          }
+                        }
+                        setModalVisible(false);
+                        setNewEntryText("");
+                      }}
+                    >
+                      <Text style={styles.modalButtonText}>Add</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </Modal>
+          </KeyboardAwareScrollView>
+        )}
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 }
@@ -2051,7 +2072,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F9F9F9",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#E4423F",
+    borderColor: "#F9F9F9",
   },
   currentAddressText: {
     fontSize: 14,
@@ -2080,5 +2101,14 @@ const styles = StyleSheet.create({
   interestText: {
     fontSize: 16,
     fontWeight: "500",
+  },
+  dropdownOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "transparent",
+    zIndex: 500,
   },
 });

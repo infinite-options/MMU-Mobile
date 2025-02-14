@@ -45,9 +45,23 @@ const screenHeight = Dimensions.get('window').height;
 // Add this near the top with other constants
 const allDateTypes = ["Lunch", "Dinner", "Coffee", "Drinks", "Movies", "Surprise Me", "Other"];
 
+// Add this zIndex configuration object
+const DROPDOWN_ZINDEX = {
+  GENDER: 3000,
+  IDENTITY: 2900,
+  OPEN_TO: 2800,
+  SMOKING: 2700,
+  DRINKING: 2600,
+  RELIGION: 2500,
+  STAR_SIGN: 2400,
+  EDUCATION: 2300,
+  BODY_TYPE: 2200,
+};
+
 export default function EditProfile() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
+  const route = useNavigation().getState().routes[useNavigation().getState().index];
 
   const [userData, setUserData] = useState({});
   const [photos, setPhotos] = useState([null, null, null]); // array of photo URIs
@@ -114,6 +128,22 @@ export default function EditProfile() {
   const [entryType, setEntryType] = useState("interest"); // 'interest' or 'dateType'
   const [hasChanges, setHasChanges] = useState(false);
   const [originalValues, setOriginalValues] = useState(null);
+
+  // Add these state variables at the top of your component
+  const [openDropdown, setOpenDropdown] = useState(null);
+
+  // Create a list of all dropdown identifiers
+  const DROPDOWN_TYPES = {
+    GENDER: 'gender',
+    IDENTITY: 'identity',
+    OPEN_TO: 'openTo',
+    SMOKING: 'smoking',
+    DRINKING: 'drinking',
+    RELIGION: 'religion',
+    STAR_SIGN: 'starSign',
+    EDUCATION: 'education',
+    BODY_TYPE: 'bodyType'
+  };
 
   // Replace these text-based fields with pickers for Gender, Body Type, etc.
   // Body Type
@@ -969,6 +999,16 @@ export default function EditProfile() {
     }
   }, [formValues, photos, videoUri, interests, dateTypes, heightCm, originalValues, userData]);
 
+  // Add this useEffect to refresh data when returning from DateAvailability
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (route.params?.refreshAvailability) {
+        // Refetch availability data here
+      }
+    });
+    return unsubscribe;
+  }, [navigation, route.params]);
+
   return (
     <SafeAreaView style={styles.container}>
       {isLoading ? (
@@ -1080,8 +1120,9 @@ export default function EditProfile() {
               }
               outlineStyle={styles.textInputOutline}
             /> */}
+            <Text style={styles.label}>First Name</Text>
             <TextInput
-              label='First Name'
+              placeholder='First Name'
               mode='outlined'
               style={styles.inputField}
               value={formValues.firstName}
@@ -1096,8 +1137,9 @@ export default function EditProfile() {
               outlineStyle={styles.textInputOutline}
             />
 
+            <Text style={styles.label}>Last Name</Text>
             <TextInput
-              label='Last Name'
+              placeholder='Last Name'
               mode='outlined'
               style={styles.inputField}
               value={formValues.lastName}
@@ -1111,8 +1153,9 @@ export default function EditProfile() {
               autoCapitalize='none'
               outlineStyle={styles.textInputOutline}
             />
+            <Text style={styles.label}>Phone Number</Text>
             <TextInput
-              label='Phone Number'
+              placeholder='Phone Number'
               mode='outlined'
               style={styles.inputField}
               value={formValues.phoneNumber}
@@ -1126,8 +1169,9 @@ export default function EditProfile() {
               autoCapitalize='none'
               outlineStyle={styles.textInputOutline}
             />
+            <Text style={styles.label}>Bio</Text>
             <TextInput
-              label='Bio'
+              placeholder='Bio'
               mode='outlined'
               style={styles.inputField}
               multiline
@@ -1244,8 +1288,9 @@ export default function EditProfile() {
               </View>
             </View>
 
+            <Text style={styles.label}>Birthdate</Text>
             <TextInput
-              label='Birthdate'
+              placeholder='Birthdate'
               mode='outlined'
               style={styles.inputField}
               value={formValues.birthdate}
@@ -1337,8 +1382,9 @@ export default function EditProfile() {
             </View>
 
             {/* # of Children */}
+            <Text style={styles.label}># of Children</Text>
             <TextInput
-              label='# of Children'
+              placeholder='# of Children'
               mode='outlined'
               style={styles.inputField}
               value={formValues.children.toString()}
@@ -1349,20 +1395,15 @@ export default function EditProfile() {
 
             {/* Gender */}
             <Text style={styles.label}>Gender assigned at birth</Text>
-            <View style={[styles.dropdownWrapper, genderOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
-              {/* Full-screen click catcher */}
-              {genderOpen && (
-                <Pressable
-                  style={styles.dropdownOverlay}
-                  onPress={() => setGenderOpen(false)}
-                />
-              )}
-              
+            <View style={[styles.dropdownWrapper, openDropdown === DROPDOWN_TYPES.GENDER ? { zIndex: DROPDOWN_ZINDEX.GENDER } : { zIndex: 1 }]}>
               <DropDownPicker
-                open={genderOpen}
+                open={openDropdown === DROPDOWN_TYPES.GENDER}
+                zIndex={DROPDOWN_ZINDEX.GENDER}
+                zIndexInverse={1000}
+                onOpen={() => setOpenDropdown(DROPDOWN_TYPES.GENDER)}
+                onClose={() => setOpenDropdown(null)}
                 value={genderValue}
                 items={genderItems}
-                setOpen={setGenderOpen}
                 setValue={setGenderValue}
                 setItems={setGenderItems}
                 placeholder="Select Gender assigned at birth"
@@ -1378,19 +1419,22 @@ export default function EditProfile() {
                 }}
                 onChangeValue={(value) =>
                   setFormValues((prev) => ({ ...prev, gender: value }))
+                
                 }
               />
             </View>
 
             {/* Identity */}
             <Text style={styles.label}>Identity</Text>
-            <View style={[styles.dropdownWrapper, identityOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
-              
+            <View style={[styles.dropdownWrapper, openDropdown === DROPDOWN_TYPES.IDENTITY ? { zIndex: DROPDOWN_ZINDEX.IDENTITY } : { zIndex: 1 }]}>
               <DropDownPicker
-                open={identityOpen}
+                open={openDropdown === DROPDOWN_TYPES.IDENTITY}
+                zIndex={DROPDOWN_ZINDEX.IDENTITY}
+                zIndexInverse={1000}
+                onOpen={() => setOpenDropdown(DROPDOWN_TYPES.IDENTITY)}
+                onClose={() => setOpenDropdown(null)}
                 value={identityValue}
                 items={identityItems}
-                setOpen={setIdentityOpen}
                 setValue={setIdentityValue}
                 setItems={setIdentityItems}
                 placeholder="Select Identity"
@@ -1442,12 +1486,15 @@ export default function EditProfile() {
 
             {/* Open To */}
             <Text style={styles.label}>Open To</Text>
-            <View style={[styles.dropdownWrapper, openToOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+            <View style={[styles.dropdownWrapper, openDropdown === DROPDOWN_TYPES.OPEN_TO ? { zIndex: DROPDOWN_ZINDEX.OPEN_TO } : { zIndex: 1 }]}>
               <DropDownPicker
-                open={openToOpen}
+                open={openDropdown === DROPDOWN_TYPES.OPEN_TO}
+                zIndex={DROPDOWN_ZINDEX.OPEN_TO}
+                zIndexInverse={1000}
+                onOpen={() => setOpenDropdown(DROPDOWN_TYPES.OPEN_TO)}
+                onClose={() => setOpenDropdown(null)}
                 value={openToValue}
                 items={openToItems}
-                setOpen={setOpenToOpen}
                 setValue={setOpenToValue}
                 setItems={setOpenToItems}
                 placeholder='Select Open To (Multiple)'
@@ -1470,12 +1517,15 @@ export default function EditProfile() {
 
             {/* Smoking */}
             <Text style={styles.label}>Smoking</Text>
-            <View style={[styles.dropdownWrapper, smokingOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+            <View style={[styles.dropdownWrapper, openDropdown === DROPDOWN_TYPES.SMOKING ? { zIndex: DROPDOWN_ZINDEX.SMOKING } : { zIndex: 1 }]}>
               <DropDownPicker
-                open={smokingOpen}
+                open={openDropdown === DROPDOWN_TYPES.SMOKING}
+                zIndex={DROPDOWN_ZINDEX.SMOKING}
+                zIndexInverse={1000}
+                onOpen={() => setOpenDropdown(DROPDOWN_TYPES.SMOKING)}
+                onClose={() => setOpenDropdown(null)}
                 value={smokingValue}
                 items={smokingItems}
-                setOpen={setSmokingOpen}
                 setValue={setSmokingValue}
                 setItems={setSmokingItems}
                 placeholder='Select Smoking Preference'
@@ -1495,12 +1545,15 @@ export default function EditProfile() {
 
             {/* Drinking */}
             <Text style={styles.label}>Drinking</Text>
-            <View style={[styles.dropdownWrapper, drinkingOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+            <View style={[styles.dropdownWrapper, openDropdown === DROPDOWN_TYPES.DRINKING ? { zIndex: DROPDOWN_ZINDEX.DRINKING } : { zIndex: 1 }]}>
               <DropDownPicker
-                open={drinkingOpen}
+                open={openDropdown === DROPDOWN_TYPES.DRINKING}
+                zIndex={DROPDOWN_ZINDEX.DRINKING}
+                zIndexInverse={1000}
+                onOpen={() => setOpenDropdown(DROPDOWN_TYPES.DRINKING)}
+                onClose={() => setOpenDropdown(null)}
                 value={drinkingValue}
                 items={drinkingItems}
-                setOpen={setDrinkingOpen}
                 setValue={setDrinkingValue}
                 setItems={setDrinkingItems}
                 placeholder='Select Drinking Preference'
@@ -1520,12 +1573,15 @@ export default function EditProfile() {
 
             {/* Religion */}
             <Text style={styles.label}>Religion</Text>
-            <View style={[styles.dropdownWrapper, religionOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+            <View style={[styles.dropdownWrapper, openDropdown === DROPDOWN_TYPES.RELIGION ? { zIndex: DROPDOWN_ZINDEX.RELIGION } : { zIndex: 1 }]}>
               <DropDownPicker
-                open={religionOpen}
+                open={openDropdown === DROPDOWN_TYPES.RELIGION}
+                zIndex={DROPDOWN_ZINDEX.RELIGION}
+                zIndexInverse={1000}
+                onOpen={() => setOpenDropdown(DROPDOWN_TYPES.RELIGION)}
+                onClose={() => setOpenDropdown(null)}
                 value={religionValue}
                 items={religionItems}
-                setOpen={setReligionOpen}
                 setValue={setReligionValue}
                 setItems={setReligionItems}
                 placeholder='Select Religion'
@@ -1545,12 +1601,15 @@ export default function EditProfile() {
 
             {/* Star Sign */}
             <Text style={styles.label}>Star Sign</Text>
-            <View style={[styles.dropdownWrapper, starSignOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+            <View style={[styles.dropdownWrapper, openDropdown === DROPDOWN_TYPES.STAR_SIGN ? { zIndex: DROPDOWN_ZINDEX.STAR_SIGN } : { zIndex: 1 }]}>
               <DropDownPicker
-                open={starSignOpen}
+                open={openDropdown === DROPDOWN_TYPES.STAR_SIGN}
+                zIndex={DROPDOWN_ZINDEX.STAR_SIGN}
+                zIndexInverse={1000}
+                onOpen={() => setOpenDropdown(DROPDOWN_TYPES.STAR_SIGN)}
+                onClose={() => setOpenDropdown(null)}
                 value={starSignValue}
                 items={starSignItems}
-                setOpen={setStarSignOpen}
                 setValue={setStarSignValue}
                 setItems={setStarSignItems}
                 placeholder='Select Star Sign'
@@ -1570,12 +1629,15 @@ export default function EditProfile() {
 
             {/* Education */}
             <Text style={styles.label}>Education</Text>
-            <View style={[styles.dropdownWrapper, educationOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+            <View style={[styles.dropdownWrapper, openDropdown === DROPDOWN_TYPES.EDUCATION ? { zIndex: DROPDOWN_ZINDEX.EDUCATION } : { zIndex: 1 }]}>
               <DropDownPicker
-                open={educationOpen}
+                open={openDropdown === DROPDOWN_TYPES.EDUCATION}
+                zIndex={DROPDOWN_ZINDEX.EDUCATION}
+                zIndexInverse={1000}
+                onOpen={() => setOpenDropdown(DROPDOWN_TYPES.EDUCATION)}
+                onClose={() => setOpenDropdown(null)}
                 value={educationValue}
                 items={educationItems}
-                setOpen={setEducationOpen}
                 setValue={setEducationValue}
                 setItems={setEducationItems}
                 placeholder='Select Education'
@@ -1672,8 +1734,9 @@ export default function EditProfile() {
               </MapView>
             </View>
 
+            <Text style={styles.label}>Nationality</Text>
             <TextInput
-              label='Nationality'
+              placeholder='Nationality'
               mode='outlined'
               style={styles.inputField}
               value={formValues.nationality}
@@ -1688,12 +1751,15 @@ export default function EditProfile() {
 
             {/* Body Type */}
             <Text style={styles.label}>Body Type</Text>
-            <View style={[styles.dropdownWrapper, bodyTypeOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+            <View style={[styles.dropdownWrapper, openDropdown === DROPDOWN_TYPES.BODY_TYPE ? { zIndex: DROPDOWN_ZINDEX.BODY_TYPE } : { zIndex: 1 }]}>
               <DropDownPicker
-                open={bodyTypeOpen}
+                open={openDropdown === DROPDOWN_TYPES.BODY_TYPE}
+                zIndex={DROPDOWN_ZINDEX.BODY_TYPE}
+                zIndexInverse={1000}
+                onOpen={() => setOpenDropdown(DROPDOWN_TYPES.BODY_TYPE)}
+                onClose={() => setOpenDropdown(null)}
                 value={bodyTypeValue}
                 items={bodyTypeItems}
-                setOpen={setBodyTypeOpen}
                 setValue={setBodyTypeValue}
                 setItems={setBodyTypeItems}
                 placeholder='Select Body Type'
@@ -1712,8 +1778,9 @@ export default function EditProfile() {
             </View>
 
             {/* Job */}
+            <Text style={styles.label}>Job</Text>
             <TextInput
-              label='Job'
+              placeholder='Job'
               mode='outlined'
               style={styles.inputField}
               value={formValues.job}
@@ -1768,6 +1835,13 @@ export default function EditProfile() {
             </View>
           </Modal>
         </KeyboardAwareScrollView>
+      )}
+      {openDropdown && (
+        <Pressable 
+          style={styles.dropdownOverlay}
+          onPress={() => setOpenDropdown(null)}
+          pointerEvents="box-none"
+        />
       )}
     </SafeAreaView>
   );
@@ -2132,7 +2206,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   dropdownWrapper: {
-    marginBottom: 15,
+    zIndex: 2000,
+    elevation: 2000,
   },
   selectedOptionsContainer: {
     marginTop: 10,
@@ -2181,13 +2256,9 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   dropdownOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height,
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1900,
     backgroundColor: 'transparent',
-    zIndex: 999,
   },
   sectionContainer: {
     marginBottom: 20,

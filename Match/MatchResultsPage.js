@@ -54,6 +54,7 @@ function safeJsonParse(value, fallback = []) {
 
 const MatchResultsPage = () => {
   const [userId, setUserId] = useState("");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [menuVisible, setMenuVisible] = useState(false);
   const [matchedResults, setMatchedResults] = useState([]);
   const [interestedInMe, setInterestedInMe] = useState([]);
@@ -83,6 +84,14 @@ const MatchResultsPage = () => {
     };
     loadUserId();
   }, []);
+
+  // Add focus listener to refresh when returning to the screen
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      setRefreshTrigger(prev => prev + 1);
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   // Fetch matching results from API
   const findMatchesResult = async () => {
@@ -117,11 +126,12 @@ const MatchResultsPage = () => {
     }
   };
 
+  // Update useEffect dependency array
   useEffect(() => {
     if (userId) {
       findMatchesResult();
     }
-  }, [userId]);
+  }, [userId, refreshTrigger]);
 
   // Once matchedResults loads, fetch meet info for each matched user
   useEffect(() => {
@@ -161,6 +171,7 @@ const MatchResultsPage = () => {
             
             // Handle case where data is missing or malformed
             const resultData = res.data?.result || [];
+            console.log("--- resultData ---", resultData);
             const meets = Array.isArray(resultData) ? resultData : [];
             
             newMeetStatus[theirUserId] = meets.length > 0;
@@ -274,7 +285,7 @@ const MatchResultsPage = () => {
         <View style={styles.matchRowRight}>
           <TouchableOpacity
             style={[styles.matchButton, styles.setUpDateButton]}
-            onPress={() => navigation.navigate('MatchProfileDisplay', { matchedUserId: matchId })}
+            onPress={() => navigation.navigate('UserProfile', { meet_date_user_id: matchId })}
           >
             <Text style={[styles.matchButtonText, { color: "#fff" }]}>
               {buttonLabel}

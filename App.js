@@ -79,6 +79,7 @@ import DateLocation from "./DatePreferences/DateLocation.js";
 import DateFinal from "./DatePreferences/DateFinal.js";
 import LandingPage5 from "./Intro/LandingPage5.js";
 import Chat from "./Chat/chat.js";
+import UserProfile from "./Match/UserProfile.js";
 const Stack = createNativeStackNavigator();
 // const Stack = createStackNavigator();
 SplashScreen.preventAutoHideAsync();
@@ -161,6 +162,7 @@ export default function App() {
           <Stack.Screen name='MatchPageNew' component={MatchPageNew} />
           <Stack.Screen name='MatchResultsPage' component={MatchResultsPage} />
           <Stack.Screen name='MatchProfileDisplay' component={MatchProfileDisplay} />
+          <Stack.Screen name='UserProfile' component={UserProfile} />
           <Stack.Screen name='DateType' component={DateType} />
           <Stack.Screen name='DateOccurance' component={DateOccurance} />
           <Stack.Screen name='DateLocation' component={DateLocation} />

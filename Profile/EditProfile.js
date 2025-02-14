@@ -1375,7 +1375,6 @@ export default function EditProfile() {
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
-                  zIndex: 2000, // Higher than overlay
                 }}
                 onChangeValue={(value) =>
                   setFormValues((prev) => ({ ...prev, gender: value }))
@@ -2185,10 +2184,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    width: '100%',
-    height: screenHeight,
-    backgroundColor: 'rgba(0,0,0,0.001)', // Nearly transparent but clickable
-    zIndex: 1500,
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').height,
+    backgroundColor: 'transparent',
+    zIndex: 999,
   },
   sectionContainer: {
     marginBottom: 20,

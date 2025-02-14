@@ -92,6 +92,7 @@ const saveAvailabilityToAPI = async (availabilityData) => {
 export default function DateAvailability() {
   const navigation = useNavigation();
   const route = useRoute();
+  const { fromEditProfile, onSave } = route.params || {};
 
   // If you passed in how many date prefs are "required" from MyProfile:
   const stepIndex = route.params?.stepIndex ?? null;
@@ -262,8 +263,14 @@ export default function DateAvailability() {
 
     try {
       await saveAvailabilityToAPI(availabilityData);
-      decrementStepCount(stepIndex);
-      navigation.navigate('TypeOfDate', { stepIndex });
+      
+      if (fromEditProfile) {
+        onSave?.(); // Call the provided save callback
+        navigation.goBack(); // Return to EditProfile
+      } else {
+        decrementStepCount(stepIndex);
+        navigation.navigate('TypeOfDate', { stepIndex });
+      }
     } catch (error) {
       // Error already handled in saveAvailabilityToAPI
     }

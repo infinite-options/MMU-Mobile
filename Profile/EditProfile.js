@@ -16,6 +16,7 @@ import {
   Text as RNText,
   Modal,
   Linking,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { TextInput, Text } from "react-native-paper";
@@ -38,6 +39,11 @@ const GOOGLE_API_KEY = REACT_APP_GOOGLE_API_KEY;
 // Add axios default configuration
 axios.defaults.timeout = 10000; // 10 seconds timeout
 axios.defaults.headers.common["Content-Type"] = "application/json";
+
+const screenHeight = Dimensions.get('window').height;
+
+// Add this near the top with other constants
+const allDateTypes = ["Lunch", "Dinner", "Coffee", "Drinks", "Movies", "Surprise Me", "Other"];
 
 export default function EditProfile() {
   const navigation = useNavigation();
@@ -83,7 +89,7 @@ export default function EditProfile() {
     lastName: "",
     phoneNumber: "",
     bio: "",
-    availableTimes: [],
+    availableTimes: "",
     birthdate: "",
     children: 0,
     gender: "",
@@ -374,7 +380,7 @@ export default function EditProfile() {
           lastName: fetched.user_last_name || "",
           phoneNumber: fetched.user_phone_number || "",
           bio: fetched.user_profile_bio || "",
-          availableTimes: fetched.user_available_time ? JSON.parse(fetched.user_available_time) : [],
+          availableTimes: fetched.user_available_time || "",
           birthdate: fetched.user_birthdate || "",
           children: fetched.user_kids || 0,
           gender: fetched.user_gender || "",
@@ -431,16 +437,29 @@ export default function EditProfile() {
         if (fetched.user_video_url) {
           let rawVideoUrl = fetched.user_video_url;
           try {
-            if (typeof rawVideoUrl === "string" && (rawVideoUrl.startsWith('"') || rawVideoUrl.startsWith("["))) {
-              rawVideoUrl = JSON.parse(rawVideoUrl);
-            }
-            if (Array.isArray(rawVideoUrl)) {
-              rawVideoUrl = rawVideoUrl[0];
+            // Remove any existing JSON encoding
+            if (typeof rawVideoUrl === "string") {
+              // Handle double-encoded strings
+              const parsed = JSON.parse(rawVideoUrl);
+              rawVideoUrl = Array.isArray(parsed) ? parsed[0] : parsed;
+              
+              // If result is still a string, parse again to remove quotes
+              if (typeof parsed === "string") {
+                rawVideoUrl = JSON.parse(parsed);
+              }
             }
           } catch (err) {
             console.log("Could not parse video URL:", err);
           }
-          setVideoUri(rawVideoUrl);
+          
+          // Ensure consistent string format
+          const cleanedVideoUrl = typeof rawVideoUrl === "string" 
+            ? rawVideoUrl.replace(/^"+|"+$/g, '') 
+            : null;
+
+          setVideoUri(cleanedVideoUrl);
+          // Update the fetched data with cleaned URL
+          fetched.user_video_url = cleanedVideoUrl;
         }
 
         // Convert stored cm back to feet/inches
@@ -753,7 +772,7 @@ export default function EditProfile() {
         user_profile_bio: userData.user_profile_bio || "",
         user_general_interests: userData.user_general_interests ? JSON.parse(userData.user_general_interests) : [],
         user_date_interests: userData.user_date_interests ? JSON.parse(userData.user_date_interests) : [],
-        user_available_time: userData.user_available_time ? JSON.parse(userData.user_available_time) : [],
+        user_available_time: userData.user_available_time || "",
         user_birthdate: userData.user_birthdate || "",
         user_height: userData.user_height || "",
         user_kids: userData.user_kids?.toString() || "0",
@@ -896,19 +915,54 @@ export default function EditProfile() {
       const originalHeight = userData.user_height ? userData.user_height.toString() : "";
       const heightChanged = heightCm !== originalHeight;
 
-      const hasAnyChanges =
-        // Compare all form input values
-        JSON.stringify(formValues) !== JSON.stringify(originalValues) ||
-        // Compare photos (filtering out null values)
-        JSON.stringify(photos.filter((p) => p !== null)) !== JSON.stringify(originalPhotos) ||
-        // Compare video URI change
-        videoUri !== userData.user_video_url ||
-        // Compare interests array
-        JSON.stringify(interests) !== JSON.stringify(originalInterests) ||
-        // Compare date types array
-        JSON.stringify(dateTypes) !== JSON.stringify(originalDateTypes) ||
-        // Check if the height (in cm) has changed
-        heightChanged;
+      // Log individual changes
+      const formValuesChanged = JSON.stringify(formValues) !== JSON.stringify(originalValues);
+      const photosChanged = JSON.stringify(photos.filter(p => p !== null)) !== JSON.stringify(originalPhotos);
+      const videoChanged = videoUri !== userData.user_video_url;
+      const interestsChanged = JSON.stringify(interests) !== JSON.stringify(originalInterests);
+      const dateTypesChanged = JSON.stringify(dateTypes) !== JSON.stringify(originalDateTypes);
+      const heightChangeValid = originalHeight && heightChanged;
+
+      if (formValuesChanged) {
+        console.log("Form values changed:", {
+          old: originalValues,
+          new: formValues,
+          diff: Object.keys(formValues).filter(key => formValues[key] !== originalValues[key])
+        });
+      }
+      if (photosChanged) {
+        console.log("Photos changed:", {
+          old: originalPhotos,
+          new: photos.filter(p => p !== null)
+        });
+      }
+      if (videoChanged) {
+        console.log("Video changed:", {
+          old: userData.user_video_url,
+          new: videoUri
+        });
+      }
+      if (interestsChanged) {
+        console.log("Interests changed:", {
+          old: originalInterests,
+          new: interests
+        });
+      }
+      if (dateTypesChanged) {
+        console.log("Date types changed:", {
+          old: originalDateTypes,
+          new: dateTypes
+        });
+      }
+      if (heightChangeValid) {
+        console.log("Height changed:", {
+          old: originalHeight,
+          new: heightCm
+        });
+      }
+
+      const hasAnyChanges = formValuesChanged || photosChanged || videoChanged || 
+                           interestsChanged || dateTypesChanged || heightChangeValid;
 
       console.log("Has Changes:", hasAnyChanges);
       setHasChanges(hasAnyChanges);
@@ -1114,42 +1168,81 @@ export default function EditProfile() {
 
             {/* Kinds of Date I Enjoy as Tag Buttons */}
             <Text style={styles.label}>Kinds of Date I Enjoy</Text>
-            <View style={styles.tagContainer}>
-              {dateTypes.map((item, index) => (
-                <View key={index} style={styles.tag}>
-                  <RNText style={styles.tagText}>{item}</RNText>
-                  <TouchableOpacity onPress={() => handleRemoveDateType(index)} style={styles.tagClose}>
-                    <Ionicons name='close' size={14} color='#FFF' />
+            <View style={styles.interestsContainer}>
+              {allDateTypes.map((dateType) => {
+                const isSelected = dateTypes.includes(dateType);
+                return (
+                  <TouchableOpacity
+                    key={dateType}
+                    onPress={() => {
+                      if (dateTypes.includes(dateType)) {
+                        setDateTypes(prev => prev.filter(t => t !== dateType));
+                      } else {
+                        setDateTypes(prev => [...prev, dateType]);
+                      }
+                    }}
+                    style={[
+                      styles.interestButton,
+                      {
+                        borderColor: isSelected ? "rgba(26, 26, 26, 1)" : "rgba(26, 26, 26, 0.5)",
+                        backgroundColor: isSelected ? "#000" : "#FFF",
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.interestText, { color: isSelected ? "#FFF" : "rgba(26, 26, 26, 0.5)" }]}>
+                      {dateType}
+                    </Text>
                   </TouchableOpacity>
-                </View>
-              ))}
+                );
+              })}
             </View>
-            <TouchableOpacity style={styles.addTagButton} onPress={handleAddDateType}>
-              <Ionicons name='add' size={14} color='#E4423F' />
-              <Text style={styles.addTagButtonText}>Add Date Type</Text>
-            </TouchableOpacity>
 
-            {/* My Availability */}
-            <TextInput
-              label='My Availability'
-              mode='outlined'
-              style={styles.inputField}
-              placeholder='Example: Mon: 9 AM - 5 PM, Tue: 10 AM - 6 PM'
-              value={formValues.availableTimes.map((t) => `${t.day}: ${t.start_time} - ${t.end_time}`).join(", ")}
-              onChangeText={(text) => {
-                const times = text.split(", ").map((entry) => {
-                  const [dayPart, timeRange] = entry.split(": ");
-                  const [start, end] = timeRange?.split(" - ") || [];
-                  return {
-                    day: dayPart?.trim() || "",
-                    start_time: start?.trim() || "",
-                    end_time: end?.trim() || "",
-                  };
-                });
-                setFormValues({ ...formValues, availableTimes: times });
-              }}
-              outlineStyle={styles.textInputOutline}
-            />
+            {/* My Availability - Display only */}
+            <View style={styles.sectionContainer}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={styles.sectionTitle}>My Availability</Text>
+                <TouchableOpacity 
+                  style={styles.editButton}
+                  onPress={() => navigation.navigate('DateAvailability', { 
+                    fromEditProfile: true,
+                    onSave: () => navigation.navigate('EditProfile') 
+                  })}
+                >
+                  <Text style={styles.editButtonText}>Edit</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                {formValues.availableTimes ? (
+                  JSON.parse(formValues.availableTimes).map((time, index) => {
+                    const days = time.day.split(', ');
+                    const dayRange = days.length > 1 
+                      ? (days.length === 2 ? days.join(' & ') : `${days[0]}-${days[days.length - 1]}`) 
+                      : days[0];
+                    
+                    const isAllDay = time.start_time === '12:00 AM' && time.end_time === '11:59 PM';
+                    const formatTime = (t) => {
+                      const [timePart, modifier] = t.split(' ');
+                      let [hours, minutes] = timePart.split(':');
+                      hours = parseInt(hours);
+                      const displayHours = hours % 12 || 12;
+                      const ampm = modifier.toLowerCase();
+                      return `${displayHours}${minutes !== '00' ? `:${minutes}` : ''} ${ampm}`;
+                    };
+
+                    return (
+                      <Text key={index} style={styles.timeSlot}>
+                        {isAllDay 
+                          ? `${dayRange}, all day`
+                          : `${dayRange}, ${formatTime(time.start_time)} to ${formatTime(time.end_time)}`
+                        }
+                      </Text>
+                    );
+                  })
+                ) : (
+                  <Text style={styles.emptyStateText}>No availability set</Text>
+                )}
+              </View>
+            </View>
 
             <TextInput
               label='Birthdate'
@@ -1161,6 +1254,7 @@ export default function EditProfile() {
             />
 
             {/* Height Input */}
+            <Text style={styles.label}>Height</Text>
             <View style={styles.inputField}>
               {/* Toggle Pill Container */}
               <View style={styles.heightToggleContainer}>
@@ -1181,9 +1275,7 @@ export default function EditProfile() {
                   </Text>
                 </TouchableOpacity>
               </View>
-              <Text variant="bodyMedium" style={styles.inputLabel}>
-                Height
-              </Text>
+              
               {heightUnit === "in" ? (
                 <View style={styles.heightContainer}>
                   {/* Feet Controls */}
@@ -1258,6 +1350,13 @@ export default function EditProfile() {
             {/* Gender */}
             <Text style={styles.label}>Gender assigned at birth</Text>
             <View style={[styles.dropdownWrapper, genderOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+              {/* Full-screen click catcher */}
+              {genderOpen && (
+                <Pressable
+                  style={styles.dropdownOverlay}
+                  onPress={() => setGenderOpen(false)}
+                />
+              )}
               
               <DropDownPicker
                 open={genderOpen}
@@ -1276,6 +1375,7 @@ export default function EditProfile() {
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
+                  zIndex: 2000, // Higher than overlay
                 }}
                 onChangeValue={(value) =>
                   setFormValues((prev) => ({ ...prev, gender: value }))
@@ -2080,5 +2180,50 @@ const styles = StyleSheet.create({
   interestText: {
     fontSize: 16,
     fontWeight: "500",
+  },
+  dropdownOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: screenHeight,
+    backgroundColor: 'rgba(0,0,0,0.001)', // Nearly transparent but clickable
+    zIndex: 1500,
+  },
+  sectionContainer: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 6,
+  },
+  timeSlot: {
+    backgroundColor: "#F9F9F9",
+    borderWidth: 1,
+    borderColor: "#E4423F",
+    borderRadius: 5,
+    padding: 8,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: "#666",
+  },
+  helperText: {
+    fontSize: 12,
+    color: "#999",
+  },
+  editButton: {
+    padding: 10,
+    backgroundColor: "#E4423F",
+    borderRadius: 5,
+    marginLeft: 10,
+  },
+  editButtonText: {
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "bold",
   },
 });

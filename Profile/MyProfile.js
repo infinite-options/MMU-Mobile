@@ -62,6 +62,18 @@ export default function MyProfile() {
       }
     }, [])
   );
+
+  // Add state for favorite photo
+  const [favoritePhotoIndex, setFavoritePhotoIndex] = useState(null);
+
+  // Add effect to set favorite photo from user data
+  useEffect(() => {
+    if (userData.user_favorite_photo) {
+      const index = photos.findIndex((photo) => photo === userData.user_favorite_photo);
+      setFavoritePhotoIndex(index >= 0 ? index : null);
+    }
+  }, [userData, photos]);
+
   // Fetch user data on mount/focus
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -411,6 +423,13 @@ export default function MyProfile() {
               {photoUri ? (
                 <>
                   <Image source={{ uri: photoUri }} style={styles.photoImage} />
+                  {favoritePhotoIndex === idx && (
+                    <View style={styles.heartIconBottomRight}>
+                      <View style={styles.heartIconBackground}>
+                        <Ionicons name='heart' size={20} color='#E4423F' />
+                      </View>
+                    </View>
+                  )}
                 </>
               ) : (
                 <Pressable style={styles.emptyPhotoBox}>
@@ -863,5 +882,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 10,
     marginVertical: 2,
+  },
+  heartIconBottomRight: {
+    position: "absolute",
+    bottom: 5,
+    right: 5,
+    zIndex: 1,
+  },
+  heartIconBackground: {
+    backgroundColor: "rgba(0,0,0,0.3)",
+    borderRadius: 15,
+    padding: 5,
   },
 });

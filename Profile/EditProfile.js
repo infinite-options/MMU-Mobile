@@ -46,6 +46,8 @@ export default function EditProfile() {
   const [userData, setUserData] = useState({});
   const [photos, setPhotos] = useState([null, null, null]); // array of photo URIs
   const [deletedPhotos, setDeletedPhotos] = useState([]); // Track deleted S3 photos
+  const [favoritePhotoIndex, setFavoritePhotoIndex] = useState(null); // Track favorite photo
+  const [isEditMode, setIsEditMode] = useState(true); // Track if we're in edit mode
   const [videoUri, setVideoUri] = useState(null); // single video URI
   const [imageLicense, setImageLicense] = useState(null);
   const videoRef = useRef(null);
@@ -679,6 +681,52 @@ export default function EditProfile() {
     }
   };
 
+  // Add this after the useEffect that fetches user data
+  useEffect(() => {
+    if (userData.user_favorite_photo) {
+      // Find the index of the favorite photo in the photos array
+      const index = photos.findIndex((photo) => photo === userData.user_favorite_photo);
+      setFavoritePhotoIndex(index >= 0 ? index : null);
+    }
+  }, [userData, photos]);
+
+  const handleSetFavoritePhoto = (index) => {
+    if (isEditMode) {
+      setFavoritePhotoIndex(favoritePhotoIndex === index ? null : index);
+    }
+  };
+
+  // Add this effect to check for changes
+  useEffect(() => {
+    const hasPhotoChanges =
+      JSON.stringify(photos.filter((p) => p !== null)) !== JSON.stringify(JSON.parse(userData.user_photo_url || "[]")) ||
+      deletedPhotos.length > 0 ||
+      (favoritePhotoIndex !== null ? photos[favoritePhotoIndex] : null) !== userData.user_favorite_photo;
+
+    setHasChanges(hasPhotoChanges || Object.keys(formValues).some((key) => formValues[key] !== userData[key]));
+  }, [photos, deletedPhotos, favoritePhotoIndex, formValues, userData]);
+
+  // Toggle a single interest
+  const toggleInterest = (interest) => {
+    if (interests.includes(interest)) {
+      // If it's already selected, remove it
+      setInterests(interests.filter((item) => item !== interest));
+    } else {
+      // Otherwise, add it
+      setInterests([...interests, interest]);
+    }
+  };
+
+  // Handle adding and removing date types
+  const handleAddDateType = () => {
+    setEntryType("dateType");
+    setModalVisible(true);
+  };
+
+  const handleRemoveDateType = (index) => {
+    setDateTypes((prev) => prev.filter((_, i) => i !== index));
+  };
+
   // Updated handleSaveChanges function
   const handleSaveChanges = async () => {
     console.log("\n=== Starting Profile Update ===");
@@ -835,6 +883,12 @@ export default function EditProfile() {
         console.log(`${key}: ${value}`);
       }
 
+      // Add favorite photo to upload data if one is selected
+      if (favoritePhotoIndex !== null && photos[favoritePhotoIndex]) {
+        const isNewPhoto = !photos[favoritePhotoIndex].startsWith("https://s3");
+        uploadData.append("user_favorite_photo", isNewPhoto ? `img_${newLocalPhotos.indexOf(photos[favoritePhotoIndex])}` : photos[favoritePhotoIndex]);
+      }
+
       // Make the upload request
       const response = await axios.put("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo", uploadData, {
         headers: {
@@ -847,6 +901,7 @@ export default function EditProfile() {
       });
 
       if (response.status === 200) {
+        setIsEditMode(false); // Exit edit mode after successful save
         console.log("Upload successful!");
         Alert.alert("Success", "Your profile has been updated!");
         navigation.goBack();
@@ -870,53 +925,6 @@ export default function EditProfile() {
       return 0;
     }
   };
-
-  // Toggle a single interest
-  const toggleInterest = (interest) => {
-    if (interests.includes(interest)) {
-      // If it's already selected, remove it
-      setInterests(interests.filter((item) => item !== interest));
-    } else {
-      // Otherwise, add it
-      setInterests([...interests, interest]);
-    }
-  };
-
-  // Handle adding and removing date types
-  const handleAddDateType = () => {
-    setEntryType("dateType");
-    setModalVisible(true);
-  };
-
-  const handleRemoveDateType = (index) => {
-    setDateTypes((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  // Add this effect to check for changes
-  useEffect(() => {
-    if (originalValues) {
-      console.log("\n=== Checking for Changes ===");
-      console.log("Original Values:", originalValues);
-      console.log("Current Form Values:", formValues);
-      console.log("Original Photos:", JSON.parse(userData.user_photo_url || "[]"));
-      console.log(
-        "Current Photos:",
-        photos.filter((p) => p !== null)
-      );
-      console.log("Original Video:", userData.user_video_url);
-      console.log("Current Video:", videoUri);
-
-      const hasAnyChanges =
-        JSON.stringify(formValues) !== JSON.stringify(originalValues) ||
-        JSON.stringify(photos.filter((p) => p !== null)) !== JSON.stringify(JSON.parse(userData.user_photo_url || "[]")) ||
-        videoUri !== userData.user_video_url;
-
-      console.log("Has Changes:", hasAnyChanges);
-      console.log("=== End Check ===\n");
-
-      setHasChanges(hasAnyChanges);
-    }
-  }, [formValues, photos, videoUri, originalValues]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -986,6 +994,13 @@ export default function EditProfile() {
                         <Ionicons name='close' size={20} color='#FFF' />
                       </View>
                     </TouchableOpacity>
+                    {(isEditMode || favoritePhotoIndex === idx) && (
+                      <TouchableOpacity onPress={() => handleSetFavoritePhoto(idx)} style={styles.heartIconBottomRight}>
+                        <View style={styles.heartIconBackground}>
+                          <Ionicons name={favoritePhotoIndex === idx ? "heart" : "heart-outline"} size={20} color={favoritePhotoIndex === idx ? "#E4423F" : "#FFF"} />
+                        </View>
+                      </TouchableOpacity>
+                    )}
                   </>
                 ) : (
                   <Pressable style={styles.emptyPhotoBox} onPress={() => handlePickImage(idx)}>
@@ -1594,8 +1609,8 @@ export default function EditProfile() {
           </View>
 
           {/* Save Changes Button */}
-          <TouchableOpacity onPress={hasChanges ? handleSaveChanges : () => navigation.goBack()} style={styles.saveButton}>
-            <Text style={styles.saveButtonText}>{hasChanges ? "Save Changes" : "Return to Profile"}</Text>
+          <TouchableOpacity style={[styles.saveButton, !hasChanges && styles.saveButtonDisabled]} onPress={handleSaveChanges} disabled={!hasChanges}>
+            <Text style={styles.saveButtonText}>{hasChanges ? "Save Changes" : "No Changes"}</Text>
           </TouchableOpacity>
 
           <Modal visible={modalVisible} animationType='slide' transparent={true} onRequestClose={() => setModalVisible(false)}>
@@ -2030,5 +2045,19 @@ const styles = StyleSheet.create({
   interestText: {
     fontSize: 16,
     fontWeight: "500",
+  },
+  heartIconBottomRight: {
+    position: "absolute",
+    bottom: 5,
+    right: 5,
+    zIndex: 1,
+  },
+  heartIconBackground: {
+    backgroundColor: "rgba(0,0,0,0.3)",
+    borderRadius: 15,
+    padding: 5,
+  },
+  saveButtonDisabled: {
+    backgroundColor: "#ccc",
   },
 });

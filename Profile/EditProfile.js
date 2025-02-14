@@ -45,6 +45,7 @@ export default function EditProfile() {
 
   const [userData, setUserData] = useState({});
   const [photos, setPhotos] = useState([null, null, null]); // array of photo URIs
+  const [deletedPhotos, setDeletedPhotos] = useState([]); // Track deleted S3 photos
   const [videoUri, setVideoUri] = useState(null); // single video URI
   const [imageLicense, setImageLicense] = useState(null);
   const videoRef = useRef(null);
@@ -460,16 +461,22 @@ export default function EditProfile() {
 
       if (!result.canceled && result.assets?.length > 0) {
         const newPhotos = [...photos];
+        console.log("\n=== Image Selection Debug ===");
+        console.log("Selected assets:", result.assets);
         for (const asset of result.assets) {
           const targetIndex = slotIndex + result.assets.indexOf(asset);
           if (targetIndex < 3) {
             newPhotos[targetIndex] = asset.uri;
             // Log image details when selected
             const size = await getFileSize(asset.uri);
-            console.log(`Image selected: ${asset.uri.split("/").pop()}`);
-            console.log(`Original size: ${(size / 1024 / 1024).toFixed(2)} MB`);
+            console.log(`\nImage ${targetIndex + 1} details:`);
+            console.log(`- URI: ${asset.uri}`);
+            console.log(`- File name: ${asset.uri.split("/").pop()}`);
+            console.log(`- Size: ${(size / 1024 / 1024).toFixed(2)} MB`);
           }
         }
+        console.log("\nFinal photos array:", newPhotos);
+        console.log("=== End Image Selection Debug ===\n");
         setPhotos(newPhotos);
       }
     } catch (error) {
@@ -486,7 +493,20 @@ export default function EditProfile() {
     }
   };
   const handleRemovePhoto = (slotIndex) => {
+    const photoToRemove = photos[slotIndex];
+    console.log("\n=== Removing Photo ===");
+    console.log("Removing photo at index:", slotIndex);
+    console.log("Photo being removed:", photoToRemove);
+
+    // If it's an S3 photo, add it to deletedPhotos array
+    if (photoToRemove && photoToRemove.startsWith("https://s3")) {
+      console.log("Adding S3 photo to deletedPhotos array");
+      setDeletedPhotos((prev) => [...prev, photoToRemove]);
+    }
+
     const newPhotos = photos.map((photo, index) => (index === slotIndex ? null : photo));
+    console.log("Updated photos array:", newPhotos);
+    console.log("=== End Remove Photo ===\n");
     setPhotos(newPhotos);
   };
 
@@ -680,15 +700,57 @@ export default function EditProfile() {
       const originalPhotos = userData.user_photo_url ? JSON.parse(userData.user_photo_url) : [];
       const photoUrls = photos.filter((uri) => uri !== null && uri !== undefined);
 
+      console.log("\n=== Debug Photo Arrays ===");
+      console.log("Original photos array:", originalPhotos);
+      console.log("Current photos array:", photoUrls);
+      console.log("Deleted photos array:", deletedPhotos);
+      console.log("=== End Debug ===\n");
+
       // Create FormData object
       const uploadData = new FormData();
       uploadData.append("user_uid", userData.user_uid);
       uploadData.append("user_email_id", userData.user_email_id);
 
-      // Check if photos have changed
-      if (JSON.stringify(originalPhotos) !== JSON.stringify(photoUrls)) {
-        uploadData.append("user_photo_url", JSON.stringify(photoUrls));
+      // Separate S3 photos from new local photos
+      const s3Photos = [];
+      const newLocalPhotos = [];
+
+      photos.forEach((uri) => {
+        if (uri) {
+          if (uri.startsWith("https://s3")) {
+            s3Photos.push(uri);
+          } else {
+            newLocalPhotos.push(uri);
+          }
+        }
+      });
+
+      console.log("\n=== Photo Upload Debug ===");
+      console.log("S3 Photos to keep:", s3Photos);
+      console.log("New Local Photos to upload:", newLocalPhotos);
+      console.log("S3 Photos to delete:", deletedPhotos);
+
+      // Add existing S3 photos as user_photo_url array
+      if (s3Photos.length > 0) {
+        uploadData.append("user_photo_url", JSON.stringify(s3Photos));
       }
+
+      // Add deleted photos array if any photos were deleted
+      if (deletedPhotos.length > 0) {
+        uploadData.append("user_delete_photo", JSON.stringify(deletedPhotos));
+      }
+
+      // Add new local photos as img_0, img_1, etc.
+      newLocalPhotos.forEach((uri, index) => {
+        console.log(`Adding new local photo ${index}:`, uri);
+        uploadData.append(`img_${index}`, {
+          uri,
+          type: "image/jpeg",
+          name: `img_${index}.jpg`,
+        });
+      });
+
+      console.log("=== End Photo Upload Debug ===\n");
 
       // Create an object of the original values from userData
       const originalValues = {

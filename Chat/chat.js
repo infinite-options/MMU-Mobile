@@ -16,6 +16,7 @@ import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 
 // Local assets
 import gemmaChatIcon from '../assets/icons/gemmachat.png';
@@ -469,7 +470,54 @@ export default function Chat() {
         )}
         
         {/* Received invitation with response options */}
-        
+        {receivedMeet && !hasResponded && (
+          <View style={styles.leftBubbleWrapper}>
+            <Image 
+              source={chatPartnerPhoto} 
+              style={styles.avatarLeftContainer}
+            />
+            <LinearGradient
+              colors={['#F5F5F5', '#F5F5F5']}
+              style={[styles.leftBubbleContainer, styles.card]}
+            >
+              <Text style={styles.inviteTitle}>Hi! Wanna go on a date with me?</Text>
+              
+              <View style={styles.detailRow}>
+                <Ionicons name="people-outline" style={styles.icon} />
+                <Text style={styles.detailText}>
+                  {receivedMeet?.meet_date_type || 'Date Type'}
+                </Text>
+              </View>
+              
+              <View style={styles.detailRow}>
+                <Ionicons name="calendar-outline" style={styles.icon} />
+                <Text style={styles.detailText}>
+                  {new Date(receivedMeet?.meet_day).toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric' 
+                  })}
+                </Text>
+              </View>
+              
+              <View style={styles.detailRow}>
+                <Ionicons name="time-outline" style={styles.icon} />
+                <Text style={styles.detailText}>
+                  {receivedMeet?.meet_time || '7:00 PM'}
+                </Text>
+              </View>
+              
+              <View style={styles.detailRow}>
+                <Ionicons name="location-outline" style={styles.icon} />
+                <Text style={styles.detailText}>
+                  {receivedMeet?.meet_location || 'Location TBD'}
+                </Text>
+              </View>
+              
+              <View style={styles.leftArrow} />
+            </LinearGradient>
+          </View>
+        )}
         {receivedMeet && !hasResponded && (
           <View style={styles.rightBubbleWrapper}>
             <LinearGradient
@@ -782,33 +830,61 @@ const styles = StyleSheet.create({
 
   /* Left Bubble (received messages) */
   leftBubbleContainer: {
-    backgroundColor: "#eeeeee",
-    padding: 10,
-    marginRight: '45%',
+    backgroundColor: "#FAFAFA",
+    padding: 16,
     borderRadius: 20,
+    marginRight: '45%',
     marginTop: 5,
     marginLeft: "5%",
     maxWidth: '50%',
-    alignSelf: 'flex-start',
-    position: 'relative',
+    // Add shadow if needed
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  inviteTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#E4423F',
+    marginBottom: 12,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  icon: {
+    fontSize: 20,
+    color: '#999',
+    marginRight: 8,
+  },
+  detailText: {
+    fontSize: 16,
+    color: '#333',
+    flexShrink: 1,
+  },
+  avatarContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 20,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: '#FFF',
   },
   leftArrow: {
     position: "absolute",
-    backgroundColor: "#eeeeee",
+    backgroundColor: "#FAFAFA",
     width: 20,
     height: 25,
     bottom: 0,
     borderBottomRightRadius: 25,
     left: -10,
-  },
-  leftArrowOverlap: {
-    position: "absolute",
-    backgroundColor: "#ffffff",
-    width: 20,
-    height: 35,
-    bottom: -6,
-    borderBottomRightRadius: 18,
-    left: -20,
+    zIndex: 1,
   },
 
   dateHeader: {
@@ -870,5 +946,29 @@ const styles = StyleSheet.create({
   leftBubbleText: {
     fontSize: 15,
     color: '#000',
+  },
+  card: {
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 8,
+  },
+  avatarLeftContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: '#FFF',
+    marginRight: 12,
+    alignSelf: 'flex-start',
+  },
+  leftArrow: {
+    position: "absolute",
+    backgroundColor: "#FAFAFA",
+    width: 20,
+    height: 25,
+    bottom: 10,
+    borderBottomRightRadius: 25,
+    left: -10,
   },
 });

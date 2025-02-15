@@ -42,6 +42,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>com.infiniteoptions.meetmeupapp</string>
+          <string>com.googleusercontent.apps.336598290180-dmis2ir0iqt2i3cpu2iloo675t82466u</string>
         </array>
       </dict>
     </array>

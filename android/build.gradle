@@ -3,10 +3,11 @@
 buildscript {
     ext {
         buildToolsVersion = findProperty('android.buildToolsVersion') ?: '34.0.0'
-        minSdkVersion = Integer.parseInt(findProperty('android.minSdkVersion') ?: '23')
+        minSdkVersion = Integer.parseInt(findProperty('android.minSdkVersion') ?: '21')
         compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '34')
         targetSdkVersion = Integer.parseInt(findProperty('android.targetSdkVersion') ?: '34')
-        kotlinVersion = findProperty('android.kotlinVersion') ?: '1.9.23'
+        kotlinVersion = findProperty('android.kotlinVersion') ?: '1.8.0'
+        frescoVersion = findProperty('expo.frescoVersion') ?: '2.5.0'
 
         ndkVersion = "26.1.10909125"
     }
@@ -17,7 +18,8 @@ buildscript {
     dependencies {
         classpath('com.android.tools.build:gradle')
         classpath('com.facebook.react:react-native-gradle-plugin')
-        classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
+        classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.0')
+        classpath('com.google.gms:google-services:4.3.15')
     }
 }
 
@@ -33,7 +35,26 @@ allprojects {
             // Android JSC is installed from npm
             url(new File(['node', '--print', "require.resolve('jsc-android/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim(), '../dist'))
         }
-
+        maven {
+            // React Native 3rd party dependencies @ expo/react-native/sdks/hermes/hermes-engine/android/
+            url("$rootDir/../node_modules/hermes-engine/android/")
+        }
+        maven {
+            // Create a lookup table for the SDK versions
+            def sdkVersions = ['expo.sdkVersion': '50.0.0']  // Replace with your Expo SDK version
+            // Expo modules @ expo/react-native/sdks/expo-modules-core/maven
+            url("$rootDir/../node_modules/expo-modules-core/android/maven")
+        }
+        exclusiveContent {
+            filter {
+                includeGroup "com.facebook.react"
+            }
+            forRepository {
+                maven {
+                    url "$rootDir/../node_modules/react-native/android"
+                }
+            }
+        }
         google()
         mavenCentral()
         maven { url 'https://www.jitpack.io' }

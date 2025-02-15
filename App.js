@@ -11,6 +11,7 @@ import AccountSetup3Create from "./AccountSetup/AccountSetup3Create";
 import AccountSetup4Create from "./AccountSetup/AccountSetup4Create";
 import AccountSetup7Summary from "./AccountSetup/AccountSetup7Summary";
 import AccountDetails3 from "./AccountDetails/AccountDetails3";
+import GoogleLogin from "./AccountSetup/GoogleLogin";
 
 // new pages
 import PersonalDetails from "./AccountSetup/PersonalDetails.js";
@@ -157,6 +158,7 @@ export default function App() {
 
           {/* Login flow */}
           <Stack.Screen name='Login' component={Login} />
+          <Stack.Screen name='GoogleLogin' component={GoogleLogin} />
           <Stack.Screen name='Preferences' component={Preferences} />
           <Stack.Screen name='MatchPageNew' component={MatchPageNew} />
           <Stack.Screen name='MatchResultsPage' component={MatchResultsPage} />

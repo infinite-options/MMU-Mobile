@@ -269,6 +269,7 @@ export default function MyProfile() {
     user_address = "",
     user_general_interests = "",
     user_date_interests = "",
+    user_available_time = "",
     user_suburb = "",
     user_nationality = "",
     user_religion = "",
@@ -495,13 +496,45 @@ export default function MyProfile() {
         {/* "Kinds of dates I enjoy" / "My available times" you can add them likewise.  */}
         {user_date_interests ? (
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>My interests</Text>
+            <Text style={styles.sectionTitle}>My Date interests</Text>
             <View style={styles.interestsRow}>
               {dateInterests.map((dateInt, i) => (
                 <View key={"date" + i} style={styles.interestChip}>
                   <Text style={styles.interestChipText}>{dateInt}</Text>
                 </View>
               ))}
+            </View>
+          </View>
+        ) : null}
+        {/* Available times */}
+        {user_available_time ? (
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>My available times</Text>
+            <View style={styles.aboutItemText}>
+              {JSON.parse(user_available_time).map((time, index) => {
+                const days = time.day.split(", ");
+                // Format day ranges as "Mon-Fri" or "Sat & Sun"
+                const dayRange = days.length > 1 ? (days.length === 2 ? days.join(" & ") : `${days[0]}-${days[days.length - 1]}`) : days[0];
+
+                // Check for all-day availability
+                const isAllDay = time.start_time === "12:00 AM" && time.end_time === "11:59 PM";
+
+                // Format time as "5:30 pm" without leading zeros
+                const formatTime = (t) => {
+                  const [timePart, modifier] = t.split(" ");
+                  let [hours, minutes] = timePart.split(":");
+                  hours = parseInt(hours);
+                  const displayHours = hours % 12 || 12; // Convert to 12-hour format
+                  const ampm = modifier.toLowerCase();
+                  return `${displayHours}${minutes !== "00" ? `:${minutes}` : ""} ${ampm}`;
+                };
+
+                return (
+                  <Text key={index} style={styles.aboutItem}>
+                    {isAllDay ? `${dayRange}, all day` : `${dayRange}, ${formatTime(time.start_time)} to ${formatTime(time.end_time)}`}
+                  </Text>
+                );
+              })}
             </View>
           </View>
         ) : null}
@@ -893,5 +926,16 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.3)",
     borderRadius: 15,
     padding: 5,
+  },
+  timeSlot: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginVertical: 5,
+    backgroundColor: "#f0f0f0",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    fontSize: 14,
+    color: "#333",
   },
 });

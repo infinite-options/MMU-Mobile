@@ -1,6 +1,6 @@
 // DatePreferences.js
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   View,
@@ -92,6 +92,7 @@ const saveAvailabilityToAPI = async (availabilityData) => {
 export default function DateAvailability() {
   const navigation = useNavigation();
   const route = useRoute();
+  const { fromEditProfile, onSave } = route.params || {};
 
   // If you passed in how many date prefs are "required" from MyProfile:
   const stepIndex = route.params?.stepIndex ?? null;
@@ -262,11 +263,66 @@ export default function DateAvailability() {
 
     try {
       await saveAvailabilityToAPI(availabilityData);
-      decrementStepCount(stepIndex);
-      navigation.navigate('TypeOfDate', { stepIndex });
+      
+      if (fromEditProfile) {
+        navigation.goBack(); // Return to EditProfile
+      } else {
+        decrementStepCount(stepIndex);
+        navigation.navigate('TypeOfDate', { stepIndex });
+      }
     } catch (error) {
       // Error already handled in saveAvailabilityToAPI
     }
+  };
+
+  // Add useEffect to fetch existing availability
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      try {
+        const user_uid = await AsyncStorage.getItem('user_uid');
+        const response = await axios.get(
+          `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${user_uid}`
+        );
+        
+        const rawData = response.data.result[0]?.user_available_time;
+        if (rawData) {
+          const parsedData = JSON.parse(rawData).map(item => ({
+            days: convertDayStringToArray(item.day),
+            start: parseTimeString(item.start_time),
+            end: parseTimeString(item.end_time),
+            isEditing: false
+          }));
+          setTimeWindows(parsedData);
+        }
+      } catch (error) {
+        console.error('Error fetching availability:', error);
+      }
+    };
+    
+    fetchAvailability();
+  }, []);
+
+  // Helper functions
+  const convertDayStringToArray = (dayString) => {
+    const dayMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    return Array(7).fill(false).map((_, i) => 
+      dayString.split(', ').some(day => dayMap[day] === i)
+    );
+  };
+
+  const parseTimeString = (timeStr) => {
+    const [timePart, ampm] = timeStr.split(' ');
+    const [hourStr, minuteStr] = timePart.split(':');
+    let hour = parseInt(hourStr, 10);
+    
+    if (ampm === 'PM' && hour !== 12) hour += 12;
+    if (ampm === 'AM' && hour === 12) hour = 0;
+    
+    return {
+      hour: hour % 12 || 12,
+      minute: parseInt(minuteStr, 10),
+      ampm: ampm.toUpperCase()
+    };
   };
 
   return (

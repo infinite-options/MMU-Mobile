@@ -16,6 +16,7 @@ import {
   Text as RNText,
   Modal,
   Linking,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { TextInput, Text } from "react-native-paper";
@@ -39,9 +40,28 @@ const GOOGLE_API_KEY = REACT_APP_GOOGLE_API_KEY;
 axios.defaults.timeout = 10000; // 10 seconds timeout
 axios.defaults.headers.common["Content-Type"] = "application/json";
 
+const screenHeight = Dimensions.get("window").height;
+
+// Add this near the top with other constants
+const allDateTypes = ["Lunch", "Dinner", "Coffee", "Drinks", "Movies", "Surprise Me", "Other"];
+
+// Add this zIndex configuration object
+const DROPDOWN_ZINDEX = {
+  GENDER: 3000,
+  IDENTITY: 2900,
+  OPEN_TO: 2800,
+  SMOKING: 2700,
+  DRINKING: 2600,
+  RELIGION: 2500,
+  STAR_SIGN: 2400,
+  EDUCATION: 2300,
+  BODY_TYPE: 2200,
+};
+
 export default function EditProfile() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
+  const route = useNavigation().getState().routes[useNavigation().getState().index];
 
   const [userData, setUserData] = useState({});
   const [photos, setPhotos] = useState([null, null, null]); // array of photo URIs
@@ -67,9 +87,66 @@ export default function EditProfile() {
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // We'll store height in two separate numeric fields for +/– usage
-  const [heightFt, setHeightFt] = useState(5);
-  const [heightIn, setHeightIn] = useState(11);
+  // -------------------------------
+  // HEIGHT STATES & CONVERSION
+  // -------------------------------
+  // We store height as feet & inches (for the UI) as well as centimeters.
+  // The endpoint always receives height in cm.
+  const [heightFt, setHeightFt] = useState("5"); // stored as string
+  const [heightIn, setHeightIn] = useState("11");
+  const defaultCm = Math.round((5 * 12 + 11) * 2.54);
+  const [heightCm, setHeightCm] = useState(defaultCm.toString());
+  // heightUnit can be either "in" (for feet/inches) or "cm" (for centimeters)
+  const [heightUnit, setHeightUnit] = useState("in");
+
+  // -------------------------------
+  // Other form states and dropdown states (e.g., gender, openTo, etc.)
+  const [formValues, setFormValues] = useState({
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
+    bio: "",
+    availableTimes: "",
+    birthdate: "",
+    children: 0,
+    gender: "",
+    identity: "",
+    orientation: "",
+    openTo: [],
+    address: "",
+    nationality: "",
+    bodyType: "",
+    education: "",
+    job: "",
+    smoking: "",
+    drinking: "",
+    religion: "",
+    starSign: "",
+    latitude: null,
+    longitude: null,
+  });
+  const [searchText, setSearchText] = useState(formValues.address || "");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newEntryText, setNewEntryText] = useState("");
+  const [entryType, setEntryType] = useState("interest"); // 'interest' or 'dateType'
+  const [hasChanges, setHasChanges] = useState(false);
+  const [originalValues, setOriginalValues] = useState(null);
+
+  // Add these state variables at the top of your component
+  const [openDropdown, setOpenDropdown] = useState(null);
+
+  // Create a list of all dropdown identifiers
+  const DROPDOWN_TYPES = {
+    GENDER: "gender",
+    IDENTITY: "identity",
+    OPEN_TO: "openTo",
+    SMOKING: "smoking",
+    DRINKING: "drinking",
+    RELIGION: "religion",
+    STAR_SIGN: "starSign",
+    EDUCATION: "education",
+    BODY_TYPE: "bodyType",
+  };
 
   // Replace these text-based fields with pickers for Gender, Body Type, etc.
   // Body Type
@@ -196,39 +273,52 @@ export default function EditProfile() {
   const [interests, setInterests] = useState([]);
   const [dateTypes, setDateTypes] = useState([]);
 
-  const [formValues, setFormValues] = useState({
-    firstName: "",
-    lastName: "",
-    phoneNumber: "",
-    bio: "",
-    availableTimes: [],
-    birthdate: "",
-    children: 0,
-    gender: "",
-    identity: "",
-    orientation: "",
-    openTo: [],
-    address: "",
-    nationality: "",
-    bodyType: "",
-    education: "",
-    job: "",
-    smoking: "",
-    drinking: "",
-    religion: "",
-    starSign: "",
-    latitude: null,
-    longitude: null,
-  });
+  // -------------------------------
+  // HEIGHT CONVERSION HELPER FUNCTIONS
+  // -------------------------------
+  // Updates both inches UI and stored cm value.
+  const updateHeightFromInches = (ft, inVal) => {
+    const totalInch = ft * 12 + inVal;
+    const normalizedFt = Math.floor(totalInch / 12);
+    const normalizedIn = totalInch % 12;
+    setHeightFt(normalizedFt.toString());
+    setHeightIn(normalizedIn.toString());
+    const cmValue = Math.round(totalInch * 2.54);
+    setHeightCm(cmValue.toString());
+  };
 
-  const [searchText, setSearchText] = useState(formValues.address || "");
+  // Updates both cm state and converts to inches.
+  const updateHeightFromCm = (cmValue) => {
+    setHeightCm(cmValue.toString());
+    const totalIn = cmValue / 2.54;
+    const ft = Math.floor(totalIn / 12);
+    const inVal = Math.round(totalIn - ft * 12);
+    setHeightFt(ft.toString());
+    setHeightIn(inVal.toString());
+  };
 
-  const [modalVisible, setModalVisible] = useState(false);
-  const [newEntryText, setNewEntryText] = useState("");
-  const [entryType, setEntryType] = useState("interest"); // 'interest' or 'dateType'
-
-  const [hasChanges, setHasChanges] = useState(false);
-  const [originalValues, setOriginalValues] = useState(null);
+  // Toggle the height unit between "in" and "cm" and convert appropriately.
+  const toggleHeightUnit = (unit) => {
+    if (unit === heightUnit) return;
+    if (unit === "cm") {
+      // Convert current inches to cm.
+      const ft = parseInt(heightFt) || 0;
+      const inVal = parseInt(heightIn) || 0;
+      const totalIn = ft * 12 + inVal;
+      const cmValue = Math.round(totalIn * 2.54);
+      setHeightCm(cmValue.toString());
+      setHeightUnit("cm");
+    } else if (unit === "in") {
+      // Convert current cm to inches.
+      const cmValue = parseInt(heightCm) || 0;
+      const totalIn = cmValue / 2.54;
+      const ft = Math.floor(totalIn / 12);
+      const inVal = Math.round(totalIn - ft * 12);
+      setHeightFt(ft.toString());
+      setHeightIn(inVal.toString());
+      setHeightUnit("in");
+    }
+  };
 
   useFocusEffect(
     React.useCallback(() => {
@@ -323,7 +413,7 @@ export default function EditProfile() {
           lastName: fetched.user_last_name || "",
           phoneNumber: fetched.user_phone_number || "",
           bio: fetched.user_profile_bio || "",
-          availableTimes: fetched.user_available_time ? JSON.parse(fetched.user_available_time) : [],
+          availableTimes: fetched.user_available_time || "",
           birthdate: fetched.user_birthdate || "",
           children: fetched.user_kids || 0,
           gender: fetched.user_gender || "",
@@ -380,16 +470,27 @@ export default function EditProfile() {
         if (fetched.user_video_url) {
           let rawVideoUrl = fetched.user_video_url;
           try {
-            if (typeof rawVideoUrl === "string" && (rawVideoUrl.startsWith('"') || rawVideoUrl.startsWith("["))) {
-              rawVideoUrl = JSON.parse(rawVideoUrl);
-            }
-            if (Array.isArray(rawVideoUrl)) {
-              rawVideoUrl = rawVideoUrl[0];
+            // Remove any existing JSON encoding
+            if (typeof rawVideoUrl === "string") {
+              // Handle double-encoded strings
+              const parsed = JSON.parse(rawVideoUrl);
+              rawVideoUrl = Array.isArray(parsed) ? parsed[0] : parsed;
+
+              // If result is still a string, parse again to remove quotes
+              if (typeof parsed === "string") {
+                rawVideoUrl = JSON.parse(parsed);
+              }
             }
           } catch (err) {
             console.log("Could not parse video URL:", err);
           }
-          setVideoUri(rawVideoUrl);
+
+          // Ensure consistent string format
+          const cleanedVideoUrl = typeof rawVideoUrl === "string" ? rawVideoUrl.replace(/^"+|"+$/g, "") : null;
+
+          setVideoUri(cleanedVideoUrl);
+          // Update the fetched data with cleaned URL
+          fetched.user_video_url = cleanedVideoUrl;
         }
 
         // Convert stored cm back to feet/inches
@@ -401,6 +502,7 @@ export default function EditProfile() {
 
           setHeightFt(feet.toString());
           setHeightIn(inches.toString());
+          setHeightCm(cm.toString());
         }
 
         setGenderValue(fetched.user_gender || null);
@@ -808,7 +910,7 @@ export default function EditProfile() {
         user_profile_bio: userData.user_profile_bio || "",
         user_general_interests: userData.user_general_interests ? JSON.parse(userData.user_general_interests) : [],
         user_date_interests: userData.user_date_interests ? JSON.parse(userData.user_date_interests) : [],
-        user_available_time: userData.user_available_time ? JSON.parse(userData.user_available_time) : [],
+        user_available_time: userData.user_available_time || "",
         user_birthdate: userData.user_birthdate || "",
         user_height: userData.user_height || "",
         user_kids: userData.user_kids?.toString() || "0",
@@ -839,7 +941,7 @@ export default function EditProfile() {
         user_date_interests: dateTypes,
         user_available_time: formValues.availableTimes,
         user_birthdate: formValues.birthdate,
-        user_height: Math.round((parseInt(heightFt || 0) * 12 + parseInt(heightIn || 0)) * 2.54).toString(),
+        user_height: heightCm,
         user_kids: formValues.children.toString(),
         user_gender: genderValue,
         user_identity: identityValue,
@@ -1044,8 +1146,9 @@ export default function EditProfile() {
               }
               outlineStyle={styles.textInputOutline}
             /> */}
+            <Text style={styles.label}>First Name</Text>
             <TextInput
-              label='First Name'
+              placeholder='First Name'
               mode='outlined'
               style={styles.inputField}
               value={formValues.firstName}
@@ -1060,8 +1163,9 @@ export default function EditProfile() {
               outlineStyle={styles.textInputOutline}
             />
 
+            <Text style={styles.label}>Last Name</Text>
             <TextInput
-              label='Last Name'
+              placeholder='Last Name'
               mode='outlined'
               style={styles.inputField}
               value={formValues.lastName}
@@ -1075,8 +1179,9 @@ export default function EditProfile() {
               autoCapitalize='none'
               outlineStyle={styles.textInputOutline}
             />
+            <Text style={styles.label}>Phone Number</Text>
             <TextInput
-              label='Phone Number'
+              placeholder='Phone Number'
               mode='outlined'
               style={styles.inputField}
               value={formValues.phoneNumber}
@@ -1090,8 +1195,9 @@ export default function EditProfile() {
               autoCapitalize='none'
               outlineStyle={styles.textInputOutline}
             />
+            <Text style={styles.label}>Bio</Text>
             <TextInput
-              label='Bio'
+              placeholder='Bio'
               mode='outlined'
               style={styles.inputField}
               multiline
@@ -1132,45 +1238,80 @@ export default function EditProfile() {
 
             {/* Kinds of Date I Enjoy as Tag Buttons */}
             <Text style={styles.label}>Kinds of Date I Enjoy</Text>
-            <View style={styles.tagContainer}>
-              {dateTypes.map((item, index) => (
-                <View key={index} style={styles.tag}>
-                  <RNText style={styles.tagText}>{item}</RNText>
-                  <TouchableOpacity onPress={() => handleRemoveDateType(index)} style={styles.tagClose}>
-                    <Ionicons name='close' size={14} color='#FFF' />
+            <View style={styles.interestsContainer}>
+              {allDateTypes.map((dateType) => {
+                const isSelected = dateTypes.includes(dateType);
+                return (
+                  <TouchableOpacity
+                    key={dateType}
+                    onPress={() => {
+                      if (dateTypes.includes(dateType)) {
+                        setDateTypes((prev) => prev.filter((t) => t !== dateType));
+                      } else {
+                        setDateTypes((prev) => [...prev, dateType]);
+                      }
+                    }}
+                    style={[
+                      styles.interestButton,
+                      {
+                        borderColor: isSelected ? "rgba(26, 26, 26, 1)" : "rgba(26, 26, 26, 0.5)",
+                        backgroundColor: isSelected ? "#000" : "#FFF",
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.interestText, { color: isSelected ? "#FFF" : "rgba(26, 26, 26, 0.5)" }]}>{dateType}</Text>
                   </TouchableOpacity>
-                </View>
-              ))}
+                );
+              })}
             </View>
-            <TouchableOpacity style={styles.addTagButton} onPress={handleAddDateType}>
-              <Ionicons name='add' size={14} color='#E4423F' />
-              <Text style={styles.addTagButtonText}>Add Date Type</Text>
-            </TouchableOpacity>
 
-            {/* My Availability */}
-            <TextInput
-              label='My Availability'
-              mode='outlined'
-              style={styles.inputField}
-              placeholder='Example: Mon: 9 AM - 5 PM, Tue: 10 AM - 6 PM'
-              value={formValues.availableTimes.map((t) => `${t.day}: ${t.start_time} - ${t.end_time}`).join(", ")}
-              onChangeText={(text) => {
-                const times = text.split(", ").map((entry) => {
-                  const [dayPart, timeRange] = entry.split(": ");
-                  const [start, end] = timeRange?.split(" - ") || [];
-                  return {
-                    day: dayPart?.trim() || "",
-                    start_time: start?.trim() || "",
-                    end_time: end?.trim() || "",
-                  };
-                });
-                setFormValues({ ...formValues, availableTimes: times });
-              }}
-              outlineStyle={styles.textInputOutline}
-            />
+            {/* My Availability - Display only */}
+            <View style={styles.sectionContainer}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <Text style={styles.sectionTitle}>My Availability</Text>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() =>
+                    navigation.navigate("DateAvailability", {
+                      fromEditProfile: true,
+                      onSave: () => navigation.navigate("EditProfile"),
+                    })
+                  }
+                >
+                  <Text style={styles.editButtonText}>Edit</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+                {formValues.availableTimes ? (
+                  JSON.parse(formValues.availableTimes).map((time, index) => {
+                    const days = time.day.split(", ");
+                    const dayRange = days.length > 1 ? (days.length === 2 ? days.join(" & ") : `${days[0]}-${days[days.length - 1]}`) : days[0];
 
+                    const isAllDay = time.start_time === "12:00 AM" && time.end_time === "11:59 PM";
+                    const formatTime = (t) => {
+                      const [timePart, modifier] = t.split(" ");
+                      let [hours, minutes] = timePart.split(":");
+                      hours = parseInt(hours);
+                      const displayHours = hours % 12 || 12;
+                      const ampm = modifier.toLowerCase();
+                      return `${displayHours}${minutes !== "00" ? `:${minutes}` : ""} ${ampm}`;
+                    };
+
+                    return (
+                      <Text key={index} style={styles.timeSlot}>
+                        {isAllDay ? `${dayRange}, all day` : `${dayRange}, ${formatTime(time.start_time)} to ${formatTime(time.end_time)}`}
+                      </Text>
+                    );
+                  })
+                ) : (
+                  <Text style={styles.emptyStateText}>No availability set</Text>
+                )}
+              </View>
+            </View>
+
+            <Text style={styles.label}>Birthdate</Text>
             <TextInput
-              label='Birthdate'
+              placeholder='Birthdate'
               mode='outlined'
               style={styles.inputField}
               value={formValues.birthdate}
@@ -1179,38 +1320,60 @@ export default function EditProfile() {
             />
 
             {/* Height Input */}
+            <Text style={styles.label}>Height</Text>
             <View style={styles.inputField}>
-              <Text variant='bodyMedium' style={styles.inputLabel}>
-                Height
-              </Text>
-              <View style={styles.heightContainer}>
-                {/* Feet Controls */}
-                <View style={styles.heightControlGroup}>
-                  <TouchableOpacity style={styles.heightButton} onPress={() => setHeightFt(Math.max(0, parseInt(heightFt || 0) - 1).toString())}>
-                    <Text style={styles.buttonText}>-</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.heightValue}>{heightFt || 0} ft</Text>
-                  <TouchableOpacity style={styles.heightButton} onPress={() => setHeightFt((parseInt(heightFt || 0) + 1).toString())}>
-                    <Text style={styles.buttonText}>+</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Inches Controls */}
-                <View style={styles.heightControlGroup}>
-                  <TouchableOpacity style={styles.heightButton} onPress={() => setHeightIn(Math.max(0, parseInt(heightIn || 0) - 1).toString())}>
-                    <Text style={styles.buttonText}>-</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.heightValue}>{heightIn || 0} in</Text>
-                  <TouchableOpacity style={styles.heightButton} onPress={() => setHeightIn((parseInt(heightIn || 0) + 1).toString())}>
-                    <Text style={styles.buttonText}>+</Text>
-                  </TouchableOpacity>
-                </View>
+              {/* Toggle Pill Container */}
+              <View style={styles.heightToggleContainer}>
+                <TouchableOpacity style={[styles.togglePill, heightUnit === "in" && styles.togglePillActive]} onPress={() => toggleHeightUnit("in")}>
+                  <Text style={[styles.togglePillText, heightUnit === "in" && styles.togglePillActiveText]}>Inches</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.togglePill, heightUnit === "cm" && styles.togglePillActive]} onPress={() => toggleHeightUnit("cm")}>
+                  <Text style={[styles.togglePillText, heightUnit === "cm" && styles.togglePillActiveText]}>Centimeters</Text>
+                </TouchableOpacity>
               </View>
+
+              {heightUnit === "in" ? (
+                <View style={styles.heightContainer}>
+                  {/* Feet Controls */}
+                  <View style={styles.heightControlGroup}>
+                    <TouchableOpacity style={styles.heightButton} onPress={() => updateHeightFromInches(Math.max(0, parseInt(heightFt) - 1), parseInt(heightIn))}>
+                      <Text style={styles.buttonText}>-</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.heightValue}>{heightFt} ft</Text>
+                    <TouchableOpacity style={styles.heightButton} onPress={() => updateHeightFromInches(parseInt(heightFt) + 1, parseInt(heightIn))}>
+                      <Text style={styles.buttonText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                  {/* Inches Controls */}
+                  <View style={styles.heightControlGroup}>
+                    <TouchableOpacity style={styles.heightButton} onPress={() => updateHeightFromInches(parseInt(heightFt), Math.max(0, parseInt(heightIn) - 1))}>
+                      <Text style={styles.buttonText}>-</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.heightValue}>{heightIn} in</Text>
+                    <TouchableOpacity style={styles.heightButton} onPress={() => updateHeightFromInches(parseInt(heightFt), parseInt(heightIn) + 1)}>
+                      <Text style={styles.buttonText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.heightContainer}>
+                  <View style={styles.heightControlGroup}>
+                    <TouchableOpacity style={styles.heightButton} onPress={() => updateHeightFromCm(Math.max(0, parseInt(heightCm) - 1))}>
+                      <Text style={styles.buttonText}>-</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.heightValue}>{heightCm} cm</Text>
+                    <TouchableOpacity style={styles.heightButton} onPress={() => updateHeightFromCm(parseInt(heightCm) + 1)}>
+                      <Text style={styles.buttonText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
             </View>
 
             {/* # of Children */}
+            <Text style={styles.label}># of Children</Text>
             <TextInput
-              label='# of Children'
+              placeholder='# of Children'
               mode='outlined'
               style={styles.inputField}
               value={formValues.children.toString()}
@@ -1221,75 +1384,59 @@ export default function EditProfile() {
 
             {/* Gender */}
             <Text style={styles.label}>Gender assigned at birth</Text>
-            <DropDownPicker
-              open={genderOpen}
-              value={genderValue}
-              items={genderItems}
-              setOpen={setGenderOpen}
-              setValue={setGenderValue}
-              setItems={setGenderItems}
-              placeholder='Select Gender assigned at birth'
-              style={{
-                backgroundColor: "#F9F9F9",
-                borderColor: "#E4423F",
-                marginBottom: genderOpen ? 100 : 15,
-                zIndex: 10000,
-                elevation: 10000,
-              }}
-              listMode='SCROLLVIEW'
-              scrollViewProps={{
-                nestedScrollEnabled: true,
-              }}
-              textStyle={{
-                fontSize: 16,
-              }}
-              dropDownContainerStyle={{
-                backgroundColor: "#F9F9F9",
-                borderColor: "#E4423F",
-                position: "absolute",
-                zIndex: 10000,
-                elevation: 10000,
-              }}
-              onChangeValue={(value) => {
-                setFormValues((prev) => ({ ...prev, gender: value }));
-              }}
-            />
+            <View style={[styles.dropdownWrapper, openDropdown === DROPDOWN_TYPES.GENDER ? { zIndex: DROPDOWN_ZINDEX.GENDER } : { zIndex: 1 }]}>
+              <DropDownPicker
+                open={openDropdown === DROPDOWN_TYPES.GENDER}
+                zIndex={DROPDOWN_ZINDEX.GENDER}
+                zIndexInverse={1000}
+                onOpen={() => setOpenDropdown(DROPDOWN_TYPES.GENDER)}
+                onClose={() => setOpenDropdown(null)}
+                value={genderValue}
+                items={genderItems}
+                setValue={setGenderValue}
+                setItems={setGenderItems}
+                placeholder='Select Gender assigned at birth'
+                style={styles.dropdownStyle}
+                listMode='SCROLLVIEW'
+                scrollViewProps={{
+                  nestedScrollEnabled: true,
+                }}
+                textStyle={styles.dropdownTextStyle}
+                dropDownContainerStyle={{
+                  ...styles.dropdownContainerStyle,
+                  position: "absolute",
+                }}
+                onChangeValue={(value) => setFormValues((prev) => ({ ...prev, gender: value }))}
+              />
+            </View>
 
             {/* Identity */}
             <Text style={styles.label}>Identity</Text>
-            <DropDownPicker
-              open={identityOpen}
-              value={identityValue}
-              items={identityItems}
-              setOpen={setIdentityOpen}
-              setValue={setIdentityValue}
-              setItems={setIdentityItems}
-              placeholder='Select Identity'
-              style={{
-                backgroundColor: "#F9F9F9",
-                borderColor: "#E4423F",
-                marginBottom: identityOpen ? 100 : 15,
-                zIndex: 9500,
-                elevation: 9500,
-              }}
-              listMode='SCROLLVIEW'
-              scrollViewProps={{
-                nestedScrollEnabled: true,
-              }}
-              textStyle={{
-                fontSize: 16,
-              }}
-              dropDownContainerStyle={{
-                backgroundColor: "#F9F9F9",
-                borderColor: "#E4423F",
-                position: "absolute",
-                zIndex: 9500,
-                elevation: 9500,
-              }}
-              onChangeValue={(value) => {
-                setFormValues((prev) => ({ ...prev, identity: value }));
-              }}
-            />
+            <View style={[styles.dropdownWrapper, openDropdown === DROPDOWN_TYPES.IDENTITY ? { zIndex: DROPDOWN_ZINDEX.IDENTITY } : { zIndex: 1 }]}>
+              <DropDownPicker
+                open={openDropdown === DROPDOWN_TYPES.IDENTITY}
+                zIndex={DROPDOWN_ZINDEX.IDENTITY}
+                zIndexInverse={1000}
+                onOpen={() => setOpenDropdown(DROPDOWN_TYPES.IDENTITY)}
+                onClose={() => setOpenDropdown(null)}
+                value={identityValue}
+                items={identityItems}
+                setValue={setIdentityValue}
+                setItems={setIdentityItems}
+                placeholder='Select Identity'
+                style={styles.dropdownStyle}
+                listMode='SCROLLVIEW'
+                scrollViewProps={{
+                  nestedScrollEnabled: true,
+                }}
+                textStyle={styles.dropdownTextStyle}
+                dropDownContainerStyle={{
+                  ...styles.dropdownContainerStyle,
+                  position: "absolute",
+                }}
+                onChangeValue={(value) => setFormValues((prev) => ({ ...prev, identity: value }))}
+              />
+            </View>
 
             {/* Commenting out Sexual Orientation section
             <Text style={styles.label}>Sexual Orientation</Text>
@@ -1323,12 +1470,15 @@ export default function EditProfile() {
 
             {/* Open To */}
             <Text style={styles.label}>Open To</Text>
-            <View style={[styles.dropdownWrapper, openToOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+            <View style={[styles.dropdownWrapper, openDropdown === DROPDOWN_TYPES.OPEN_TO ? { zIndex: DROPDOWN_ZINDEX.OPEN_TO } : { zIndex: 1 }]}>
               <DropDownPicker
-                open={openToOpen}
+                open={openDropdown === DROPDOWN_TYPES.OPEN_TO}
+                zIndex={DROPDOWN_ZINDEX.OPEN_TO}
+                zIndexInverse={1000}
+                onOpen={() => setOpenDropdown(DROPDOWN_TYPES.OPEN_TO)}
+                onClose={() => setOpenDropdown(null)}
                 value={openToValue}
                 items={openToItems}
-                setOpen={setOpenToOpen}
                 setValue={setOpenToValue}
                 setItems={setOpenToItems}
                 placeholder='Select Open To (Multiple)'
@@ -1351,12 +1501,15 @@ export default function EditProfile() {
 
             {/* Smoking */}
             <Text style={styles.label}>Smoking</Text>
-            <View style={[styles.dropdownWrapper, smokingOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+            <View style={[styles.dropdownWrapper, openDropdown === DROPDOWN_TYPES.SMOKING ? { zIndex: DROPDOWN_ZINDEX.SMOKING } : { zIndex: 1 }]}>
               <DropDownPicker
-                open={smokingOpen}
+                open={openDropdown === DROPDOWN_TYPES.SMOKING}
+                zIndex={DROPDOWN_ZINDEX.SMOKING}
+                zIndexInverse={1000}
+                onOpen={() => setOpenDropdown(DROPDOWN_TYPES.SMOKING)}
+                onClose={() => setOpenDropdown(null)}
                 value={smokingValue}
                 items={smokingItems}
-                setOpen={setSmokingOpen}
                 setValue={setSmokingValue}
                 setItems={setSmokingItems}
                 placeholder='Select Smoking Preference'
@@ -1376,12 +1529,15 @@ export default function EditProfile() {
 
             {/* Drinking */}
             <Text style={styles.label}>Drinking</Text>
-            <View style={[styles.dropdownWrapper, drinkingOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+            <View style={[styles.dropdownWrapper, openDropdown === DROPDOWN_TYPES.DRINKING ? { zIndex: DROPDOWN_ZINDEX.DRINKING } : { zIndex: 1 }]}>
               <DropDownPicker
-                open={drinkingOpen}
+                open={openDropdown === DROPDOWN_TYPES.DRINKING}
+                zIndex={DROPDOWN_ZINDEX.DRINKING}
+                zIndexInverse={1000}
+                onOpen={() => setOpenDropdown(DROPDOWN_TYPES.DRINKING)}
+                onClose={() => setOpenDropdown(null)}
                 value={drinkingValue}
                 items={drinkingItems}
-                setOpen={setDrinkingOpen}
                 setValue={setDrinkingValue}
                 setItems={setDrinkingItems}
                 placeholder='Select Drinking Preference'
@@ -1401,12 +1557,15 @@ export default function EditProfile() {
 
             {/* Religion */}
             <Text style={styles.label}>Religion</Text>
-            <View style={[styles.dropdownWrapper, religionOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+            <View style={[styles.dropdownWrapper, openDropdown === DROPDOWN_TYPES.RELIGION ? { zIndex: DROPDOWN_ZINDEX.RELIGION } : { zIndex: 1 }]}>
               <DropDownPicker
-                open={religionOpen}
+                open={openDropdown === DROPDOWN_TYPES.RELIGION}
+                zIndex={DROPDOWN_ZINDEX.RELIGION}
+                zIndexInverse={1000}
+                onOpen={() => setOpenDropdown(DROPDOWN_TYPES.RELIGION)}
+                onClose={() => setOpenDropdown(null)}
                 value={religionValue}
                 items={religionItems}
-                setOpen={setReligionOpen}
                 setValue={setReligionValue}
                 setItems={setReligionItems}
                 placeholder='Select Religion'
@@ -1426,12 +1585,15 @@ export default function EditProfile() {
 
             {/* Star Sign */}
             <Text style={styles.label}>Star Sign</Text>
-            <View style={[styles.dropdownWrapper, starSignOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+            <View style={[styles.dropdownWrapper, openDropdown === DROPDOWN_TYPES.STAR_SIGN ? { zIndex: DROPDOWN_ZINDEX.STAR_SIGN } : { zIndex: 1 }]}>
               <DropDownPicker
-                open={starSignOpen}
+                open={openDropdown === DROPDOWN_TYPES.STAR_SIGN}
+                zIndex={DROPDOWN_ZINDEX.STAR_SIGN}
+                zIndexInverse={1000}
+                onOpen={() => setOpenDropdown(DROPDOWN_TYPES.STAR_SIGN)}
+                onClose={() => setOpenDropdown(null)}
                 value={starSignValue}
                 items={starSignItems}
-                setOpen={setStarSignOpen}
                 setValue={setStarSignValue}
                 setItems={setStarSignItems}
                 placeholder='Select Star Sign'
@@ -1451,12 +1613,15 @@ export default function EditProfile() {
 
             {/* Education */}
             <Text style={styles.label}>Education</Text>
-            <View style={[styles.dropdownWrapper, educationOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+            <View style={[styles.dropdownWrapper, openDropdown === DROPDOWN_TYPES.EDUCATION ? { zIndex: DROPDOWN_ZINDEX.EDUCATION } : { zIndex: 1 }]}>
               <DropDownPicker
-                open={educationOpen}
+                open={openDropdown === DROPDOWN_TYPES.EDUCATION}
+                zIndex={DROPDOWN_ZINDEX.EDUCATION}
+                zIndexInverse={1000}
+                onOpen={() => setOpenDropdown(DROPDOWN_TYPES.EDUCATION)}
+                onClose={() => setOpenDropdown(null)}
                 value={educationValue}
                 items={educationItems}
-                setOpen={setEducationOpen}
                 setValue={setEducationValue}
                 setItems={setEducationItems}
                 placeholder='Select Education'
@@ -1553,8 +1718,9 @@ export default function EditProfile() {
               </MapView>
             </View>
 
+            <Text style={styles.label}>Nationality</Text>
             <TextInput
-              label='Nationality'
+              placeholder='Nationality'
               mode='outlined'
               style={styles.inputField}
               value={formValues.nationality}
@@ -1569,12 +1735,15 @@ export default function EditProfile() {
 
             {/* Body Type */}
             <Text style={styles.label}>Body Type</Text>
-            <View style={[styles.dropdownWrapper, bodyTypeOpen ? { zIndex: 1000 } : { zIndex: 1 }]}>
+            <View style={[styles.dropdownWrapper, openDropdown === DROPDOWN_TYPES.BODY_TYPE ? { zIndex: DROPDOWN_ZINDEX.BODY_TYPE } : { zIndex: 1 }]}>
               <DropDownPicker
-                open={bodyTypeOpen}
+                open={openDropdown === DROPDOWN_TYPES.BODY_TYPE}
+                zIndex={DROPDOWN_ZINDEX.BODY_TYPE}
+                zIndexInverse={1000}
+                onOpen={() => setOpenDropdown(DROPDOWN_TYPES.BODY_TYPE)}
+                onClose={() => setOpenDropdown(null)}
                 value={bodyTypeValue}
                 items={bodyTypeItems}
-                setOpen={setBodyTypeOpen}
                 setValue={setBodyTypeValue}
                 setItems={setBodyTypeItems}
                 placeholder='Select Body Type'
@@ -1593,8 +1762,9 @@ export default function EditProfile() {
             </View>
 
             {/* Job */}
+            <Text style={styles.label}>Job</Text>
             <TextInput
-              label='Job'
+              placeholder='Job'
               mode='outlined'
               style={styles.inputField}
               value={formValues.job}
@@ -1650,6 +1820,7 @@ export default function EditProfile() {
           </Modal>
         </KeyboardAwareScrollView>
       )}
+      {openDropdown && <Pressable style={styles.dropdownOverlay} onPress={() => setOpenDropdown(null)} pointerEvents='box-none' />}
     </SafeAreaView>
   );
 }
@@ -1864,6 +2035,29 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   // Height Input
+  heightToggleContainer: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginBottom: 8,
+  },
+  togglePill: {
+    borderWidth: 1,
+    borderColor: "#E4423F",
+    borderRadius: 20,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    marginLeft: 8,
+  },
+  togglePillActive: {
+    backgroundColor: "#E4423F",
+  },
+  togglePillText: {
+    fontSize: 14,
+    color: "#E4423F",
+  },
+  togglePillActiveText: {
+    color: "#FFF",
+  },
   heightContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1958,15 +2152,7 @@ const styles = StyleSheet.create({
     marginLeft: 15,
   },
   addButton: {
-    backgroundColor: "#E4423F",
-    borderRadius: 5,
-  },
-  modalButtonText: {
-    color: "#E4423F",
-    fontWeight: "bold",
-  },
-  addButtonText: {
-    color: "white",
+    // Additional styling for the add button (if needed)
   },
   mapContainer: {
     height: 200,
@@ -1998,7 +2184,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   dropdownWrapper: {
-    marginBottom: 15,
+    zIndex: 2000,
+    elevation: 2000,
   },
   selectedOptionsContainer: {
     marginTop: 10,
@@ -2059,5 +2246,46 @@ const styles = StyleSheet.create({
   },
   saveButtonDisabled: {
     backgroundColor: "#ccc",
+  },
+  dropdownOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1900,
+    backgroundColor: "transparent",
+  },
+  sectionContainer: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 6,
+  },
+  timeSlot: {
+    backgroundColor: "#F9F9F9",
+    borderWidth: 1,
+    borderColor: "#E4423F",
+    borderRadius: 5,
+    padding: 8,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: "#666",
+  },
+  helperText: {
+    fontSize: 12,
+    color: "#999",
+  },
+  editButton: {
+    padding: 10,
+    backgroundColor: "#E4423F",
+    borderRadius: 5,
+    marginLeft: 10,
+  },
+  editButtonText: {
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "bold",
   },
 });

@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { View, Text, ActivityIndicator, Button, StyleSheet } from "react-native";
 import axios from "axios";
-import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
 import { useNavigation } from "@react-navigation/native";
 import UserDoesNotExistModal from "./UserDoesNotExistModal";
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
 import { REACT_APP_GOOGLE_CLIENT_ID } from "@env";
 
-const CLIENT_ID = REACT_APP_GOOGLE_CLIENT_ID;
+WebBrowser.maybeCompleteAuthSession();
+
+const SCOPES = ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"];
 
 function GoogleLogin(props) {
   const navigation = useNavigation();
@@ -15,53 +18,56 @@ function GoogleLogin(props) {
   const [loginSuccessful, setLoginSuccessful] = useState(false);
   const [userDoesntExist, setUserDoesntExist] = useState(false);
 
-  useEffect(() => {
-    GoogleSignin.configure({
-      webClientId: CLIENT_ID,
-      offlineAccess: true,
-    });
-  }, []);
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    iosClientId: "466541803518-mpejfib4i7g8m88tbk4hpgfrmqlt9aho.apps.googleusercontent.com",
+    androidClientId: "466541803518-41pdpb9pei96hihdt70db2e6a5hg8sj6.apps.googleusercontent.com",
+    webClientId: "466541803518-gsnmbth4efjiajdpl1i9c2phrlu81njq.apps.googleusercontent.com",
+    scopes: SCOPES,
+  });
 
   async function handleGoogleSignIn() {
     try {
       setShowSpinner(true);
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-      const { idToken, user } = userInfo;
+      const result = await promptAsync();
 
-      const emailAddress = user.email;
-      if (emailAddress) {
-        const url = `https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialLogin/MMU/${emailAddress}`;
-        const serverResponse = await axios.get(url, {
-          params: {
-            id_token: idToken,
-          },
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+      if (result.type === "success") {
+        const { authentication } = result;
+
+        // Get user info using the access token
+        const userInfoResponse = await fetch("https://www.googleapis.com/userinfo/v2/me", {
+          headers: { Authorization: `Bearer ${authentication.accessToken}` },
         });
 
-        if (serverResponse.data && serverResponse.data.code === 200) {
-          setNewEmail(emailAddress);
-          setLoginSuccessful(true);
-          setUserDoesntExist(false);
-          navigation.navigate("AccountSetup2Create");
-        } else {
-          setUserDoesntExist(true);
+        const userInfo = await userInfoResponse.json();
+        const emailAddress = userInfo.email;
+
+        if (emailAddress) {
+          const url = `https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialLogin/MMU/${emailAddress}`;
+          const serverResponse = await axios.get(url, {
+            params: {
+              id_token: authentication.idToken,
+            },
+            headers: {
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*",
+            },
+          });
+
+          if (serverResponse.data && serverResponse.data.code === 200) {
+            setNewEmail(emailAddress);
+            setLoginSuccessful(true);
+            setUserDoesntExist(false);
+            navigation.navigate("AccountSetup2Create");
+          } else {
+            setUserDoesntExist(true);
+          }
         }
+      } else {
+        console.log("Google Sign In was cancelled or failed");
       }
     } catch (error) {
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        console.log("User cancelled the login flow");
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        console.log("Signin in progress");
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        console.log("Play services not available or outdated");
-      } else {
-        console.error("Error handling Google login:", error);
-        setUserDoesntExist(true);
-      }
+      console.error("Error handling Google login:", error);
+      setUserDoesntExist(true);
     } finally {
       setShowSpinner(false);
     }
@@ -79,7 +85,7 @@ function GoogleLogin(props) {
         <Text>Login Successful! Redirecting...</Text>
       ) : (
         <View>
-          <Button title='Sign in with Google' onPress={handleGoogleSignIn} />
+          <Button title='Sign in with Google' onPress={handleGoogleSignIn} disabled={!request} />
           {showSpinner && <ActivityIndicator size='large' color='#0000ff' style={styles.spinner} />}
         </View>
       )}

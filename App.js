@@ -80,6 +80,7 @@ import DateFinal from "./DatePreferences/DateFinal.js";
 import LandingPage5 from "./Intro/LandingPage5.js";
 import Chat from "./Chat/chat.js";
 import UserProfile from "./Match/UserProfile.js";
+import GoogleSignUp from "./AccountSetup/GoogleSignUp.js";
 const Stack = createNativeStackNavigator();
 // const Stack = createStackNavigator();
 SplashScreen.preventAutoHideAsync();
@@ -158,6 +159,7 @@ export default function App() {
 
           {/* Login flow */}
           <Stack.Screen name='Login' component={Login} />
+          <Stack.Screen name='GoogleSignUp' component={GoogleSignUp} />
           <Stack.Screen name='Preferences' component={Preferences} />
           <Stack.Screen name='MatchPageNew' component={MatchPageNew} />
           <Stack.Screen name='MatchResultsPage' component={MatchResultsPage} />

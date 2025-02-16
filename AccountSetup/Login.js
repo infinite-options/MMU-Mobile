@@ -1,37 +1,26 @@
-import React, { useState } from 'react';
-import {
-  StatusBar,
-  Platform,
-  SafeAreaView,
-  View,
-  StyleSheet,
-  Pressable,
-  TouchableOpacity,
-  Alert,
-  Image,
-  ActivityIndicator,
-} from 'react-native';
-import { Text, TextInput } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import ProgressBar from '../src/Assets/Components/ProgressBar';
+import React, { useState } from "react";
+import { StatusBar, Platform, SafeAreaView, View, StyleSheet, Pressable, TouchableOpacity, Alert, Image, ActivityIndicator } from "react-native";
+import { Text, TextInput } from "react-native-paper";
+import { useNavigation } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import ProgressBar from "../src/Assets/Components/ProgressBar";
 
-import axios from 'axios';
-import sha256 from 'crypto-js/sha256';
+import axios from "axios";
+import sha256 from "crypto-js/sha256";
 
 export default function Login() {
   const navigation = useNavigation();
 
   // Local states
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showSpinner, setShowSpinner] = useState(false);
 
   // Endpoints
-  const SALT_ENDPOINT = 'https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/MMU';
-  const LOGIN_ENDPOINT = 'https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/Login/MMU';
+  const SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/MMU";
+  const LOGIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/Login/MMU";
 
   // Check if email is valid
   const isValidEmail = (userEmail) => {
@@ -42,11 +31,11 @@ export default function Login() {
   // Attempt to login with salt
   const handleSubmitLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill out all the fields.');
+      Alert.alert("Error", "Please fill out all the fields.");
       return;
     }
     if (!isValidEmail(email)) {
-      Alert.alert('Error', 'Please enter a valid email address.');
+      Alert.alert("Error", "Please enter a valid email address.");
       return;
     }
 
@@ -58,7 +47,7 @@ export default function Login() {
       const saltObject = saltResponse.data;
 
       if (saltObject.code !== 200) {
-        Alert.alert('Error', 'User does not exist or server error.');
+        Alert.alert("Error", "User does not exist or server error.");
         return;
       }
 
@@ -75,27 +64,27 @@ export default function Login() {
           password: hashedPassword,
         },
         {
-          headers: { 'Content-Type': 'application/json' },
+          headers: { "Content-Type": "application/json" },
         }
       );
 
       // 4. If success, store the user data in AsyncStorage
       const { user_uid, user_email_id } = loginResponse.data.result;
-      await AsyncStorage.setItem('user_uid', user_uid);
-      await AsyncStorage.setItem('user_email_id', user_email_id);
+      await AsyncStorage.setItem("user_uid", user_uid);
+      await AsyncStorage.setItem("user_email_id", user_email_id);
 
       // 5. Navigate to next screen
-      navigation.navigate('MyProfile');
+      navigation.navigate("MyProfile");
     } catch (error) {
-      console.error('Error occurred:', error);
-      Alert.alert('Error', 'Invalid credentials or server error.');
+      console.error("Error occurred:", error);
+      Alert.alert("Error", "Invalid credentials or server error.");
     } finally {
       setShowSpinner(false);
     }
   };
 
   // Whether the form is ready to be submitted
-  const isFormComplete = () => email !== '' && password !== '' && isValidEmail(email);
+  const isFormComplete = () => email !== "" && password !== "" && isValidEmail(email);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -112,35 +101,19 @@ export default function Login() {
       <Text style={styles.subtitle}>Please choose a login option to continue.</Text>
 
       {/* Spinner (optional) */}
-      {showSpinner && <ActivityIndicator size="large" color="#E4423F" style={{ marginBottom: 10 }} />}
+      {showSpinner && <ActivityIndicator size='large' color='#E4423F' style={{ marginBottom: 10 }} />}
 
       {/* Input Fields */}
       <View style={styles.inputContainer}>
-        <TextInput
-          label="Email"
-          mode='outlined'
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-          style={styles.input}
-          outlineStyle={styles.textInputOutline}
-        />
+        <TextInput label='Email' mode='outlined' keyboardType='email-address' value={email} onChangeText={setEmail} style={styles.input} outlineStyle={styles.textInputOutline} />
 
         <TextInput
-          label="Password"
-          mode="outlined"
+          label='Password'
+          mode='outlined'
           secureTextEntry={!showPassword}
           value={password}
           onChangeText={setPassword}
-          right={
-            <TextInput.Icon
-              icon={showPassword ? 'eye' : 'eye-off'}
-              onPress={() => setShowPassword(!showPassword)}
-              size={20}
-              color="gray"
-              style={styles.eyeIcon}
-            />
-          }
+          right={<TextInput.Icon icon={showPassword ? "eye" : "eye-off"} onPress={() => setShowPassword(!showPassword)} size={20} color='gray' style={styles.eyeIcon} />}
           style={styles.input}
           outlineStyle={styles.textInputOutline}
         />
@@ -148,10 +121,7 @@ export default function Login() {
 
       {/* Continue (Login) Button */}
       <Pressable
-        style={[
-          styles.continueButton,
-          { backgroundColor: isFormComplete() ? '#E4423F' : '#F5F5F5' },
-        ]}
+        style={[styles.continueButton, { backgroundColor: isFormComplete() ? "#E4423F" : "#F5F5F5" }]}
         onPress={() => {
           if (isFormComplete()) {
             handleSubmitLogin();
@@ -159,7 +129,7 @@ export default function Login() {
         }}
         disabled={!isFormComplete()}
       >
-        <Text style={[styles.continueButtonText, { color: isFormComplete() ? '#FFF' : 'rgba(26, 26, 26, 0.25)' }]}>Continue</Text>
+        <Text style={[styles.continueButtonText, { color: isFormComplete() ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
       </Pressable>
 
       {/* OR Separator */}
@@ -171,24 +141,18 @@ export default function Login() {
 
       {/* Social Login Buttons */}
       <View style={styles.socialContainer}>
-        <TouchableOpacity style={styles.socialLoginButton}>
-          <Image
-            source={require('../assets/google_logo.png')}
-            style={styles.googleLogo}
-          />
+        <TouchableOpacity style={styles.socialLoginButton} onPress={() => navigation.navigate("GoogleSignUp")}>
+          <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.socialLoginButton}>
-          <Image
-            source={require('../assets/apple_logo.png')}
-            style={styles.appleLogo}
-          />
+          <Image source={require("../assets/apple_logo.png")} style={styles.appleLogo} />
         </TouchableOpacity>
       </View>
 
-      {/* Don’t have an account? Sign up */}
-      <TouchableOpacity onPress={() => navigation.navigate('AccountSetup2Create')}>
+      {/* Don't have an account? Sign up */}
+      <TouchableOpacity onPress={() => navigation.navigate("AccountSetup2Create")}>
         <Text style={styles.footerText}>
-          Don’t have an account yet? <Text style={styles.loginLink}>Sign Up</Text>
+          Don't have an account yet? <Text style={styles.loginLink}>Sign Up</Text>
         </Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -200,10 +164,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 25,
-    backgroundColor: '#FFF',
-    justifyContent: 'flex-start',
-    alignItems: 'stretch',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    backgroundColor: "#FFF",
+    justifyContent: "flex-start",
+    alignItems: "stretch",
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   // backButton: {
   //   alignSelf: 'flex-start',
@@ -219,15 +183,15 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 26,
-    fontWeight: 'bold',
-    textAlign: 'left',
-    color: '#000',
+    fontWeight: "bold",
+    textAlign: "left",
+    color: "#000",
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 14,
-    color: 'gray',
-    textAlign: 'left',
+    color: "gray",
+    textAlign: "left",
     marginBottom: 20,
   },
   inputContainer: {
@@ -241,44 +205,44 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#E4423F',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#E4423F",
     borderRadius: 30,
     marginBottom: 20,
   },
   continueButtonText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   orSeparator: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: 20,
   },
   separatorLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: "#E0E0E0",
   },
   orText: {
     marginHorizontal: 10,
     fontSize: 14,
-    color: 'gray',
+    color: "gray",
   },
   socialContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginBottom: 25,
   },
   socialLoginButton: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
     borderRadius: 50,
     padding: 15,
     marginHorizontal: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   googleLogo: {
     width: 45,
@@ -289,21 +253,21 @@ const styles = StyleSheet.create({
     height: 45,
   },
   footerText: {
-    textAlign: 'center',
-    color: 'gray',
+    textAlign: "center",
+    color: "gray",
     fontSize: 16,
   },
   loginLink: {
-    color: '#E4423F',
-    fontWeight: 'bold',
+    color: "#E4423F",
+    fontWeight: "bold",
   },
   textInputOutline: {
     borderWidth: 0,
-    borderColor: '#F9F9F9',
+    borderColor: "#F9F9F9",
     borderRadius: 10,
     flex: 1,
-    alignItems: 'center',
-    backgroundColor: '#F9F9F9',
+    alignItems: "center",
+    backgroundColor: "#F9F9F9",
     paddingHorizontal: 15,
     height: 50,
   },

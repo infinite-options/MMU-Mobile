@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Image, ActivityIndicator, Modal, Alert } from "react-native";
-import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
+import React, { useState } from "react";
+import { View, Text, TextInput, Button, StyleSheet, ActivityIndicator, Modal } from "react-native";
 import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
 import { formatPhoneNumber } from "./helper";
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
 import { REACT_APP_GOOGLE_CLIENT_ID, REACT_APP_GOOGLE_CLIENT_SECRET, REACT_APP_GOOGLE_LOGIN } from "@env";
 
-const CLIENT_ID = REACT_APP_GOOGLE_CLIENT_ID;
-const CLIENT_SECRET = REACT_APP_GOOGLE_CLIENT_SECRET;
-const GOOGLE_LOGIN = REACT_APP_GOOGLE_LOGIN;
+WebBrowser.maybeCompleteAuthSession();
+
 const SCOPES = ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"];
 
 function GoogleSignup() {
@@ -24,92 +24,71 @@ function GoogleSignup() {
   const [userAlreadyExists, setUserAlreadyExists] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    GoogleSignin.configure({
-      scopes: SCOPES,
-      webClientId: CLIENT_ID,
-      offlineAccess: true,
-    });
-  }, []);
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    iosClientId: "466541803518-mpejfib4i7g8m88tbk4hpgfrmqlt9aho.apps.googleusercontent.com",
+    androidClientId: "466541803518-41pdpb9pei96hihdt70db2e6a5hg8sj6.apps.googleusercontent.com",
+    webClientId: "466541803518-gsnmbth4efjiajdpl1i9c2phrlu81njq.apps.googleusercontent.com",
+    scopes: SCOPES,
+  });
 
   const handleGoogleSignup = async () => {
     try {
       setLoading(true);
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-      const { idToken, user } = userInfo;
-      const { email, id } = user;
-      setEmail(email);
-      setSocialId(id);
-      fetchGoogleTokens(idToken);
-    } catch (error) {
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        console.log("User cancelled the login flow");
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        console.log("Sign-in is in progress");
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        console.log("Play Services not available or outdated");
-      } else {
-        console.error("Error during Google Signup:", error);
-      }
-      setLoading(false);
-    }
-  };
+      const result = await promptAsync();
 
-  const fetchGoogleTokens = async (auth_code) => {
-    try {
-      const authorization_url = "https://accounts.google.com/o/oauth2/token";
-      const details = {
-        code: auth_code,
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
-        redirectUri: "postmessage",
-        grant_type: "authorization_code",
-      };
+      if (result.type === "success") {
+        const { authentication } = result;
 
-      const formBody = Object.keys(details)
-        .map((key) => encodeURIComponent(key) + "=" + encodeURIComponent(details[key]))
-        .join("&");
+        // Get user info using the access token
+        const userInfoResponse = await fetch("https://www.googleapis.com/userinfo/v2/me", {
+          headers: { Authorization: `Bearer ${authentication.accessToken}` },
+        });
 
-      const response = await fetch(authorization_url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-        },
-        body: formBody,
-      });
-      const data = await response.json();
+        const userData = await userInfoResponse.json();
+        setEmail(userData.email);
+        setSocialId(userData.id);
+        setAccessToken(authentication.accessToken);
 
-      const at = data["access_token"];
-      const rt = data["refresh_token"];
-      setAccessToken(at);
-      setRefreshToken(rt);
+        // Exchange authorization code for refresh token
+        const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            code: authentication.idToken,
+            client_id: REACT_APP_GOOGLE_CLIENT_ID,
+            client_secret: REACT_APP_GOOGLE_CLIENT_SECRET,
+            redirect_uri: "https://auth.expo.io",
+            grant_type: "authorization_code",
+          }).toString(),
+        });
 
-      const userResponse = await axios.get(`https://www.googleapis.com/oauth2/v2/userinfo?alt=json&access_token=${at}`);
-      const userData = userResponse.data;
+        const tokenData = await tokenResponse.json();
+        setRefreshToken(tokenData.refresh_token);
 
-      setEmail(userData.email);
-      setSocialId(userData.id);
+        const user = {
+          email: userData.email,
+          password: REACT_APP_GOOGLE_LOGIN,
+          phone_number: phoneNumber,
+          google_auth_token: authentication.accessToken,
+          google_refresh_token: tokenData.refresh_token,
+          social_id: userData.id,
+        };
 
-      const user = {
-        email: userData.email,
-        password: GOOGLE_LOGIN,
-        phone_number: phoneNumber,
-        google_auth_token: at,
-        google_refresh_token: rt,
-        social_id: userData.id,
-      };
+        const response = await axios.post("https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/MMU", user);
 
-      axios.post("https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/MMU", user).then((response) => {
         if (response.data.message === "User already exists") {
           setUserAlreadyExists(true);
         } else {
           setSignupSuccessful(true);
         }
-        setLoading(false);
-      });
+      } else {
+        console.log("Google Sign Up was cancelled or failed");
+      }
     } catch (error) {
-      console.error("Error fetching tokens:", error);
+      console.error("Error during Google Signup:", error);
+    } finally {
       setLoading(false);
     }
   };
@@ -134,7 +113,7 @@ function GoogleSignup() {
             <TextInput style={styles.input} placeholder='Phone Number' value={phoneNumber} onChangeText={(value) => setPhoneNumber(formatPhoneNumber(value))} keyboardType='phone-pad' />
           </View>
           <View style={styles.signUpButton}>
-            <Button title='Sign Up with Google' onPress={handleGoogleSignup} />
+            <Button title='Sign Up with Google' onPress={handleGoogleSignup} disabled={!request} />
           </View>
           {loading && <ActivityIndicator size='large' color='#0000ff' />}
         </>

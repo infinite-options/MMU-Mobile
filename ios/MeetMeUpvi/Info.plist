@@ -17,7 +17,7 @@
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>GMSApiKey</key>
-    <string>AIzaSyDLmcCHhr3U6d5mf10f9NELlrtGweoxzjE</string>
+    <string>AIzaSyBHZlcN8UeLNySmAf66WOfu1N_hDBaq0-I</string>
     <key>CFBundleIdentifier</key>
     <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
     <key>NSLocationWhenInUseUsageDescription</key>
@@ -42,11 +42,12 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>com.infiniteoptions.meetmeupapp</string>
+          <string>com.googleusercontent.apps.466541803518-mpejfib4i7g8m88tbk4hpgfrmqlt9aho</string>
         </array>
       </dict>
     </array>
     <key>CFBundleVersion</key>
-    <string>13</string>
+    <string>14</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>NSAppTransportSecurity</key>

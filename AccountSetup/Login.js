@@ -141,7 +141,7 @@ export default function Login() {
 
       {/* Social Login Buttons */}
       <View style={styles.socialContainer}>
-        <TouchableOpacity style={styles.socialLoginButton} onPress={() => navigation.navigate("GoogleSignUp")}>
+        <TouchableOpacity style={styles.socialLoginButton} onPress={() => navigation.navigate("GoogleLogin")}>
           <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.socialLoginButton}>

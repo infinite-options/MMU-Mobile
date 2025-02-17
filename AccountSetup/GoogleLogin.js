@@ -5,7 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import UserDoesNotExistModal from "./UserDoesNotExistModal";
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
-import { REACT_APP_GOOGLE_CLIENT_ID } from "@env";
+import { getGoogleConfig } from "../utils/environment";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -18,19 +18,34 @@ function GoogleLogin(props) {
   const [loginSuccessful, setLoginSuccessful] = useState(false);
   const [userDoesntExist, setUserDoesntExist] = useState(false);
 
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    iosClientId: "466541803518-mpejfib4i7g8m88tbk4hpgfrmqlt9aho.apps.googleusercontent.com",
-    androidClientId: "466541803518-41pdpb9pei96hihdt70db2e6a5hg8sj6.apps.googleusercontent.com",
-    webClientId: "466541803518-gsnmbth4efjiajdpl1i9c2phrlu81njq.apps.googleusercontent.com",
-    scopes: SCOPES,
-  });
+  const config = getGoogleConfig();
+  const [request, response, promptAsync] = Google.useAuthRequest(config);
 
   async function handleGoogleSignIn() {
     try {
       setShowSpinner(true);
+      console.log("1. Starting Google Sign In Flow...");
+
+      // Log the request object before attempting authentication
+      if (request) {
+        console.log("2. Auth Request Configuration:", {
+          authUrl: request.url,
+          responseType: request.responseType,
+          clientId: request.clientId,
+          redirectUri: request.redirectUri,
+          scopes: request.scopes,
+        });
+      } else {
+        console.log("Error: Auth Request not initialized");
+        return;
+      }
+
+      console.log("3. Opening Google Auth in browser...");
       const result = await promptAsync();
+      console.log("4. Received auth result:", JSON.stringify(result, null, 2));
 
       if (result.type === "success") {
+        console.log("5. Authentication successful, getting user info...");
         const { authentication } = result;
 
         // Get user info using the access token
@@ -39,9 +54,11 @@ function GoogleLogin(props) {
         });
 
         const userInfo = await userInfoResponse.json();
+        console.log("6. Received user info:", userInfo);
         const emailAddress = userInfo.email;
 
         if (emailAddress) {
+          console.log("7. Calling our backend to create/verify user...");
           const url = `https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialLogin/MMU/${emailAddress}`;
           const serverResponse = await axios.get(url, {
             params: {
@@ -54,19 +71,27 @@ function GoogleLogin(props) {
           });
 
           if (serverResponse.data && serverResponse.data.code === 200) {
+            console.log("8. User successfully authenticated and verified");
             setNewEmail(emailAddress);
             setLoginSuccessful(true);
             setUserDoesntExist(false);
             navigation.navigate("AccountSetup2Create");
           } else {
+            console.log("8. User not found in our system");
             setUserDoesntExist(true);
           }
         }
       } else {
-        console.log("Google Sign In was cancelled or failed");
+        console.log("Authentication failed or was cancelled:", result);
       }
     } catch (error) {
       console.error("Error handling Google login:", error);
+      if (error.message) {
+        console.error("Error message:", error.message);
+      }
+      if (error.response) {
+        console.error("Error response:", error.response);
+      }
       setUserDoesntExist(true);
     } finally {
       setShowSpinner(false);

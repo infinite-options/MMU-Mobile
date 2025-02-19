@@ -62,6 +62,18 @@ export default function MyProfile() {
       }
     }, [])
   );
+
+  // Add state for favorite photo
+  const [favoritePhotoIndex, setFavoritePhotoIndex] = useState(null);
+
+  // Add effect to set favorite photo from user data
+  useEffect(() => {
+    if (userData.user_favorite_photo) {
+      const index = photos.findIndex((photo) => photo === userData.user_favorite_photo);
+      setFavoritePhotoIndex(index >= 0 ? index : null);
+    }
+  }, [userData, photos]);
+
   // Fetch user data on mount/focus
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -412,6 +424,13 @@ export default function MyProfile() {
               {photoUri ? (
                 <>
                   <Image source={{ uri: photoUri }} style={styles.photoImage} />
+                  {favoritePhotoIndex === idx && (
+                    <View style={styles.heartIconBottomRight}>
+                      <View style={styles.heartIconBackground}>
+                        <Ionicons name='heart' size={20} color='#E4423F' />
+                      </View>
+                    </View>
+                  )}
                 </>
               ) : (
                 <Pressable style={styles.emptyPhotoBox}>
@@ -493,31 +512,26 @@ export default function MyProfile() {
             <Text style={styles.sectionTitle}>My available times</Text>
             <View style={styles.aboutItemText}>
               {JSON.parse(user_available_time).map((time, index) => {
-                const days = time.day.split(', ');
+                const days = time.day.split(", ");
                 // Format day ranges as "Mon-Fri" or "Sat & Sun"
-                const dayRange = days.length > 1 
-                  ? (days.length === 2 ? days.join(' & ') : `${days[0]}-${days[days.length - 1]}`) 
-                  : days[0];
-                
+                const dayRange = days.length > 1 ? (days.length === 2 ? days.join(" & ") : `${days[0]}-${days[days.length - 1]}`) : days[0];
+
                 // Check for all-day availability
-                const isAllDay = time.start_time === '12:00 AM' && time.end_time === '11:59 PM';
-                
+                const isAllDay = time.start_time === "12:00 AM" && time.end_time === "11:59 PM";
+
                 // Format time as "5:30 pm" without leading zeros
                 const formatTime = (t) => {
-                  const [timePart, modifier] = t.split(' ');
-                  let [hours, minutes] = timePart.split(':');
+                  const [timePart, modifier] = t.split(" ");
+                  let [hours, minutes] = timePart.split(":");
                   hours = parseInt(hours);
                   const displayHours = hours % 12 || 12; // Convert to 12-hour format
                   const ampm = modifier.toLowerCase();
-                  return `${displayHours}${minutes !== '00' ? `:${minutes}` : ''} ${ampm}`;
+                  return `${displayHours}${minutes !== "00" ? `:${minutes}` : ""} ${ampm}`;
                 };
 
                 return (
                   <Text key={index} style={styles.aboutItem}>
-                    {isAllDay 
-                      ? `${dayRange}, all day`
-                      : `${dayRange}, ${formatTime(time.start_time)} to ${formatTime(time.end_time)}`
-                    }
+                    {isAllDay ? `${dayRange}, all day` : `${dayRange}, ${formatTime(time.start_time)} to ${formatTime(time.end_time)}`}
                   </Text>
                 );
               })}
@@ -902,15 +916,26 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     marginVertical: 2,
   },
+  heartIconBottomRight: {
+    position: "absolute",
+    bottom: 5,
+    right: 5,
+    zIndex: 1,
+  },
+  heartIconBackground: {
+    backgroundColor: "rgba(0,0,0,0.3)",
+    borderRadius: 15,
+    padding: 5,
+  },
   timeSlot: {
     flexDirection: "row",
     alignItems: "flex-start",
     marginVertical: 5,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     fontSize: 14,
-    color: '#333',
+    color: "#333",
   },
 });

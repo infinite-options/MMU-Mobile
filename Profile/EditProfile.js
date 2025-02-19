@@ -40,7 +40,7 @@ const GOOGLE_API_KEY = REACT_APP_GOOGLE_API_KEY;
 axios.defaults.timeout = 10000; // 10 seconds timeout
 axios.defaults.headers.common["Content-Type"] = "application/json";
 
-const screenHeight = Dimensions.get('window').height;
+const screenHeight = Dimensions.get("window").height;
 
 // Add this near the top with other constants
 const allDateTypes = ["Lunch", "Dinner", "Coffee", "Drinks", "Movies", "Surprise Me", "Other"];
@@ -65,6 +65,9 @@ export default function EditProfile() {
 
   const [userData, setUserData] = useState({});
   const [photos, setPhotos] = useState([null, null, null]); // array of photo URIs
+  const [deletedPhotos, setDeletedPhotos] = useState([]); // Track deleted S3 photos
+  const [favoritePhotoIndex, setFavoritePhotoIndex] = useState(null); // Track favorite photo
+  const [isEditMode, setIsEditMode] = useState(true); // Track if we're in edit mode
   const [videoUri, setVideoUri] = useState(null); // single video URI
   const [imageLicense, setImageLicense] = useState(null);
   const videoRef = useRef(null);
@@ -134,15 +137,15 @@ export default function EditProfile() {
 
   // Create a list of all dropdown identifiers
   const DROPDOWN_TYPES = {
-    GENDER: 'gender',
-    IDENTITY: 'identity',
-    OPEN_TO: 'openTo',
-    SMOKING: 'smoking',
-    DRINKING: 'drinking',
-    RELIGION: 'religion',
-    STAR_SIGN: 'starSign',
-    EDUCATION: 'education',
-    BODY_TYPE: 'bodyType'
+    GENDER: "gender",
+    IDENTITY: "identity",
+    OPEN_TO: "openTo",
+    SMOKING: "smoking",
+    DRINKING: "drinking",
+    RELIGION: "religion",
+    STAR_SIGN: "starSign",
+    EDUCATION: "education",
+    BODY_TYPE: "bodyType",
   };
 
   // Replace these text-based fields with pickers for Gender, Body Type, etc.
@@ -472,7 +475,7 @@ export default function EditProfile() {
               // Handle double-encoded strings
               const parsed = JSON.parse(rawVideoUrl);
               rawVideoUrl = Array.isArray(parsed) ? parsed[0] : parsed;
-              
+
               // If result is still a string, parse again to remove quotes
               if (typeof parsed === "string") {
                 rawVideoUrl = JSON.parse(parsed);
@@ -481,11 +484,9 @@ export default function EditProfile() {
           } catch (err) {
             console.log("Could not parse video URL:", err);
           }
-          
+
           // Ensure consistent string format
-          const cleanedVideoUrl = typeof rawVideoUrl === "string" 
-            ? rawVideoUrl.replace(/^"+|"+$/g, '') 
-            : null;
+          const cleanedVideoUrl = typeof rawVideoUrl === "string" ? rawVideoUrl.replace(/^"+|"+$/g, "") : null;
 
           setVideoUri(cleanedVideoUrl);
           // Update the fetched data with cleaned URL
@@ -564,16 +565,22 @@ export default function EditProfile() {
 
       if (!result.canceled && result.assets?.length > 0) {
         const newPhotos = [...photos];
+        console.log("\n=== Image Selection Debug ===");
+        console.log("Selected assets:", result.assets);
         for (const asset of result.assets) {
           const targetIndex = slotIndex + result.assets.indexOf(asset);
           if (targetIndex < 3) {
             newPhotos[targetIndex] = asset.uri;
             // Log image details when selected
             const size = await getFileSize(asset.uri);
-            console.log(`Image selected: ${asset.uri.split("/").pop()}`);
-            console.log(`Original size: ${(size / 1024 / 1024).toFixed(2)} MB`);
+            console.log(`\nImage ${targetIndex + 1} details:`);
+            console.log(`- URI: ${asset.uri}`);
+            console.log(`- File name: ${asset.uri.split("/").pop()}`);
+            console.log(`- Size: ${(size / 1024 / 1024).toFixed(2)} MB`);
           }
         }
+        console.log("\nFinal photos array:", newPhotos);
+        console.log("=== End Image Selection Debug ===\n");
         setPhotos(newPhotos);
       }
     } catch (error) {
@@ -590,7 +597,20 @@ export default function EditProfile() {
     }
   };
   const handleRemovePhoto = (slotIndex) => {
+    const photoToRemove = photos[slotIndex];
+    console.log("\n=== Removing Photo ===");
+    console.log("Removing photo at index:", slotIndex);
+    console.log("Photo being removed:", photoToRemove);
+
+    // If it's an S3 photo, add it to deletedPhotos array
+    if (photoToRemove && photoToRemove.startsWith("https://s3")) {
+      console.log("Adding S3 photo to deletedPhotos array");
+      setDeletedPhotos((prev) => [...prev, photoToRemove]);
+    }
+
     const newPhotos = photos.map((photo, index) => (index === slotIndex ? null : photo));
+    console.log("Updated photos array:", newPhotos);
+    console.log("=== End Remove Photo ===\n");
     setPhotos(newPhotos);
   };
 
@@ -763,6 +783,52 @@ export default function EditProfile() {
     }
   };
 
+  // Add this after the useEffect that fetches user data
+  useEffect(() => {
+    if (userData.user_favorite_photo) {
+      // Find the index of the favorite photo in the photos array
+      const index = photos.findIndex((photo) => photo === userData.user_favorite_photo);
+      setFavoritePhotoIndex(index >= 0 ? index : null);
+    }
+  }, [userData, photos]);
+
+  const handleSetFavoritePhoto = (index) => {
+    if (isEditMode) {
+      setFavoritePhotoIndex(favoritePhotoIndex === index ? null : index);
+    }
+  };
+
+  // Add this effect to check for changes
+  useEffect(() => {
+    const hasPhotoChanges =
+      JSON.stringify(photos.filter((p) => p !== null)) !== JSON.stringify(JSON.parse(userData.user_photo_url || "[]")) ||
+      deletedPhotos.length > 0 ||
+      (favoritePhotoIndex !== null ? photos[favoritePhotoIndex] : null) !== userData.user_favorite_photo;
+
+    setHasChanges(hasPhotoChanges || Object.keys(formValues).some((key) => formValues[key] !== userData[key]));
+  }, [photos, deletedPhotos, favoritePhotoIndex, formValues, userData]);
+
+  // Toggle a single interest
+  const toggleInterest = (interest) => {
+    if (interests.includes(interest)) {
+      // If it's already selected, remove it
+      setInterests(interests.filter((item) => item !== interest));
+    } else {
+      // Otherwise, add it
+      setInterests([...interests, interest]);
+    }
+  };
+
+  // Handle adding and removing date types
+  const handleAddDateType = () => {
+    setEntryType("dateType");
+    setModalVisible(true);
+  };
+
+  const handleRemoveDateType = (index) => {
+    setDateTypes((prev) => prev.filter((_, i) => i !== index));
+  };
+
   // Updated handleSaveChanges function
   const handleSaveChanges = async () => {
     console.log("\n=== Starting Profile Update ===");
@@ -784,15 +850,57 @@ export default function EditProfile() {
       const originalPhotos = userData.user_photo_url ? JSON.parse(userData.user_photo_url) : [];
       const photoUrls = photos.filter((uri) => uri !== null && uri !== undefined);
 
+      console.log("\n=== Debug Photo Arrays ===");
+      console.log("Original photos array:", originalPhotos);
+      console.log("Current photos array:", photoUrls);
+      console.log("Deleted photos array:", deletedPhotos);
+      console.log("=== End Debug ===\n");
+
       // Create FormData object
       const uploadData = new FormData();
       uploadData.append("user_uid", userData.user_uid);
       uploadData.append("user_email_id", userData.user_email_id);
 
-      // Check if photos have changed
-      if (JSON.stringify(originalPhotos) !== JSON.stringify(photoUrls)) {
-        uploadData.append("user_photo_url", JSON.stringify(photoUrls));
+      // Separate S3 photos from new local photos
+      const s3Photos = [];
+      const newLocalPhotos = [];
+
+      photos.forEach((uri) => {
+        if (uri) {
+          if (uri.startsWith("https://s3")) {
+            s3Photos.push(uri);
+          } else {
+            newLocalPhotos.push(uri);
+          }
+        }
+      });
+
+      console.log("\n=== Photo Upload Debug ===");
+      console.log("S3 Photos to keep:", s3Photos);
+      console.log("New Local Photos to upload:", newLocalPhotos);
+      console.log("S3 Photos to delete:", deletedPhotos);
+
+      // Add existing S3 photos as user_photo_url array
+      if (s3Photos.length > 0) {
+        uploadData.append("user_photo_url", JSON.stringify(s3Photos));
       }
+
+      // Add deleted photos array if any photos were deleted
+      if (deletedPhotos.length > 0) {
+        uploadData.append("user_delete_photo", JSON.stringify(deletedPhotos));
+      }
+
+      // Add new local photos as img_0, img_1, etc.
+      newLocalPhotos.forEach((uri, index) => {
+        console.log(`Adding new local photo ${index}:`, uri);
+        uploadData.append(`img_${index}`, {
+          uri,
+          type: "image/jpeg",
+          name: `img_${index}.jpg`,
+        });
+      });
+
+      console.log("=== End Photo Upload Debug ===\n");
 
       // Create an object of the original values from userData
       const originalValues = {
@@ -877,6 +985,12 @@ export default function EditProfile() {
         console.log(`${key}: ${value}`);
       }
 
+      // Add favorite photo to upload data if one is selected
+      if (favoritePhotoIndex !== null && photos[favoritePhotoIndex]) {
+        const isNewPhoto = !photos[favoritePhotoIndex].startsWith("https://s3");
+        uploadData.append("user_favorite_photo", isNewPhoto ? `img_${newLocalPhotos.indexOf(photos[favoritePhotoIndex])}` : photos[favoritePhotoIndex]);
+      }
+
       // Make the upload request
       const response = await axios.put("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo", uploadData, {
         headers: {
@@ -889,6 +1003,7 @@ export default function EditProfile() {
       });
 
       if (response.status === 200) {
+        setIsEditMode(false); // Exit edit mode after successful save
         console.log("Upload successful!");
         Alert.alert("Success", "Your profile has been updated!");
         navigation.goBack();
@@ -912,102 +1027,6 @@ export default function EditProfile() {
       return 0;
     }
   };
-
-  // Toggle a single interest
-  const toggleInterest = (interest) => {
-    if (interests.includes(interest)) {
-      // If it's already selected, remove it
-      setInterests(interests.filter((item) => item !== interest));
-    } else {
-      // Otherwise, add it
-      setInterests([...interests, interest]);
-    }
-  };
-
-  // Handle adding and removing date types
-  const handleAddDateType = () => {
-    setEntryType("dateType");
-    setModalVisible(true);
-  };
-
-  const handleRemoveDateType = (index) => {
-    setDateTypes((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  // Add this effect to check for changes
-  useEffect(() => {
-    if (originalValues) {
-      // Convert original photos, interests, and date types if present:
-      const originalPhotos = userData.user_photo_url ? JSON.parse(userData.user_photo_url) : [];
-      const originalInterests = userData.user_general_interests ? JSON.parse(userData.user_general_interests) : [];
-      const originalDateTypes = userData.user_date_interests ? JSON.parse(userData.user_date_interests) : [];
-      // Get original height in cm (make sure to cast to string for comparison)
-      const originalHeight = userData.user_height ? userData.user_height.toString() : "";
-      const heightChanged = heightCm !== originalHeight;
-
-      // Log individual changes
-      const formValuesChanged = JSON.stringify(formValues) !== JSON.stringify(originalValues);
-      const photosChanged = JSON.stringify(photos.filter(p => p !== null)) !== JSON.stringify(originalPhotos);
-      const videoChanged = videoUri !== userData.user_video_url;
-      const interestsChanged = JSON.stringify(interests) !== JSON.stringify(originalInterests);
-      const dateTypesChanged = JSON.stringify(dateTypes) !== JSON.stringify(originalDateTypes);
-      const heightChangeValid = originalHeight && heightChanged;
-
-      if (formValuesChanged) {
-        console.log("Form values changed:", {
-          old: originalValues,
-          new: formValues,
-          diff: Object.keys(formValues).filter(key => formValues[key] !== originalValues[key])
-        });
-      }
-      if (photosChanged) {
-        console.log("Photos changed:", {
-          old: originalPhotos,
-          new: photos.filter(p => p !== null)
-        });
-      }
-      if (videoChanged) {
-        console.log("Video changed:", {
-          old: userData.user_video_url,
-          new: videoUri
-        });
-      }
-      if (interestsChanged) {
-        console.log("Interests changed:", {
-          old: originalInterests,
-          new: interests
-        });
-      }
-      if (dateTypesChanged) {
-        console.log("Date types changed:", {
-          old: originalDateTypes,
-          new: dateTypes
-        });
-      }
-      if (heightChangeValid) {
-        console.log("Height changed:", {
-          old: originalHeight,
-          new: heightCm
-        });
-      }
-
-      const hasAnyChanges = formValuesChanged || photosChanged || videoChanged || 
-                           interestsChanged || dateTypesChanged || heightChangeValid;
-
-      console.log("Has Changes:", hasAnyChanges);
-      setHasChanges(hasAnyChanges);
-    }
-  }, [formValues, photos, videoUri, interests, dateTypes, heightCm, originalValues, userData]);
-
-  // Add this useEffect to refresh data when returning from DateAvailability
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      if (route.params?.refreshAvailability) {
-        // Refetch availability data here
-      }
-    });
-    return unsubscribe;
-  }, [navigation, route.params]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -1077,6 +1096,13 @@ export default function EditProfile() {
                         <Ionicons name='close' size={20} color='#FFF' />
                       </View>
                     </TouchableOpacity>
+                    {(isEditMode || favoritePhotoIndex === idx) && (
+                      <TouchableOpacity onPress={() => handleSetFavoritePhoto(idx)} style={styles.heartIconBottomRight}>
+                        <View style={styles.heartIconBackground}>
+                          <Ionicons name={favoritePhotoIndex === idx ? "heart" : "heart-outline"} size={20} color={favoritePhotoIndex === idx ? "#E4423F" : "#FFF"} />
+                        </View>
+                      </TouchableOpacity>
+                    )}
                   </>
                 ) : (
                   <Pressable style={styles.emptyPhotoBox} onPress={() => handlePickImage(idx)}>
@@ -1220,9 +1246,9 @@ export default function EditProfile() {
                     key={dateType}
                     onPress={() => {
                       if (dateTypes.includes(dateType)) {
-                        setDateTypes(prev => prev.filter(t => t !== dateType));
+                        setDateTypes((prev) => prev.filter((t) => t !== dateType));
                       } else {
-                        setDateTypes(prev => [...prev, dateType]);
+                        setDateTypes((prev) => [...prev, dateType]);
                       }
                     }}
                     style={[
@@ -1233,9 +1259,7 @@ export default function EditProfile() {
                       },
                     ]}
                   >
-                    <Text style={[styles.interestText, { color: isSelected ? "#FFF" : "rgba(26, 26, 26, 0.5)" }]}>
-                      {dateType}
-                    </Text>
+                    <Text style={[styles.interestText, { color: isSelected ? "#FFF" : "rgba(26, 26, 26, 0.5)" }]}>{dateType}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -1243,42 +1267,39 @@ export default function EditProfile() {
 
             {/* My Availability - Display only */}
             <View style={styles.sectionContainer}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                 <Text style={styles.sectionTitle}>My Availability</Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.editButton}
-                  onPress={() => navigation.navigate('DateAvailability', { 
-                    fromEditProfile: true,
-                    onSave: () => navigation.navigate('EditProfile') 
-                  })}
+                  onPress={() =>
+                    navigation.navigate("DateAvailability", {
+                      fromEditProfile: true,
+                      onSave: () => navigation.navigate("EditProfile"),
+                    })
+                  }
                 >
                   <Text style={styles.editButtonText}>Edit</Text>
                 </TouchableOpacity>
               </View>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
                 {formValues.availableTimes ? (
                   JSON.parse(formValues.availableTimes).map((time, index) => {
-                    const days = time.day.split(', ');
-                    const dayRange = days.length > 1 
-                      ? (days.length === 2 ? days.join(' & ') : `${days[0]}-${days[days.length - 1]}`) 
-                      : days[0];
-                    
-                    const isAllDay = time.start_time === '12:00 AM' && time.end_time === '11:59 PM';
+                    const days = time.day.split(", ");
+                    const dayRange = days.length > 1 ? (days.length === 2 ? days.join(" & ") : `${days[0]}-${days[days.length - 1]}`) : days[0];
+
+                    const isAllDay = time.start_time === "12:00 AM" && time.end_time === "11:59 PM";
                     const formatTime = (t) => {
-                      const [timePart, modifier] = t.split(' ');
-                      let [hours, minutes] = timePart.split(':');
+                      const [timePart, modifier] = t.split(" ");
+                      let [hours, minutes] = timePart.split(":");
                       hours = parseInt(hours);
                       const displayHours = hours % 12 || 12;
                       const ampm = modifier.toLowerCase();
-                      return `${displayHours}${minutes !== '00' ? `:${minutes}` : ''} ${ampm}`;
+                      return `${displayHours}${minutes !== "00" ? `:${minutes}` : ""} ${ampm}`;
                     };
 
                     return (
                       <Text key={index} style={styles.timeSlot}>
-                        {isAllDay 
-                          ? `${dayRange}, all day`
-                          : `${dayRange}, ${formatTime(time.start_time)} to ${formatTime(time.end_time)}`
-                        }
+                        {isAllDay ? `${dayRange}, all day` : `${dayRange}, ${formatTime(time.start_time)} to ${formatTime(time.end_time)}`}
                       </Text>
                     );
                   })
@@ -1303,59 +1324,33 @@ export default function EditProfile() {
             <View style={styles.inputField}>
               {/* Toggle Pill Container */}
               <View style={styles.heightToggleContainer}>
-                <TouchableOpacity
-                  style={[styles.togglePill, heightUnit === "in" && styles.togglePillActive]}
-                  onPress={() => toggleHeightUnit("in")}
-                >
-                  <Text style={[styles.togglePillText, heightUnit === "in" && styles.togglePillActiveText]}>
-                    Inches
-                  </Text>
+                <TouchableOpacity style={[styles.togglePill, heightUnit === "in" && styles.togglePillActive]} onPress={() => toggleHeightUnit("in")}>
+                  <Text style={[styles.togglePillText, heightUnit === "in" && styles.togglePillActiveText]}>Inches</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.togglePill, heightUnit === "cm" && styles.togglePillActive]}
-                  onPress={() => toggleHeightUnit("cm")}
-                >
-                  <Text style={[styles.togglePillText, heightUnit === "cm" && styles.togglePillActiveText]}>
-                    Centimeters
-                  </Text>
+                <TouchableOpacity style={[styles.togglePill, heightUnit === "cm" && styles.togglePillActive]} onPress={() => toggleHeightUnit("cm")}>
+                  <Text style={[styles.togglePillText, heightUnit === "cm" && styles.togglePillActiveText]}>Centimeters</Text>
                 </TouchableOpacity>
               </View>
-              
+
               {heightUnit === "in" ? (
                 <View style={styles.heightContainer}>
                   {/* Feet Controls */}
                   <View style={styles.heightControlGroup}>
-                    <TouchableOpacity
-                      style={styles.heightButton}
-                      onPress={() =>
-                        updateHeightFromInches(Math.max(0, parseInt(heightFt) - 1), parseInt(heightIn))
-                      }
-                    >
+                    <TouchableOpacity style={styles.heightButton} onPress={() => updateHeightFromInches(Math.max(0, parseInt(heightFt) - 1), parseInt(heightIn))}>
                       <Text style={styles.buttonText}>-</Text>
                     </TouchableOpacity>
                     <Text style={styles.heightValue}>{heightFt} ft</Text>
-                    <TouchableOpacity
-                      style={styles.heightButton}
-                      onPress={() => updateHeightFromInches(parseInt(heightFt) + 1, parseInt(heightIn))}
-                    >
+                    <TouchableOpacity style={styles.heightButton} onPress={() => updateHeightFromInches(parseInt(heightFt) + 1, parseInt(heightIn))}>
                       <Text style={styles.buttonText}>+</Text>
                     </TouchableOpacity>
                   </View>
                   {/* Inches Controls */}
                   <View style={styles.heightControlGroup}>
-                    <TouchableOpacity
-                      style={styles.heightButton}
-                      onPress={() =>
-                        updateHeightFromInches(parseInt(heightFt), Math.max(0, parseInt(heightIn) - 1))
-                      }
-                    >
+                    <TouchableOpacity style={styles.heightButton} onPress={() => updateHeightFromInches(parseInt(heightFt), Math.max(0, parseInt(heightIn) - 1))}>
                       <Text style={styles.buttonText}>-</Text>
                     </TouchableOpacity>
                     <Text style={styles.heightValue}>{heightIn} in</Text>
-                    <TouchableOpacity
-                      style={styles.heightButton}
-                      onPress={() => updateHeightFromInches(parseInt(heightFt), parseInt(heightIn) + 1)}
-                    >
+                    <TouchableOpacity style={styles.heightButton} onPress={() => updateHeightFromInches(parseInt(heightFt), parseInt(heightIn) + 1)}>
                       <Text style={styles.buttonText}>+</Text>
                     </TouchableOpacity>
                   </View>
@@ -1363,17 +1358,11 @@ export default function EditProfile() {
               ) : (
                 <View style={styles.heightContainer}>
                   <View style={styles.heightControlGroup}>
-                    <TouchableOpacity
-                      style={styles.heightButton}
-                      onPress={() => updateHeightFromCm(Math.max(0, parseInt(heightCm) - 1))}
-                    >
+                    <TouchableOpacity style={styles.heightButton} onPress={() => updateHeightFromCm(Math.max(0, parseInt(heightCm) - 1))}>
                       <Text style={styles.buttonText}>-</Text>
                     </TouchableOpacity>
                     <Text style={styles.heightValue}>{heightCm} cm</Text>
-                    <TouchableOpacity
-                      style={styles.heightButton}
-                      onPress={() => updateHeightFromCm(parseInt(heightCm) + 1)}
-                    >
+                    <TouchableOpacity style={styles.heightButton} onPress={() => updateHeightFromCm(parseInt(heightCm) + 1)}>
                       <Text style={styles.buttonText}>+</Text>
                     </TouchableOpacity>
                   </View>
@@ -1406,9 +1395,9 @@ export default function EditProfile() {
                 items={genderItems}
                 setValue={setGenderValue}
                 setItems={setGenderItems}
-                placeholder="Select Gender assigned at birth"
+                placeholder='Select Gender assigned at birth'
                 style={styles.dropdownStyle}
-                listMode="SCROLLVIEW"
+                listMode='SCROLLVIEW'
                 scrollViewProps={{
                   nestedScrollEnabled: true,
                 }}
@@ -1417,10 +1406,7 @@ export default function EditProfile() {
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
                 }}
-                onChangeValue={(value) =>
-                  setFormValues((prev) => ({ ...prev, gender: value }))
-                
-                }
+                onChangeValue={(value) => setFormValues((prev) => ({ ...prev, gender: value }))}
               />
             </View>
 
@@ -1437,9 +1423,9 @@ export default function EditProfile() {
                 items={identityItems}
                 setValue={setIdentityValue}
                 setItems={setIdentityItems}
-                placeholder="Select Identity"
+                placeholder='Select Identity'
                 style={styles.dropdownStyle}
-                listMode="SCROLLVIEW"
+                listMode='SCROLLVIEW'
                 scrollViewProps={{
                   nestedScrollEnabled: true,
                 }}
@@ -1448,9 +1434,7 @@ export default function EditProfile() {
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
                 }}
-                onChangeValue={(value) =>
-                  setFormValues((prev) => ({ ...prev, identity: value }))
-                }
+                onChangeValue={(value) => setFormValues((prev) => ({ ...prev, identity: value }))}
               />
             </View>
 
@@ -1795,8 +1779,8 @@ export default function EditProfile() {
           </View>
 
           {/* Save Changes Button */}
-          <TouchableOpacity onPress={hasChanges ? handleSaveChanges : () => navigation.goBack()} style={styles.saveButton}>
-            <Text style={styles.saveButtonText}>{hasChanges ? "Save Changes" : "Return to Profile"}</Text>
+          <TouchableOpacity style={[styles.saveButton, !hasChanges && styles.saveButtonDisabled]} onPress={handleSaveChanges} disabled={!hasChanges}>
+            <Text style={styles.saveButtonText}>{hasChanges ? "Save Changes" : "No Changes"}</Text>
           </TouchableOpacity>
 
           <Modal visible={modalVisible} animationType='slide' transparent={true} onRequestClose={() => setModalVisible(false)}>
@@ -1836,13 +1820,7 @@ export default function EditProfile() {
           </Modal>
         </KeyboardAwareScrollView>
       )}
-      {openDropdown && (
-        <Pressable 
-          style={styles.dropdownOverlay}
-          onPress={() => setOpenDropdown(null)}
-          pointerEvents="box-none"
-        />
-      )}
+      {openDropdown && <Pressable style={styles.dropdownOverlay} onPress={() => setOpenDropdown(null)} pointerEvents='box-none' />}
     </SafeAreaView>
   );
 }
@@ -2255,10 +2233,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
   },
+  heartIconBottomRight: {
+    position: "absolute",
+    bottom: 5,
+    right: 5,
+    zIndex: 1,
+  },
+  heartIconBackground: {
+    backgroundColor: "rgba(0,0,0,0.3)",
+    borderRadius: 15,
+    padding: 5,
+  },
+  saveButtonDisabled: {
+    backgroundColor: "#ccc",
+  },
   dropdownOverlay: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 1900,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   sectionContainer: {
     marginBottom: 20,

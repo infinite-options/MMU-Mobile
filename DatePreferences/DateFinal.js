@@ -172,6 +172,7 @@ export default function DateFinal({ navigation }) {
         formData.append('meet_location', meetLocation);
         formData.append('meet_latitude', meetLatitude);
         formData.append('meet_longitude', meetLongitude);
+        formData.append('meet_confirmed', 0);
         console.log('Existing meet found. Updating with PUT using meet_uid:', existingMeetData.meet_uid);
         response = await fetch('https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet', {
           method: "PUT",

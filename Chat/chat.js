@@ -55,8 +55,6 @@ export default function Chat() {
   const scrollViewRef = useRef(null);
 
   const [localUid, setLocalUid] = useState(null);
-  const [initiatedMeet, setInitiatedMeet] = useState(null);
-  const [receivedMeet, setReceivedMeet] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const [chatPartnerName] = useState('Gemma Jones');
@@ -65,9 +63,9 @@ export default function Chat() {
   // Typed messages
   const [currentMessage, setCurrentMessage] = useState('');
   const [messages, setMessages] = useState([]);
-
-  // Add state to track if user has responded
-  const [hasResponded, setHasResponded] = useState(false);
+  const [invitationResponseSent, setInvitationResponseSent] = useState(false);
+  const [meetConfirmed, setMeetConfirmed] = useState(false);
+  const [meetUid, setMeetUid] = useState(null);
 
   /**
    * Load user UID
@@ -84,92 +82,15 @@ export default function Chat() {
     loadLocalUid();
   }, []);
 
-  /**
-   * Once we have both localUid and matchedUserId, fetch meets from both perspectives
-   */
-  useEffect(() => {
-    if (localUid || matchedUserId) {
-      checkInitiatedAndReceived(localUid, matchedUserId);
-    }
-  }, [localUid, matchedUserId]);
-
-  /**
-   * 1) Call /meet/localUid to see if local user sent an invite to matchedUserId
-   * 2) Call /meet/matchedUserId to see if matchedUserId sent an invite to localUid
-   */
-  const checkInitiatedAndReceived = async (localUid, matchedUserId) => {
-    setLoading(true);
-
-    // ---------------- CHECK INITIATED ----------------
-    try {
-      console.log('Checking initiated meet for localUid:', localUid, 'and matchedUserId:', matchedUserId);
-      const localResponse = await axios.get(
-        `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet/${localUid}`
-      );
-      const localMeets = Array.isArray(localResponse.data?.result)
-        ? localResponse.data.result
-        : [];
-
-      const foundInitiated =
-        localMeets.find(
-          (m) =>
-            m.meet_user_id === localUid 
-        ) || null;
-
-        if (foundInitiated && !foundInitiated.created_at) {
-          foundInitiated.created_at = new Date().toISOString();
-        }
-        setInitiatedMeet(foundInitiated);
-        console.log('Initiated meet:', foundInitiated);
-
-        // If nothing was found, just log and continue
-        if (!foundInitiated) {
-          console.log('No initiated meet for this user. Continuing...');
-          // Additional logic or fallback UI
-        }
-    } catch (err) {
-      console.log('Error checking initiated invitations:', err);
-      setInitiatedMeet(null);
-    }
-
-    // ---------------- CHECK RECEIVED ----------------
-    try {
-      if (matchedUserId) {
-        const matchedUserResponse = await axios.get(
-          `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet/${matchedUserId}`
-        );
-        const matchedUserMeets = Array.isArray(matchedUserResponse.data?.result)
-          ? matchedUserResponse.data.result
-          : [];
-        
-        const foundReceived =
-          matchedUserMeets.find(
-            (m) =>
-              m.meet_user_id === matchedUserId &&
-              m.meet_date_user_id === localUid
-          ) || null;
-        setReceivedMeet(foundReceived);
-        console.log('Received meet:', foundReceived);
-
-        if (!foundReceived) {
-          console.log('No received meet from this user. Continuing...');
-          // Additional logic or fallback UI
-        }
-      }
-    } catch (err) {
-      console.log('Error checking received invitations:', err);
-      setReceivedMeet(null);
-    }
-
-    // Loading is finished regardless of whether either call failed
-    setLoading(false);
-  };
-
-  // Replace AsyncStorage message loading with API fetch
+  // Modified fetchMessages useEffect to handle loading state
   useEffect(() => {
     const fetchMessages = async () => {
-      if (!localUid || !matchedUserId) return;
-      
+      if (!localUid || !matchedUserId) {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
       try {
         const response = await axios.get(
           'https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/messages',
@@ -181,37 +102,67 @@ export default function Chat() {
           }
         );
         
-        // Transform API response to match existing message structure
-        const apiMessages = response.data.result.map(msg => ({
-          id: msg.message_uid,
-          text: msg.message_content,
-          timestamp: msg.message_sent_at,
-          isSent: msg.message_sender_user_id === localUid,
-          isReceived: msg.message_sender_user_id !== localUid
-        }));
-        
+        // Gracefully handle API response structure
+        let apiMessages = [];
+        if (response.data && Array.isArray(response.data.result)) {
+          apiMessages = response.data.result.map(msg => ({
+            id: msg.message_uid,
+            text: msg.message_content,
+            timestamp: msg.message_sent_at,
+            isSent: msg.message_sender_user_id === localUid,
+            isReceived: msg.message_sender_user_id !== localUid
+          }));
+        } else {
+          console.warn('Warning: response.data.result is not an array in fetchMessages', response.data);
+        }
         setMessages(apiMessages);
       } catch (err) {
         console.warn('Error fetching messages:', err);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchMessages();
-  }, [localUid, matchedUserId]); // Fetch when UID or matched user changes
+  }, [localUid, matchedUserId]);
 
-  // Load response status on mount
+  // Add new useEffect to fetch meeting details
   useEffect(() => {
-    const loadResponseStatus = async () => {
-      if (!localUid) return;
+    if (!localUid || !matchedUserId) return;
+    const getMeeting = async () => {
       try {
-        const response = await AsyncStorage.getItem(`meet_response_${localUid}`);
-        if (response) setHasResponded(true);
-      } catch (err) {
-        console.warn('Error loading response status:', err);
+        const response = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet/${matchedUserId}`);
+        if (!response.data) {
+          console.warn('Warning: fetch meeting returned empty data.');
+          return;
+        }
+        console.log(response.data);
+        let resultArray = [];
+        if (Array.isArray(response.data)) {
+          resultArray = response.data;
+        } else if (Array.isArray(response.data.result)) {
+          resultArray = response.data.result;
+        } else {
+          console.warn('Warning: Unexpected meeting data structure', response.data);
+        }
+        const matchingMeet = resultArray.find(item => item.meet_date_user_id === localUid);
+        if (matchingMeet) {
+          if (matchingMeet.meet_confirmed == 1 || matchingMeet.meet_confirmed === "1") {
+            setMeetConfirmed(true);
+          }
+          setMeetUid(matchingMeet.meet_uid);
+        }
+      } catch (error) {
+        if (error.response && error.response.status === 404) {
+          console.log(matchedUserId);
+          console.log('Warning: Meeting endpoint returned 404.');
+        } else {
+          console.error('Error fetching meeting:', error);
+        }
       }
     };
-    loadResponseStatus();
-  }, [localUid]);
+    getMeeting();
+  }, [localUid, matchedUserId]);
 
   const handleSend = async (text) => {
     const trimmed = text?.trim() || currentMessage.trim();
@@ -267,93 +218,77 @@ export default function Chat() {
   // Get grouped messages
   const groupedMessages = groupMessagesByDate(messages);
 
-  // Handle response selection
-  const handleMeetResponse = async (response) => {
+  // New function to handle meeting response
+  const handleMeetResponse = async (responseText) => {
     if (!localUid || !matchedUserId) return;
-    
-    try {
-      // Save response locally
-      await AsyncStorage.setItem(`meet_response_${localUid}`, response);
-      setHasResponded(true);
-
-      // Add to messages state
-      const newMessage = {
-        id: Date.now().toString(),
-        text: response,
-        timestamp: new Date().toISOString(),
-      };
-      setMessages(prev => [...prev, newMessage]);
-
-      // Send to messages API endpoint
-      await axios.post(
-        'https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/messages',
-        {
-          sender_id: localUid,
-          receiver_id: matchedUserId,
-          message_content: response
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${await AsyncStorage.getItem('user_token')}`
-          }
-        }
-      );
-
-    } catch (err) {
-      console.warn('Error saving/sending response:', err);
-      // Rollback message if API call fails
-      setMessages(prev => prev.filter(m => m.id !== newMessage.id));
-    }
-  };
-
-  // Add this useEffect to handle meet initiation message
-  useEffect(() => {
-    const sendMeetInvitationMessage = async () => {
-      if (!initiatedMeet || !localUid || !matchedUserId) return;
-
+    if (responseText === "Yes, I'd love to!") {
       try {
-        // Format meet details into a message
-        const meetMessage = `Date Invitation: 
-          Type: ${initiatedMeet.meet_date_type}
-          Date: ${new Date(initiatedMeet.meet_day).toLocaleDateString('en-US')}
-          Time: ${initiatedMeet.meet_time}
-          Location: ${initiatedMeet.meet_location}`;
+        const formData = new FormData();
+        formData.append('meet_uid', meetUid);
+        formData.append('meet_user_id', matchedUserId);
+        formData.append('meet_date_user_id', localUid);
+        formData.append('meet_confirmed', 1);
+        console.log(formData);
 
-        // Send to messages endpoint
+        await fetch('https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet', {
+          method: "PUT",
+          body: formData,
+        });
+        setMeetConfirmed(true);
+        const responseMessage = {
+          id: Date.now().toString(),
+          text: responseText,
+          timestamp: new Date().toISOString(),
+          isSent: true
+        };
+        setMessages(prev => [...prev, responseMessage]);
+
+        // Also send the confirmation message to the backend messages endpoint
         await axios.post(
           'https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/messages',
           {
             sender_id: localUid,
             receiver_id: matchedUserId,
-            message_content: meetMessage
+            message_content: responseText
           },
           {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${await AsyncStorage.getItem('user_token')}`
-            }
+            headers: { 'Content-Type': 'application/json' }
           }
         );
-
-        // Add to local messages state
-        setMessages(prev => [...prev, {
-          id: `meet-${Date.now()}`,
-          text: meetMessage,
+      } catch (err) {
+        console.error('Error confirming meeting:', err);
+      }
+    } else {
+      try {
+        await axios.post(
+          'https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/messages',
+          {
+            sender_id: localUid,
+            receiver_id: matchedUserId,
+            message_content: responseText
+          },
+          {
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+        setInvitationResponseSent(true);
+        const responseMessage = {
+          id: Date.now().toString(),
+          text: responseText,
           timestamp: new Date().toISOString(),
           isSent: true
-        }]);
-
+        };
+        setMessages(prev => [...prev, responseMessage]);
       } catch (err) {
-        console.warn('Error sending meet invitation message:', err);
+        console.error('Error sending meeting response:', err);
       }
-    };
-
-    // Only send if meet was just initiated
-    if (initiatedMeet?.created_at) { // Check if this is a new meet
-      sendMeetInvitationMessage();
     }
-  }, [initiatedMeet, localUid, matchedUserId]);
+  };
+
+  // Compute the latest received Date Invitation (received and starts with 'Date Invitation:')
+  const receivedInvitations = messages.filter(m => !m.isSent && m.text.startsWith('Date Invitation:'));
+  const sortedInvitations = receivedInvitations.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  const latestInvitation = sortedInvitations.length > 0 ? sortedInvitations[sortedInvitations.length - 1] : null;
 
   if (loading) {
     return (
@@ -362,7 +297,6 @@ export default function Chat() {
       </View>
     );
   }
-
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -386,17 +320,13 @@ export default function Chat() {
         style={styles.chatScrollView}
         contentContainerStyle={[styles.chatScrollViewContent, { flexGrow: 1 }]}
       >
-       
-
-        {/* Date groups - this will now appear above older messages */}
+        {/* Grouped messages from the messages endpoint */}
         {Object.entries(groupedMessages).map(([date, dateMessages]) => (
           <View key={date}>
             <Text style={styles.dateHeader}>{date}</Text>
-            {dateMessages.map((item) => (
-              <View 
-                key={item.id} 
-                style={item.isSent ? styles.rightBubbleWrapper : styles.leftBubbleWrapper}
-              >
+            {dateMessages.map((item) => {
+              const containerStyle = item.isSent ? styles.rightBubbleWrapper : styles.leftBubbleWrapper;
+              const bubbleContent = (
                 <LinearGradient
                   colors={item.isSent ? ['#FF5E62', '#FF9966'] : ['#F5F5F5', '#F5F5F5']}
                   style={styles.bubbleContainer}
@@ -416,123 +346,35 @@ export default function Chat() {
                     <View style={styles.leftArrow} />
                   )}
                 </LinearGradient>
-              </View>
-            ))}
+              );
+              
+              if (item.isSent && item.text.startsWith('Date Invitation:')) {
+                return (
+                  <TouchableOpacity key={item.id} style={containerStyle} onPress={() => navigation.navigate('DateFinal', { matchedUserId: matchedUserId })}>
+                    {bubbleContent}
+                  </TouchableOpacity>
+                );
+              } else {
+                return (
+                  <View key={item.id} style={containerStyle}>
+                    {bubbleContent}
+                  </View>
+                );
+              }
+            })}
           </View>
         ))}
 
-        {/* Initiated meet bubble at the bottom */}
-        {initiatedMeet && (
-           <TouchableOpacity 
-           onPress={() => navigation.navigate('DateFinal')}
-         >
+        {/* New right bubble for response to latest received Date Invitation */}
+        {latestInvitation && !invitationResponseSent && !meetConfirmed && (
           <View style={styles.rightBubbleWrapper}>
-           
-              <LinearGradient
-                colors={['#FF5E62', '#FF9966']}
-                style={styles.rightBubbleContainer}
-              >
-                <Text style={styles.bubbleTitle}>Hi! Wanna go on a date with me?</Text>
-                <View style={styles.bubbleDetailRow}>
-                  <Text style={styles.bubbleDetailIcon}>👫</Text>
-                  <Text style={styles.bubbleDetailText}>
-                    {initiatedMeet?.meet_date_type || ''}
-                  </Text>
-                </View>
-                <View style={styles.bubbleDetailRow}>
-                  <Text style={styles.bubbleDetailIcon}>📅</Text>
-                  <Text style={styles.bubbleDetailText}>
-                    {initiatedMeet?.date ? 
-                      new Date(initiatedMeet.meet_day).toLocaleDateString('en-US', { 
-                        weekday: 'short', 
-                        month: 'short', 
-                        day: 'numeric' 
-                      }) : initiatedMeet?.meet_day}
-                  </Text>
-                </View>
-                <View style={styles.bubbleDetailRow}>
-                  <Text style={styles.bubbleDetailIcon}>⏰</Text>
-                  <Text style={styles.bubbleDetailText}>
-                    {initiatedMeet?.meet_time || ''}
-                  </Text>
-                </View>
-                <View style={styles.bubbleDetailRow}>
-                  <Text style={styles.bubbleDetailIcon}>📍</Text>
-                  <Text style={styles.bubbleDetailText}>
-                    {initiatedMeet?.meet_location || ''}
-                  </Text>
-                </View>
-                <View style={styles.rightArrow} />
-              </LinearGradient>
-            
-          </View>
-          </TouchableOpacity>
-        )}
-        
-        {/* Received invitation with response options */}
-        {receivedMeet && !hasResponded && (
-          <View style={styles.leftBubbleWrapper}>
-            <Image 
-              source={chatPartnerPhoto} 
-              style={styles.avatarLeftContainer}
-            />
-            <LinearGradient
-              colors={['#F5F5F5', '#F5F5F5']}
-              style={[styles.leftBubbleContainer, styles.card]}
-            >
-              <Text style={styles.inviteTitle}>Hi! Wanna go on a date with me?</Text>
-              
-              <View style={styles.detailRow}>
-                <Ionicons name="people-outline" style={styles.icon} />
-                <Text style={styles.detailText}>
-                  {receivedMeet?.meet_date_type || 'Date Type'}
-                </Text>
-              </View>
-              
-              <View style={styles.detailRow}>
-                <Ionicons name="calendar-outline" style={styles.icon} />
-                <Text style={styles.detailText}>
-                  {new Date(receivedMeet?.meet_day).toLocaleDateString('en-US', { 
-                    weekday: 'short', 
-                    month: 'short', 
-                    day: 'numeric' 
-                  })}
-                </Text>
-              </View>
-              
-              <View style={styles.detailRow}>
-                <Ionicons name="time-outline" style={styles.icon} />
-                <Text style={styles.detailText}>
-                  {receivedMeet?.meet_time || '7:00 PM'}
-                </Text>
-              </View>
-              
-              <View style={styles.detailRow}>
-                <Ionicons name="location-outline" style={styles.icon} />
-                <Text style={styles.detailText}>
-                  {receivedMeet?.meet_location || 'Location TBD'}
-                </Text>
-              </View>
-              
-              <View style={styles.leftArrow} />
-            </LinearGradient>
-          </View>
-        )}
-        {receivedMeet && !hasResponded && (
-          <View style={styles.rightBubbleWrapper}>
-            <LinearGradient
-              colors={['#FF5E62', '#FF9966']}
-              style={styles.rightBubbleContainer}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
+            <LinearGradient colors={['#FF5E62', '#FF9966']} style={styles.bubbleContainer}>
               <TouchableOpacity
                 style={styles.acceptButton}
                 onPress={() => handleMeetResponse("Yes, I'd love to!")}
               >
                 <Text style={styles.acceptButtonText}>Yes, I'd love to!</Text>
               </TouchableOpacity>
-              
               <TouchableOpacity
                 style={styles.declineButton}
                 onPress={() => handleMeetResponse("I'm sorry, maybe next time")}
@@ -541,29 +383,10 @@ export default function Chat() {
                   I'm sorry, maybe next time
                 </Text>
               </TouchableOpacity>
-              <View style={styles.rightArrow} />
-              
             </LinearGradient>
           </View>
         )}
-        {/* Sent messages (right side with tail) */}
-        {/* {messages.map((item) => (
-          <View key={item.id} style={styles.rightBubbleWrapper}>
-            <LinearGradient
-              colors={['#FF5E62', '#FF9966']}
-              style={styles.rightBubbleContainer}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-            >
-              <Text style={styles.rightBubbleText}>{item.text}</Text>
-              <Text style={styles.timestampSmall}>{new Date(item.timestamp).toLocaleTimeString([], { 
-                      hour: 'numeric', 
-                      minute: '2-digit' 
-                    })}</Text>
-              <View style={styles.rightArrow} />
-            </LinearGradient>
-          </View>
-        ))} */}
+
       </ScrollView>
 
       {/* Bottom input bar */}
@@ -915,26 +738,31 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   acceptButton: {
-    backgroundColor: '#FFF',
-    margin: 2,
-    borderRadius: 18,
-    padding: 12,
+    backgroundColor: '#E4423F',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    marginBottom: 15,
+    marginHorizontal: 5,
   },
   acceptButtonText: {
-    color: '#FF5E62',
+    color: '#FFF',
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: 'bold',
     textAlign: 'center',
   },
   declineButton: {
-    padding: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    marginBottom: 15,
+    marginHorizontal: 5,
   },
   declineButtonText: {
     color: '#FFF',
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: 'bold',
     textAlign: 'center',
-    textDecorationLine: 'underline',
   },
   bubbleContainer: {
     padding: 10,

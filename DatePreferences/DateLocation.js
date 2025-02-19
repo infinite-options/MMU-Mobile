@@ -14,7 +14,19 @@ const GOOGLE_API_KEY = REACT_APP_GOOGLE_API_KEY;
 
 export default function DateLocation({ navigation }) {
   const route = useRoute();
-  const matchedUserId = route.params?.matchedUserId || null;
+  const [matchedUserId, setMatchedUserId] = useState(route.params?.matchedUserId || null);
+  useEffect(() => {
+    const initMatchedUserId = async () => {
+      if (!matchedUserId) {
+        const storedId = await AsyncStorage.getItem('matchedUserId');
+        if (storedId) setMatchedUserId(storedId);
+      }
+      else {
+        await AsyncStorage.setItem('matchedUserId', matchedUserId);
+      }
+    };
+    initMatchedUserId();
+  }, []);
   const [location, setLocation] = useState(null);
 
   // Default map region

@@ -15,36 +15,88 @@ import { Ionicons } from '@expo/vector-icons';
 // Import your custom SlideToSend
 import SlideToSend from '../src/Assets/Components/SlideToSend.js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 
 export default function DateFinal({ navigation }) {
   const route = useRoute();
-  const matchedUserId = route.params?.matchedUserId || null;
-  const [dateType, setDateType] = useState('Dinner');
-  const [dateDay, setDateDay] = useState('Sat, Aug 17');
-  const [dateTime, setDateTime] = useState('7:00 pm');
-  const [dateLocation, setDateLocation] = useState('96 S 1st St, San Jose, CA 95113');
+  const [matchedUserId, setMatchedUserId] = useState(route.params?.matchedUserId || null);
 
   useEffect(() => {
-    const fetchDateDetails = async () => {
-      try {
-        const storedDateType = await AsyncStorage.getItem('user_date_type');
-        const storedDateDay = await AsyncStorage.getItem('user_date_day');
-        const storedDateTime = await AsyncStorage.getItem('user_date_time');
-        const storedDateLocation = await AsyncStorage.getItem('selected_location_name');
-
-        if (storedDateType) setDateType(storedDateType);
-        if (storedDateDay) setDateDay(storedDateDay);
-        if (storedDateTime) setDateTime(storedDateTime);
-        if (storedDateLocation) setDateLocation(storedDateLocation);
-      } catch (error) {
-        console.error('Error retrieving date details from AsyncStorage:', error);
+    const initMatchedUserId = async () => {
+      if (!matchedUserId) {
+        const storedId = await AsyncStorage.getItem('matchedUserId');
+        if (storedId) setMatchedUserId(storedId);
+      }
+      else {
+        await AsyncStorage.setItem('matchedUserId', matchedUserId);
       }
     };
-
-    fetchDateDetails();
+    initMatchedUserId();
   }, []);
+
+  const [dateType, setDateType] = useState('No date type selected');
+  const [dateDay, setDateDay] = useState('No date day selected');
+  const [dateTime, setDateTime] = useState('No date time selected');
+  const [dateLocation, setDateLocation] = useState('No date location selected');
+
+  // Replace useEffect with useFocusEffect for screen focus updates
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchDateDetails = async () => {
+        try {
+          // First check AsyncStorage values
+          const storedDateType = await AsyncStorage.getItem('user_date_type');
+          const storedDateDay = await AsyncStorage.getItem('user_date_day');
+          const storedDateTime = await AsyncStorage.getItem('user_date_time');
+          const storedDateLocation = await AsyncStorage.getItem('selected_location_name');
+
+          // Always set values from AsyncStorage if they exist, as they are the most recent
+          if (storedDateType) setDateType(storedDateType);
+          if (storedDateDay) setDateDay(storedDateDay);
+          if (storedDateTime) setDateTime(storedDateTime);
+          if (storedDateLocation) setDateLocation(storedDateLocation);
+
+          // Only fetch from endpoint if ALL AsyncStorage values are missing
+          if (!storedDateType && !storedDateDay && !storedDateTime && !storedDateLocation) {
+            const meetUserId = await AsyncStorage.getItem('user_uid');
+            if (meetUserId && matchedUserId) {
+              try {
+                const checkUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet/${meetUserId}`;
+                const checkResponse = await fetch(checkUrl, { method: "GET" });
+                if (checkResponse.ok) {
+                  const checkData = await checkResponse.json();
+                  let resultArray = [];
+                  if (Array.isArray(checkData)) {
+                    resultArray = checkData;
+                  } else if (checkData.result && Array.isArray(checkData.result)) {
+                    resultArray = checkData.result;
+                  } else {
+                    resultArray = [checkData];
+                  }
+                  
+                  const matchingMeet = resultArray.find(item => item.meet_date_user_id === matchedUserId);
+                  if (matchingMeet) {
+                    // Set default values from meet data only if ALL AsyncStorage values are missing
+                    setDateType(matchingMeet.meet_date_type || 'Dinner');
+                    setDateDay(matchingMeet.meet_day || 'Sat, Aug 17');
+                    setDateTime(matchingMeet.meet_time || '7:00 pm');
+                    setDateLocation(matchingMeet.meet_location || '96 S 1st St, San Jose, CA 95113');
+                  }
+                }
+              } catch (error) {
+                console.error('Error fetching meet data:', error);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error retrieving date details:', error);
+        }
+      };
+
+      fetchDateDetails();
+    }, [matchedUserId])
+  );
 
   const [invitationSent, setInvitationSent] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -52,10 +104,9 @@ export default function DateFinal({ navigation }) {
   // Slide completed => show "Invitation Sent" screen
   const handleSlideComplete = async () => {
     setInvitationSent(true);
-
     try {
       const meetUserId = await AsyncStorage.getItem('user_uid');
-      const meetDateUserId = await AsyncStorage.getItem('meet_date_user_id');
+      const meetDateUserId = matchedUserId;
       const meetDay = await AsyncStorage.getItem('user_date_day');
       const meetTime = await AsyncStorage.getItem('user_date_time');
       const meetDateType = await AsyncStorage.getItem('user_date_type');
@@ -63,35 +114,106 @@ export default function DateFinal({ navigation }) {
       const meetLatitude = await AsyncStorage.getItem('selected_date_location_lat');
       const meetLongitude = await AsyncStorage.getItem('selected_date_location_lat');
 
-      const formData = new FormData();
-      formData.append('meet_user_id', meetUserId);
-      formData.append('meet_date_user_id', meetDateUserId);
-      formData.append('meet_day', meetDay);
-      formData.append('meet_time', meetTime);
-      formData.append('meet_date_type', meetDateType);
-      formData.append('meet_location', meetLocation);
-      formData.append('meet_latitude', meetLatitude);
-      formData.append('meet_longitude', meetLongitude);
-      console.log('formData', formData);
-      console.log('Meet User ID:', meetUserId);
-      console.log('Meet Date User ID:', meetDateUserId);
-      console.log('Meet Day:', meetDay);
-      console.log('Meet Time:', meetTime);
-      console.log('Meet Date Type:', meetDateType);
-      console.log('Meet Location:', meetLocation);
-      console.log('Meet Latitude:', meetLatitude);
-      console.log('Meet Longitude:', meetLongitude);
-        const response = await fetch('https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet', {
+      // Clear date-related AsyncStorage values after retrieving them
+      await Promise.all([
+        AsyncStorage.removeItem('matchedUserId'),
+        AsyncStorage.removeItem('user_date_type'),
+        AsyncStorage.removeItem('user_date_day'),
+        AsyncStorage.removeItem('user_date_time'),
+        AsyncStorage.removeItem('selected_location_name'),
+        AsyncStorage.removeItem('selected_date_location_lat'),
+        AsyncStorage.removeItem('selected_date_location_lat')
+      ]);
+
+      // Check if a meet already exists between the users
+      let existingMeet = false;
+      let existingMeetData = null;
+      try {
+        const checkUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet/${meetUserId}`;
+        const checkResponse = await fetch(checkUrl, { method: "GET" });
+        if (checkResponse.ok) {
+          const checkData = await checkResponse.json();
+          if (checkData && (((Array.isArray(checkData) && checkData.length > 0)) || (checkData.result && Array.isArray(checkData.result) && checkData.result.length > 0))) {
+            let resultArray = [];
+            if (Array.isArray(checkData)) {
+              resultArray = checkData;
+            } else if (checkData.result && Array.isArray(checkData.result)) {
+              resultArray = checkData.result;
+            } else {
+              resultArray = [checkData];
+            }
+            const matchingMeet = resultArray.find(item => item.meet_date_user_id === meetDateUserId);
+            console.log('Matching meet:', matchingMeet);
+            if (matchingMeet) {
+              existingMeet = true;
+              existingMeetData = matchingMeet;
+            } else {
+              console.log('No matching meet found for meetDateUserId:', meetDateUserId);
+            }
+          } else {
+            console.log('checkData does not contain a valid result array');
+          }
+        }
+        console.log('Existing meet:', existingMeetData);
+      } catch (error) {
+        console.error('Error checking for existing meet:', error);
+      }
+      
+      let response;
+      if (existingMeet && existingMeetData) {
+        // Use PUT to update the existing meet with new date information using the retrieved meet_uid
+        const formData = new FormData();
+        formData.append('meet_uid', existingMeetData.meet_uid);
+        formData.append('meet_user_id', meetUserId);
+        formData.append('meet_date_user_id', meetDateUserId);
+        formData.append('meet_day', meetDay);
+        formData.append('meet_time', meetTime);
+        formData.append('meet_date_type', meetDateType);
+        formData.append('meet_location', meetLocation);
+        formData.append('meet_latitude', meetLatitude);
+        formData.append('meet_longitude', meetLongitude);
+        console.log('Existing meet found. Updating with PUT using meet_uid:', existingMeetData.meet_uid);
+        response = await fetch('https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet', {
+          method: "PUT",
+          body: formData,
+        });
+      } else {
+        // Create a new meet using POST with values from AsyncStorage
+        const formData = new FormData();
+        formData.append('meet_user_id', meetUserId);
+        formData.append('meet_date_user_id', meetDateUserId);
+        formData.append('meet_day', meetDay);
+        formData.append('meet_time', meetTime);
+        formData.append('meet_date_type', meetDateType);
+        formData.append('meet_location', meetLocation);
+        formData.append('meet_latitude', meetLatitude);
+        formData.append('meet_longitude', meetLongitude);
+        console.log('No existing meet. Creating new meet with POST');
+        response = await fetch('https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet', {
           method: "POST",
           body: formData,
         });
-        if (response.ok) {
-          const result = await response.json();
-          console.log("Response from server:", result);
-        }
+      }
       
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Response from server:", result);
+        // Send date invitation message to messages endpoint
+        const messageText = `Date Invitation:\nType: ${dateType}\nDate: ${dateDay}\nTime: ${dateTime}\nLocation: ${dateLocation}`;
+        await axios.post(
+          'https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/messages',
+          {
+            sender_id: meetUserId,
+            receiver_id: meetDateUserId,
+            message_content: messageText
+          },
+          {
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      }
     } catch (error) {
-      console.error('Error retrieving data from AsyncStorage:', error);
+      console.error('Error in handleSlideComplete:', error);
     }
   };
 

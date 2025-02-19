@@ -70,6 +70,42 @@ const MatchResultsPage = () => {
   const handleMenuOpen = () => setMenuVisible(true);
   const handleMenuClose = () => setMenuVisible(false);
 
+  // Added functions for menu actions similar to MyProfile.js
+  const handleMenuItemPress = (item) => {
+    setMenuVisible(false);
+    switch (item) {
+      case "Edit Profile":
+        navigation.navigate("EditProfile");
+        break;
+      case "Settings":
+        navigation.navigate("SettingsScreen");
+        break;
+      case "Manage Membership":
+        navigation.navigate("MembershipScreen");
+        break;
+      case "Hide Profile":
+        // handle hide profile if needed
+        break;
+      case "Delete Account":
+        // handle delete account if needed
+        break;
+      case "Logout":
+        logoutUser();
+        break;
+      default:
+        break;
+    }
+  };
+
+  const logoutUser = async () => {
+    try {
+      await AsyncStorage.clear();
+      navigation.navigate("Login");
+    } catch (error) {
+      console.error("Error clearing AsyncStorage:", error);
+    }
+  };
+
   // Load user UID from AsyncStorage
   useEffect(() => {
     const loadUserId = async () => {
@@ -176,7 +212,10 @@ const MatchResultsPage = () => {
             
             newMeetStatus[theirUserId] = meets.length > 0;
           } catch (err) {
-            console.warn("Error fetching meet data for user:", theirUserId, err);
+            // Only log error if it's not a 404
+            if (!(err.response && err.response.status === 404)) {
+              console.warn("Error fetching meet data for user:", theirUserId, err);
+            }
             newMeetStatus[theirUserId] = false; // Default to no meet
           }
         }
@@ -199,6 +238,25 @@ const MatchResultsPage = () => {
     } else {
       // Also pass the UID to DateType
       navigation.navigate("DateType", { matchedUserId: matchId });
+    }
+  };
+
+  const handleDislike = async (matchId) => {
+    const userUid = await AsyncStorage.getItem("user_uid");
+    const formData = new URLSearchParams();
+    formData.append("liker_user_id", userUid);
+    formData.append("liked_user_id", matchId);
+    try {
+      await axios.delete("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/likes", {
+        data: formData.toString(),
+        headers: { "Content-Type": "application/x-www-form-urlencoded" }
+      });
+      console.log("Disliked user:", matchId);
+      setMatchedResults(prevResults => prevResults.filter(match => match.user_uid !== matchId));
+      setRefreshTrigger(prev => prev + 1);
+      await findMatchesResult();
+    } catch (error) {
+      console.error("Error disliking user:", error.message);
     }
   };
 
@@ -225,16 +283,20 @@ const MatchResultsPage = () => {
         key={`${firstname}-${matchId}-${Math.random()}`}
       >
         <View style={styles.matchRowLeft}>
-          <Image 
-            source={imgSrc ? { uri: imgSrc } : require('../assets/account.png')} 
-            style={styles.avatar} 
-          />
-          <View>
-            <Text style={styles.matchName}>{firstname} {lastname}</Text>
-            <Text style={styles.matchSubText}>
-              {interests} interests in common
-            </Text>
-          </View>
+          <TouchableOpacity onPress={() => navigation.navigate('UserProfile', { meet_date_user_id: matchId })}>
+            <Image 
+              source={imgSrc ? { uri: imgSrc } : require('../assets/account.png')} 
+              style={styles.avatar} 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Chat', { matchedUserId: matchId })}>
+            <View>
+              <Text style={styles.matchName}>{firstname} {lastname}</Text>
+              <Text style={styles.matchSubText}>
+                {interests} interests in common
+              </Text>
+            </View>
+          </TouchableOpacity>
         </View>
         <View style={styles.matchRowRight}>
           <TouchableOpacity
@@ -257,7 +319,7 @@ const MatchResultsPage = () => {
               {dynamicButtonLabel}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.closeButton}>
+          <TouchableOpacity style={styles.closeButton} onPress={() => handleDislike(matchId)}>
             <Text style={styles.closeButtonIcon}>×</Text>
           </TouchableOpacity>
         </View>
@@ -271,16 +333,20 @@ const MatchResultsPage = () => {
         key={`${fname}-${matchId}`}
       >
         <View style={styles.matchRowLeft}>
-          <Image 
-            source={imgSrc ? { uri: imgSrc } : require('../assets/account.png')} 
-            style={styles.avatar} 
-          />
-          <View>
-            <Text style={styles.matchName}>{fname} {lname}</Text>
-            <Text style={styles.matchSubText}>
-              {interests} interests in common
-            </Text>
-          </View>
+          <TouchableOpacity onPress={() => navigation.navigate('UserProfile', { meet_date_user_id: matchId })}>
+            <Image 
+              source={imgSrc ? { uri: imgSrc } : require('../assets/account.png')} 
+              style={styles.avatar} 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('UserProfile', { meet_date_user_id: matchId })}>
+            <View>
+              <Text style={styles.matchName}>{fname} {lname}</Text>
+              <Text style={styles.matchSubText}>
+                {interests} interests in common
+              </Text>
+            </View>
+          </TouchableOpacity>
         </View>
         <View style={styles.matchRowRight}>
           <TouchableOpacity
@@ -291,7 +357,7 @@ const MatchResultsPage = () => {
               {buttonLabel}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.closeButton}>
+          <TouchableOpacity style={styles.closeButton} onPress={() => setInterestedInMe(prevResults => prevResults.filter(match => match.user_uid !== matchId))}>
             <Text style={styles.closeButtonIcon}>×</Text>
           </TouchableOpacity>
         </View>
@@ -305,19 +371,23 @@ const MatchResultsPage = () => {
         key={`${fname}-${matchId}`}
       >
         <View style={styles.matchRowLeft}>
-          <Image 
-            source={imgSrc ? { uri: imgSrc } : require('../assets/account.png')} 
-            style={styles.avatar} 
-          />
-          <View>
-            <Text style={styles.matchName}>{fname} {lname}</Text>
-            <Text style={styles.matchSubText}>
-              {interests} interests in common
-            </Text>
-          </View>
+          <TouchableOpacity onPress={() => navigation.navigate('UserProfile', { meet_date_user_id: matchId })}>
+            <Image 
+              source={imgSrc ? { uri: imgSrc } : require('../assets/account.png')} 
+              style={styles.avatar} 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('UserProfile', { meet_date_user_id: matchId })}>
+            <View>
+              <Text style={styles.matchName}>{fname} {lname}</Text>
+              <Text style={styles.matchSubText}>
+                {interests} interests in common
+              </Text>
+            </View>
+          </TouchableOpacity>
         </View>
         <View style={styles.matchRowRight}>
-          <TouchableOpacity style={styles.closeButton}>
+          <TouchableOpacity style={styles.closeButton} onPress={() => handleDislike(matchId)}>
             <Text style={styles.closeButtonIcon}>×</Text>
           </TouchableOpacity>
         </View>
@@ -342,26 +412,33 @@ const MatchResultsPage = () => {
 
         {/* MENU */}
         {menuVisible && (
-          <View style={styles.menuContainer}>
-            <TouchableOpacity onPress={handleMenuClose} style={styles.menuItem}>
-              <Text>Edit Profile</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleMenuClose} style={styles.menuItem}>
-              <Text>Settings</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleMenuClose} style={styles.menuItem}>
-              <Text>Manage Membership</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleMenuClose} style={styles.menuItem}>
-              <Text>Hide Profile</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleMenuClose} style={styles.menuItem}>
-              <Text>Delete Account</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleMenuClose} style={styles.menuItem}>
-              <Text>Logout</Text>
-            </TouchableOpacity>
-          </View>
+          <>
+            <TouchableOpacity 
+              style={styles.menuOverlay} 
+              activeOpacity={0} 
+              onPress={handleMenuClose}
+            />
+            <View style={styles.menuContainer}>
+              <TouchableOpacity onPress={() => handleMenuItemPress("Edit Profile") } style={styles.menuItem}>
+                <Text>Edit Profile</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleMenuItemPress("Settings") } style={styles.menuItem}>
+                <Text>Settings</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleMenuItemPress("Manage Membership") } style={styles.menuItem}>
+                <Text>Manage Membership</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleMenuItemPress("Hide Profile") } style={styles.menuItem}>
+                <Text>Hide Profile</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleMenuItemPress("Delete Account") } style={styles.menuItem}>
+                <Text>Delete Account</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleMenuItemPress("Logout") } style={styles.menuItem}>
+                <Text>Logout</Text>
+              </TouchableOpacity>
+            </View>
+          </>
         )}
 
         <ScrollView style={styles.scrollArea}>
@@ -490,10 +567,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     borderRadius: 12,
     padding: 8,
-    elevation: 5, // Shadow on Android
-    shadowColor: "#000", // iOS shadow
+    elevation: 5,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
+    zIndex: 1000,
+  },
+  menuOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+    zIndex: 999,
   },
   menuItem: {
     padding: 8,

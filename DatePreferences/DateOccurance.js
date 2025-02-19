@@ -18,7 +18,19 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 
 export default function DateOccurance({ navigation }) {
   const route = useRoute();
-  const matchedUserId = route.params?.matchedUserId || null;
+  const [matchedUserId, setMatchedUserId] = useState(route.params?.matchedUserId || null);
+  useEffect(() => {
+    const initMatchedUserId = async () => {
+      if (!matchedUserId) {
+        const storedId = await AsyncStorage.getItem('matchedUserId');
+        if (storedId) setMatchedUserId(storedId);
+      }
+      else {
+        await AsyncStorage.setItem('matchedUserId', matchedUserId);
+      }
+    };
+    initMatchedUserId();
+  }, []);
   // Track selected day (index or null)
   const [selectedDayIndex, setSelectedDayIndex] = useState(null);
 

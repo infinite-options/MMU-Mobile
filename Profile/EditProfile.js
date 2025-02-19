@@ -33,6 +33,7 @@ import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplet
 import DropDownPicker from "react-native-dropdown-picker";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { allInterests } from "../src/config/interests";
+import * as Camera from 'expo-camera';
 
 const GOOGLE_API_KEY = REACT_APP_GOOGLE_API_KEY;
 
@@ -618,57 +619,45 @@ export default function EditProfile() {
   const handleVideoUpload = async () => {
     try {
       // Platform-specific permission handling
-      if (Platform.OS === "ios") {
-        const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
-        const microphonePermission = await ImagePicker.requestMicrophonePermissionsAsync();
+      const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+      const mediaLibraryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-        if (cameraPermission.status !== "granted" || microphonePermission.status !== "granted") {
-          Alert.alert("Permission Required", "Camera and microphone access is required to record video. Please enable it in your device settings.", [
-            { text: "Cancel", style: "cancel" },
-            { text: "Settings", onPress: () => Linking.openSettings() },
-          ]);
-          return;
-        }
-      } else {
-        // Android permissions
-        const permissions = await Promise.all([ImagePicker.requestCameraPermissionsAsync(), ImagePicker.requestMicrophonePermissionsAsync(), ImagePicker.requestMediaLibraryPermissionsAsync()]);
-
-        if (permissions.some((permission) => permission.status !== "granted")) {
-          Alert.alert("Permission Required", "Camera, microphone, and storage access are required to record video. Please enable them in your device settings.", [
-            { text: "Cancel", style: "cancel" },
-            { text: "Settings", onPress: () => Linking.openSettings() },
-          ]);
-          return;
-        }
+      if (cameraPermission.status !== 'granted' || mediaLibraryPermission.status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Camera and storage access is required to record video. Please enable it in your device settings.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Settings', onPress: () => Linking.openSettings() }
+          ]
+        );
+        return;
       }
 
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-        allowsEditing: Platform.OS === "ios", // Video editing only works well on iOS
+        allowsEditing: Platform.OS === 'ios', // Video editing only works well on iOS
         quality: 1,
         videoQuality: getVideoQuality(),
         maxDuration: 60,
         saveToPhotos: true, // Save to device camera roll
-        presentationStyle: Platform.OS === "ios" ? "fullScreen" : undefined,
-        androidRecordAudioPermissionOptions:
-          Platform.OS === "android"
-            ? {
-                title: "Permission to use audio recording",
-                message: "We need your permission to use your audio",
-              }
-            : undefined,
+        presentationStyle: Platform.OS === 'ios' ? 'fullScreen' : undefined,
+        androidRecordAudioPermissionOptions: Platform.OS === 'android' ? {
+          title: 'Permission to use audio recording',
+          message: 'We need your permission to use your audio'
+        } : undefined
       });
 
       if (!result.canceled && result.assets?.[0]?.uri) {
         // Handle platform-specific video path
-        const videoUri = Platform.OS === "ios" ? result.assets[0].uri.replace("file://", "") : result.assets[0].uri;
+        const videoUri = Platform.OS === 'ios' ? result.assets[0].uri.replace('file://', '') : result.assets[0].uri;
 
         setVideoUri(videoUri);
         setIsVideoPlaying(false);
       }
     } catch (error) {
-      console.error("Error picking video:", error);
-      Alert.alert("Error", "There was an issue recording the video. Please try again.");
+      console.error('Error picking video:', error);
+      Alert.alert('Error', 'There was an issue recording the video. Please try again.');
     }
   };
   const handleRemoveVideo = () => {

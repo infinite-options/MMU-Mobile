@@ -1,3 +1,4 @@
+import "./polyfills";
 import React, { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";

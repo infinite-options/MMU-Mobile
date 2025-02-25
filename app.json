@@ -14,7 +14,15 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.infiniteoptions.meetmeupapp",
-      "buildNumber": "13"
+      "buildNumber": "13",
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": ["$(PRODUCT_BUNDLE_IDENTIFIER)"],
+            "CFBundleURLName": "google"
+          }
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -34,17 +42,32 @@
       "eas": {
         "projectId": "a57a9873-7c6d-45b1-af9e-2ba19255cdb6"
       }
-    }
+    },
+    "scheme": "meetmeupapp",
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera."
+        }
+      ],
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.336598290180-e89eo7pqbfs7ilj3hjpj1fvr661cdnn2"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
+    ]
   },
   "web": {
     "favicon": "./assets/favicon.png"
-  },
-  "plugins": [
-    [
-      "expo-camera",
-      {
-        "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera."
-      }
-    ]
-  ]
+  }
 }

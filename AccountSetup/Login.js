@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StatusBar,
   Platform,
@@ -19,6 +19,8 @@ import ProgressBar from '../src/Assets/Components/ProgressBar';
 
 import axios from 'axios';
 import sha256 from 'crypto-js/sha256';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import config from '../config'; // Import config
 
 export default function Login() {
   const navigation = useNavigation();
@@ -28,15 +30,181 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showSpinner, setShowSpinner] = useState(false);
+  const [isGoogleConfigured, setIsGoogleConfigured] = useState(false);
 
   // Endpoints
   const SALT_ENDPOINT = 'https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/MMU';
   const LOGIN_ENDPOINT = 'https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/Login/MMU';
+  const GOOGLE_LOGIN_ENDPOINT = 'https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/GoogleLoginMMU';
+
+  // Initialize Google Sign In
+  useEffect(() => {
+    const configureGoogleSignIn = async () => {
+      try {
+        console.log("Configuring Google Sign-In with config:", {
+          iosClientId: config.googleClientIds.ios,
+          androidClientId: config.googleClientIds.android,
+          webClientId: config.googleClientIds.web,
+        });
+        
+        // Create Google Sign-In configuration object
+        const googleSignInConfig = {
+          iosClientId: config.googleClientIds.ios,
+          androidClientId: config.googleClientIds.android,
+          webClientId: config.googleClientIds.web,
+          scopes: ['profile', 'email'],
+          offlineAccess: true,
+        };
+        
+        // Configure Google Sign-In
+        await GoogleSignin.configure(googleSignInConfig);
+        setIsGoogleConfigured(true);
+        console.log('Google Sign-In configured successfully');
+      } catch (error) {
+        console.error('Google Sign-In configuration error:', error);
+        setIsGoogleConfigured(false);
+      }
+    };
+    
+    configureGoogleSignIn();
+  }, []);
 
   // Check if email is valid
   const isValidEmail = (userEmail) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(userEmail);
+  };
+
+  // Handle Google Sign In
+  const handleGoogleSignIn = async () => {
+    if (!isGoogleConfigured) {
+      Alert.alert('Error', 'Google Sign-In is not configured properly. Please try again later.');
+      return;
+    }
+
+    try {
+      setShowSpinner(true);
+      
+      // Make sure Play Services are available (for Android)
+      if (Platform.OS === 'android') {
+        try {
+          await GoogleSignin.hasPlayServices({ 
+            showPlayServicesUpdateDialog: true 
+          });
+          console.log('Play services check passed');
+        } catch (e) {
+          console.error('Play services check error:', e);
+          Alert.alert('Error', 'Google Play Services are required for Google Sign-In.');
+          setShowSpinner(false);
+          return;
+        }
+      }
+      
+      console.log('Starting Google sign in process...');
+      
+      // First try to sign out to ensure a clean state
+      try {
+        await GoogleSignin.signOut();
+        console.log('Successfully signed out before new sign-in attempt');
+      } catch (signOutError) {
+        // This is okay to fail if user was not previously signed in
+        console.log('Sign out before sign in resulted in error (can be ignored):', signOutError);
+      }
+      
+      // Sign in - this is the part that was failing before
+      let userInfo;
+      try {
+        userInfo = await GoogleSignin.signIn();
+        console.log('Google Sign-In successful', JSON.stringify(userInfo, null, 2));
+      } catch (signInError) {
+        console.error('Sign in specific error:', signInError);
+        
+        // Log more details if it's a DEVELOPER_ERROR
+        if (signInError.code === 'DEVELOPER_ERROR') {
+          console.error('DEVELOPER_ERROR details:', JSON.stringify({
+            message: signInError.message,
+            code: signInError.code,
+            platform: Platform.OS,
+            androidClientId: config.googleClientIds.android,
+            webClientId: config.googleClientIds.web,
+            iosClientId: config.googleClientIds.ios,
+            scopes: ['profile', 'email']
+          }, null, 2));
+          
+          // For Android: Show guidance to check SHA-1 fingerprint registration
+          if (Platform.OS === 'android') {
+            Alert.alert(
+              'Google Sign-In Error', 
+              'There appears to be a configuration issue with Google Sign-In. This is likely due to a SHA-1 certificate fingerprint mismatch in the Google Cloud Console.',
+              [{ text: 'OK' }]
+            );
+            setShowSpinner(false);
+            return;
+          }
+        }
+        
+        throw signInError; // Re-throw to be caught by the outer catch
+      }
+      
+      if (!userInfo || !userInfo.idToken) {
+        throw new Error('No ID token received from Google Sign-In');
+      }
+      
+      // Process Google login with backend
+      const { idToken, user } = userInfo;
+      
+      console.log('Sending data to backend:', {
+        tokenLength: idToken?.length,
+        email: user.email,
+        givenName: user.givenName,
+        familyName: user.familyName,
+        hasPhoto: !!user.photo
+      });
+      
+      // Call your backend endpoint for Google login
+      const response = await axios.post(GOOGLE_LOGIN_ENDPOINT, {
+        google_id_token: idToken,
+        email: user.email,
+        first_name: user.givenName || '',
+        last_name: user.familyName || '',
+        profile_picture: user.photo || '',
+      });
+      
+      console.log('Backend response:', response.data);
+      
+      // Handle response
+      if (response.data && response.data.result) {
+        // Store user data in AsyncStorage
+        const { user_uid, user_email_id } = response.data.result;
+        await AsyncStorage.setItem('user_uid', user_uid);
+        await AsyncStorage.setItem('user_email_id', user_email_id);
+        
+        // Navigate to next screen
+        navigation.navigate('MyProfile');
+      } else {
+        Alert.alert('Error', 'Failed to login with Google. Server response invalid.');
+      }
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      
+      let errorMessage = 'Something went wrong with Google sign-in. Please try again.';
+      
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        console.log('Google sign-in cancelled');
+        errorMessage = 'Sign-in was cancelled';
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        console.log('Google sign-in in progress');
+        errorMessage = 'Sign-in is already in progress';
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        errorMessage = 'Play services not available or outdated';
+      } else if (error.code === 'DEVELOPER_ERROR') {
+        errorMessage = 'Configuration error with Google Sign-In. Please check app credentials.';
+      }
+      
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setShowSpinner(false);
+    }
   };
 
   // Attempt to login with salt
@@ -171,7 +339,10 @@ export default function Login() {
 
       {/* Social Login Buttons */}
       <View style={styles.socialContainer}>
-        <TouchableOpacity style={styles.socialLoginButton}>
+        <TouchableOpacity 
+          style={styles.socialLoginButton}
+          onPress={handleGoogleSignIn}
+        >
           <Image
             source={require('../assets/google_logo.png')}
             style={styles.googleLogo}
@@ -185,10 +356,10 @@ export default function Login() {
         </TouchableOpacity>
       </View>
 
-      {/* Don’t have an account? Sign up */}
+      {/* Don't have an account? Sign up */}
       <TouchableOpacity onPress={() => navigation.navigate('AccountSetup2Create')}>
         <Text style={styles.footerText}>
-          Don’t have an account yet? <Text style={styles.loginLink}>Sign Up</Text>
+          Don't have an account yet? <Text style={styles.loginLink}>Sign Up</Text>
         </Text>
       </TouchableOpacity>
     </SafeAreaView>

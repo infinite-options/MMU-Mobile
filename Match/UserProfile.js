@@ -39,7 +39,7 @@ export default function UserProfile() {
   const sheetClosedY = screenHeight * 0.55; // how far from top when "closed"
   const navigation = useNavigation();
   const route = useRoute();
-  const matchedUserId = route.params?.meet_date_user_id;
+  const matchedUserId = route.params?.meet_date_user_id;
 
   const videoRef = useRef(null);
   const [status, setStatus] = useState({});
@@ -49,6 +49,10 @@ export default function UserProfile() {
   const [arrlength, setArrlength] = useState(0);
   const [arrposition, setArrposition] = useState(0);
   const [userUid, setUserUid] = useState(null);
+  const [likeStatus, setLikeStatus] = useState({
+    isLikedByMe: false,
+    isLikedByOther: false
+  });
 
   // For video slider (optional)
   const [videoPosition, setVideoPosition] = useState(0);
@@ -93,10 +97,10 @@ export default function UserProfile() {
   }, []);
 
   useEffect(() => {
-    if (userInfo?.["Liked by"] === "YES") {
-      setIsLiked(true);
-    }
-  }, [userInfo]);
+    console.log("likeStatus changed:", likeStatus);
+    // Use direct boolean value instead of conditional
+    setIsLiked(Boolean(likeStatus.isLikedByMe));
+  }, [likeStatus]);
 
   // Video logic
   const handlePlaybackStatusUpdate = (statusUpdate) => {
@@ -150,7 +154,6 @@ export default function UserProfile() {
     const updatedIsLiked = !isLiked;
     setIsLiked(updatedIsLiked);
 
-    const userUid = await AsyncStorage.getItem("user_uid");
     const likedUserUid = userInfo.user_uid;
     const formData = new URLSearchParams();
     formData.append("liker_user_id", userUid);
@@ -163,6 +166,9 @@ export default function UserProfile() {
             "Content-Type": "application/x-www-form-urlencoded",
           },
         });
+        
+        // Update like status after successful API call
+        setLikeStatus(prev => ({...prev, isLikedByMe: true}));
       } else {
         await axios.delete("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/likes", {
           data: formData.toString(),
@@ -170,24 +176,25 @@ export default function UserProfile() {
             "Content-Type": "application/x-www-form-urlencoded",
           },
         });
+        
+        // Update like status after successful API call
+        setLikeStatus(prev => ({...prev, isLikedByMe: false}));
       }
     } catch (error) {
       console.error("Error handling like action", error.message);
       console.error("Error details:", error.response ? error.response.data : "No response data");
+      // Revert UI state if API call fails
+      setIsLiked(!updatedIsLiked);
     }
 
-    // Debugging logs
-    console.log("updatedIsLiked:", updatedIsLiked);
-    console.log("userInfo.Liked:", userInfo?.Likes);
-
     // Check if both users have liked each other
-    if (updatedIsLiked && userInfo?.Likes === "YES") {
+    if (updatedIsLiked && userInfo["Liked by"] === "YES") {
       try {
         // Store the matched user's UserUid
-        await AsyncStorage.setItem("meet_date_user_id", userInfo.user_uid);
-        console.log("meet_date_user_id stored:", userInfo.user_uid);
+        await AsyncStorage.setItem("meet_date_user_id", likedUserUid);
+        console.log("meet_date_user_id stored:", likedUserUid);
         // Navigate to MatchPageNew
-        navigation.navigate("MatchPageNew", { meet_date_user_id: userInfo.user_uid });
+        navigation.navigate("MatchPageNew", { meet_date_user_id: likedUserUid });
       } catch (error) {
         console.error("Failed to store meet_date_user_id:", error);
       }
@@ -199,34 +206,209 @@ export default function UserProfile() {
     handleRightArrowPress();
   };
 
-  const fetchData = async (position) => {
+  // Calculate distance between two coordinates
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    // Radius of the Earth in miles
+    const earthRadius = 3958.8;
+    
+    // Convert latitude and longitude from degrees to radians
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    
+    // Haversine formula
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = earthRadius * c;
+    
+    return distance;
+  };
+
+  // Get the like status between current user and matched user
+  const getLikeStatus = async (currentUserUid, matchedUserUid) => {
     try {
-      console.log("userUid", userUid);
-      console.log(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/${userUid}`);
-      const response = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/${userUid}`);
-
-      console.log("responseDate:", response.data);
-      console.log("API Response MatchProfileDisplay:", response.data);
-
-      let matchResults = response.data.hasOwnProperty("result of 1 way match") ? response.data["result of 1 way match"] : response.data["result"];
-
-      const fetchedData = matchResults.find((match) => match.user_uid === matchedUserId);
-        if (fetchedData) {
-          const uid = fetchedData.user_uid;
-          const data = await fetchUserInfo(uid);
-          console.log("data", data);
-          console.log("fetchedData", fetchedData);
-          console.log("userInfo", fetchedData.user_uid);
-          console.log("isLiked", fetchedData["Liked by"]);
-          setUserInfo(fetchedData);
-
-          // Update isLiked state based on the new userInfo
-          setIsLiked(fetchedData["Liked by"] === "YES");
-        } else {
-          setError("No match data available.");
+      console.log(`Getting like status for current user ${currentUserUid} and matched user ${matchedUserUid}`);
+      
+      // Get likes data for current user using the correct endpoint format
+      const response = await axios.get(
+        `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/likes/${currentUserUid}`
+      );
+      
+      console.log("Likes response received:", JSON.stringify(response.data).substring(0, 300) + "...");
+      
+      // Check if response has the expected structure
+      if (!response.data || response.data.code !== 200) {
+        console.error("Unexpected response from likes endpoint:", response.data);
+        return { isLikedByMe: false, isLikedByOther: false };
       }
+      
+      // Deep logging of response structure to debug
+      console.log("Response structure:", Object.keys(response.data));
+      console.log("Result array type:", Array.isArray(response.data.result));
+      if (response.data.result) {
+        console.log("Result array length:", response.data.result.length);
+      }
+      
+      // Extract data from the response - checking both top-level and nested structures
+      let isLikedByMe = false;
+      let isLikedByOther = false;
+
+      // Check top-level arrays first
+      if (Array.isArray(response.data.people_whom_you_selected)) {
+        console.log("Checking top-level people_whom_you_selected array");
+        isLikedByMe = response.data.people_whom_you_selected.some(user => user.user_uid === matchedUserUid);
+      }
+      
+      if (Array.isArray(response.data.people_who_selected_you)) {
+        console.log("Checking top-level people_who_selected_you array");
+        isLikedByOther = response.data.people_who_selected_you.some(user => user.user_uid === matchedUserUid);
+      }
+      
+      // If we couldn't find the info in top-level arrays, look in the result array
+      if ((!isLikedByMe || !isLikedByOther) && Array.isArray(response.data.result)) {
+        response.data.result.forEach((item, index) => {
+          console.log(`Checking result[${index}] keys:`, Object.keys(item));
+          
+          if (Array.isArray(item.people_whom_you_selected)) {
+            console.log(`Checking nested people_whom_you_selected at index ${index}`);
+            if (item.people_whom_you_selected.some(user => user.user_uid === matchedUserUid)) {
+              isLikedByMe = true;
+            }
+          }
+          
+          if (Array.isArray(item.people_who_selected_you)) {
+            console.log(`Checking nested people_who_selected_you at index ${index}`);
+            if (item.people_who_selected_you.some(user => user.user_uid === matchedUserUid)) {
+              isLikedByOther = true;
+            }
+          }
+        });
+      }
+      
+      // Check matched_results as well, which might contain mutual matches
+      if (Array.isArray(response.data.matched_results)) {
+        console.log("Checking matched_results array");
+        const isMutualMatch = response.data.matched_results.some(user => user.user_uid === matchedUserUid);
+        if (isMutualMatch) {
+          isLikedByMe = true;
+          isLikedByOther = true;
+        }
+      }
+      
+      console.log("Final like status:", { isLikedByMe, isLikedByOther });
+      return { isLikedByMe, isLikedByOther };
+    } catch (error) {
+      console.error("Error getting like status:", error);
+      console.error("Error details:", error.response ? error.response.data : "No response data");
+      return { isLikedByMe: false, isLikedByOther: false };
+    }
+  };
+
+  // Get current user's location
+  const getCurrentUserLocation = async (userUid) => {
+    try {
+      const userData = await fetchUserInfo(userUid);
+      return {
+        latitude: parseFloat(userData.user_latitude || 0),
+        longitude: parseFloat(userData.user_longitude || 0)
+      };
+    } catch (error) {
+      console.error("Error getting current user location:", error);
+      return { latitude: 0, longitude: 0 };
+    }
+  };
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      if (!matchedUserId || !userUid) {
+        setError("Missing user information");
+        setLoading(false);
+        return;
+      }
+      
+      // 1. Get matched user information directly
+      const matchedUserData = await fetchUserInfo(matchedUserId);
+      console.log("Matched user data:", matchedUserData);
+      
+      if (!matchedUserData) {
+        setError("Could not retrieve matched user data");
+        setLoading(false);
+        return;
+      }
+      
+      // 2. Get like status between users
+      const likeStatusData = await getLikeStatus(userUid, matchedUserId);
+      setLikeStatus(likeStatusData);
+      
+      // 3. Calculate distance between users - with enhanced validation
+      let distance = 0;
+      try {
+        const currentUserData = await fetchUserInfo(userUid);
+        
+        // Log coordinates to help debug
+        console.log("Current user coordinates:", {
+          latitude: currentUserData.user_latitude,
+          longitude: currentUserData.user_longitude
+        });
+        
+        console.log("Matched user coordinates:", {
+          latitude: matchedUserData.user_latitude,
+          longitude: matchedUserData.user_longitude
+        });
+        
+        // Validate coordinates before calculation
+        const currentUserLat = parseFloat(currentUserData.user_latitude);
+        const currentUserLng = parseFloat(currentUserData.user_longitude);
+        const matchedUserLat = parseFloat(matchedUserData.user_latitude);
+        const matchedUserLng = parseFloat(matchedUserData.user_longitude);
+        
+        if (!isNaN(currentUserLat) && !isNaN(currentUserLng) && 
+            !isNaN(matchedUserLat) && !isNaN(matchedUserLng) &&
+            currentUserLat !== 0 && currentUserLng !== 0 && 
+            matchedUserLat !== 0 && matchedUserLng !== 0) {
+          
+          distance = calculateDistance(
+            currentUserLat,
+            currentUserLng,
+            matchedUserLat,
+            matchedUserLng
+          );
+          
+          console.log("Calculated distance:", distance);
+        } else {
+          console.warn("Invalid coordinates for distance calculation, using default distance");
+          distance = 0;
+        }
+      } catch (locationError) {
+        console.error("Error calculating distance:", locationError);
+        distance = 0;
+      }
+      
+      // 4. Combine all data
+      const completeUserInfo = {
+        ...matchedUserData,
+        "Liked by": likeStatusData.isLikedByOther ? "YES" : "NO",
+        "Likes": likeStatusData.isLikedByMe ? "YES" : "NO",
+        distance: distance
+      };
+      
+      // Force immediate update by using a functional update
+      setUserInfo(() => completeUserInfo);
+      
+      // Use actual API data instead of forcing it to true
+      setIsLiked(likeStatusData.isLikedByMe);
+      
+      console.log("API like status:", likeStatusData.isLikedByMe);
+      console.log("Setting complete user info:", completeUserInfo);
+      console.log("User updated info:", userInfo);
+      
     } catch (err) {
-      setError(err.message || "An error occurred while fetching matches.");
+      setError(err.message || "An error occurred while fetching user information.");
     } finally {
       setLoading(false);
     }
@@ -252,10 +434,10 @@ export default function UserProfile() {
   }, []);
 
   useEffect(() => {
-    if (userUid) {
-      fetchData(arrposition);
+    if (userUid && matchedUserId) {
+      fetchData();
     }
-  }, [userUid, arrposition]);
+  }, [userUid, matchedUserId]);
 
   if (loading) {
     return (
@@ -390,9 +572,6 @@ export default function UserProfile() {
 
       {/* MATCH ACTIONS CONTAINER */}
       <View style={styles.matchActionsContainer}>
-        <TouchableOpacity style={styles.roundButton} onPress={handleLeftArrowPress}>
-          <Ionicons name='chevron-back' size={28} color='white' />
-        </TouchableOpacity>
 
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <TouchableOpacity style={[styles.roundButton, { backgroundColor: "#fff" }]} onPress={handleClosePress}>
@@ -403,10 +582,6 @@ export default function UserProfile() {
             <Ionicons name={isLiked ? "heart" : "heart-outline"} size={24} color={isLiked ? "white" : "red"} />
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity style={styles.roundButton} onPress={handleRightArrowPress}>
-          <Ionicons name='chevron-forward' size={28} color='white' />
-        </TouchableOpacity>
       </View>
 
       {/* BOTTOM SHEET */}
@@ -426,7 +601,12 @@ export default function UserProfile() {
             <Text style={styles.nameText}>
               {userInfo?.user_first_name}, {userInfo?.user_age}
             </Text>
-            <Ionicons name={userInfo?.["Likes"] === "YES" ? "heart" : "heart-outline"} size={20} color='red' style={{ marginLeft: 6 }} />
+            <Ionicons 
+              name={userInfo?.["Liked by"] === "YES" ? "heart" : "heart-outline"} 
+              size={20} 
+              color='red' 
+              style={{ marginLeft: 6 }} 
+            />
           </View>
 
           {/* 5-star rating + attendance rating (example placeholder) */}
@@ -452,7 +632,11 @@ export default function UserProfile() {
           {/* Distances */}
           <View style={styles.detailRow}>
             <Ionicons name='location' size={16} color='#bbb' style={{ marginRight: 8 }} />
-            <Text style={styles.detailText}>{userInfo.distance ? `${userInfo.distance.toFixed(2)} miles away` : "Distance unavailable"}</Text>
+            <Text style={styles.detailText}>
+              {typeof userInfo.distance === 'number'
+                ? `${userInfo.distance.toFixed(2)} miles away`
+                : "Distance unavailable"}
+            </Text>
           </View>
 
           {/* Height */}

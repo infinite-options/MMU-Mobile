@@ -34,8 +34,15 @@ import DropDownPicker from "react-native-dropdown-picker";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { allInterests } from "../src/config/interests";
 import * as Camera from 'expo-camera';
+import Constants from 'expo-constants';
 
-const GOOGLE_API_KEY = REACT_APP_GOOGLE_API_KEY;
+// Fallback to a placeholder to prevent crashes - replace with your actual key when testing
+const GOOGLE_API_KEY = Constants.expoConfig?.extra?.googleApiKey || 
+                       process.env.REACT_APP_GOOGLE_API_KEY || 
+                       "YOUR_GOOGLE_API_KEY_HERE";
+
+// Add this debug line below to see if key is loaded
+console.log("Google API Key status:", GOOGLE_API_KEY ? "Key found (length: " + GOOGLE_API_KEY.length + ")" : "No key found");
 
 // Add axios default configuration
 axios.defaults.timeout = 10000; // 10 seconds timeout
@@ -59,6 +66,14 @@ const DROPDOWN_ZINDEX = {
   BODY_TYPE: 2200,
 };
 
+// Add this near the top with other constants
+const DEFAULT_REGION = {
+  latitude: 37.7749,
+  longitude: -122.4194,
+  latitudeDelta: 0.06,
+  longitudeDelta: 0.06,
+};
+
 export default function EditProfile() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
@@ -77,12 +92,8 @@ export default function EditProfile() {
   const [address, setAddress] = useState(null);
 
   // Default map region
-  const [region, setRegion] = useState({
-    latitude: 37.7749,
-    longitude: -122.4194,
-    latitudeDelta: 0.06,
-    longitudeDelta: 0.06,
-  });
+  const [region, setRegion] = useState(DEFAULT_REGION);
+  const [mapReady, setMapReady] = useState(false);
 
   // Autocomplete suggestions
   const [suggestions, setSuggestions] = useState([]);
@@ -468,30 +479,15 @@ export default function EditProfile() {
         }
 
         // Handle video
+        let videoUrl = null;
         if (fetched.user_video_url) {
-          let rawVideoUrl = fetched.user_video_url;
           try {
-            // Remove any existing JSON encoding
-            if (typeof rawVideoUrl === "string") {
-              // Handle double-encoded strings
-              const parsed = JSON.parse(rawVideoUrl);
-              rawVideoUrl = Array.isArray(parsed) ? parsed[0] : parsed;
-
-              // If result is still a string, parse again to remove quotes
-              if (typeof parsed === "string") {
-                rawVideoUrl = JSON.parse(parsed);
-              }
-            }
-          } catch (err) {
-            console.log("Could not parse video URL:", err);
+            videoUrl = JSON.parse(fetched.user_video_url);
+          } catch (e) {
+            // If parsing fails, clean the string directly
+            videoUrl = fetched.user_video_url.replace(/^"|"$/g, '');
           }
-
-          // Ensure consistent string format
-          const cleanedVideoUrl = typeof rawVideoUrl === "string" ? rawVideoUrl.replace(/^"+|"+$/g, "") : null;
-
-          setVideoUri(cleanedVideoUrl);
-          // Update the fetched data with cleaned URL
-          fetched.user_video_url = cleanedVideoUrl;
+          console.log("Cleaned video url:", videoUrl);
         }
 
         // Convert stored cm back to feet/inches
@@ -701,6 +697,7 @@ export default function EditProfile() {
       setSuggestions([]);
       return;
     }
+    console.log("Api key:", GOOGLE_API_KEY);
     try {
       const endpoint = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&key=${GOOGLE_API_KEY}&components=country:us`;
       const response = await fetch(endpoint);
@@ -724,6 +721,7 @@ export default function EditProfile() {
     Keyboard.dismiss();
     setSearchText(suggestion.description);
     setSuggestions([]);
+    console.log("Api key in handleSuggestionPress:", GOOGLE_API_KEY);
     try {
       const detailsEndpoint = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${suggestion.place_id}&key=${GOOGLE_API_KEY}`;
       const detailsResp = await fetch(detailsEndpoint);
@@ -731,7 +729,16 @@ export default function EditProfile() {
       if (detailsData.status === "OK") {
         const { lat, lng } = detailsData.result.geometry.location;
         setLocation({ latitude: lat, longitude: lng });
-        setRegion((prev) => ({ ...prev, latitude: lat, longitude: lng }));
+        
+        // Update the region with the new coordinates
+        const newRegion = {
+          latitude: lat,
+          longitude: lng,
+          latitudeDelta: 0.06,
+          longitudeDelta: 0.06,
+        };
+        setRegion(newRegion);
+        
         setFormValues((prev) => ({
           ...prev,
           address: suggestion.description,
@@ -1016,6 +1023,19 @@ export default function EditProfile() {
       return 0;
     }
   };
+
+  // Add this effect to properly initialize the map location
+  useEffect(() => {
+    if (formValues.latitude && formValues.longitude && !mapReady) {
+      setRegion({
+        latitude: parseFloat(formValues.latitude),
+        longitude: parseFloat(formValues.longitude),
+        latitudeDelta: 0.06,
+        longitudeDelta: 0.06,
+      });
+      setMapReady(true);
+    }
+  }, [formValues.latitude, formValues.longitude, mapReady]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -1636,73 +1656,57 @@ export default function EditProfile() {
                 <Text style={styles.addressValue}>{formValues.address}</Text>
               </View>
             )}
-            <View style={styles.autocompleteContainer}>
-              <GooglePlacesAutocomplete
-                placeholder='Search your location...'
-                fetchDetails={true}
-                onPress={(data, details = null) => {
-                  if (details) {
-                    const { lat, lng } = details.geometry.location;
-                    setLocation({ latitude: lat, longitude: lng });
-                    setRegion((prev) => ({ ...prev, latitude: lat, longitude: lng }));
-                    setFormValues((prev) => ({
-                      ...prev,
-                      address: data.description,
-                      latitude: lat,
-                      longitude: lng,
-                    }));
+
+            {/* Replace GooglePlacesAutocomplete with a custom implementation */}
+            <View style={styles.searchRow}>
+              <View style={styles.searchWrapper}>
+                <TextInput
+                  placeholder="Search your location..."
+                  mode="outlined"
+                  style={styles.inputField}
+                  value={searchText}
+                  onChangeText={handleSearchTextChange}
+                  outlineStyle={styles.textInputOutline}
+                  right={
+                    <TextInput.Icon
+                      icon="magnify"
+                      onPress={handleSearch}
+                      color="#E4423F"
+                    />
                   }
-                }}
-                query={{
-                  key: GOOGLE_API_KEY,
-                  language: "en",
-                  components: "country:us",
-                }}
-                enablePoweredByContainer={false}
-                styles={{
-                  container: {
-                    flex: 0,
-                    zIndex: 2000,
-                  },
-                  textInputContainer: {
-                    width: "100%",
-                  },
-                  textInput: {
-                    height: 48,
-                    color: "#000",
-                    fontSize: 16,
-                    borderWidth: 1,
-                    borderColor: "#CCC",
-                    borderRadius: 25,
-                    paddingHorizontal: 15,
-                    backgroundColor: "#F9F9F9",
-                  },
-                  listView: {
-                    position: "absolute",
-                    top: 50,
-                    left: 0,
-                    right: 0,
-                    backgroundColor: "#FFF",
-                    borderWidth: 1,
-                    borderColor: "#DDD",
-                    borderRadius: 5,
-                    zIndex: 2000,
-                    elevation: 2000,
-                  },
-                  row: {
-                    padding: 13,
-                    height: 44,
-                  },
-                }}
-                listViewDisplayed={false}
-                keyboardShouldPersistTaps='handled'
-                nestedScrollEnabled={true}
-              />
+                />
+              </View>
             </View>
+
+            {/* Display suggestions in a separate container */}
+            {suggestions.length > 0 && (
+              <View style={styles.suggestionsContainer}>
+                {suggestions.map((suggestion) => (
+                  <TouchableOpacity
+                    key={suggestion.place_id}
+                    style={styles.suggestionItem}
+                    onPress={() => handleSuggestionPress(suggestion)}
+                  >
+                    <Text>{suggestion.description}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
 
             {/* Map View */}
             <View style={styles.mapContainer}>
-              <MapView style={styles.map} region={region} onRegionChangeComplete={(newRegion) => setRegion(newRegion)}>
+              <MapView 
+                style={styles.map} 
+                region={region}
+                onMapReady={() => setMapReady(true)}
+                onRegionChangeComplete={(newRegion) => {
+                  // Only update region if user is actually moving the map
+                  if (Math.abs(newRegion.latitude - region.latitude) > 0.0001 ||
+                      Math.abs(newRegion.longitude - region.longitude) > 0.0001) {
+                    setRegion(newRegion);
+                  }
+                }}
+              >
                 {location && <Marker coordinate={location} title='Selected Location' pinColor='red' />}
               </MapView>
             </View>

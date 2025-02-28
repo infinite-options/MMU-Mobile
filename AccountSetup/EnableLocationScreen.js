@@ -23,17 +23,17 @@ export default function EnableLocationScreen({ navigation }) {
   const handleEnableLocation = async () => {
     try {
       // 1) Ask permission to use location
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        // If they deny, just store "False" in user_location_service
-        await updateLocationServiceInDB("False");
-        navigation.navigate("EnableNotificationsScreen");
-        return;
-      }
+      // const { status } = await Location.requestForegroundPermissionsAsync();
+      // if (status !== 'granted') {
+      //   // If they deny, just store "False" in user_location_service
+      //   await updateLocationServiceInDB("False");
+      //   navigation.navigate("EnableNotificationsScreen");
+      //   return;
+      // }
 
-      // 2) If granted, get current position (optional)
-      const currentPosition = await Location.getCurrentPositionAsync({});
-      setLocation(currentPosition.coords);
+      // // 2) If granted, get current position (optional)
+      // const currentPosition = await Location.getCurrentPositionAsync({});
+      // setLocation(currentPosition.coords);
 
       // 3) user_location_service => "True"
       await updateLocationServiceInDB("True");

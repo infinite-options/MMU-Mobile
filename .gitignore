@@ -33,6 +33,11 @@ yarn-error.*
 # local env files
 .env*.local
 .env
+*.keystore
 
 # typescript
 *.tsbuildinfo
+
+# Build directories
+# ios/
+# android/

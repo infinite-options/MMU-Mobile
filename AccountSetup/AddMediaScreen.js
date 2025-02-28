@@ -144,15 +144,61 @@ export default function AddMediaScreen({ navigation }) {
   // Handle picking a video
   const handleVideoUpload = async () => {
     try {
-      const result = await ImagePicker.launchCameraAsync({
+      // Only request camera permissions - not microphone through ImagePicker
+      const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (cameraPermission.status !== 'granted') {
+        Alert.alert("Permissions Required", 
+          "Please enable camera permissions to record video.");
+        return;
+      }
+      
+      // Try using launchImageLibraryAsync instead, which is more reliable for videos
+      const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
         allowsEditing: true,
         quality: 1.0,
         videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium,
-        maxDuration: 60, // limit to 60 seconds
-        videoExportPreset: ImagePicker.VideoExportPreset.MediumQuality,
+        // Remove videoExportPreset as it can cause issues on some devices
       });
 
+      console.log("Video picker result:", result);
+      
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        console.log("Video selection success:", result.assets[0]);
+        setVideoUri(result.assets[0].uri);
+        setIsVideoPlaying(false);
+      } else {
+        console.log("Video selection cancelled or no URI returned");
+        Alert.alert("No Video Selected", "Please try again or choose a different video.");
+      }
+    } catch (error) {
+      console.error("Error details:", error);
+      Alert.alert("Video Selection Error", 
+        "There was an issue selecting the video. Please try again.");
+    }
+  };
+
+  // Add a new function for recording video directly (as an alternative)
+  const handleRecordVideo = async () => {
+    try {
+      // Only request camera permissions - not microphone through ImagePicker
+      const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (cameraPermission.status !== 'granted') {
+        Alert.alert("Permissions Required", 
+          "Please enable camera permissions to record video.");
+        return;
+      }
+      
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        allowsEditing: false, // Set to false for more reliable results
+        quality: 1, // Slightly reduced quality for better compatibility
+      });
+
+      console.log("Video recording result:", result);
+      
       if (!result.canceled && result.assets?.[0]?.uri) {
         console.log("Video recording success:", result.assets[0]);
         setVideoUri(result.assets[0].uri);
@@ -333,10 +379,17 @@ export default function AddMediaScreen({ navigation }) {
                 </TouchableOpacity>
               </View>
             ) : (
-              <TouchableOpacity onPress={handleVideoUpload} style={styles.uploadVideoButton}>
-                <Image source={require("../assets/icons/record.png")} />
-                <Text style={styles.uploadVideoText}>Record Video</Text>
-              </TouchableOpacity>
+              <View style={styles.videoUploadOptions}>
+                <TouchableOpacity onPress={handleRecordVideo} style={styles.uploadVideoButton}>
+                  <Image source={require("../assets/icons/record.png")} />
+                  <Text style={styles.uploadVideoText}>Record Video</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity onPress={handleVideoUpload} style={styles.selectVideoButton}>
+                  <Ionicons name="images-outline" size={24} color="#E4423F" />
+                  <Text style={styles.uploadVideoText}>Select Video</Text>
+                </TouchableOpacity>
+              </View>
             )}
           </View>
 
@@ -471,6 +524,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 4,
   },
+  videoUploadOptions: {
+    flexDirection: 'column',
+    gap: 10,
+    marginBottom: 20,
+  },
   uploadVideoButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -487,6 +545,16 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
     marginLeft: 15,
+  },
+  selectVideoButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: "#E4423F",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    justifyContent: "center",
   },
 
   // Photo boxes in a row (3 boxes)

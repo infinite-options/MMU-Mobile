@@ -12,6 +12,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+
 export default function EnableNotificationsScreen({ navigation }) {
   // Store the push token if successfully obtained
   const [expoPushToken, setExpoPushToken] = useState(null);
@@ -20,20 +22,29 @@ export default function EnableNotificationsScreen({ navigation }) {
   const handleEnableNotifications = async () => {
     try {
       // 1. Ask the user for permissions
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status !== 'granted') {
-        await updateNotificationServiceInDB("False");
-      navigation.navigate("MyProfile");
-        return;
-      }
+      // const { status } = await Notifications.requestPermissionsAsync();
+      // if (status !== 'granted') {
+      //   await updateNotificationServiceInDB("False");
+      //   navigation.navigate("MyProfile");
+      //   return;
+      // }
 
-      // 2. Get the Expo push token
-      const tokenResponse = await Notifications.getExpoPushTokenAsync();
-      const token = tokenResponse.data;
-      setExpoPushToken(token);
+      // // 2. Get the Expo push token with proper configuration
+      // const tokenOptions = {
+      //   projectId: Constants.expoConfig?.extra?.eas?.projectId || Constants.manifest?.extra?.eas?.projectId,
+      // };
+      
+      // try {
+      //   const tokenResponse = await Notifications.getExpoPushTokenAsync(tokenOptions);
+      //   const token = tokenResponse.data;
+      //   setExpoPushToken(token);
+      //   console.log("Push token obtained:", token);
+      // } catch (tokenError) {
+      //   console.warn("Could not get push token:", tokenError);
+      //   // Continue even if we can't get the token
+      // }
 
       // 3. You could send this token to your backend for sending push notifications
-      // For now, we'll just navigate away:
       await updateNotificationServiceInDB("True");
       navigation.navigate("MyProfile");
     } catch (error) {

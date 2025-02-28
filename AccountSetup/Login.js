@@ -19,10 +19,12 @@ import ProgressBar from '../src/Assets/Components/ProgressBar';
 
 import axios from 'axios';
 import sha256 from 'crypto-js/sha256';
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { GoogleSignin, statusCodes, GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import config from '../config'; // Import config
 
 export default function Login() {
+  console.log("LoginPage");
+  console.log("from login .env:", process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG);
   const navigation = useNavigation();
 
   // Local states
@@ -35,12 +37,14 @@ export default function Login() {
   // Endpoints
   const SALT_ENDPOINT = 'https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/MMU';
   const LOGIN_ENDPOINT = 'https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/Login/MMU';
-  const GOOGLE_LOGIN_ENDPOINT = 'https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/GoogleLoginMMU';
+  // Replace the GoogleLoginMMU endpoint with UserSocialLogin endpoint (used as template below)
+  // const GOOGLE_LOGIN_ENDPOINT = 'https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/GoogleLoginMMU';
 
   // Initialize Google Sign In
   useEffect(() => {
     const configureGoogleSignIn = async () => {
       try {
+        console.log("from login configure useeffect .env:", process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG);
         console.log("Configuring Google Sign-In with config:", {
           iosClientId: config.googleClientIds.ios,
           androidClientId: config.googleClientIds.android,
@@ -52,9 +56,9 @@ export default function Login() {
           iosClientId: config.googleClientIds.ios,
           androidClientId: config.googleClientIds.android,
           webClientId: config.googleClientIds.web,
-          scopes: ['profile', 'email'],
           offlineAccess: true,
         };
+        console.log("googleSignInConfig:", googleSignInConfig);
         
         // Configure Google Sign-In
         await GoogleSignin.configure(googleSignInConfig);
@@ -161,21 +165,26 @@ export default function Login() {
         hasPhoto: !!user.photo
       });
       
-      // Call your backend endpoint for Google login
-      const response = await axios.post(GOOGLE_LOGIN_ENDPOINT, {
-        google_id_token: idToken,
-        email: user.email,
-        first_name: user.givenName || '',
-        last_name: user.familyName || '',
-        profile_picture: user.photo || '',
+      // Call your backend endpoint for Google login - updated to match GoogleLogin.js
+      const url = `https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialLogin/MMU/${user.email}`;
+      const response = await axios.get(url, {
+        params: {
+          id_token: idToken,
+        },
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
       });
       
       console.log('Backend response:', response.data);
       
-      // Handle response
-      if (response.data && response.data.result) {
-        // Store user data in AsyncStorage
-        const { user_uid, user_email_id } = response.data.result;
+      // Handle response - updated to match actual response format
+      if (response.data && response.data.message === "Correct Email" && Array.isArray(response.data.result) && response.data.result.length >= 1) {
+        // Store user data in AsyncStorage - the first element in result array is the user_uid
+        const user_uid = response.data.result[0];
+        const user_email_id = user.email; // Use email from Google sign-in data
+        
         await AsyncStorage.setItem('user_uid', user_uid);
         await AsyncStorage.setItem('user_email_id', user_email_id);
         
@@ -356,6 +365,14 @@ export default function Login() {
         </TouchableOpacity>
       </View>
 
+      {/* Google Sign-In Button */}
+      {/* <GoogleSigninButton
+        style={styles.googleButton}
+        size={GoogleSigninButton.Size.Wide}
+        color={GoogleSigninButton.Color.Dark}
+        onPress={handleGoogleSignIn}
+      /> */}
+
       {/* Don't have an account? Sign up */}
       <TouchableOpacity onPress={() => navigation.navigate('AccountSetup2Create')}>
         <Text style={styles.footerText}>
@@ -477,5 +494,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9F9F9',
     paddingHorizontal: 15,
     height: 50,
+  },
+  googleButton: {
+    width: 192,
+    height: 48,
+    alignSelf: 'center',
+    marginBottom: 20,
   },
 });

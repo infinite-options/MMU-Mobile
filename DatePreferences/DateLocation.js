@@ -1,20 +1,32 @@
-import React, { useState, useEffect } from "react";
-import { SafeAreaView, Platform, StatusBar, View, Text, TouchableOpacity, StyleSheet, Pressable, Keyboard, Alert, Image } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { SafeAreaView, Platform, StatusBar, View, Text, TouchableOpacity, StyleSheet, Pressable, Keyboard, Alert, Image, ActivityIndicator, TextInput, FlatList } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker } from "react-native-maps";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { REACT_APP_GOOGLE_API_KEY } from "@env";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
-// Example hearts images
-// import heartUser from '../src/Assets/Images/heartUser.png';
-// import heartMatch from '../src/Assets/Images/heartMatch.png';
+// Remove GooglePlacesAutocomplete
+// import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 
-const GOOGLE_API_KEY = REACT_APP_GOOGLE_API_KEY;
+// Use conditional check to ensure API key is properly loaded
+const GOOGLE_API_KEY = REACT_APP_GOOGLE_API_KEY || '';
+
+// Add console log to debug API key (remove in production)
+console.log("API Key defined:", !!GOOGLE_API_KEY);
 
 export default function DateLocation({ navigation }) {
   const route = useRoute();
   const [matchedUserId, setMatchedUserId] = useState(route.params?.matchedUserId || null);
+  
+  // State for custom place search
+  const [searchText, setSearchText] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedPlace, setSelectedPlace] = useState(null);
+  
+  // Add a ref for the map
+  const mapRef = useRef(null);
+  
   useEffect(() => {
     const initMatchedUserId = async () => {
       if (!matchedUserId) {
@@ -27,6 +39,7 @@ export default function DateLocation({ navigation }) {
     };
     initMatchedUserId();
   }, []);
+  
   const [location, setLocation] = useState(null);
 
   // Default map region
@@ -60,17 +73,182 @@ export default function DateLocation({ navigation }) {
     fetchUserCredentials();
   }, []);
 
+  // Location loading state
+  const [locationLoading, setLocationLoading] = useState(false);
+
   const handleRegionChangeComplete = (newRegion) => {
     setRegion(newRegion);
   };
+  
+  // Custom function to search places using fetch
+  const searchPlaces = async (query) => {
+    if (!query || query.length < 3 || !GOOGLE_API_KEY) return;
+    
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
+          query
+        )}&key=${GOOGLE_API_KEY}&components=country:us`
+      );
+      
+      const data = await response.json();
+      if (data.status === 'OK') {
+        setSearchResults(data.predictions);
+      } else {
+        console.error('Place Autocomplete Error:', data.status);
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Error fetching places:', error);
+      Alert.alert('Error', 'Failed to search locations. Please try again.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+  
+  // Debounce search to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchText.length > 2) {
+        searchPlaces(searchText);
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [searchText]);
+  
+  // Add a useEffect to load previously chosen location
+  useEffect(() => {
+    const loadSavedLocation = async () => {
+      try {
+        // Try to load previously saved location
+        const savedLocationJSON = await AsyncStorage.getItem('savedLocation');
+        if (savedLocationJSON) {
+          const savedLocation = JSON.parse(savedLocationJSON);
+          setLocation(savedLocation);
+          setSearchText(savedLocation.name || '');
+          setSelectedPlace(savedLocation.name || '');
+          
+          // Update the map to show the saved location
+          setRegion({
+            latitude: savedLocation.latitude,
+            longitude: savedLocation.longitude,
+            latitudeDelta: 0.06,
+            longitudeDelta: 0.06,
+          });
+          
+          // Use setTimeout to ensure the map has rendered before animating
+          setTimeout(() => {
+            if (mapRef.current) {
+              mapRef.current.animateToRegion({
+                latitude: savedLocation.latitude,
+                longitude: savedLocation.longitude,
+                latitudeDelta: 0.06,
+                longitudeDelta: 0.06,
+              }, 1000);
+            }
+          }, 500);
+        }
+      } catch (error) {
+        console.error('Error loading saved location:', error);
+      }
+    };
+    
+    loadSavedLocation();
+  }, []);
+  
+  // Modify the getPlaceDetails function to make map updates more reliable
+  const getPlaceDetails = async (placeId) => {
+    if (!placeId || !GOOGLE_API_KEY) return;
+    
+    setLocationLoading(true);
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,geometry&key=${GOOGLE_API_KEY}`
+      );
+      
+      const data = await response.json();
+      if (data.status === 'OK' && data.result) {
+        const placeDetails = data.result;
+        const newRegion = {
+          latitude: placeDetails.geometry.location.lat,
+          longitude: placeDetails.geometry.location.lng,
+          latitudeDelta: 0.06,
+          longitudeDelta: 0.06,
+        };
+        
+        const locationData = {
+          latitude: placeDetails.geometry.location.lat,
+          longitude: placeDetails.geometry.location.lng,
+          name: placeDetails.name,
+          address: placeDetails.formatted_address,
+          placeId: placeDetails.place_id,
+        };
+        
+        // Update location state
+        setLocation(locationData);
+        
+        // Clear search results after selection
+        setSearchResults([]);
+        setSelectedPlace(placeDetails.name);
+        setSearchText(placeDetails.name);
+        
+        // Update region state
+        setRegion(newRegion);
+        
+        // Use both methods to ensure map updates:
+        // 1. Set region state (above)
+        // 2. Directly animate map to new location
+        if (mapRef.current) {
+          // Immediate update
+          mapRef.current.animateToRegion(newRegion, 1000);
+          
+          // Delayed update as backup
+          setTimeout(() => {
+            mapRef.current.animateToRegion(newRegion, 500);
+          }, 500);
+        }
+      } else {
+        console.error('Place Details Error:', data.status);
+        Alert.alert('Error', 'Could not get details for this location.');
+      }
+    } catch (error) {
+      console.error('Error fetching place details:', error);
+      Alert.alert('Error', 'Failed to get location details. Please try again.');
+    } finally {
+      setLocationLoading(false);
+    }
+  };
 
-  // Confirm location => optionally store on server or just proceed
+  // Handle location confirmation
   const handleAskGemmaOut = async () => {
     if (location) {
-      // Example: Save to your server or AsyncStorage
-      console.log("Location chosen:", location, "for user:", userUid);
-      // Navigate onward
-      navigation.navigate("DateFinal", { location, matchedUserId: matchedUserId });
+      try {
+        // Save complete location object
+        await AsyncStorage.setItem('savedLocation', JSON.stringify(location));
+        
+        // Also save individual fields for DateFinal.js to access
+        if (location.name) {
+          await AsyncStorage.setItem('selected_location_name', location.name);
+        }
+        if (location.address) {
+          await AsyncStorage.setItem('selected_location_address', location.address);
+        }
+        await AsyncStorage.setItem('selected_date_location_lat', String(location.latitude));
+        await AsyncStorage.setItem('selected_date_location_lng', String(location.longitude));
+        
+        console.log("Location chosen:", location, "for user:", userUid);
+        
+        // Navigate onward with complete location data
+        navigation.navigate("DateFinal", { 
+          location, 
+          matchedUserId: matchedUserId 
+        });
+      } catch (error) {
+        console.error("Error saving location:", error);
+        Alert.alert("Error", "There was a problem saving your location. Please try again.");
+      }
     }
   };
 
@@ -92,72 +270,50 @@ export default function DateLocation({ navigation }) {
         <Text style={styles.title}>Where will the date occur?</Text>
         <Text style={styles.subtitle}>Please search for a dinner location.</Text>
 
-        {/* Google Places Autocomplete */}
-        <GooglePlacesAutocomplete
-          placeholder='Search a location...'
-          fetchDetails={true}
-          onPress={(data, details = null) => {
-            if (details) {
-              const { lat, lng } = details.geometry.location;
-              setLocation({
-                latitude: lat,
-                longitude: lng,
-              });
-              setRegion({
-                latitude: lat,
-                longitude: lng,
-                latitudeDelta: 0.06,
-                longitudeDelta: 0.06,
-              });
-            }
-          }}
-          query={{
-            key: GOOGLE_API_KEY,
-            language: "en",
-            components: "country:us",
-          }}
-          styles={{
-            container: {
-              flex: 0,
-            },
-            textInputContainer: {
-              width: "100%",
-              backgroundColor: "rgba(0,0,0,0)",
-              borderTopWidth: 0,
-              borderBottomWidth: 0,
-            },
-            textInput: {
-              marginLeft: 0,
-              marginRight: 0,
-              height: 48,
-              color: "#000",
-              fontSize: 16,
-              borderWidth: 1,
-              borderColor: "#CCC",
-              borderRadius: 25,
-              paddingHorizontal: 15,
-            },
-            listView: {
-              backgroundColor: "#FFF",
-              borderWidth: 1,
-              borderColor: "#DDD",
-              borderRadius: 5,
-              marginTop: 5,
-            },
-            row: {
-              padding: 13,
-              height: 44,
-            },
-          }}
-        />
+        {/* Custom Search Input */}
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search a location..."
+            value={searchText}
+            onChangeText={setSearchText}
+            onFocus={() => setSelectedPlace(null)}
+          />
+          {isSearching && (
+            <ActivityIndicator size="small" color="#E4423F" style={styles.searchLoader} />
+          )}
+        </View>
+        
+        {/* Search Results List */}
+        {searchResults.length > 0 && !selectedPlace && (
+          <View style={styles.resultsContainer}>
+            <FlatList
+              data={searchResults}
+              keyExtractor={(item) => item.place_id}
+              renderItem={({ item }) => (
+                <TouchableOpacity 
+                  style={styles.resultItem}
+                  onPress={() => getPlaceDetails(item.place_id)}
+                >
+                  <Ionicons name="location-outline" size={20} color="#666" />
+                  <Text style={styles.resultText}>{item.description}</Text>
+                </TouchableOpacity>
+              )}
+              style={styles.resultsList}
+            />
+          </View>
+        )}
       </View>
 
       {/* Map */}
       <View style={styles.mapContainer}>
-        <MapView style={styles.map} region={region} onRegionChangeComplete={handleRegionChangeComplete}>
-          {/* Show a Marker if user selected a location */}
-          {/* {location && <Marker coordinate={location} title='Selected Location' description={searchText || "Location"} pinColor='red' />} */}
-          {location && <Marker coordinate={location} title='Selected Location' pinColor='red' />}
+        <MapView 
+          ref={mapRef}
+          style={styles.map} 
+          region={region} 
+          onRegionChangeComplete={handleRegionChangeComplete}
+        >
+          {location && <Marker coordinate={location} title={location.name} pinColor='red' />}
         </MapView>
       </View>
 
@@ -166,17 +322,24 @@ export default function DateLocation({ navigation }) {
         <Text style={styles.askButtonText}>Confirm Date Details</Text>
       </Pressable>
 
-      {/* Progress Dots (example: second dot in red) */}
+      {/* Progress Dots */}
       <View style={styles.progressDotsContainer}>
         <View style={[styles.dot, { backgroundColor: "#ccc" }]} />
         <View style={[styles.dot, { backgroundColor: "#E4423F" }]} />
         <View style={[styles.dot, { backgroundColor: "#ccc" }]} />
       </View>
+      
+      {/* Loading Indicator */}
+      {locationLoading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#E4423F" />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
 
-// Styles
+// Updated Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -218,6 +381,45 @@ const styles = StyleSheet.create({
     color: "#888",
     marginBottom: 20,
   },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  searchInput: {
+    flex: 1,
+    height: 48,
+    borderWidth: 1,
+    borderColor: '#CCC',
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    fontSize: 16,
+  },
+  searchLoader: {
+    position: 'absolute',
+    right: 15,
+  },
+  resultsContainer: {
+    maxHeight: 200,
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  resultsList: {
+    backgroundColor: '#FFF',
+  },
+  resultItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
+  },
+  resultText: {
+    fontSize: 14,
+    marginLeft: 10,
+  },
   mapContainer: {
     flex: 1,
     marginHorizontal: 20,
@@ -252,5 +454,15 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     marginHorizontal: 4,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

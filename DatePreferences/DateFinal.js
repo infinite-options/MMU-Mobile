@@ -45,20 +45,71 @@ export default function DateFinal({ navigation }) {
     React.useCallback(() => {
       const fetchDateDetails = async () => {
         try {
-          // First check AsyncStorage values
+          console.log('DateFinal: Fetching date details');
+          
+          // First check route.params for any new selections (highest priority)
+          if (route.params?.dateType) {
+            setDateType(route.params.dateType);
+            await AsyncStorage.setItem('user_date_type', route.params.dateType);
+          }
+          
+          if (route.params?.dateDay) {
+            setDateDay(route.params.dateDay);
+            await AsyncStorage.setItem('user_date_day', route.params.dateDay);
+          }
+          
+          if (route.params?.dateTime) {
+            setDateTime(route.params.dateTime);
+            await AsyncStorage.setItem('user_date_time', route.params.dateTime);
+          }
+
+          // Then check AsyncStorage for saved values (second priority)
           const storedDateType = await AsyncStorage.getItem('user_date_type');
           const storedDateDay = await AsyncStorage.getItem('user_date_day');
           const storedDateTime = await AsyncStorage.getItem('user_date_time');
           const storedDateLocation = await AsyncStorage.getItem('selected_location_name');
 
-          // Always set values from AsyncStorage if they exist, as they are the most recent
-          if (storedDateType) setDateType(storedDateType);
-          if (storedDateDay) setDateDay(storedDateDay);
-          if (storedDateTime) setDateTime(storedDateTime);
+          // Set values from AsyncStorage if they exist and weren't already set from route.params
+          if (storedDateType && !route.params?.dateType) setDateType(storedDateType);
+          if (storedDateDay && !route.params?.dateDay) setDateDay(storedDateDay);
+          if (storedDateTime && !route.params?.dateTime) setDateTime(storedDateTime);
           if (storedDateLocation) setDateLocation(storedDateLocation);
 
-          // Only fetch from endpoint if ALL AsyncStorage values are missing
-          if (!storedDateType && !storedDateDay && !storedDateTime && !storedDateLocation) {
+          // Special handling for location from route.params
+          if (route.params?.location?.name) {
+            const locationText = route.params.location.name + ' - ' + route.params.location.address;
+            setDateLocation(locationText);
+            
+            // Save to AsyncStorage for persistence
+            await AsyncStorage.setItem('selected_location_name', locationText);
+            await AsyncStorage.setItem('selected_date_location_lat', String(route.params.location.latitude));
+            await AsyncStorage.setItem('selected_date_location_lng', String(route.params.location.longitude));
+          } else if (!storedDateLocation) {
+            // Try to parse from savedLocation if no other location is set
+            const savedLocationJSON = await AsyncStorage.getItem('savedLocation');
+            if (savedLocationJSON) {
+              try {
+                const savedLocation = JSON.parse(savedLocationJSON);
+                if (savedLocation.name) {
+                  const locationText = savedLocation.name + (savedLocation.address ? ' - ' + savedLocation.address : '');
+                  setDateLocation(locationText);
+                  await AsyncStorage.setItem('selected_location_name', locationText);
+                  await AsyncStorage.setItem('selected_date_location_lat', String(savedLocation.latitude));
+                  await AsyncStorage.setItem('selected_date_location_lng', String(savedLocation.longitude));
+                }
+              } catch (e) {
+                console.error('Error parsing saved location:', e);
+              }
+            }
+          }
+
+          // Fallback to API endpoint only if we don't have critical data yet (lowest priority)
+          const hasDateInfo = storedDateType || storedDateDay || storedDateTime || storedDateLocation || 
+                             route.params?.dateType || route.params?.dateDay || 
+                             route.params?.dateTime || route.params?.location;
+                             
+          if (!hasDateInfo) {
+            console.log('DateFinal: No local data found, fetching from API');
             const meetUserId = await AsyncStorage.getItem('user_uid');
             if (meetUserId && matchedUserId) {
               try {
@@ -77,11 +128,27 @@ export default function DateFinal({ navigation }) {
                   
                   const matchingMeet = resultArray.find(item => item.meet_date_user_id === matchedUserId);
                   if (matchingMeet) {
-                    // Set default values from meet data only if ALL AsyncStorage values are missing
-                    setDateType(matchingMeet.meet_date_type || 'Dinner');
-                    setDateDay(matchingMeet.meet_day || 'Sat, Aug 17');
-                    setDateTime(matchingMeet.meet_time || '7:00 pm');
-                    setDateLocation(matchingMeet.meet_location || '96 S 1st St, San Jose, CA 95113');
+                    console.log('DateFinal: Found matching meet in API data');
+                    // Set values from meet data and store them in AsyncStorage
+                    if (matchingMeet.meet_date_type) {
+                      setDateType(matchingMeet.meet_date_type);
+                      await AsyncStorage.setItem('user_date_type', matchingMeet.meet_date_type);
+                    }
+                    
+                    if (matchingMeet.meet_day) {
+                      setDateDay(matchingMeet.meet_day);
+                      await AsyncStorage.setItem('user_date_day', matchingMeet.meet_day);
+                    }
+                    
+                    if (matchingMeet.meet_time) {
+                      setDateTime(matchingMeet.meet_time);
+                      await AsyncStorage.setItem('user_date_time', matchingMeet.meet_time);
+                    }
+                    
+                    if (matchingMeet.meet_location) {
+                      setDateLocation(matchingMeet.meet_location);
+                      await AsyncStorage.setItem('selected_location_name', matchingMeet.meet_location);
+                    }
                   }
                 }
               } catch (error) {
@@ -95,7 +162,7 @@ export default function DateFinal({ navigation }) {
       };
 
       fetchDateDetails();
-    }, [matchedUserId])
+    }, [matchedUserId, route.params])
   );
 
   const [invitationSent, setInvitationSent] = useState(false);
@@ -112,7 +179,7 @@ export default function DateFinal({ navigation }) {
       const meetDateType = await AsyncStorage.getItem('user_date_type');
       const meetLocation = await AsyncStorage.getItem('selected_location_name');
       const meetLatitude = await AsyncStorage.getItem('selected_date_location_lat');
-      const meetLongitude = await AsyncStorage.getItem('selected_date_location_lat');
+      const meetLongitude = await AsyncStorage.getItem('selected_date_location_lng');
 
       // Clear date-related AsyncStorage values after retrieving them
       await Promise.all([
@@ -122,7 +189,7 @@ export default function DateFinal({ navigation }) {
         AsyncStorage.removeItem('user_date_time'),
         AsyncStorage.removeItem('selected_location_name'),
         AsyncStorage.removeItem('selected_date_location_lat'),
-        AsyncStorage.removeItem('selected_date_location_lat')
+        AsyncStorage.removeItem('selected_date_location_lng')
       ]);
 
       // Check if a meet already exists between the users

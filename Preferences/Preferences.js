@@ -260,18 +260,19 @@ const Preferences = () => {
           </View>
 
           {/* Body Type – using circle checkmarks */}
-          <Text style={[styles.label, { marginTop: 15 }]}>Body Type</Text>
+          <Text style={[styles.label, { marginTop: 15, color: '#AAAAAA' }]}>Body Type</Text>
           <View style={styles.interestsContainer}>
             {["Slim", "Athletic", "Curvy", "Plus Sized", "Few Extra Pounds"].map((type) => {
               const isSelected = bodyType.includes(type);
               return (
                 <TouchableOpacity
                   key={type}
-                  onPress={() => toggleSelection("BodyType", type)}
+                  disabled={true}
                   style={[
                     styles.bodyTypeButton,
                     {
-                      borderColor: isSelected ? "#000" : "#CCC",
+                      borderColor: '#CCCCCC',
+                      opacity: 0.6,
                     },
                   ]}
                 >
@@ -279,68 +280,91 @@ const Preferences = () => {
                     style={[
                       styles.circle,
                       {
-                        backgroundColor: isSelected ? "#000" : "transparent",
-                        borderColor: isSelected ? "#000" : "#CCC",
+                        backgroundColor: isSelected ? "#AAAAAA" : "transparent",
+                        borderColor: "#CCCCCC",
                       },
                     ]}
                   >
                     {isSelected && <Ionicons name='checkmark' size={14} color='#FFF' />}
                   </View>
-                  <Text style={styles.bodyTypeText}>{type}</Text>
+                  <Text style={[styles.bodyTypeText, { color: '#AAAAAA' }]}>{type}</Text>
                 </TouchableOpacity>
               );
             })}
+            <View style={styles.premiumFeatureOverlay}>
+              <Text style={styles.premiumFeatureText}>Available in live version</Text>
+            </View>
           </View>
 
           {/* Smoking Habits – black pill for selected */}
-          <Text style={styles.label}>Smoking Habits</Text>
+          <Text style={[styles.label, { color: '#AAAAAA' }]}>Smoking Habits</Text>
           <View style={styles.pillsContainer}>
             {["Yes", "No", "Either"].map((option) => {
               const isSelected = smokingHabit === option;
               return (
                 <TouchableOpacity
                   key={option}
-                  onPress={() => toggleSelection("Smoking", option)}
+                  disabled={true}
                   style={[
                     styles.pill,
                     {
-                      backgroundColor: isSelected ? "#000" : "#FFF",
-                      borderColor: "#000",
+                      backgroundColor: isSelected ? "#AAAAAA" : "#F5F5F5",
+                      borderColor: "#CCCCCC",
+                      opacity: 0.6,
                     },
                   ]}
                 >
-                  <Text style={[styles.pillText, { color: isSelected ? "#FFF" : "#000" }]}>{option}</Text>
+                  <Text style={[styles.pillText, { color: isSelected ? "#FFF" : "#AAAAAA" }]}>{option}</Text>
                 </TouchableOpacity>
               );
             })}
+            <View style={styles.premiumFeatureOverlay}>
+              <Text style={styles.premiumFeatureText}>Available in live version</Text>
+            </View>
           </View>
 
           {/* Drinking Habits – black pill for selected */}
-          <Text style={styles.label}>Drinking Habits</Text>
+          <Text style={[styles.label, { color: '#AAAAAA' }]}>Drinking Habits</Text>
           <View style={styles.pillsContainer}>
             {["Yes", "No", "Either"].map((option) => {
               const isSelected = drinkingHabit === option;
               return (
                 <TouchableOpacity
                   key={option}
-                  onPress={() => toggleSelection("Drinking", option)}
+                  disabled={true}
                   style={[
                     styles.pill,
                     {
-                      backgroundColor: isSelected ? "#000" : "#FFF",
-                      borderColor: "#000",
+                      backgroundColor: isSelected ? "#AAAAAA" : "#F5F5F5",
+                      borderColor: "#CCCCCC",
+                      opacity: 0.6,
                     },
                   ]}
                 >
-                  <Text style={[styles.pillText, { color: isSelected ? "#FFF" : "#000" }]}>{option}</Text>
+                  <Text style={[styles.pillText, { color: isSelected ? "#FFF" : "#AAAAAA" }]}>{option}</Text>
                 </TouchableOpacity>
               );
             })}
+            <View style={styles.premiumFeatureOverlay}>
+              <Text style={styles.premiumFeatureText}>Available in live version</Text>
+            </View>
           </View>
 
           {/* Religious Preference */}
-          <Text style={styles.label}>Religious Preference</Text>
-          <TextInput style={styles.input} value={religiousPreference} onChangeText={setReligiousPreference} placeholder='Any' />
+          <Text style={[styles.label, { color: '#AAAAAA' }]}>Religious Preference</Text>
+          <View style={styles.inputContainer}>
+            <TextInput 
+              style={[styles.input, { borderColor: '#CCCCCC', backgroundColor: '#F5F5F5', color: '#AAAAAA' }]} 
+              value={religiousPreference} 
+              onChangeText={setReligiousPreference} 
+              placeholder='Any'
+              placeholderTextColor="#CCCCCC"
+              editable={false}
+            />
+            <View style={styles.premiumFeatureOverlay}>
+              <Text style={styles.premiumFeatureText}>Available in live version</Text>
+            </View>
+          </View>
         </View>
       </ScrollView>
 
@@ -494,6 +518,33 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 18,
     fontWeight: "bold",
+  },
+
+  // Add these new styles to the StyleSheet
+  premiumFeatureOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    zIndex: 1,
+  },
+  premiumFeatureText: {
+    color: '#E4423F',
+    fontWeight: 'bold',
+    fontSize: 14,
+    textAlign: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  inputContainer: {
+    position: 'relative',
+    marginBottom: 25,
   },
 });
 

@@ -43,6 +43,21 @@ const groupMessagesByDate = (messages) => {
   }, {});
 };
 
+// Add this utility function to parse JSON safely (copied from MatchResultsPage.js)
+function safeJsonParse(value, fallback = []) {
+  // If value is null or not a string, just return fallback
+  if (typeof value !== "string") {
+    return fallback;
+  }
+  // Otherwise parse
+  try {
+    return JSON.parse(value);
+  } catch (err) {
+    console.warn("Failed to parse JSON:", value, err);
+    return fallback;
+  }
+}
+
 export default function Chat() {
   const navigation = useNavigation();
   const route = useRoute();
@@ -57,8 +72,8 @@ export default function Chat() {
   const [localUid, setLocalUid] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const [chatPartnerName] = useState('Gemma Jones');
-  const [chatPartnerPhoto] = useState(gemmaChatIcon);
+  const [chatPartnerName, setChatPartnerName] = useState('');
+  const [chatPartnerPhoto, setChatPartnerPhoto] = useState(gemmaChatIcon);
 
   // Typed messages
   const [currentMessage, setCurrentMessage] = useState('');
@@ -163,6 +178,54 @@ export default function Chat() {
     };
     getMeeting();
   }, [localUid, matchedUserId]);
+
+  // Update useEffect to fetch matched user details with the correct endpoint
+  useEffect(() => {
+    if (!matchedUserId) return;
+    
+    const fetchUserDetails = async () => {
+      console.log('Fetching user details for:', matchedUserId);
+      try {
+        const response = await axios.get(
+          `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${matchedUserId}`
+        );
+        
+        console.log('User details response:', response.data);
+        
+        if (response.data && response.data.result && response.data.result.length > 0) {
+          // Get user info from the result array
+          const userData = response.data.result[0];
+          
+          // Set name from first and last name
+          const firstName = userData.user_first_name || '';
+          const lastName = userData.user_last_name || '';
+          const fullName = `${firstName} ${lastName}`.trim() || 'Chat Partner';
+          console.log('Setting chat partner name:', fullName);
+          setChatPartnerName(fullName);
+          
+          // Handle profile photo like in MatchResultsPage.js
+          const photoUrls = safeJsonParse(userData.user_photo_url, []);
+          console.log('Parsed photo URLs:', photoUrls);
+          const firstPhoto = photoUrls[0] || null;
+          if (firstPhoto) {
+            console.log('Setting chat partner photo to:', firstPhoto);
+            setChatPartnerPhoto({ uri: firstPhoto });
+          } else {
+            console.log('No photo found, using default icon');
+          }
+        } else {
+          console.warn('User details response missing data:', response.data);
+          setChatPartnerName('Chat Partner');
+        }
+      } catch (err) {
+        console.error('Error fetching user details:', err);
+        console.error('Error details:', err.response || err.message);
+        setChatPartnerName('Chat Partner');
+      }
+    };
+    
+    fetchUserDetails();
+  }, [matchedUserId]);
 
   const handleSend = async (text) => {
     const trimmed = text?.trim() || currentMessage.trim();

@@ -478,16 +478,24 @@ export default function EditProfile() {
           }
         }
 
-        // Handle video
-        let videoUrl = null;
+        // Handle video URL with better parsing
         if (fetched.user_video_url) {
+          let videoUrl = null;
           try {
+            // Try parsing as JSON first
             videoUrl = JSON.parse(fetched.user_video_url);
           } catch (e) {
-            // If parsing fails, clean the string directly
-            videoUrl = fetched.user_video_url.replace(/^"|"$/g, '');
+            // If parsing fails, use the raw string
+            videoUrl = fetched.user_video_url;
           }
+          
+          // Clean up any extra quotes that might be present
+          if (typeof videoUrl === "string") {
+            videoUrl = videoUrl.replace(/^"|"$/g, '');
+          }
+          
           console.log("Cleaned video url:", videoUrl);
+          setVideoUri(videoUrl);
         }
 
         // Convert stored cm back to feet/inches
@@ -611,17 +619,52 @@ export default function EditProfile() {
     setPhotos(newPhotos);
   };
 
-  // Handle picking a video
+  // Replace the current handleVideoUpload function with these two functions
   const handleVideoUpload = async () => {
     try {
       // Platform-specific permission handling
-      const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
       const mediaLibraryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-      if (cameraPermission.status !== 'granted' || mediaLibraryPermission.status !== 'granted') {
+      if (mediaLibraryPermission.status !== 'granted') {
         Alert.alert(
           'Permission Required',
-          'Camera and storage access is required to record video. Please enable it in your device settings.',
+          'Storage access is required to select video. Please enable it in your device settings.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Settings', onPress: () => Linking.openSettings() }
+          ]
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        allowsEditing: Platform.OS === 'ios', // Video editing only works well on iOS
+        quality: 1,
+        videoQuality: getVideoQuality(),
+        maxDuration: 60,
+      });
+
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        console.log("Video selection success:", result.assets[0]);
+        setVideoUri(result.assets[0].uri);
+        setIsVideoPlaying(false);
+      }
+    } catch (error) {
+      console.error('Error picking video:', error);
+      Alert.alert('Error', 'There was an issue selecting the video. Please try again.');
+    }
+  };
+
+  const handleRecordVideo = async () => {
+    try {
+      // Platform-specific permission handling
+      const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+
+      if (cameraPermission.status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Camera access is required to record video. Please enable it in your device settings.',
           [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Settings', onPress: () => Linking.openSettings() }
@@ -632,30 +675,24 @@ export default function EditProfile() {
 
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-        allowsEditing: Platform.OS === 'ios', // Video editing only works well on iOS
+        allowsEditing: false, // Set to false for more reliable results
         quality: 1,
         videoQuality: getVideoQuality(),
         maxDuration: 60,
         saveToPhotos: true, // Save to device camera roll
-        presentationStyle: Platform.OS === 'ios' ? 'fullScreen' : undefined,
-        androidRecordAudioPermissionOptions: Platform.OS === 'android' ? {
-          title: 'Permission to use audio recording',
-          message: 'We need your permission to use your audio'
-        } : undefined
       });
 
       if (!result.canceled && result.assets?.[0]?.uri) {
-        // Handle platform-specific video path
-        const videoUri = Platform.OS === 'ios' ? result.assets[0].uri.replace('file://', '') : result.assets[0].uri;
-
-        setVideoUri(videoUri);
+        console.log("Video recording success:", result.assets[0]);
+        setVideoUri(result.assets[0].uri);
         setIsVideoPlaying(false);
       }
     } catch (error) {
-      console.error('Error picking video:', error);
-      Alert.alert('Error', 'There was an issue recording the video. Please try again.');
+      console.error('Error recording video:', error);
+      Alert.alert('Error', 'There was an issue recording the video. Please check your permissions and try again.');
     }
   };
+
   const handleRemoveVideo = () => {
     setVideoUri(null);
     setIsVideoPlaying(false);
@@ -898,6 +935,34 @@ export default function EditProfile() {
 
       console.log("=== End Photo Upload Debug ===\n");
 
+      // Handle video upload
+      console.log("\n=== Video Upload Debug ===");
+      const originalVideoUrl = userData.user_video_url ? (typeof userData.user_video_url === 'string' ? userData.user_video_url.replace(/^"|"$/g, '') : userData.user_video_url) : null;
+      console.log("Original video URL:", originalVideoUrl);
+      console.log("Current video URL:", videoUri);
+
+      // Check if video was deleted or changed
+      if (originalVideoUrl && !videoUri) {
+        // Video was deleted
+        console.log("Video was deleted, setting user_delete_video flag");
+        uploadData.append("user_delete_video", "true");
+      } else if (videoUri && videoUri !== originalVideoUrl) {
+        // New video to upload (not from S3)
+        if (!videoUri.startsWith("https://s3")) {
+          console.log("Adding new local video for upload");
+          uploadData.append("user_video", {
+            uri: videoUri,
+            type: "video/mp4",
+            name: "user_video.mp4",
+          });
+        } else {
+          // Existing S3 video - no need to re-upload
+          console.log("Keeping existing S3 video");
+          uploadData.append("user_video_url", videoUri);
+        }
+      }
+      console.log("=== End Video Upload Debug ===\n");
+
       // Create an object of the original values from userData
       const originalValues = {
         user_first_name: userData.user_first_name || "",
@@ -1086,10 +1151,17 @@ export default function EditProfile() {
                 </TouchableOpacity>
               </View>
             ) : (
-              <TouchableOpacity onPress={handleVideoUpload} style={styles.uploadVideoButton}>
-                <Ionicons name='cloud-upload-outline' size={20} color='#E4423F' />
-                <Text style={styles.uploadVideoText}>Upload Video</Text>
-              </TouchableOpacity>
+              <View style={styles.videoUploadOptions}>
+                <TouchableOpacity onPress={handleRecordVideo} style={styles.uploadVideoButton}>
+                  <Ionicons name="videocam-outline" size={20} color="#E4423F" />
+                  <Text style={styles.uploadVideoText}>Record Video</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity onPress={handleVideoUpload} style={[styles.uploadVideoButton, {marginTop: 10}]}>
+                  <Ionicons name="cloud-upload-outline" size={20} color="#E4423F" />
+                  <Text style={styles.uploadVideoText}>Select Video</Text>
+                </TouchableOpacity>
+              </View>
             )}
           </View>
 
@@ -2280,5 +2352,10 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 14,
     fontWeight: "bold",
+  },
+  videoUploadOptions: {
+    flexDirection: 'column',
+    gap: 10,
+    marginBottom: 20,
   },
 });

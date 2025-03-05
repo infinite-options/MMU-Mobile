@@ -101,7 +101,7 @@ const PreferenceSlider = ({ preference, measurement, start, min, max }) => {
             formData.append('user_prefer_age_max', ageRange.maxAge);
         }
         
-        formData.append('user_prefer_gender', "Female");
+        // formData.append('user_prefer_gender', "Female");
 
         axios.put('https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo', formData)
             .then(response => console.log('Slider value updated:', response))

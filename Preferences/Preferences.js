@@ -126,7 +126,7 @@ const Preferences = () => {
       formData.append("user_prefer_age_max", ageRange[1].toString());
       formData.append("user_prefer_height_min", heightRange[0].toString());
       formData.append("user_prefer_kids", numChildren.toString());
-      formData.append("user_prefer_gender", "Female");
+      // formData.append("user_prefer_gender", "Female");
 
       // Store preferences locally first
       await storePreferencesLocally();
@@ -140,20 +140,33 @@ const Preferences = () => {
 
       console.log("Put response", response);
 
-      // Example API call (commented out until needed):
-      // const response = await axios.put(
-      //   'https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo',
-      //   formData,
-      //   {
-      //     headers: {
-      //       'Content-Type': 'multipart/form-data',
-      //     },
-      //     timeout: 10000,
-      //   }
-      // );
-
-      // Navigate upon success:
-      navigation.navigate("MatchProfileDisplay");
+      // After updating preferences, check if there are matches available
+      try {
+        console.log(`Checking matches: https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/${uid}`);
+        const matchesResponse = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/${uid}`);
+        
+        console.log("Matches response:", matchesResponse.data);
+        
+        // Check if there are no matches
+        if (matchesResponse.data.message === "No matches found") {
+          Alert.alert(
+            "No matches found",
+            "Please adjust your preferences.",
+            [{ text: "OK" }]
+          );
+          // Stay on the preferences page (no navigation)
+        } else {
+          // Navigate to MatchProfileDisplay since matches were found
+          navigation.navigate("MatchProfileDisplay");
+        }
+      } catch (matchError) {
+        console.error("Error fetching matches:", matchError);
+        Alert.alert(
+          "Error",
+          "Unable to retrieve matches. Please try again later.",
+          [{ text: "OK" }]
+        );
+      }
     } catch (error) {
       console.error("Error details:", {
         message: error.message,

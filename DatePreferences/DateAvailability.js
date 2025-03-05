@@ -393,125 +393,134 @@ export default function DateAvailability() {
 
                 {/* Time pickers */}
                 <View style={styles.timeRow}>
-                  <View style={styles.timeColumn}>
+                  <View style={styles.labelColumn}>
                     <Text style={styles.timeLabel}>Start Time</Text>
-                    <View style={styles.timeInputRow}>
-                      {/* Hour / minute */}
-                      <TextInput
-                        style={[styles.timeInput, { marginRight: 5 }]}
-                        keyboardType="number-pad"
-                        value={tw.start.hour.toString()}
-                        onChangeText={(val) =>
-                          handleTimeChange(index, 'start', 'hour', val)
-                        }
-                      />
-                      <Text style={styles.colon}>:</Text>
-                      <TextInput
-                        style={[styles.timeInput, { marginLeft: 5 }]}
-                        keyboardType="number-pad"
-                        value={tw.start.minute.toString()}
-                        onChangeText={(val) =>
-                          handleTimeChange(index, 'start', 'minute', val)
-                        }
-                      />
-                    </View>
-                    {/* AM/PM toggle */}
-                    <View style={styles.ampmRow}>
-                      <Pressable
-                        onPress={() => handleToggleAmPm(index, 'start')}
-                        style={[
-                          styles.ampmButton,
-                          tw.start.ampm === 'AM' && styles.ampmButtonActive,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.ampmButtonText,
-                            tw.start.ampm === 'AM' &&
-                              styles.ampmButtonTextActive,
-                          ]}
-                        >
-                          AM
-                        </Text>
-                      </Pressable>
-                      <Pressable
-                        onPress={() => handleToggleAmPm(index, 'start')}
-                        style={[
-                          styles.ampmButton,
-                          tw.start.ampm === 'PM' && styles.ampmButtonActive,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.ampmButtonText,
-                            tw.start.ampm === 'PM' &&
-                              styles.ampmButtonTextActive,
-                          ]}
-                        >
-                          PM
-                        </Text>
-                      </Pressable>
-                    </View>
-                  </View>
-
-                  <View style={styles.timeColumn}>
                     <Text style={styles.timeLabel}>End Time</Text>
-                    <View style={styles.timeInputRow}>
-                      {/* Hour / minute */}
+                  </View>
+                  
+                  <View style={styles.inputColumn}>
+                    {/* Start Time input and AM/PM toggle */}
+                    <View style={styles.timeInputGroup}>
                       <TextInput
-                        style={[styles.timeInput, { marginRight: 5 }]}
+                        style={styles.timeInput}
+                        value={`${tw.start.hour.toString().padStart(2, '0')}:${tw.start.minute.toString().padStart(2, '0')}`}
+                        onChangeText={(val) => {
+                          // Format and handle time input
+                          let formattedVal = val.replace(/[^0-9]/g, '');
+                          if (formattedVal.length > 4) formattedVal = formattedVal.substring(0, 4);
+                          
+                          if (formattedVal.length > 2) {
+                            const hour = parseInt(formattedVal.substring(0, 2), 10);
+                            const min = parseInt(formattedVal.substring(2), 10);
+                            
+                            handleTimeChange(index, 'start', 'hour', hour > 12 ? 12 : hour);
+                            handleTimeChange(index, 'start', 'minute', min > 59 ? 59 : min);
+                          } else if (formattedVal.length > 0) {
+                            handleTimeChange(index, 'start', 'hour', parseInt(formattedVal, 10));
+                            handleTimeChange(index, 'start', 'minute', 0);
+                          }
+                        }}
                         keyboardType="number-pad"
-                        value={tw.end.hour.toString()}
-                        onChangeText={(val) =>
-                          handleTimeChange(index, 'end', 'hour', val)
-                        }
+                        placeholder="00:00"
                       />
-                      <Text style={styles.colon}>:</Text>
-                      <TextInput
-                        style={[styles.timeInput, { marginLeft: 5 }]}
-                        keyboardType="number-pad"
-                        value={tw.end.minute.toString()}
-                        onChangeText={(val) =>
-                          handleTimeChange(index, 'end', 'minute', val)
-                        }
-                      />
+                      <View style={styles.ampmButtons}>
+                        <Pressable
+                          onPress={() => handleToggleAmPm(index, 'start')}
+                          style={[
+                            styles.ampmButton,
+                            styles.ampmButtonLeft,
+                            tw.start.ampm === 'AM' && styles.ampmButtonActive,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.ampmButtonText,
+                              tw.start.ampm === 'AM' && styles.ampmButtonTextActive,
+                            ]}
+                          >
+                            AM
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => handleToggleAmPm(index, 'start')}
+                          style={[
+                            styles.ampmButton,
+                            styles.ampmButtonRight,
+                            tw.start.ampm === 'PM' && styles.ampmButtonActive,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.ampmButtonText,
+                              tw.start.ampm === 'PM' && styles.ampmButtonTextActive,
+                            ]}
+                          >
+                            PM
+                          </Text>
+                        </Pressable>
+                      </View>
                     </View>
-                    {/* AM/PM toggle */}
-                    <View style={styles.ampmRow}>
-                      <Pressable
-                        onPress={() => handleToggleAmPm(index, 'end')}
-                        style={[
-                          styles.ampmButton,
-                          tw.end.ampm === 'AM' && styles.ampmButtonActive,
-                        ]}
-                      >
-                        <Text
+                    
+                    {/* End Time input and AM/PM toggle */}
+                    <View style={styles.timeInputGroup}>
+                      <TextInput
+                        style={styles.timeInput}
+                        value={`${tw.end.hour.toString().padStart(2, '0')}:${tw.end.minute.toString().padStart(2, '0')}`}
+                        onChangeText={(val) => {
+                          // Format and handle time input
+                          let formattedVal = val.replace(/[^0-9]/g, '');
+                          if (formattedVal.length > 4) formattedVal = formattedVal.substring(0, 4);
+                          
+                          if (formattedVal.length > 2) {
+                            const hour = parseInt(formattedVal.substring(0, 2), 10);
+                            const min = parseInt(formattedVal.substring(2), 10);
+                            
+                            handleTimeChange(index, 'end', 'hour', hour > 12 ? 12 : hour);
+                            handleTimeChange(index, 'end', 'minute', min > 59 ? 59 : min);
+                          } else if (formattedVal.length > 0) {
+                            handleTimeChange(index, 'end', 'hour', parseInt(formattedVal, 10));
+                            handleTimeChange(index, 'end', 'minute', 0);
+                          }
+                        }}
+                        keyboardType="number-pad"
+                        placeholder="00:00"
+                      />
+                      <View style={styles.ampmButtons}>
+                        <Pressable
+                          onPress={() => handleToggleAmPm(index, 'end')}
                           style={[
-                            styles.ampmButtonText,
-                            tw.end.ampm === 'AM' &&
-                              styles.ampmButtonTextActive,
+                            styles.ampmButton,
+                            styles.ampmButtonLeft,
+                            tw.end.ampm === 'AM' && styles.ampmButtonActive,
                           ]}
                         >
-                          AM
-                        </Text>
-                      </Pressable>
-                      <Pressable
-                        onPress={() => handleToggleAmPm(index, 'end')}
-                        style={[
-                          styles.ampmButton,
-                          tw.end.ampm === 'PM' && styles.ampmButtonActive,
-                        ]}
-                      >
-                        <Text
+                          <Text
+                            style={[
+                              styles.ampmButtonText,
+                              tw.end.ampm === 'AM' && styles.ampmButtonTextActive,
+                            ]}
+                          >
+                            AM
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => handleToggleAmPm(index, 'end')}
                           style={[
-                            styles.ampmButtonText,
-                            tw.end.ampm === 'PM' &&
-                              styles.ampmButtonTextActive,
+                            styles.ampmButton,
+                            styles.ampmButtonRight,
+                            tw.end.ampm === 'PM' && styles.ampmButtonActive,
                           ]}
                         >
-                          PM
-                        </Text>
-                      </Pressable>
+                          <Text
+                            style={[
+                              styles.ampmButtonText,
+                              tw.end.ampm === 'PM' && styles.ampmButtonTextActive,
+                            ]}
+                          >
+                            PM
+                          </Text>
+                        </Pressable>
+                      </View>
                     </View>
                   </View>
                 </View>
@@ -622,20 +631,25 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#F9F9F9',
     marginHorizontal: 20,
-    borderRadius: 10,
-    padding: 15,
+    borderRadius: 12,
+    padding: 20,
     marginBottom: 15,
-    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   cardHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 15,
   },
   cardHeaderText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#444',
   },
   daysRow: {
     flexDirection: 'row',
@@ -643,22 +657,24 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   dayCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#ddd',
     marginRight: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'white',
   },
   dayCircleActive: {
     backgroundColor: '#000',
     borderColor: '#000',
   },
   dayLabel: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#333',
+    fontWeight: '500',
   },
   dayLabelActive: {
     color: '#FFF',
@@ -666,51 +682,72 @@ const styles = StyleSheet.create({
   timeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 5,
+    marginTop: 20,
+    marginBottom: 10,
   },
-  timeColumn: {
-    flex: 1,
-    marginRight: 15,
+  labelColumn: {
+    width: '25%',
+    justifyContent: 'space-between',
+    height: 90, // Adjust based on your spacing needs
+  },
+  inputColumn: {
+    width: '70%',
   },
   timeLabel: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#333',
-    marginBottom: 5,
+    fontWeight: '500',
+    marginTop: 15, // Adjust for vertical alignment
   },
-  timeInputRow: {
+  timeInputGroup: {
     flexDirection: 'row',
-    alignItems: 'center',
+    marginBottom: 15,
   },
   timeInput: {
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 6,
-    padding: 5,
-    width: 50,
-    textAlign: 'center',
+    borderTopLeftRadius: 8,
+    borderBottomLeftRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    fontSize: 16,
     backgroundColor: '#FFF',
+    flex: 1,
+    textAlign: 'center',
   },
-  colon: {
-    fontSize: 20,
-    color: '#333',
-  },
-  ampmRow: {
+  ampmButtons: {
     flexDirection: 'row',
-    marginTop: 5,
+    borderTopWidth: 0,
+    borderBottomWidth: 0,
+    borderRightWidth: 1,
+    borderLeftWidth: 0,
+    borderColor: '#ddd',
   },
   ampmButton: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    marginRight: 5,
+    width: 45,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#ddd',
+  },
+  ampmButtonLeft: {
+    borderTopRightRadius: 0,
+    borderBottomRightRadius: 0,
+    borderRightWidth: 0,
+  },
+  ampmButtonRight: {
+    borderTopRightRadius: 8,
+    borderBottomRightRadius: 8,
+    borderLeftWidth: 0,
   },
   ampmButtonActive: {
     backgroundColor: '#000',
-    borderColor: '#000',
   },
   ampmButtonText: {
+    fontSize: 14,
     color: '#333',
   },
   ampmButtonTextActive: {
@@ -719,22 +756,25 @@ const styles = StyleSheet.create({
   actionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 15,
+    marginTop: 20,
+    alignItems: 'center',
+    paddingHorizontal: 10,
   },
   deleteText: {
     color: 'red',
     fontSize: 16,
+    fontWeight: '500',
   },
   saveButton: {
-    backgroundColor: 'red',
-    borderRadius: 20,
-    paddingVertical: 6,
-    paddingHorizontal: 20,
+    backgroundColor: '#f2f2f2',
+    borderRadius: 25,
+    paddingVertical: 10,
+    paddingHorizontal: 30,
   },
   saveButtonText: {
-    color: '#FFF',
+    color: '#333',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   collapsedCard: {
     backgroundColor: '#F9F9F9',
@@ -754,18 +794,20 @@ const styles = StyleSheet.create({
   addButton: {
     borderWidth: 1,
     borderColor: 'red',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    borderRadius: 30,
+    paddingVertical: 12,
+    paddingHorizontal: 25,
     alignSelf: 'flex-start',
     marginHorizontal: 20,
+    marginBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
   },
   addButtonText: {
     color: 'red',
     fontSize: 16,
-    marginLeft: 4,
+    fontWeight: '500',
+    marginLeft: 8,
   },
   bottomContainer: {
     position: 'absolute',
@@ -773,16 +815,18 @@ const styles = StyleSheet.create({
     width: '100%',
     padding: 20,
     backgroundColor: '#FFF',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
   },
   continueButton: {
-    backgroundColor: 'red',
+    backgroundColor: '#eee',
     borderRadius: 25,
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
   },
   continueButtonText: {
-    color: '#FFF',
+    color: '#333',
     fontSize: 18,
     fontWeight: 'bold',
   },

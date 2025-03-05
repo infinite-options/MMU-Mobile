@@ -528,11 +528,11 @@ export default function UserProfile() {
     <View style={styles.container}>
       {/* Top bar with "x of y" and settings icon */}
       <View style={styles.topBar}>
-        <View style={{ flex: 1 }}>
+        {/* <View style={{ flex: 1 }}>
           <Text style={styles.topCounter}>
             {arrposition + 1} of {arrlength}
           </Text>
-        </View>
+        </View> */}
         <TouchableOpacity>
           <Ionicons name='options' size={24} color='#999' />
         </TouchableOpacity>

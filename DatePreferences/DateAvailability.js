@@ -77,8 +77,8 @@ const saveAvailabilityToAPI = async (availabilityData) => {
   );
 
     if (response.status === 200) {
-            console.log("date uploaded successfully:", response.data);
-            Alert.alert("Success", "date uploaded successfully!");
+            console.log("Availability uploaded successfully:", response.data);
+            Alert.alert("Success", "Availability uploaded successfully!");
         } else {
             console.error("Failed to upload date:", response);
             Alert.alert("Error", "Failed to upload date to the server.");

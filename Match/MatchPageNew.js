@@ -14,8 +14,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 // If you have your images locally, you can import/require them:
-const male1 = require('../src/Assets/Images/img2.png');
-const Tiffany = require('../src/Assets/Images/Tiffany.jpeg');
+const DefaultMale = require('../src/Assets/Images/account.png');
+const DefaultFeMale = require('../src/Assets/Images/account.png');
 
 const MatchPageNew = () => {
   const route = useRoute();
@@ -87,18 +87,18 @@ const MatchPageNew = () => {
         {/* Current user's image */}
         <View style={[styles.imageWrapper, { zIndex: 2, marginRight: -20 }]}>
           <Image 
-            source={userPhoto ? { uri: userPhoto } : male1} 
+            source={userPhoto ? { uri: userPhoto } : DefaultMale} 
             style={styles.image}
-            defaultSource={male1} // Fallback while loading
+            defaultSource={DefaultMale} // Fallback while loading
           />
         </View>
         
         {/* Matched user's image */}
         <View style={[styles.imageWrapper, { zIndex: 1, marginLeft: -20 }]}>
           <Image 
-            source={matchedUserPhoto ? { uri: matchedUserPhoto } : Tiffany} 
+            source={matchedUserPhoto ? { uri: matchedUserPhoto } : DefaultFeMale} 
             style={styles.image}
-            defaultSource={Tiffany} // Fallback while loading
+            defaultSource={DefaultFeMale} // Fallback while loading
           />
         </View>
       </View>

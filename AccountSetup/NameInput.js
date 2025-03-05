@@ -19,8 +19,36 @@ export default function NameInput({ navigation }) {
     firstName: "",
     lastName: "",
   });
+  
+  // Add error state
+  const [nameErrors, setNameErrors] = useState({
+    firstName: '',
+    lastName: ''
+  });
 
-  const isFormComplete = formData.firstName.trim() !== "" && formData.lastName.trim() !== "";
+  // Modify form completion check to also check for validation errors
+  const isFormComplete = 
+    formData.firstName.trim() !== "" && 
+    formData.lastName.trim() !== "" && 
+    !nameErrors.firstName && 
+    !nameErrors.lastName;
+
+  // Add validation function
+  const validateName = (name, field) => {
+    // Name should only contain letters, spaces, hyphens, and apostrophes
+    const nameRegex = /^[A-Za-z\s\-']+$/;
+    
+    if (!name || name.trim() === '') {
+      return `${field} is required`;
+    } else if (name.length < 2) {
+      return `${field} must be at least 2 characters`;
+    } else if (name.length > 40) {
+      return `${field} cannot exceed 40 characters`;
+    } else if (!nameRegex.test(name)) {
+      return `${field} can only contain letters, spaces, hyphens, and apostrophes`;
+    }
+    return '';
+  };
 
   /**
    * Store the user's name (firstName, lastName) in AsyncStorage.
@@ -37,12 +65,20 @@ export default function NameInput({ navigation }) {
   };
 
   const handleContinue = async () => {
+    // Validate once more before continuing
+    const firstNameError = validateName(formData.firstName, 'First name');
+    const lastNameError = validateName(formData.lastName, 'Last name');
+    
+    setNameErrors({
+      firstName: firstNameError,
+      lastName: lastNameError
+    });
+    
     if (isFormComplete) {
       // 1) Store the data for future usage
       await saveUserName(formData.firstName, formData.lastName);
 
-      // 2) Navigate to next screen. We'll eventually call the API
-      //    from the final screen once all data is collected.
+      // 2) Navigate to next screen
       navigation.navigate("BirthdayInput");
     }
   };
@@ -69,19 +105,57 @@ export default function NameInput({ navigation }) {
           label="First Name"
           mode="outlined"
           value={formData.firstName}
-          onChangeText={(text) => setFormData({ ...formData, firstName: text })}
-          style={styles.input}
-          outlineStyle={styles.textInputOutline}
+          onChangeText={(text) => {
+            // Allow spaces during typing but validate the input
+            const validatedText = text.replace(/[^A-Za-z\s\-']/g, '');
+            
+            // Capitalize first letter when there's content
+            const formattedText = validatedText.length > 0 
+              ? validatedText.charAt(0).toUpperCase() + validatedText.slice(1)
+              : validatedText;
+              
+            setFormData({ ...formData, firstName: formattedText });
+            
+            // Validate
+            setNameErrors(prev => ({
+              ...prev,
+              firstName: validateName(formattedText, 'First name')
+            }));
+          }}
+          autoCorrect={false}
+          autoCapitalize="words"
+          style={[styles.input, nameErrors.firstName ? styles.inputError : null]}
+          outlineStyle={[styles.textInputOutline, nameErrors.firstName ? styles.textInputOutlineError : null]}
         />
+        {nameErrors.firstName ? <Text style={styles.errorText}>{nameErrors.firstName}</Text> : null}
 
         <TextInput
           label="Last Name"
           mode="outlined"
           value={formData.lastName}
-          onChangeText={(text) => setFormData({ ...formData, lastName: text })}
-          style={styles.input}
-          outlineStyle={styles.textInputOutline}
+          onChangeText={(text) => {
+            // Allow spaces during typing but validate the input
+            const validatedText = text.replace(/[^A-Za-z\s\-']/g, '');
+            
+            // Capitalize first letter when there's content
+            const formattedText = validatedText.length > 0 
+              ? validatedText.charAt(0).toUpperCase() + validatedText.slice(1)
+              : validatedText;
+              
+            setFormData({ ...formData, lastName: formattedText });
+            
+            // Validate
+            setNameErrors(prev => ({
+              ...prev,
+              lastName: validateName(formattedText, 'Last name')
+            }));
+          }}
+          autoCorrect={false}
+          autoCapitalize="words"
+          style={[styles.input, nameErrors.lastName ? styles.inputError : null]}
+          outlineStyle={[styles.textInputOutline, nameErrors.lastName ? styles.textInputOutlineError : null]}
         />
+        {nameErrors.lastName ? <Text style={styles.errorText}>{nameErrors.lastName}</Text> : null}
       </View>
 
       {/* Continue Button */}
@@ -160,5 +234,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     marginBottom: 20,
     height: 50,
+  },
+  inputError: {
+    marginBottom: 5, // Reduced to make room for error text
+  },
+  textInputOutlineError: {
+    borderWidth: 1,
+    borderColor: '#E4423F',
+  },
+  errorText: {
+    color: '#E4423F',
+    fontSize: 12,
+    marginTop: -10,
+    marginBottom: 10,
+    marginLeft: 5,
   },
 });

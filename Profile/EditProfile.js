@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -136,6 +136,7 @@ export default function EditProfile() {
     starSign: "",
     latitude: null,
     longitude: null,
+    phoneNumberValid: true, // Added phone number validation state
   });
   const [searchText, setSearchText] = useState(formValues.address || "");
   const [modalVisible, setModalVisible] = useState(false);
@@ -284,6 +285,29 @@ export default function EditProfile() {
   // Interests and date interests as arrays of strings => displayed as chips
   const [interests, setInterests] = useState([]);
   const [dateTypes, setDateTypes] = useState([]);
+
+  // Add these validation state variables with other state variables
+  const [nameErrors, setNameErrors] = useState({
+    firstName: '',
+    lastName: ''
+  });
+
+  // Add this validation function
+  const validateName = (name, field) => {
+    // Name should only contain letters, spaces, hyphens, and apostrophes
+    const nameRegex = /^[A-Za-z\s\-']+$/;
+    
+    if (!name || name.trim() === '') {
+      return `${field} is required`;
+    } else if (name.length < 2) {
+      return `${field} must be at least 2 characters`;
+    } else if (name.length > 40) {
+      return `${field} cannot exceed 40 characters`;
+    } else if (!nameRegex.test(name)) {
+      return `${field} can only contain letters, spaces, hyphens, and apostrophes`;
+    }
+    return '';
+  };
 
   // -------------------------------
   // HEIGHT CONVERSION HELPER FUNCTIONS
@@ -443,6 +467,7 @@ export default function EditProfile() {
           starSign: fetched.user_star_sign || "",
           latitude: fetched.user_latitude || null,
           longitude: fetched.user_longitude || null,
+          phoneNumberValid: true, // Added phone number validation state
         };
 
         setFormValues(newFormValues);
@@ -831,15 +856,101 @@ export default function EditProfile() {
     }
   };
 
-  // Add this effect to check for changes
-  useEffect(() => {
-    const hasPhotoChanges =
-      JSON.stringify(photos.filter((p) => p !== null)) !== JSON.stringify(JSON.parse(userData.user_photo_url || "[]")) ||
-      deletedPhotos.length > 0 ||
-      (favoritePhotoIndex !== null ? photos[favoritePhotoIndex] : null) !== userData.user_favorite_photo;
+  // Simplify the checkForChanges function and add more logging
+  const checkForChanges = useCallback(() => {
+    console.log("Running checkForChanges");
+    
+    if (!originalValues || !formValues) {
+      console.log("Missing originalValues or formValues");
+      return false;
+    }
+    
+    // Create value objects in same format used for saving
+    const original = {
+      user_first_name: originalValues.firstName || "",
+      user_last_name: originalValues.lastName || "",
+      // ...other fields
+    };
+    
+    const current = {
+      user_first_name: formValues.firstName || "",
+      user_last_name: formValues.lastName || "",
+      // ...other fields
+    };
+    
+    // Add debugging for media changes
+    const photosChanged = JSON.stringify(photos) !== JSON.stringify(userData?.user_photo_url ? 
+      (typeof userData.user_photo_url === 'string' ? JSON.parse(userData.user_photo_url) : userData.user_photo_url) : []);
+    
+    const hasDeletedPhotos = deletedPhotos.length > 0;
+    
+    // Get proper video URL format for comparison
+    const originalVideoUrl = userData?.user_video_url ? 
+      (typeof userData.user_video_url === 'string' ? userData.user_video_url.replace(/^"|"$/g, '') : userData.user_video_url) : null;
+    const videoChanged = videoUri !== originalVideoUrl;
+    
+    console.log("Media changed?", { photosChanged, hasDeletedPhotos, videoChanged });
+    
+    // Check form values with explicit debug logs
+    let formValuesChanged = false;
+    let changedFields = [];
+    
+    Object.entries(current).forEach(([key, value]) => {
+      const originalValue = original[key];
+      
+      // Special handling for comparing empty strings and null values
+      const isOriginalEmpty = originalValue === "" || originalValue === null || originalValue === undefined;
+      const isNewEmpty = value === "" || value === null || value === undefined;
+      
+      // Only consider it a change if they're not both empty in some form
+      if (!(isOriginalEmpty && isNewEmpty)) {
+        const newValueStr = typeof value === "object" ? JSON.stringify(value) : String(value);
+        const originalValueStr = typeof originalValue === "object" ? JSON.stringify(originalValue) : String(originalValue);
+        
+        if (newValueStr !== originalValueStr) {
+          formValuesChanged = true;
+          changedFields.push(`${key}: "${originalValueStr}" → "${newValueStr}"`);
+        }
+      }
+    });
+    
+    console.log("Form values changed?", formValuesChanged, changedFields);
+    
+    const result = formValuesChanged || photosChanged || hasDeletedPhotos || videoChanged;
+    console.log("Final hasChanges result:", result);
+    return result;
+  }, [formValues, originalValues, photos, deletedPhotos, videoUri, userData]);
 
-    setHasChanges(hasPhotoChanges || Object.keys(formValues).some((key) => formValues[key] !== userData[key]));
-  }, [photos, deletedPhotos, favoritePhotoIndex, formValues, userData]);
+  // Make sure we're tracking if userData is loaded
+  const [userDataLoaded, setUserDataLoaded] = useState(false);
+
+  // Update the userData useEffect to set userDataLoaded
+  useEffect(() => {
+    if (userData) {
+      // Set the loaded flag
+      setUserDataLoaded(true);
+      
+      // Existing code to set original values...
+    }
+  }, [userData]);
+
+  // Only check for changes when all data is properly loaded
+  useEffect(() => {
+    if (userDataLoaded && originalValues) {
+      console.log("Checking for changes after data loaded");
+      const hasChangesResult = checkForChanges();
+      console.log("Setting hasChanges to:", hasChangesResult);
+      setHasChanges(hasChangesResult);
+    }
+  }, [userDataLoaded, originalValues, checkForChanges]);
+
+  // Add another useEffect to check whenever form values change
+  useEffect(() => {
+    if (userDataLoaded && originalValues) {
+      console.log("Form values changed, checking for changes");
+      setHasChanges(checkForChanges());
+    }
+  }, [userDataLoaded, originalValues, formValues, photos, videoUri, interests, dateTypes]);
 
   // Toggle a single interest
   const toggleInterest = (interest) => {
@@ -866,8 +977,18 @@ export default function EditProfile() {
   const handleSaveChanges = async () => {
     console.log("\n=== Starting Profile Update ===");
     console.log("Creating new FormData object");
-    if (!formValues.firstName || !formValues.lastName) {
-      Alert.alert("Error", "Please fill in your full name and phone number.");
+    
+    // Check for validation errors
+    const firstNameError = validateName(formValues.firstName, 'First name');
+    const lastNameError = validateName(formValues.lastName, 'Last name');
+    
+    setNameErrors({
+      firstName: firstNameError,
+      lastName: lastNameError
+    });
+    
+    if (firstNameError || lastNameError) {
+      Alert.alert("Validation Error", "Please correct the errors in the form before saving.");
       return;
     }
 
@@ -1031,12 +1152,22 @@ export default function EditProfile() {
       console.log("\n=== Changed Fields ===");
       Object.entries(newValues).forEach(([key, value]) => {
         const originalValue = originalValues[key];
-        const newValueStr = typeof value === "object" ? JSON.stringify(value) : value;
-        const originalValueStr = typeof originalValue === "object" ? JSON.stringify(originalValue) : originalValue;
-
-        if (newValueStr !== originalValueStr) {
-          console.log(`${key}: ${originalValueStr} -> ${newValueStr}`);
-          uploadData.append(key, newValueStr);
+        
+        // Special handling for comparing empty strings and null values
+        const isOriginalEmpty = originalValue === "" || originalValue === null || originalValue === undefined;
+        const isNewEmpty = value === "" || value === null || value === undefined;
+        
+        // Only consider it a change if they're not both empty in some form
+        if (!(isOriginalEmpty && isNewEmpty)) {
+          const newValueStr = typeof value === "object" ? JSON.stringify(value) : value;
+          const originalValueStr = typeof originalValue === "object" ? JSON.stringify(originalValue) : originalValue;
+          
+          if (newValueStr !== originalValueStr) {
+            console.log(`${key}: ${originalValueStr} -> ${newValueStr}`);
+            uploadData.append(key, newValueStr);
+          }
+        } else {
+          console.log(`Skipping equivalent empty values for ${key}`);
         }
       });
 
@@ -1092,12 +1223,23 @@ export default function EditProfile() {
   // Add this effect to properly initialize the map location
   useEffect(() => {
     if (formValues.latitude && formValues.longitude && !mapReady) {
+      const lat = parseFloat(formValues.latitude);
+      const lng = parseFloat(formValues.longitude);
+      
+      // Set both the region and location state
       setRegion({
-        latitude: parseFloat(formValues.latitude),
-        longitude: parseFloat(formValues.longitude),
+        latitude: lat,
+        longitude: lng,
         latitudeDelta: 0.06,
         longitudeDelta: 0.06,
       });
+      
+      // Also set the location state to show the marker
+      setLocation({
+        latitude: lat,
+        longitude: lng
+      });
+      
       setMapReady(true);
     }
   }, [formValues.latitude, formValues.longitude, mapReady]);
@@ -1231,47 +1373,100 @@ export default function EditProfile() {
             <TextInput
               placeholder='First Name'
               mode='outlined'
-              style={styles.inputField}
+              style={[styles.inputField, nameErrors.firstName ? styles.inputError : null]}
               value={formValues.firstName}
-              onChangeText={(text) =>
+              onChangeText={(text) => {
+                // Allow spaces during typing but trim when setting the value
+                const validatedText = text.replace(/[^A-Za-z\s\-']/g, '');
                 setFormValues((prev) => ({
                   ...prev,
-                  firstName: text.trim(),
-                }))
-              }
+                  firstName: validatedText,
+                }));
+                
+                // Capitalize first letter when there's content
+                if (validatedText.length > 0 && validatedText[0] !== validatedText[0].toUpperCase()) {
+                  setFormValues((prev) => ({
+                    ...prev,
+                    firstName: validatedText.charAt(0).toUpperCase() + validatedText.slice(1),
+                  }));
+                }
+                
+                // Validate
+                setNameErrors(prev => ({
+                  ...prev,
+                  firstName: validateName(validatedText, 'First name')
+                }));
+              }}
               autoCorrect={false}
-              autoCapitalize='none'
-              outlineStyle={styles.textInputOutline}
+              autoCapitalize='words'
+              outlineStyle={[styles.textInputOutline, nameErrors.firstName ? styles.textInputOutlineError : null]}
             />
+            {nameErrors.firstName ? <Text style={styles.errorText}>{nameErrors.firstName}</Text> : null}
 
             <Text style={styles.label}>Last Name</Text>
             <TextInput
               placeholder='Last Name'
               mode='outlined'
-              style={styles.inputField}
+              style={[styles.inputField, nameErrors.lastName ? styles.inputError : null]}
               value={formValues.lastName}
-              onChangeText={(text) =>
+              onChangeText={(text) => {
+                // Allow spaces during typing but trim when setting the value
+                const validatedText = text.replace(/[^A-Za-z\s\-']/g, '');
                 setFormValues((prev) => ({
                   ...prev,
-                  lastName: text.trim(),
-                }))
-              }
+                  lastName: validatedText,
+                }));
+                
+                // Capitalize first letter when there's content
+                if (validatedText.length > 0 && validatedText[0] !== validatedText[0].toUpperCase()) {
+                  setFormValues((prev) => ({
+                    ...prev,
+                    lastName: validatedText.charAt(0).toUpperCase() + validatedText.slice(1),
+                  }));
+                }
+                
+                // Validate
+                setNameErrors(prev => ({
+                  ...prev,
+                  lastName: validateName(validatedText, 'Last name')
+                }));
+              }}
               autoCorrect={false}
-              autoCapitalize='none'
-              outlineStyle={styles.textInputOutline}
+              autoCapitalize='words'
+              outlineStyle={[styles.textInputOutline, nameErrors.lastName ? styles.textInputOutlineError : null]}
             />
+            {nameErrors.lastName ? <Text style={styles.errorText}>{nameErrors.lastName}</Text> : null}
             <Text style={styles.label}>Phone Number</Text>
             <TextInput
               placeholder='Phone Number'
               mode='outlined'
               style={styles.inputField}
               value={formValues.phoneNumber}
-              onChangeText={(text) =>
-                setFormValues((prev) => ({
-                  ...prev,
-                  phoneNumber: text.trim(),
-                }))
-              }
+              onChangeText={(text) => {
+                // Only allow digits in the input
+                if (/^\d*$/.test(text.replace(/[().\- ]/g, ''))) {
+                  // Remove all non-digit characters for processing
+                  const digitsOnly = text.replace(/\D/g, '');
+                  
+                  // Format phone number
+                  let formattedNumber = '';
+                  if (digitsOnly.length <= 3) {
+                    formattedNumber = digitsOnly;
+                  } else if (digitsOnly.length <= 6) {
+                    formattedNumber = `(${digitsOnly.slice(0, 3)}) ${digitsOnly.slice(3)}`;
+                  } else {
+                    formattedNumber = `(${digitsOnly.slice(0, 3)}) ${digitsOnly.slice(3, 6)}-${digitsOnly.slice(6, 10)}`;
+                  }
+                  
+                  // Validate and update state
+                  setFormValues((prev) => ({
+                    ...prev,
+                    phoneNumber: formattedNumber,
+                    phoneNumberValid: digitsOnly.length === 10 // Basic validation
+                  }));
+                }
+              }}
+              keyboardType="phone-pad"
               autoCorrect={false}
               autoCapitalize='none'
               outlineStyle={styles.textInputOutline}
@@ -1286,7 +1481,7 @@ export default function EditProfile() {
               onChangeText={(text) =>
                 setFormValues((prev) => ({
                   ...prev,
-                  bio: text.trim(),
+                  bio: text,  // Remove the .trim() here to allow spaces
                 }))
               }
               autoCorrect={false}
@@ -1722,12 +1917,12 @@ export default function EditProfile() {
 
             {/* Location */}
             <Text style={styles.label}>Address / Location</Text>
-            {formValues.address && (
+            {/* {formValues.address && (
               <View style={styles.currentAddressContainer}>
                 <Text style={styles.currentAddressText}>Current Address:</Text>
                 <Text style={styles.addressValue}>{formValues.address}</Text>
               </View>
-            )}
+            )} */}
 
             {/* Replace GooglePlacesAutocomplete with a custom implementation */}
             <View style={styles.searchRow}>
@@ -1845,7 +2040,7 @@ export default function EditProfile() {
 
           {/* Save Changes Button */}
           <TouchableOpacity style={[styles.saveButton, !hasChanges && styles.saveButtonDisabled]} onPress={handleSaveChanges} disabled={!hasChanges}>
-            <Text style={styles.saveButtonText}>{hasChanges ? "Save Changes" : "No Changes"}</Text>
+            <Text style={styles.saveButtonText}>{hasChanges ? "Save Changes" : "Return to Profile"}</Text>
           </TouchableOpacity>
 
           <Modal visible={modalVisible} animationType='slide' transparent={true} onRequestClose={() => setModalVisible(false)}>
@@ -2357,5 +2552,19 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     gap: 10,
     marginBottom: 20,
+  },
+  inputError: {
+    marginBottom: 5, // Reduced to make room for error text
+  },
+  textInputOutlineError: {
+    borderWidth: 1,
+    borderColor: '#E4423F',
+  },
+  errorText: {
+    color: '#E4423F',
+    fontSize: 12,
+    marginTop: -10,
+    marginBottom: 10,
+    marginLeft: 5,
   },
 });

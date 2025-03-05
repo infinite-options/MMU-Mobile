@@ -119,15 +119,43 @@ export default function MyProfile() {
           console.log("Cleaned video url:", rawVideoUrl);
           setVideoUri(rawVideoUrl);
         }
+        
+        // Adjust profile steps based on available user data
+        const hasDateInterests = !!fetched?.user_date_interests;
+        const hasAvailableTime = !!fetched?.user_available_time;
+        
+        // Get profile steps and modify them based on available data
+        const steps = getProfileSteps();
+        
+        if (hasDateInterests && hasAvailableTime) {
+          // Remove date preferences step entirely if both are complete
+          const filteredSteps = steps.filter(step => step.title !== "your date preferences");
+          setProfileSteps(filteredSteps);
+        } else {
+          // Update date preferences step count based on available data
+          const updatedSteps = steps.map(step => {
+            if (step.title === "your date preferences") {
+              if (hasDateInterests) {
+                // Only need DateAvailability
+                return { ...step, count: 1 };
+              } else if (hasAvailableTime) {
+                // Only need TypeOfDate
+                return { ...step, count: 1 };
+              } else {
+                // Reset to 2 if both are missing
+                return { ...step, count: 2 };
+              }
+            }
+            return step;
+          });
+          setProfileSteps(updatedSteps);
+        }
+        setProfileCompletion(getProfileCompletion());
+        
       } catch (error) {
         console.log("Error fetching user info:", error);
       }
     };
-
-    // Profile steps logic
-    const steps = getProfileSteps();
-    setProfileSteps(steps);
-    setProfileCompletion(getProfileCompletion());
 
     if (isFocused) {
       fetchUserInfo();
@@ -153,11 +181,23 @@ export default function MyProfile() {
     const step = profileSteps[index];
 
     if (step.title === "your date preferences") {
-      // 2 sub-pages
-      if (step.count === 2) {
+      // Check user data to determine appropriate navigation
+      const hasDateInterests = !!userData?.user_date_interests;
+      const hasAvailableTime = !!userData?.user_available_time;
+      
+      if (hasDateInterests) {
+        // If date interests already filled, navigate to DateAvailability
         navigation.navigate("DateAvailability", { stepIndex: index });
-      } else if (step.count === 1) {
+      } else if (hasAvailableTime) {
+        // If available time already filled, navigate to TypeOfDate
         navigation.navigate("TypeOfDate", { stepIndex: index });
+      } else {
+        // Default behavior if neither is filled
+        if (step.count === 2) {
+          navigation.navigate("DateAvailability", { stepIndex: index });
+        } else if (step.count === 1) {
+          navigation.navigate("TypeOfDate", { stepIndex: index });
+        }
       }
     } else if (step.title === "a few more details about you") {
       // 8 sub-pages

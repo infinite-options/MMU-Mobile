@@ -106,9 +106,26 @@ export default function DateAvailability() {
   // }
   const [timeWindows, setTimeWindows] = useState([]);
 
-  // We only enable "Continue" if there's at least one *saved* window
-  // (meaning not currently in edit mode with unsaved data)
+  // We only enable "Continue" if there's at least one *saved* window with valid settings
   const savedWindows = timeWindows.filter((tw) => !tw.isEditing);
+  
+  // Improved validation logic
+  const hasValidWindow = savedWindows.some(window => {
+    // Check if at least one day is selected
+    const hasDaySelected = window.days.some(day => day === true);
+    
+    // Check if times are valid
+    const hasValidStartTime = window.start.hour > 0 || window.start.minute > 0;
+    const hasValidEndTime = window.end.hour > 0 || window.end.minute > 0;
+    
+    // Check if times are different
+    const isDifferentTime = 
+      window.start.hour !== window.end.hour || 
+      window.start.minute !== window.end.minute ||
+      window.start.ampm !== window.end.ampm;
+    
+    return hasDaySelected && hasValidStartTime && hasValidEndTime && isDifferentTime;
+  });
 
   // For demonstration, we show a progress bar at ~30% or so for your step
   // Or adapt it if this step is 1 out of 2 required date preferences, etc.
@@ -403,25 +420,69 @@ export default function DateAvailability() {
                     <View style={styles.timeInputGroup}>
                       <TextInput
                         style={styles.timeInput}
-                        value={`${tw.start.hour.toString().padStart(2, '0')}:${tw.start.minute.toString().padStart(2, '0')}`}
+                        placeholder="HH:MM"
+                        value={tw.start.formattedInput || ''}
                         onChangeText={(val) => {
-                          // Format and handle time input
-                          let formattedVal = val.replace(/[^0-9]/g, '');
-                          if (formattedVal.length > 4) formattedVal = formattedVal.substring(0, 4);
+                          // Allow only numbers
+                          const digitsOnly = val.replace(/[^0-9]/g, '');
                           
-                          if (formattedVal.length > 2) {
-                            const hour = parseInt(formattedVal.substring(0, 2), 10);
-                            const min = parseInt(formattedVal.substring(2), 10);
+                          // Format time as user types (HH:MM)
+                          let formatted = '';
+                          if (digitsOnly.length > 0) {
+                            // First digit of hour
+                            const hour1 = parseInt(digitsOnly[0], 10);
+                            // Only allow 0, 1 as first digit if there's a second digit
+                            if (digitsOnly.length > 1 && hour1 > 1) {
+                              return; // Invalid hour first digit
+                            }
                             
-                            handleTimeChange(index, 'start', 'hour', hour > 12 ? 12 : hour);
-                            handleTimeChange(index, 'start', 'minute', min > 59 ? 59 : min);
-                          } else if (formattedVal.length > 0) {
-                            handleTimeChange(index, 'start', 'hour', parseInt(formattedVal, 10));
-                            handleTimeChange(index, 'start', 'minute', 0);
+                            if (digitsOnly.length === 1) {
+                              formatted = digitsOnly[0];
+                            } else if (digitsOnly.length === 2) {
+                              // Check for valid hour
+                              const hour = parseInt(digitsOnly.substring(0, 2), 10);
+                              if (hour === 0 || hour > 12) return; // Invalid hour
+                              formatted = digitsOnly.substring(0, 2) + ':';
+                            } else if (digitsOnly.length >= 3) {
+                              // Add minutes
+                              const hour = parseInt(digitsOnly.substring(0, 2), 10);
+                              if (hour === 0 || hour > 12) return; // Invalid hour
+                              
+                              const min1 = parseInt(digitsOnly[2], 10);
+                              if (min1 > 5) return; // First minute digit can only be 0-5
+                              
+                              if (digitsOnly.length === 3) {
+                                formatted = digitsOnly.substring(0, 2) + ':' + digitsOnly[2];
+                              } else {
+                                const minutes = parseInt(digitsOnly.substring(2, 4), 10);
+                                if (minutes > 59) return; // Invalid minutes
+                                formatted = digitsOnly.substring(0, 2) + ':' + digitsOnly.substring(2, 4);
+                              }
+                            }
                           }
+                          
+                          // Store formatted value for display and update the actual time values
+                          const newTimeWindow = { ...tw };
+                          newTimeWindow.start.formattedInput = formatted;
+                          
+                          // Update hour and minute values for the data model
+                          if (digitsOnly.length >= 2) {
+                            newTimeWindow.start.hour = parseInt(digitsOnly.substring(0, 2), 10);
+                          }
+                          if (digitsOnly.length >= 4) {
+                            newTimeWindow.start.minute = parseInt(digitsOnly.substring(2, 4), 10);
+                          } else if (digitsOnly.length === 3) {
+                            newTimeWindow.start.minute = parseInt(digitsOnly[2] + '0', 10);
+                          }
+                          
+                          // Update the time window
+                          setTimeWindows(prev => {
+                            const newArr = [...prev];
+                            newArr[index] = newTimeWindow;
+                            return newArr;
+                          });
                         }}
                         keyboardType="number-pad"
-                        placeholder="00:00"
                       />
                       <View style={styles.ampmButtons}>
                         <Pressable
@@ -465,25 +526,69 @@ export default function DateAvailability() {
                     <View style={styles.timeInputGroup}>
                       <TextInput
                         style={styles.timeInput}
-                        value={`${tw.end.hour.toString().padStart(2, '0')}:${tw.end.minute.toString().padStart(2, '0')}`}
+                        placeholder="HH:MM"
+                        value={tw.end.formattedInput || ''}
                         onChangeText={(val) => {
-                          // Format and handle time input
-                          let formattedVal = val.replace(/[^0-9]/g, '');
-                          if (formattedVal.length > 4) formattedVal = formattedVal.substring(0, 4);
+                          // Allow only numbers
+                          const digitsOnly = val.replace(/[^0-9]/g, '');
                           
-                          if (formattedVal.length > 2) {
-                            const hour = parseInt(formattedVal.substring(0, 2), 10);
-                            const min = parseInt(formattedVal.substring(2), 10);
+                          // Format time as user types (HH:MM)
+                          let formatted = '';
+                          if (digitsOnly.length > 0) {
+                            // First digit of hour
+                            const hour1 = parseInt(digitsOnly[0], 10);
+                            // Only allow 0, 1 as first digit if there's a second digit
+                            if (digitsOnly.length > 1 && hour1 > 1) {
+                              return; // Invalid hour first digit
+                            }
                             
-                            handleTimeChange(index, 'end', 'hour', hour > 12 ? 12 : hour);
-                            handleTimeChange(index, 'end', 'minute', min > 59 ? 59 : min);
-                          } else if (formattedVal.length > 0) {
-                            handleTimeChange(index, 'end', 'hour', parseInt(formattedVal, 10));
-                            handleTimeChange(index, 'end', 'minute', 0);
+                            if (digitsOnly.length === 1) {
+                              formatted = digitsOnly[0];
+                            } else if (digitsOnly.length === 2) {
+                              // Check for valid hour
+                              const hour = parseInt(digitsOnly.substring(0, 2), 10);
+                              if (hour === 0 || hour > 12) return; // Invalid hour
+                              formatted = digitsOnly.substring(0, 2) + ':';
+                            } else if (digitsOnly.length >= 3) {
+                              // Add minutes
+                              const hour = parseInt(digitsOnly.substring(0, 2), 10);
+                              if (hour === 0 || hour > 12) return; // Invalid hour
+                              
+                              const min1 = parseInt(digitsOnly[2], 10);
+                              if (min1 > 5) return; // First minute digit can only be 0-5
+                              
+                              if (digitsOnly.length === 3) {
+                                formatted = digitsOnly.substring(0, 2) + ':' + digitsOnly[2];
+                              } else {
+                                const minutes = parseInt(digitsOnly.substring(2, 4), 10);
+                                if (minutes > 59) return; // Invalid minutes
+                                formatted = digitsOnly.substring(0, 2) + ':' + digitsOnly.substring(2, 4);
+                              }
+                            }
                           }
+                          
+                          // Store formatted value for display and update the actual time values
+                          const newTimeWindow = { ...tw };
+                          newTimeWindow.end.formattedInput = formatted;
+                          
+                          // Update hour and minute values for the data model
+                          if (digitsOnly.length >= 2) {
+                            newTimeWindow.end.hour = parseInt(digitsOnly.substring(0, 2), 10);
+                          }
+                          if (digitsOnly.length >= 4) {
+                            newTimeWindow.end.minute = parseInt(digitsOnly.substring(2, 4), 10);
+                          } else if (digitsOnly.length === 3) {
+                            newTimeWindow.end.minute = parseInt(digitsOnly[2] + '0', 10);
+                          }
+                          
+                          // Update the time window
+                          setTimeWindows(prev => {
+                            const newArr = [...prev];
+                            newArr[index] = newTimeWindow;
+                            return newArr;
+                          });
                         }}
                         keyboardType="number-pad"
-                        placeholder="00:00"
                       />
                       <View style={styles.ampmButtons}>
                         <Pressable
@@ -582,15 +687,15 @@ export default function DateAvailability() {
         <TouchableOpacity
           style={[
             styles.continueButton,
-            savedWindows.length === 0 && { backgroundColor: '#eee' },
+            hasValidWindow ? { backgroundColor: '#E4423F' } : { backgroundColor: '#eee' },
           ]}
           onPress={handleContinue}
-          disabled={savedWindows.length === 0}
+          disabled={!hasValidWindow}
         >
           <Text
             style={[
               styles.continueButtonText,
-              savedWindows.length === 0 && { color: '#bbb' },
+              hasValidWindow ? { color: '#FFF' } : { color: '#bbb' },
             ]}
           >
             Continue
@@ -714,6 +819,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     flex: 1,
     textAlign: 'center',
+    marginRight: 8,
   },
   ampmButtons: {
     flexDirection: 'row',
@@ -819,14 +925,14 @@ const styles = StyleSheet.create({
     borderTopColor: '#eee',
   },
   continueButton: {
-    backgroundColor: '#eee',
+    backgroundColor: '#eee', // Default disabled color
     borderRadius: 25,
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
   },
   continueButtonText: {
-    color: '#333',
+    color: '#bbb', // Default disabled text color
     fontSize: 18,
     fontWeight: 'bold',
   },

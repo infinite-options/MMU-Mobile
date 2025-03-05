@@ -48,6 +48,7 @@ target 'MeetMeUpvi' do
   require_relative '../node_modules/react-native/scripts/react_native_pods'
   use_react_native!(
     :path => config[:reactNativePath],
+    :hermes_enabled => true
     # Additional configuration options if needed
   )
 

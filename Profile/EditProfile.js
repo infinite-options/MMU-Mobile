@@ -190,8 +190,8 @@ export default function EditProfile() {
     { label: "Man", value: "Man" },
     { label: "Woman", value: "Woman" },
     { label: "Non-binary", value: "Non-binary" },
-    { label: "Transgender Man", value: "Transgender Man" },
-    { label: "Transgender Woman", value: "Transgender Woman" },
+    { label: "Man (transgender)", value: "Man (transgender)" },
+    { label: "Woman (transgender)", value: "Woman (transgender)" },
     { label: "Genderqueer", value: "Genderqueer" },
     { label: "Other", value: "Other" },
   ]);

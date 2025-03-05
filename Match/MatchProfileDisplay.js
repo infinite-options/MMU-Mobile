@@ -204,8 +204,8 @@ export default function MatchProfileDisplay() {
 
       console.log("responseData:", response.data);
       // console.log("API Response MatchProfileDisplay:", response.data);
-      if (response.data["message"] === "No matches found") {
-        console.log("No matches found");
+      if (response.data["message"].startsWith("No matches found")) {
+        console.log("Message from API:", response.data["message"]);
         setUserInfo(null);
         return;
       }

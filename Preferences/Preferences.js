@@ -148,7 +148,7 @@ const Preferences = () => {
         console.log("Matches response:", matchesResponse.data);
         
         // Check if there are no matches
-        if (matchesResponse.data.message === "No matches found") {
+        if (matchesResponse.data["message"].startsWith("No matches found")) {
           Alert.alert(
             "No matches found",
             "Please adjust your preferences.",

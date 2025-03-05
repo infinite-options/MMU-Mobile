@@ -637,12 +637,40 @@ export default function DateAvailability() {
                   >
                     <Text style={styles.deleteText}>Delete</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.saveButton}
-                    onPress={() => handleSaveWindow(index)}
-                  >
-                    <Text style={styles.saveButtonText}>Save</Text>
-                  </TouchableOpacity>
+                  
+                  {/* Check if the current window has valid data */}
+                  {(() => {
+                    // Validate current window
+                    const hasDaySelected = tw.days.some(day => day === true);
+                    const hasValidStartTime = tw.start.hour > 0 || tw.start.minute > 0;
+                    const hasValidEndTime = tw.end.hour > 0 || tw.end.minute > 0;
+                    const isDifferentTime = 
+                      tw.start.hour !== tw.end.hour || 
+                      tw.start.minute !== tw.end.minute ||
+                      tw.start.ampm !== tw.end.ampm;
+                    
+                    const isValid = hasDaySelected && hasValidStartTime && hasValidEndTime && isDifferentTime;
+                    
+                    return (
+                      <TouchableOpacity
+                        style={[
+                          styles.saveButton,
+                          isValid ? { backgroundColor: '#E4423F' } : { backgroundColor: '#f2f2f2' }
+                        ]}
+                        onPress={() => handleSaveWindow(index)}
+                        disabled={!isValid}
+                      >
+                        <Text 
+                          style={[
+                            styles.saveButtonText,
+                            isValid ? { color: '#FFF' } : { color: '#333' }
+                          ]}
+                        >
+                          Save
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })()}
                 </View>
               </View>
             );
@@ -872,13 +900,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   saveButton: {
-    backgroundColor: '#f2f2f2',
+    backgroundColor: '#f2f2f2', // Default disabled color
     borderRadius: 25,
     paddingVertical: 10,
     paddingHorizontal: 30,
   },
   saveButtonText: {
-    color: '#333',
+    color: '#333', // Default disabled text color
     fontSize: 16,
     fontWeight: '500',
   },

@@ -454,7 +454,7 @@ export default function EditProfile() {
           children: fetched.user_kids || 0,
           gender: fetched.user_gender || "",
           identity: fetched.user_identity || "",
-          orientation: fetched.user_sexuality || "",
+          // orientation: fetched.user_sexuality || "",
           openTo: parsedOpenTo,
           address: fetched.user_address || "",
           nationality: fetched.user_nationality || "",
@@ -479,7 +479,7 @@ export default function EditProfile() {
         // Set initial values for dropdowns
         setGenderValue(fetched.user_gender || null);
         setIdentityValue(fetched.user_identity || null);
-        setOrientationValue(fetched.user_sexuality || null);
+        // setOrientationValue(fetched.user_sexuality || null);
         setOpenToValue(parsedOpenTo);
         setBodyTypeValue(fetched.user_body_composition || null);
         setSmokingValue(fetched.user_smoking || null);
@@ -1098,7 +1098,7 @@ export default function EditProfile() {
         user_kids: userData.user_kids?.toString() || "0",
         user_gender: userData.user_gender || "",
         user_identity: userData.user_identity || "",
-        user_sexuality: userData.user_sexuality || "",
+        // user_sexuality: userData.user_sexuality || "",
         user_open_to: userData.user_open_to ? JSON.parse(userData.user_open_to) : [],
         user_address: userData.user_address || "",
         user_nationality: userData.user_nationality || "",
@@ -1127,7 +1127,7 @@ export default function EditProfile() {
         user_kids: formValues.children.toString(),
         user_gender: genderValue,
         user_identity: identityValue,
-        user_sexuality: orientationValue,
+        // user_sexuality: orientationValue,
         user_open_to: openToValue,
         user_address: formValues.address,
         user_nationality: formValues.nationality,

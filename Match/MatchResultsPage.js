@@ -64,6 +64,7 @@ const MatchResultsPage = () => {
   // Example structure: { '100-000111': true, '100-000112': false }
   const [meetStatus, setMeetStatus] = useState({});
   const [meetSelfStatus, setMeetSelfStatus] = useState({});
+  const [userInterests, setUserInterests] = useState([]);
 
   const navigation = useNavigation();
 
@@ -106,19 +107,66 @@ const MatchResultsPage = () => {
     }
   };
 
-  // Load user UID from AsyncStorage
+  // Load user UID from AsyncStorage and fetch user info from API
   useEffect(() => {
-    const loadUserId = async () => {
+    const loadUserData = async () => {
       try {
         const storedUserId = await AsyncStorage.getItem("user_uid");
+        
         if (storedUserId) {
           setUserId(storedUserId);
+          
+          // Fetch user info from API
+          try {
+            const userInfoUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${storedUserId}`;
+            const response = await axios.get(userInfoUrl);
+            console.log("--- User Info Response ---", response.data);
+            
+            // Extract general interests from response - access the first item in the result array
+            if (response.data && response.data.result && response.data.result.length > 0) {
+              const userData = response.data.result[0];
+              
+              if (userData.user_general_interests) {
+                const interestsData = userData.user_general_interests;
+                
+                // Handle different formats of interests data
+                if (typeof interestsData === 'string') {
+                  try {
+                    // Try parsing as JSON
+                    const interests = JSON.parse(interestsData);
+                    setUserInterests(Array.isArray(interests) ? interests : []);
+                  } catch (e) {
+                    // If parsing fails, try treating as comma-separated string
+                    setUserInterests(interestsData.split(',').map(i => i.trim()));
+                  }
+                } else if (Array.isArray(interestsData)) {
+                  setUserInterests(interestsData);
+                }
+                
+                console.log("--- Parsed User Interests ---", userInterests);
+              }
+            }
+          } catch (apiError) {
+            console.error("Error fetching user info from API:", apiError);
+            
+            // Fallback to AsyncStorage if API call fails
+            const userInterestsString = await AsyncStorage.getItem("user_general_interests");
+            if (userInterestsString) {
+              try {
+                const interests = JSON.parse(userInterestsString);
+                setUserInterests(Array.isArray(interests) ? interests : []);
+              } catch (e) {
+                setUserInterests(userInterestsString.split(',').map(i => i.trim()));
+              }
+            }
+          }
         }
       } catch (error) {
-        console.error("Error loading user UID from AsyncStorage:", error);
+        console.error("Error loading user data:", error);
       }
     };
-    loadUserId();
+    
+    loadUserData();
   }, []);
 
   // Add focus listener to refresh when returning to the screen
@@ -153,9 +201,86 @@ const MatchResultsPage = () => {
       // If parse succeeded, proceed
       console.log("--- data ---", data);
 
-      setMatchedResults(data.matched_results || []);
-      setInterestedInMe(data.people_who_selected_you || []);
-      setInterestedIn(data.people_whom_you_selected || []);
+      const matchedResultsData = data.matched_results || [];
+      const interestedInMeData = data.people_who_selected_you || [];
+      const interestedInData = data.people_whom_you_selected || [];
+      
+      // Fetch user details including interests for each matched user
+      const enrichedMatchedResults = await Promise.all(
+        matchedResultsData.map(async (match) => {
+          try {
+            const userInfoUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${match.user_uid}`;
+            const userInfoResponse = await axios.get(userInfoUrl);
+            
+            if (userInfoResponse.data && 
+                userInfoResponse.data.result && 
+                userInfoResponse.data.result.length > 0) {
+              const userDetails = userInfoResponse.data.result[0];
+              // Merge the user details into the match data
+              return {
+                ...match,
+                user_general_interests: userDetails.user_general_interests
+              };
+            }
+            return match;
+          } catch (error) {
+            console.error(`Error fetching interests for user ${match.user_uid}:`, error);
+            return match;
+          }
+        })
+      );
+      
+      // Similarly fetch details for interested in me users
+      const enrichedInterestedInMe = await Promise.all(
+        interestedInMeData.map(async (match) => {
+          try {
+            const userInfoUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${match.user_uid}`;
+            const userInfoResponse = await axios.get(userInfoUrl);
+            
+            if (userInfoResponse.data && 
+                userInfoResponse.data.result && 
+                userInfoResponse.data.result.length > 0) {
+              const userDetails = userInfoResponse.data.result[0];
+              return {
+                ...match,
+                user_general_interests: userDetails.user_general_interests
+              };
+            }
+            return match;
+          } catch (error) {
+            console.error(`Error fetching interests for user ${match.user_uid}:`, error);
+            return match;
+          }
+        })
+      );
+      
+      // And for interested in users
+      const enrichedInterestedIn = await Promise.all(
+        interestedInData.map(async (match) => {
+          try {
+            const userInfoUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${match.user_uid}`;
+            const userInfoResponse = await axios.get(userInfoUrl);
+            
+            if (userInfoResponse.data && 
+                userInfoResponse.data.result && 
+                userInfoResponse.data.result.length > 0) {
+              const userDetails = userInfoResponse.data.result[0];
+              return {
+                ...match,
+                user_general_interests: userDetails.user_general_interests
+              };
+            }
+            return match;
+          } catch (error) {
+            console.error(`Error fetching interests for user ${match.user_uid}:`, error);
+            return match;
+          }
+        })
+      );
+
+      setMatchedResults(enrichedMatchedResults);
+      setInterestedInMe(enrichedInterestedInMe);
+      setInterestedIn(enrichedInterestedIn);
     } catch (error) {
       console.error("Error fetching matches:", error);
       Alert.alert("Error", "An error occurred while finding matches.");
@@ -229,6 +354,63 @@ const MatchResultsPage = () => {
     fetchMeetStatus();
   }, [matchedResults]);
 
+  // Function to calculate common interests
+  const calculateCommonInterests = (matchInterests) => {
+    console.log("--- CALCULATING COMMON INTERESTS ---");
+    console.log("User interests:", userInterests);
+    console.log("Match interests raw:", matchInterests);
+    
+    // Ensure both are arrays and not null/undefined
+    const userInterestsArray = Array.isArray(userInterests) ? userInterests : [];
+    let matchInterestsArray = [];
+    
+    // Handle case when matchInterests is undefined or null
+    if (!matchInterests) {
+      console.log("No match interests found, returning 0");
+      return 0; // No common interests if match has no interests
+    }
+    
+    if (typeof matchInterests === 'string') {
+      try {
+        // Try parsing as JSON
+        matchInterestsArray = JSON.parse(matchInterests);
+        console.log("Successfully parsed match interests as JSON:", matchInterestsArray);
+        if (!Array.isArray(matchInterestsArray)) {
+          console.log("Parsed result is not an array, converting to empty array");
+          matchInterestsArray = []; // Ensure it's an array
+        }
+      } catch (e) {
+        // If parsing fails, try treating as comma-separated string
+        console.log("Failed to parse as JSON, treating as comma-separated string");
+        matchInterestsArray = matchInterests.split(',').map(i => i.trim());
+        console.log("Split result:", matchInterestsArray);
+      }
+    } else if (Array.isArray(matchInterests)) {
+      console.log("Match interests is already an array");
+      matchInterestsArray = matchInterests;
+    } else {
+      console.log("Match interests is neither string nor array:", typeof matchInterests);
+    }
+    
+    // Extra safety check to ensure matchInterestsArray is an array
+    if (!Array.isArray(matchInterestsArray)) {
+      console.log("matchInterestsArray is still not an array after processing");
+      return 0;
+    }
+    
+    // Count common interests with case-insensitive comparison
+    const common = userInterestsArray.filter(userInterest => 
+      matchInterestsArray.some(matchInterest => 
+        String(userInterest).toLowerCase() === String(matchInterest).toLowerCase()
+      )
+    );
+    
+    console.log("Common interests found:", common);
+    console.log("Common count:", common.length);
+    
+    return common.length;
+  };
+
   // Render "Set up date" or "See invitation" depending on meet status
   // Also handle button press to navigate to DateType or Chat
   const handleButtonPress = (matchId) => {
@@ -268,6 +450,9 @@ const MatchResultsPage = () => {
     buttonLabel = null,
     matchId = null
   ) => {
+    // Calculate common interests
+    const commonInterestsCount = calculateCommonInterests(interests);
+    
     // Decide which label to show (we ignore the passed buttonLabel here intentionally,
     // because we override with either "See invitation" or "Set up date" below).
     const hasMeet = meetStatus[matchId] || false;
@@ -293,7 +478,7 @@ const MatchResultsPage = () => {
             <View>
               <Text style={styles.matchName}>{firstname} {lastname}</Text>
               <Text style={styles.matchSubText}>
-                {interests} interests in common
+                {commonInterestsCount} interests in common
               </Text>
             </View>
           </TouchableOpacity>
@@ -343,7 +528,7 @@ const MatchResultsPage = () => {
             <View>
               <Text style={styles.matchName}>{fname} {lname}</Text>
               <Text style={styles.matchSubText}>
-                {interests} interests in common
+                {calculateCommonInterests(interests)} interests in common
               </Text>
             </View>
           </TouchableOpacity>
@@ -381,7 +566,7 @@ const MatchResultsPage = () => {
             <View>
               <Text style={styles.matchName}>{fname} {lname}</Text>
               <Text style={styles.matchSubText}>
-                {interests} interests in common
+                {calculateCommonInterests(interests)} interests in common
               </Text>
             </View>
           </TouchableOpacity>
@@ -451,7 +636,7 @@ const MatchResultsPage = () => {
               return renderMatchRow(
                 match.user_first_name,
                 match.user_last_name,
-                match.common_interests || "0",
+                match.user_general_interests,
                 firstPhoto,
                 "Set up date or see invitation",
                 match.user_uid
@@ -472,7 +657,7 @@ const MatchResultsPage = () => {
               return renderInterestedInMeRow(
                 match.user_first_name,
                 match.user_last_name,
-                match.common_interests || "0",
+                match.user_general_interests,
                 firstPhoto,
                 "Match",
                 match.user_uid
@@ -493,7 +678,7 @@ const MatchResultsPage = () => {
               return renderInterestedInRow(
                 match.user_first_name,
                 match.user_last_name,
-                match.common_interests || "0",
+                match.user_general_interests,
                 firstPhoto,
                 "See Profile",
                 match.user_uid

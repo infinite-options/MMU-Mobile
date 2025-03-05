@@ -24,6 +24,7 @@ const MatchPageNew = () => {
   const [userId, setUserId] = useState(null);
   const [userPhoto, setUserPhoto] = useState(null);
   const [matchedUserPhoto, setMatchedUserPhoto] = useState(null);
+  const [matchedUserName, setMatchedUserName] = useState('');
 
   useEffect(() => {
     const loadUserId = async () => {
@@ -55,11 +56,15 @@ const MatchPageNew = () => {
         const matchedPhotoUrls = JSON.parse(matchedUserData.user_photo_url.replace(/\\"/g, '"')) || [];
         setMatchedUserPhoto(matchedPhotoUrls[0] || null);
         
+        // Get matched user's name
+        setMatchedUserName(matchedUserData.user_first_name + ' ' + matchedUserData.user_last_name || 'your match');
+        
       } catch (error) {
         console.error("Error fetching user photos:", error);
         // Fallback to default images
         setUserPhoto(null);
         setMatchedUserPhoto(null);
+        setMatchedUserName('your match');
       }
     };
 
@@ -74,13 +79,13 @@ const MatchPageNew = () => {
         navigation.navigate('MatchResultsPage');
     }
     const handleSetUpDate = () => {
-        navigation.navigate('DateType');
+        navigation.navigate('DateType', { matchedUserId: meet_date_user_id });
     }
   return (
     <LinearGradient colors={['#FC6767', '#EC008C']} style={styles.container}>
       {/* Title */}
       <Text style={styles.title}>It's a Match!</Text>
-      <Text style={styles.subtitle}>You and Gemma have liked each other.</Text>
+      <Text style={styles.subtitle}>You and {matchedUserName} have liked each other.</Text>
 
       {/* Images container */}
       <View style={styles.imagesContainer}>

@@ -34,6 +34,24 @@ export default function DateType({ navigation }) {
   // Track which date type is selected
 
   const [selectedDateType, setSelectedDateType] = useState(null);
+
+  // Add useEffect to load previously selected date type
+  useEffect(() => {
+    const loadSavedDateType = async () => {
+      try {
+        const savedDateType = await AsyncStorage.getItem('user_date_type');
+        if (savedDateType) {
+          setSelectedDateType(savedDateType);
+          console.log('Loaded previously selected date type:', savedDateType);
+        }
+      } catch (error) {
+        console.error('Error loading saved date type:', error);
+      }
+    };
+    
+    loadSavedDateType();
+  }, []);
+
   // Add state for matched user's info
   const [matchedUserName, setMatchedUserName] = useState('');
   const [matchedUserPreferences, setMatchedUserPreferences] = useState([]);
@@ -69,20 +87,25 @@ export default function DateType({ navigation }) {
     const fetchUserImages = async () => {
       try {
         // Get current user ID from storage
-        const currentUserId = await AsyncStorage.getItem('meet_date_user_id');
+        const currentUserId = await AsyncStorage.getItem('user_uid');
+        console.log("--- currentUserId ---", currentUserId);
         
         // Fetch current user's image
         if (currentUserId) {
           const currentUserResponse = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${currentUserId}`);
           const currentUserData = await currentUserResponse.json();
-          setCurrentUserImage(currentUserData.result[0]?.user_profile_image || null);
+          const currentUserPhotoUrls = currentUserData.result[0]?.user_photo_url ? 
+            JSON.parse(currentUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
+          setCurrentUserImage(currentUserPhotoUrls[0] || null);
         }
 
         // Fetch matched user's image
         if (matchedUserId) {
           const matchedUserResponse = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${matchedUserId}`);
           const matchedUserData = await matchedUserResponse.json();
-          setMatchedUserImage(matchedUserData.result[0]?.user_profile_image || null);
+          const matchedUserPhotoUrls = matchedUserData.result[0]?.user_photo_url ? 
+            JSON.parse(matchedUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
+          setMatchedUserImage(matchedUserPhotoUrls[0] || null);
         }
       } catch (error) {
         console.error('Error fetching user images:', error);
@@ -131,14 +154,14 @@ export default function DateType({ navigation }) {
         {/* Profile images */}
         <View style={styles.heartsContainer}>
           <Image
-            source={currentUserImage ? { uri: currentUserImage } : require('../src/Assets/Images/match1.png')}
+            source={currentUserImage ? { uri: currentUserImage } : require('../src/Assets/Images/account.png')}
             style={styles.heartImage}
-            defaultSource={require('../src/Assets/Images/match1.png')}
+            defaultSource={require('../src/Assets/Images/account.png')}
           />
           <Image
-            source={matchedUserImage ? { uri: matchedUserImage } : require('../src/Assets/Images/match2.png')}
+            source={matchedUserImage ? { uri: matchedUserImage } : require('../src/Assets/Images/account.png')}
             style={[styles.heartImage, styles.heartOverlap]}
-            defaultSource={require('../src/Assets/Images/match2.png')}
+            defaultSource={require('../src/Assets/Images/account.png')}
           />
         </View>
 

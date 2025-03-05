@@ -398,11 +398,25 @@ export default function MatchProfileDisplay() {
               {/* Play/Pause Button */}
               <TouchableOpacity
                 style={styles.playPauseButton}
-                onPress={() => {
-                  if (status.isPlaying) {
-                    videoRef.current.pauseAsync();
-                  } else {
-                    videoRef.current.playAsync();
+                onPress={async () => {
+                  if (!videoRef.current) return;
+                  
+                  try {
+                    // Get current playback status
+                    const currentStatus = await videoRef.current.getStatusAsync();
+                    
+                    // If video is at the end or paused, reset and play from beginning
+                    if (currentStatus.didJustFinish || 
+                        (currentStatus.positionMillis >= currentStatus.durationMillis - 100) || 
+                        !currentStatus.isPlaying) {
+                      await videoRef.current.setPositionAsync(0);
+                      await videoRef.current.playAsync();
+                    } else {
+                      // If video is currently playing, pause it
+                      await videoRef.current.pauseAsync();
+                    }
+                  } catch (error) {
+                    console.log("Error handling video play/pause:", error);
                   }
                 }}
               >
@@ -509,10 +523,10 @@ export default function MatchProfileDisplay() {
               </View>
 
               {/* Sexuality */}
-              <View style={styles.detailRow}>
+              {/* <View style={styles.detailRow}>
                 <Ionicons name='heart-half-outline' size={16} color='#bbb' style={{ marginRight: 8 }} />
                 <Text style={styles.detailText}>{userInfo?.user_sexuality || "Orientation not provided"}</Text>
-              </View>
+              </View> */}
 
               {/* Open to */}
               <View style={styles.detailRow}>

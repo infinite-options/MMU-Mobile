@@ -68,7 +68,7 @@ export default function InterestsScreen({ navigation }) {
     const identity = await AsyncStorage.getItem("user_identity");
     const height = await AsyncStorage.getItem("user_height_cm");
     const kids = await AsyncStorage.getItem("user_kids");
-    const sexuality = await AsyncStorage.getItem("user_sexuality");
+    // const sexuality = await AsyncStorage.getItem("user_sexuality");
     const openTo = await AsyncStorage.getItem("user_open_to");
     const interests = await AsyncStorage.getItem("user_general_interests");
     formData.append("user_uid", uid); // Example user ID
@@ -81,7 +81,7 @@ export default function InterestsScreen({ navigation }) {
     formData.append("user_identity", identity);
     formData.append("user_height", height);
     formData.append("user_kids", kids);
-    formData.append("user_sexuality", sexuality);
+    // formData.append("user_sexuality", sexuality);
     formData.append("user_open_to", openTo);
     formData.append("user_general_interests", interests);
     console.log("Form data from InterestsScreen:", formData);

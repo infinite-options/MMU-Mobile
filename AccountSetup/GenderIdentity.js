@@ -15,7 +15,7 @@ export default function GenderIdentity({ navigation }) {
         console.log("Gender identity stored:", selectedOption);
 
         // Set a default value for sexuality since we're skipping that screen
-        await AsyncStorage.setItem("user_sexuality", "Prefer not to say");
+        // await AsyncStorage.setItem("user_sexuality", "Prefer not to say");
       } catch (error) {
         console.error("Error storing user_gender_identity:", error);
       }

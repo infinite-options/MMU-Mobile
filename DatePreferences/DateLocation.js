@@ -27,6 +27,10 @@ export default function DateLocation({ navigation }) {
   // Add a ref for the map
   const mapRef = useRef(null);
   
+  // Add state for user images
+  const [matchedUserImage, setMatchedUserImage] = useState(null);
+  const [currentUserImage, setCurrentUserImage] = useState(null);
+  
   useEffect(() => {
     const initMatchedUserId = async () => {
       if (!matchedUserId) {
@@ -75,6 +79,38 @@ export default function DateLocation({ navigation }) {
 
   // Location loading state
   const [locationLoading, setLocationLoading] = useState(false);
+
+  // Fetch both users' images
+  useEffect(() => {
+    const fetchUserImages = async () => {
+      try {
+        // Get current user ID from storage
+        const currentUserId = await AsyncStorage.getItem('user_uid');
+        
+        // Fetch current user's image
+        if (currentUserId) {
+          const currentUserResponse = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${currentUserId}`);
+          const currentUserData = await currentUserResponse.json();
+          const currentUserPhotoUrls = currentUserData.result[0]?.user_photo_url ? 
+            JSON.parse(currentUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
+          setCurrentUserImage(currentUserPhotoUrls[0] || null);
+        }
+
+        // Fetch matched user's image
+        if (matchedUserId) {
+          const matchedUserResponse = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${matchedUserId}`);
+          const matchedUserData = await matchedUserResponse.json();
+          const matchedUserPhotoUrls = matchedUserData.result[0]?.user_photo_url ? 
+            JSON.parse(matchedUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
+          setMatchedUserImage(matchedUserPhotoUrls[0] || null);
+        }
+      } catch (error) {
+        console.error('Error fetching user images:', error);
+      }
+    };
+
+    fetchUserImages();
+  }, [matchedUserId]);
 
   const handleRegionChangeComplete = (newRegion) => {
     setRegion(newRegion);
@@ -260,10 +296,18 @@ export default function DateLocation({ navigation }) {
           <Ionicons name='arrow-back' size={28} color='red' />
         </TouchableOpacity>
 
-        {/* Hearts at top */}
+        {/* Hearts at top with actual user images */}
         <View style={styles.heartsContainer}>
-          <Image source={require("../src/Assets/Images/match1.png")} style={styles.heartImage} />
-          <Image source={require("../src/Assets/Images/match2.png")} style={[styles.heartImage, styles.heartOverlap]} />
+          <Image
+            source={currentUserImage ? { uri: currentUserImage } : require('../src/Assets/Images/account.png')}
+            style={styles.heartImage}
+            defaultSource={require('../src/Assets/Images/account.png')}
+          />
+          <Image
+            source={matchedUserImage ? { uri: matchedUserImage } : require('../src/Assets/Images/account.png')}
+            style={[styles.heartImage, styles.heartOverlap]}
+            defaultSource={require('../src/Assets/Images/account.png')}
+          />
         </View>
 
         {/* Title & Subtitle */}

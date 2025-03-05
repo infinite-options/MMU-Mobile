@@ -121,12 +121,15 @@ export default function Chat() {
         let apiMessages = [];
         if (response.data && Array.isArray(response.data.result)) {
           apiMessages = response.data.result.map(msg => ({
-            id: msg.message_uid,
-            text: msg.message_content,
-            timestamp: msg.message_sent_at,
+            id: msg.message_uid || `msg-${Date.now()}-${Math.random()}`,
+            text: msg.message_content || '',
+            timestamp: msg.message_sent_at || new Date().toISOString(),
             isSent: msg.message_sender_user_id === localUid,
             isReceived: msg.message_sender_user_id !== localUid
           }));
+          
+          // Log messages for debugging
+          console.log('Fetched messages:', apiMessages);
         } else {
           console.warn('Warning: response.data.result is not an array in fetchMessages', response.data);
         }
@@ -349,9 +352,18 @@ export default function Chat() {
   };
 
   // Compute the latest received Date Invitation (received and starts with 'Date Invitation:')
-  const receivedInvitations = messages.filter(m => !m.isSent && m.text.startsWith('Date Invitation:'));
-  const sortedInvitations = receivedInvitations.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-  const latestInvitation = sortedInvitations.length > 0 ? sortedInvitations[sortedInvitations.length - 1] : null;
+  const receivedInvitations = messages.filter(m => 
+    m.isReceived && m.text && m.text.startsWith('Date Invitation:')
+  );
+  const sortedInvitations = receivedInvitations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  const latestInvitation = sortedInvitations.length > 0 ? sortedInvitations[0] : null;
+
+  // Log invitation status for debugging
+  useEffect(() => {
+    console.log('Latest invitation:', latestInvitation);
+    console.log('Invitation response sent:', invitationResponseSent);
+    console.log('Meet confirmed:', meetConfirmed);
+  }, [latestInvitation, invitationResponseSent, meetConfirmed]);
 
   if (loading) {
     return (
@@ -388,14 +400,26 @@ export default function Chat() {
           <View key={date}>
             <Text style={styles.dateHeader}>{date}</Text>
             {dateMessages.map((item) => {
+              // Ensure text is a string before calling startsWith
+              const textContent = item.text || '';
+              const isDateInvitation = textContent.startsWith('Date Invitation:');
               const containerStyle = item.isSent ? styles.rightBubbleWrapper : styles.leftBubbleWrapper;
+              
+              // Enhanced bubble content with better handling of invitation formatting
               const bubbleContent = (
                 <LinearGradient
                   colors={item.isSent ? ['#FF5E62', '#FF9966'] : ['#F5F5F5', '#F5F5F5']}
                   style={styles.bubbleContainer}
                 >
                   <Text style={item.isSent ? styles.rightBubbleText : styles.leftBubbleText}>
-                    {item.text}
+                    {isDateInvitation ? (
+                      // Format date invitation nicely
+                      textContent.split('\n').map((line, index) => (
+                        <Text key={index} style={index === 0 ? {fontWeight: 'bold'} : {}}>
+                          {line}{'\n'}
+                        </Text>
+                      ))
+                    ) : textContent}
                   </Text>
                   <Text style={styles.messageTimestamp}>
                     {new Date(item.timestamp.replace(' ', 'T')).toLocaleTimeString([], {
@@ -411,9 +435,13 @@ export default function Chat() {
                 </LinearGradient>
               );
               
-              if (item.isSent && item.text.startsWith('Date Invitation:')) {
+              if (isDateInvitation) {
                 return (
-                  <TouchableOpacity key={item.id} style={containerStyle} onPress={() => navigation.navigate('DateFinal', { matchedUserId: matchedUserId })}>
+                  <TouchableOpacity 
+                    key={item.id} 
+                    style={containerStyle} 
+                    onPress={() => navigation.navigate('DateFinal', { matchedUserId: matchedUserId })}
+                  >
                     {bubbleContent}
                   </TouchableOpacity>
                 );

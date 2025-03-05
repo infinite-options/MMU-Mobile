@@ -666,10 +666,10 @@ export default function UserProfile() {
           </View>
 
           {/* Sexuality */}
-          <View style={styles.detailRow}>
+          {/* <View style={styles.detailRow}>
             <Ionicons name='heart-half-outline' size={16} color='#bbb' style={{ marginRight: 8 }} />
             <Text style={styles.detailText}>{userInfo?.user_sexuality || "Orientation not provided"}</Text>
-          </View>
+          </View> */}
 
           {/* Open to */}
           <View style={styles.detailRow}>

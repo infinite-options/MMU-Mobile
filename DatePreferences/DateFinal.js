@@ -17,10 +17,14 @@ import SlideToSend from '../src/Assets/Components/SlideToSend.js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
+import MaskedView from '@react-native-masked-view/masked-view';
+import LinearGradient from 'react-native-linear-gradient';
 
 export default function DateFinal({ navigation }) {
   const route = useRoute();
   const [matchedUserId, setMatchedUserId] = useState(route.params?.matchedUserId || null);
+  const [matchedUserImage, setMatchedUserImage] = useState(null);
+  const [currentUserImage, setCurrentUserImage] = useState(null);
 
   useEffect(() => {
     const initMatchedUserId = async () => {
@@ -34,6 +38,34 @@ export default function DateFinal({ navigation }) {
     };
     initMatchedUserId();
   }, []);
+
+  useEffect(() => {
+    const fetchUserImages = async () => {
+      try {
+        const currentUserId = await AsyncStorage.getItem('user_uid');
+        
+        if (currentUserId) {
+          const currentUserResponse = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${currentUserId}`);
+          const currentUserData = await currentUserResponse.json();
+          const currentUserPhotoUrls = currentUserData.result[0]?.user_photo_url ? 
+            JSON.parse(currentUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
+          setCurrentUserImage(currentUserPhotoUrls[0] || null);
+        }
+
+        if (matchedUserId) {
+          const matchedUserResponse = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${matchedUserId}`);
+          const matchedUserData = await matchedUserResponse.json();
+          const matchedUserPhotoUrls = matchedUserData.result[0]?.user_photo_url ? 
+            JSON.parse(matchedUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
+          setMatchedUserImage(matchedUserPhotoUrls[0] || null);
+        }
+      } catch (error) {
+        console.error('Error fetching user images:', error);
+      }
+    };
+
+    fetchUserImages();
+  }, [matchedUserId]);
 
   const [dateType, setDateType] = useState('No date type selected');
   const [dateDay, setDateDay] = useState('No date day selected');
@@ -288,7 +320,7 @@ export default function DateFinal({ navigation }) {
   // Confirm cancel => exit or go back
   const handleConfirmCancel = () => {
     setShowCancelModal(false);
-    navigation.popToTop();
+    navigation.navigate('MatchResultsPage',{  matchedUserId: matchedUserId });
   };
 
   if (invitationSent) {
@@ -296,16 +328,57 @@ export default function DateFinal({ navigation }) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.sentContainer}>
-          <View style={styles.heartsContainer}>
+        <View style={styles.heartsContainer}>
+        {/* First heart using MaskedView */}
+        <View style={styles.heartWrapper}>
+          <MaskedView
+            style={styles.maskedView}
+            maskElement={
+              <Image
+                source={require('../assets/icons/Primaryheart.png')}
+                style={styles.maskImage}
+                resizeMode="contain"
+              />
+            }
+          >
             <Image
-              source={require('../src/Assets/Images/match1.png')}
-              style={styles.heartImage}
+              source={currentUserImage ? { uri: currentUserImage } : require('../src/Assets/Images/account.png')}
+              style={styles.fullImage}
+              defaultSource={require('../src/Assets/Images/account.png')}
             />
+          </MaskedView>
+          <Image
+            source={require('../assets/icons/primaryheartoutline.png')}
+            style={styles.heartOutline}
+            resizeMode="contain"
+          />
+        </View>
+        
+        {/* Second heart using MaskedView */}
+        <View style={[styles.heartWrapper, styles.secondHeartWrapper]}>
+          <MaskedView
+            style={styles.maskedView}
+            maskElement={
+              <Image
+                source={require('../assets/icons/Secondaryheart.png')}
+                style={styles.maskImage}
+                resizeMode="contain"
+              />
+            }
+          >
             <Image
-              source={require('../src/Assets/Images/match2.png')}
-              style={[styles.heartImage, styles.heartOverlap]}
+              source={matchedUserImage ? { uri: matchedUserImage } : require('../src/Assets/Images/account.png')}
+              style={styles.fullImage}
+              defaultSource={require('../src/Assets/Images/account.png')}
             />
-          </View>
+          </MaskedView>
+          <Image
+            source={require('../assets/icons/secondaryheartoutline.png')}
+            style={styles.heartOutline}
+            resizeMode="contain"
+          />
+        </View>
+      </View>
           <Text style={styles.sentTitle}>Invitation Sent!</Text>
           <Text style={styles.sentSubtitle}>
             Your date invitation was successfully sent.
@@ -340,14 +413,55 @@ export default function DateFinal({ navigation }) {
       <Text style={styles.subtitle}>Tap on any info to edit.</Text>
 
       <View style={styles.heartsContainer}>
-        <Image
-          source={require('../src/Assets/Images/match1.png')}
-          style={styles.heartImage}
-        />
-        <Image
-          source={require('../src/Assets/Images/match2.png')}
-          style={[styles.heartImage, styles.heartOverlap]}
-        />
+        {/* First heart using MaskedView */}
+        <View style={styles.heartWrapper}>
+          <MaskedView
+            style={styles.maskedView}
+            maskElement={
+              <Image
+                source={require('../assets/icons/Primaryheart.png')}
+                style={styles.maskImage}
+                resizeMode="contain"
+              />
+            }
+          >
+            <Image
+              source={currentUserImage ? { uri: currentUserImage } : require('../src/Assets/Images/account.png')}
+              style={styles.fullImage}
+              defaultSource={require('../src/Assets/Images/account.png')}
+            />
+          </MaskedView>
+          <Image
+            source={require('../assets/icons/primaryheartoutline.png')}
+            style={styles.heartOutline}
+            resizeMode="contain"
+          />
+        </View>
+        
+        {/* Second heart using MaskedView */}
+        <View style={[styles.heartWrapper, styles.secondHeartWrapper]}>
+          <MaskedView
+            style={styles.maskedView}
+            maskElement={
+              <Image
+                source={require('../assets/icons/Secondaryheart.png')}
+                style={styles.maskImage}
+                resizeMode="contain"
+              />
+            }
+          >
+            <Image
+              source={matchedUserImage ? { uri: matchedUserImage } : require('../src/Assets/Images/account.png')}
+              style={styles.fullImage}
+              defaultSource={require('../src/Assets/Images/account.png')}
+            />
+          </MaskedView>
+          <Image
+            source={require('../assets/icons/secondaryheartoutline.png')}
+            style={styles.heartOutline}
+            resizeMode="contain"
+          />
+        </View>
       </View>
 
       {/* Example: Date Info */}
@@ -355,7 +469,7 @@ export default function DateFinal({ navigation }) {
         {/* Date Type */}
         <TouchableOpacity
           style={styles.detailRow}
-          onPress={() => navigation.navigate('DateType')}
+          onPress={() => navigation.navigate('DateType',{ matchedUserId: matchedUserId })}
         >
           <Ionicons name="people" size={24} color="#666" style={styles.detailIcon} />
           <Text style={styles.detailText}>{dateType}</Text>
@@ -364,7 +478,7 @@ export default function DateFinal({ navigation }) {
         {/* Day */}
         <TouchableOpacity
           style={styles.detailRow}
-          onPress={() => navigation.navigate('DateOccurance')}
+          onPress={() => navigation.navigate('DateOccurance',{ matchedUserId: matchedUserId })}
         >
           <Ionicons name="calendar" size={24} color="#666" style={styles.detailIcon} />
           <Text style={styles.detailText}>{dateDay}</Text>
@@ -373,7 +487,7 @@ export default function DateFinal({ navigation }) {
         {/* Time */}
         <TouchableOpacity
           style={styles.detailRow}
-          onPress={() => navigation.navigate('DateOccurance')}
+          onPress={() => navigation.navigate('DateOccurance',{ matchedUserId: matchedUserId })}
         >
           <Ionicons name="time" size={24} color="#666" style={styles.detailIcon} />
           <Text style={styles.detailText}>{dateTime}</Text>
@@ -382,7 +496,7 @@ export default function DateFinal({ navigation }) {
         {/* Location */}
         <TouchableOpacity
           style={styles.detailRow}
-          onPress={() => navigation.navigate('DateLocation')}
+          onPress={() => navigation.navigate('DateLocation',{ matchedUserId: matchedUserId })}
         >
           <Ionicons name="location-sharp" size={24} color="#666" style={styles.detailIcon} />
           <Text style={styles.detailText}>{dateLocation}</Text>
@@ -474,18 +588,32 @@ const styles = StyleSheet.create({
   heartsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 25,
+    alignItems: 'center',
+    marginVertical: 30,
   },
-  heartImage: {
-    width: 80,
-    height: 80,
+  heartWrapper: {
+    width: 130,
+    height: 130,
+    position: 'relative',
+  },
+  secondHeartWrapper: {
+    marginLeft: -25,
+    marginTop: -15,
+  },
+  maskedView: {
+    width: 130,
+    height: 130,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  maskImage: {
+    width: 130,
+    height: 130,
+  },
+  fullImage: {
+    width: 130,
+    height: 130,
     resizeMode: 'cover',
-    borderRadius: 40,
-    borderWidth: 2,
-    borderColor: '#FF4081',
-  },
-  heartOverlap: {
-    marginLeft: -30,
   },
   detailsContainer: {
     marginHorizontal: 10,
@@ -581,5 +709,12 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  heartOutline: {
+    position: 'absolute',
+    width: 130,
+    height: 130,
+    top: 0,
+    left: 0,
   },
 });

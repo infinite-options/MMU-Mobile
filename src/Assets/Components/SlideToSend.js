@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { View, Text, StyleSheet, Dimensions, Animated } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Animated, Image } from 'react-native';
 import {
   PanGestureHandler,
   State,
@@ -70,10 +70,14 @@ export default function SlideToSend({ onSlideSuccess }) {
         <Animated.View
           style={[
             styles.thumb,
-            { transform: [{ translateX }] }
+            { transform: [{ translateX }] },
+            { marginLeft: 5 }
           ]}
         >
-          <Ionicons name="arrow-forward" size={24} color="#FFF" />
+          <Image 
+            source={require('../../Assets/Images/sendrectangle.png')} 
+            style={styles.thumbImage}
+          />
         </Animated.View>
       </PanGestureHandler>
     </View>
@@ -81,6 +85,7 @@ export default function SlideToSend({ onSlideSuccess }) {
 }
 
 const THUMB_SIZE = 50;
+const SLIDING_THUMB_SIZE = 40; // Smaller size for the thumb
 
 const styles = StyleSheet.create({
   container: {
@@ -92,7 +97,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: '100%',
     height: THUMB_SIZE,
-    borderRadius: THUMB_SIZE / 2,
+    borderRadius: 10,
     backgroundColor: '#ddd',
     justifyContent: 'center',
     alignItems: 'center',
@@ -102,11 +107,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   thumb: {
-    width: THUMB_SIZE,
-    height: THUMB_SIZE,
-    borderRadius: THUMB_SIZE / 2,
+    width: SLIDING_THUMB_SIZE,
+    height: SLIDING_THUMB_SIZE,
+    borderRadius: 5, // Slight border radius
     backgroundColor: '#E4423F',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  thumbImage: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
 });

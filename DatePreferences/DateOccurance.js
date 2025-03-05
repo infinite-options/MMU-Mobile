@@ -34,18 +34,82 @@ export default function DateOccurance({ navigation }) {
   // Track selected day (index or null)
   const [selectedDayIndex, setSelectedDayIndex] = useState(null);
 
-  // Track the start time in HH:MM format
-  const [startTime, setStartTime] = useState('');
+  // Enhanced time state with formatting
+  const [timeState, setTimeState] = useState({
+    formattedInput: '',
+    hour: 0,
+    minute: 0
+  });
 
   // Track AM/PM selection
   const [amPm, setAmPm] = useState(null);
 
-  // Days array
+  // Days array with single letters for display
   const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  
+  // Full day names for storage and API
+  const fullDayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   // Add state for user info
   const [matchedUserName, setMatchedUserName] = useState('');
   const [matchedUserAvailability, setMatchedUserAvailability] = useState([]);
+
+  // Add state for user images
+  const [matchedUserImage, setMatchedUserImage] = useState(null);
+  const [currentUserImage, setCurrentUserImage] = useState(null);
+
+  // Add useEffect to load previously selected day and time
+  useEffect(() => {
+    const loadSavedDayAndTime = async () => {
+      try {
+        // Load previously saved day
+        const savedDay = await AsyncStorage.getItem('user_date_day');
+        if (savedDay) {
+          // Find the index of the saved day in the fullDayNames array
+          const dayIndex = fullDayNames.findIndex(day => day === savedDay);
+          if (dayIndex !== -1) {
+            setSelectedDayIndex(dayIndex);
+          }
+        }
+        
+        // Load previously saved time
+        const savedTime = await AsyncStorage.getItem('user_date_time');
+        if (savedTime) {
+          // Parse the time format (e.g., "7:30 PM")
+          const timeParts = savedTime.split(' ');
+          if (timeParts.length === 2) {
+            const [timeString, periodStr] = timeParts;
+            const [hourStr, minuteStr] = timeString.split(':');
+            
+            // Set time values
+            const hour = parseInt(hourStr, 10);
+            const minute = parseInt(minuteStr, 10);
+            
+            setTimeState({
+              formattedInput: timeString,
+              hour: hour,
+              minute: minute
+            });
+            
+            // Set AM/PM
+            setAmPm(periodStr);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading saved day and time:', error);
+      }
+    };
+    
+    loadSavedDayAndTime();
+  }, []);
+
+  // Helper function to format time string for display and storage
+  const formatTime = () => {
+    if (!timeState.formattedInput) return '';
+    const hour = timeState.hour || 12; // Default to 12 if hour is 0
+    const minute = timeState.minute.toString().padStart(2, '0');
+    return `${hour}:${minute} ${amPm}`;
+  };
 
   // Fetch user info when component mounts
   useEffect(() => {
@@ -72,6 +136,38 @@ export default function DateOccurance({ navigation }) {
     fetchMatchedUserInfo();
   }, [matchedUserId]);
 
+  // Fetch both users' images
+  useEffect(() => {
+    const fetchUserImages = async () => {
+      try {
+        // Get current user ID from storage
+        const currentUserId = await AsyncStorage.getItem('user_uid');
+        
+        // Fetch current user's image
+        if (currentUserId) {
+          const currentUserResponse = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${currentUserId}`);
+          const currentUserData = await currentUserResponse.json();
+          const currentUserPhotoUrls = currentUserData.result[0]?.user_photo_url ? 
+            JSON.parse(currentUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
+          setCurrentUserImage(currentUserPhotoUrls[0] || null);
+        }
+
+        // Fetch matched user's image
+        if (matchedUserId) {
+          const matchedUserResponse = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${matchedUserId}`);
+          const matchedUserData = await matchedUserResponse.json();
+          const matchedUserPhotoUrls = matchedUserData.result[0]?.user_photo_url ? 
+            JSON.parse(matchedUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
+          setMatchedUserImage(matchedUserPhotoUrls[0] || null);
+        }
+      } catch (error) {
+        console.error('Error fetching user images:', error);
+      }
+    };
+
+    fetchUserImages();
+  }, [matchedUserId]);
+
   // Handler to pick a single day
   const handleDayPress = (index) => {
     setSelectedDayIndex(index);
@@ -82,29 +178,92 @@ export default function DateOccurance({ navigation }) {
     setAmPm(val);
   };
 
-  // Determine if form is "complete"
-  const isFormComplete =
-    selectedDayIndex !== null && startTime.trim() !== '' && amPm !== null;
+  // Handler for time input with formatting and validation
+  const handleTimeChange = (val) => {
+    // Allow only numbers
+    const digitsOnly = val.replace(/[^0-9]/g, '');
+    
+    // Format time as user types (HH:MM)
+    let formatted = '';
+    if (digitsOnly.length > 0) {
+      // First digit of hour
+      const hour1 = parseInt(digitsOnly[0], 10);
+      // Only allow 0, 1 as first digit if there's a second digit
+      if (digitsOnly.length > 1 && hour1 > 1) {
+        return; // Invalid hour first digit
+      }
+      
+      if (digitsOnly.length === 1) {
+        formatted = digitsOnly[0];
+      } else if (digitsOnly.length === 2) {
+        // Check for valid hour
+        const hour = parseInt(digitsOnly.substring(0, 2), 10);
+        if (hour === 0 || hour > 12) return; // Invalid hour
+        formatted = digitsOnly.substring(0, 2) + ':';
+      } else if (digitsOnly.length >= 3) {
+        // Add minutes
+        const hour = parseInt(digitsOnly.substring(0, 2), 10);
+        if (hour === 0 || hour > 12) return; // Invalid hour
+        
+        const min1 = parseInt(digitsOnly[2], 10);
+        if (min1 > 5) return; // First minute digit can only be 0-5
+        
+        if (digitsOnly.length === 3) {
+          formatted = digitsOnly.substring(0, 2) + ':' + digitsOnly[2];
+        } else {
+          const minutes = parseInt(digitsOnly.substring(2, 4), 10);
+          if (minutes > 59) return; // Invalid minutes
+          formatted = digitsOnly.substring(0, 2) + ':' + digitsOnly.substring(2, 4);
+        }
+      }
+    }
+    
+    // Update state with formatted value and actual time values
+    setTimeState({
+      formattedInput: formatted,
+      hour: digitsOnly.length >= 2 ? parseInt(digitsOnly.substring(0, 2), 10) : 0,
+      minute: digitsOnly.length >= 4 
+        ? parseInt(digitsOnly.substring(2, 4), 10) 
+        : (digitsOnly.length === 3 ? parseInt(digitsOnly[2] + '0', 10) : 0)
+    });
+  };
+
+  // Improved validation logic
+  const isFormComplete = () => {
+    // Day selected
+    const hasDaySelected = selectedDayIndex !== null;
+    
+    // Valid time entered
+    const hasValidTime = timeState.hour > 0 || timeState.minute > 0;
+    
+    // AM/PM selected
+    const hasAmPmSelected = amPm !== null;
+    
+    return hasDaySelected && hasValidTime && hasAmPmSelected;
+  };
 
   // Continue button behavior
   const handleContinue = async () => {
-    if (isFormComplete) {
+    if (isFormComplete()) {
       try {
-        // Optionally store these selections in AsyncStorage
-        const daySelected = days[selectedDayIndex];
-        const selectedTime = `${startTime} ${amPm}`;
-        await AsyncStorage.setItem('user_date_day', daySelected);
+        // Get the full day name instead of just the letter
+        const dayLetter = days[selectedDayIndex];
+        const dayFullName = fullDayNames[selectedDayIndex];
+        const selectedTime = formatTime();
+        
+        await AsyncStorage.setItem('user_date_day', dayFullName);
         await AsyncStorage.setItem('user_date_time', selectedTime);
 
-        console.log('Day stored:', daySelected);
+        console.log('Day stored:', dayFullName);
         console.log('Time stored:', selectedTime);
       } catch (error) {
         console.error('Error storing date info:', error);
       }
-      // Navigate to the next screen
+      // Navigate to the next screen with full day name
       navigation.navigate('DateLocation', {
         selectedDayIndex,
-        startTime,
+        selectedDay: fullDayNames[selectedDayIndex],
+        startTime: formatTime(),
         amPm,
         matchedUserId: matchedUserId,
       });
@@ -125,12 +284,14 @@ export default function DateOccurance({ navigation }) {
         {/* Hearts at top (replace sources as needed) */}
         <View style={styles.heartsContainer}>
           <Image
-            source={require('../src/Assets/Images/match1.png')}
+            source={currentUserImage ? { uri: currentUserImage } : require('../src/Assets/Images/account.png')}
             style={styles.heartImage}
+            defaultSource={require('../src/Assets/Images/account.png')}
           />
           <Image
-            source={require('../src/Assets/Images/match2.png')}
+            source={matchedUserImage ? { uri: matchedUserImage } : require('../src/Assets/Images/account.png')}
             style={[styles.heartImage, styles.heartOverlap]}
+            defaultSource={require('../src/Assets/Images/account.png')}
           />
         </View>
 
@@ -181,13 +342,13 @@ export default function DateOccurance({ navigation }) {
 
             {/* Row for Start Time label, input, AM/PM toggles */}
             <View style={styles.timeRow}>
-              <View style={styles.timeBlock}>
-                <Text style={styles.smallLabel}>Start Time</Text>
+              <Text style={styles.timeLabel}>Start Time</Text>
+              <View style={styles.timeInputContainer}>
                 <TextInput
                   style={styles.timeInput}
                   placeholder="00:00"
-                  value={startTime}
-                  onChangeText={(txt) => setStartTime(txt)}
+                  value={timeState.formattedInput}
+                  onChangeText={handleTimeChange}
                   keyboardType="numeric"
                 />
               </View>
@@ -197,6 +358,7 @@ export default function DateOccurance({ navigation }) {
                 <TouchableOpacity
                   style={[
                     styles.amPmButton,
+                    styles.amPmButtonLeft,
                     amPm === 'AM' && { backgroundColor: '#000' },
                   ]}
                   onPress={() => handleAmPmPress('AM')}
@@ -215,6 +377,7 @@ export default function DateOccurance({ navigation }) {
                 <TouchableOpacity
                   style={[
                     styles.amPmButton,
+                    styles.amPmButtonRight,
                     amPm === 'PM' && { backgroundColor: '#000' },
                   ]}
                   onPress={() => handleAmPmPress('PM')}
@@ -238,10 +401,10 @@ export default function DateOccurance({ navigation }) {
       <Pressable
         style={[
           styles.continueButton,
-          { backgroundColor: isFormComplete ? '#E4423F' : '#ccc' },
+          { backgroundColor: isFormComplete() ? '#E4423F' : '#ccc' },
         ]}
         onPress={handleContinue}
-        disabled={!isFormComplete}
+        disabled={!isFormComplete()}
       >
         <Text style={styles.continueButtonText}>Continue</Text>
       </Pressable>
@@ -345,25 +508,33 @@ const styles = StyleSheet.create({
   timeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
+    justifyContent: 'flex-start',
+    marginTop: 20,
+    paddingHorizontal: 5,
   },
-  timeBlock: {
-    flex: 1,
-    marginRight: 20,
-  },
-  smallLabel: {
-    fontSize: 14,
+  timeLabel: {
+    fontSize: 16,
     color: '#000',
-    marginBottom: 5,
     fontWeight: '600',
+    width: 90,
+    marginRight: 5,
+  },
+  timeInputContainer: {
+    width: 100,
+    marginRight: 15,
   },
   timeInput: {
     backgroundColor: '#FFF',
-    borderColor: '#CCC',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    height: 40,
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    fontSize: 16,
+    textAlign: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+    elevation: 1,
   },
 
   // AM/PM toggles
@@ -371,17 +542,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   amPmButton: {
-    borderWidth: 1,
-    borderColor: '#CCC',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     backgroundColor: '#FFF',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  amPmButtonLeft: {
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRightWidth: 0,
+  },
+  amPmButtonRight: {
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+    borderColor: '#ccc',
+    borderWidth: 1,
   },
   amPmText: {
-    color: '#000',
-    fontWeight: '600',
+    color: '#888',
+    fontWeight: '500',
+    fontSize: 16,
   },
 
   // Continue button

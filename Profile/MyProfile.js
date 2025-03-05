@@ -167,12 +167,23 @@ export default function MyProfile() {
   // Toggle video play/pause
   const handlePlayPause = async () => {
     if (!videoRef.current) return;
-    if (isVideoPlaying) {
-      await videoRef.current.pauseAsync();
-      setIsVideoPlaying(false);
-    } else {
-      await videoRef.current.playAsync();
-      setIsVideoPlaying(true);
+    
+    try {
+      // Get the current playback status
+      const status = await videoRef.current.getStatusAsync();
+      
+      // If video is at the end or paused, reset and play from beginning
+      if (status.didJustFinish || (status.positionMillis >= status.durationMillis - 100) || !isVideoPlaying) {
+        await videoRef.current.setPositionAsync(0);
+        await videoRef.current.playAsync();
+        setIsVideoPlaying(true);
+      } else {
+        // If video is currently playing, pause it
+        await videoRef.current.pauseAsync();
+        setIsVideoPlaying(false);
+      }
+    } catch (error) {
+      console.log("Error handling video play/pause:", error);
     }
   };
 
@@ -304,7 +315,7 @@ export default function MyProfile() {
     user_birthdate = "",
     user_kids = "",
     user_height = "",
-    user_sexuality = "",
+    // user_sexuality = "",
     user_open_to = "",
     user_address = "",
     user_general_interests = "",
@@ -620,12 +631,12 @@ export default function MyProfile() {
             </View>
           ) : null}
 
-          {user_sexuality ? (
+          {/* {user_sexuality ? (
             <View style={styles.aboutItem}>
               <Image source={require("../assets/icons/sexuality.png")} style={{ width: 14, height: 16 }} />
               <Text style={styles.aboutItemText}>{user_sexuality}</Text>
             </View>
-          ) : null}
+          ) : null} */}
 
           {user_open_to ? (
             <View style={styles.aboutItem}>

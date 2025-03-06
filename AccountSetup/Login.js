@@ -13,7 +13,7 @@ import config from "../config"; // Import config
 
 export default function Login() {
   console.log("LoginPage");
-  console.log("from login .env:", process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG);
+  console.log("LP from login .env:", process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG);
   const navigation = useNavigation();
 
   // Local states
@@ -33,8 +33,8 @@ export default function Login() {
   useEffect(() => {
     const configureGoogleSignIn = async () => {
       try {
-        console.log("from login configure useeffect .env:", process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG);
-        console.log("Configuring Google Sign-In with config:", {
+        console.log("LP from login configure useeffect .env:", process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG);
+        console.log("LP Configuring Google Sign-In with config:", {
           iosClientId: config.googleClientIds.ios,
           androidClientId: config.googleClientIds.android,
           webClientId: config.googleClientIds.web,
@@ -48,14 +48,14 @@ export default function Login() {
           webClientId: config.googleClientIds.web,
           offlineAccess: true,
         };
-        console.log("googleSignInConfig:", googleSignInConfig);
+        console.log("LP googleSignInConfig:", googleSignInConfig);
 
         // Configure Google Sign-In
         await GoogleSignin.configure(googleSignInConfig);
         setIsGoogleConfigured(true);
-        console.log("Google Sign-In configured successfully1");
+        console.log("LP Google Sign-In configured successfully1");
       } catch (error) {
-        console.error("Google Sign-In configuration error:", error);
+        console.error("LP Google Sign-In configuration error:", error);
         setIsGoogleConfigured(false);
       }
     };
@@ -85,40 +85,40 @@ export default function Login() {
           await GoogleSignin.hasPlayServices({
             showPlayServicesUpdateDialog: true,
           });
-          console.log("Play services check passed");
+          console.log("LP Play services check passed");
         } catch (e) {
-          console.error("Play services check error:", e);
+          console.error("LP Play services check error:", e);
           Alert.alert("Error", "Google Play Services are required for Google Sign-In.");
           setShowSpinner(false);
           return;
         }
       }
 
-      console.log("Starting Google sign in process...");
+      console.log("LP Starting Google sign in process...");
 
       // First try to sign out to ensure a clean state
       try {
         await GoogleSignin.signOut();
-        console.log("Successfully signed out before new sign-in attempt");
+        console.log("LP Successfully signed out before new sign-in attempt");
       } catch (signOutError) {
         // This is okay to fail if user was not previously signed in
-        console.log("Sign out before sign in resulted in error (can be ignored):", signOutError);
+        console.log("LP Sign out before sign in resulted in error (can be ignored):", signOutError);
       }
 
       // Sign in - this is the part that was failing before
       let userInfo;
       try {
-        console.log("Starting Google sign in process in try block...");
+        console.log("LP Starting Google sign in process in try block...");
         userInfo = await GoogleSignin.signIn();
         // console.log("Sign-in successful:", userInfo);
-        console.log("Google Sign-In successful", JSON.stringify(userInfo, null, 2));
+        console.log("LP Google Sign-In successful", JSON.stringify(userInfo, null, 2));
       } catch (signInError) {
-        console.error("Sign in specific error:", signInError);
+        console.error("LP Sign in specific error:", signInError);
 
         // Log more details if it's a DEVELOPER_ERROR
         if (signInError.code === "DEVELOPER_ERROR") {
           console.error(
-            "DEVELOPER_ERROR details:",
+            "LP DEVELOPER_ERROR details:",
             JSON.stringify(
               {
                 message: signInError.message,
@@ -156,7 +156,7 @@ export default function Login() {
       // Process Google login with backend
       const { idToken, user } = userInfo;
 
-      console.log("Sending data to backend:", {
+      console.log("LP Sending data to backend:", {
         tokenLength: idToken?.length,
         email: user.email,
         givenName: user.givenName,
@@ -176,7 +176,7 @@ export default function Login() {
         },
       });
 
-      console.log("Backend response:", response.data);
+      console.log("LP Backend response:", response.data);
 
       // Handle response - updated to match actual response format
       if (response.data && response.data.message === "Correct Email" && Array.isArray(response.data.result) && response.data.result.length >= 1) {
@@ -193,15 +193,15 @@ export default function Login() {
         Alert.alert("Error", "Failed to login with Google. Server response invalid.");
       }
     } catch (error) {
-      console.error("Google sign-in error:", error);
+      console.error("LP Google sign-in error:", error);
 
       let errorMessage = "Something went wrong with Google sign-in. Please try again.";
 
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        console.log("Google sign-in cancelled");
+        console.log("LP Google sign-in cancelled");
         errorMessage = "Sign-in was cancelled";
       } else if (error.code === statusCodes.IN_PROGRESS) {
-        console.log("Google sign-in in progress");
+        console.log("LP Google sign-in in progress");
         errorMessage = "Sign-in is already in progress";
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
         errorMessage = "Play services not available or outdated";
@@ -263,7 +263,7 @@ export default function Login() {
       // 5. Navigate to next screen
       navigation.navigate("MyProfile");
     } catch (error) {
-      console.error("Error occurred:", error);
+      console.error("LP Error occurred:", error);
       Alert.alert("Error", "Invalid credentials or server error.");
     } finally {
       setShowSpinner(false);

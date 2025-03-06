@@ -5,6 +5,7 @@ import MapView, { Marker } from "react-native-maps";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { REACT_APP_GOOGLE_API_KEY } from "@env";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import MaskedView from "@react-native-masked-view/masked-view";
 // Remove GooglePlacesAutocomplete
 // import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 
@@ -293,21 +294,60 @@ export default function DateLocation({ navigation }) {
       <View style={{ marginHorizontal: 20 }}>
         {/* Back Button */}
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name='arrow-back' size={28} color='red' />
+          <Image source={require("../assets/icons/backarrow.png")} />
         </TouchableOpacity>
 
         {/* Hearts at top with actual user images */}
         <View style={styles.heartsContainer}>
-          <Image
-            source={currentUserImage ? { uri: currentUserImage } : require('../src/Assets/Images/account.png')}
-            style={styles.heartImage}
-            defaultSource={require('../src/Assets/Images/account.png')}
-          />
-          <Image
-            source={matchedUserImage ? { uri: matchedUserImage } : require('../src/Assets/Images/account.png')}
-            style={[styles.heartImage, styles.heartOverlap]}
-            defaultSource={require('../src/Assets/Images/account.png')}
-          />
+          {/* First heart using MaskedView */}
+          <View style={styles.heartWrapper}>
+            <MaskedView
+              style={styles.maskedView}
+              maskElement={
+                <Image
+                  source={require('../assets/icons/Primaryheart.png')}
+                  style={styles.maskImage}
+                  resizeMode="contain"
+                />
+              }
+            >
+              <Image
+                source={currentUserImage ? { uri: currentUserImage } : require('../src/Assets/Images/account.png')}
+                style={styles.fullImage}
+                defaultSource={require('../src/Assets/Images/account.png')}
+              />
+            </MaskedView>
+            <Image
+              source={require('../assets/icons/primaryheartoutline.png')}
+              style={styles.heartOutline}
+              resizeMode="contain"
+            />
+          </View>
+          
+          {/* Second heart using MaskedView */}
+          <View style={[styles.heartWrapper, styles.secondHeartWrapper]}>
+            <MaskedView
+              style={styles.maskedView}
+              maskElement={
+                <Image
+                  source={require('../assets/icons/Secondaryheart.png')}
+                  style={styles.maskImage}
+                  resizeMode="contain"
+                />
+              }
+            >
+              <Image
+                source={matchedUserImage ? { uri: matchedUserImage } : require('../src/Assets/Images/account.png')}
+                style={styles.fullImage}
+                defaultSource={require('../src/Assets/Images/account.png')}
+              />
+            </MaskedView>
+            <Image
+              source={require('../assets/icons/secondaryheartoutline.png')}
+              style={styles.heartOutline}
+              resizeMode="contain"
+            />
+          </View>
         </View>
 
         {/* Title & Subtitle */}
@@ -369,8 +409,8 @@ export default function DateLocation({ navigation }) {
       {/* Progress Dots */}
       <View style={styles.progressDotsContainer}>
         <View style={[styles.dot, { backgroundColor: "#ccc" }]} />
-        <View style={[styles.dot, { backgroundColor: "#E4423F" }]} />
         <View style={[styles.dot, { backgroundColor: "#ccc" }]} />
+        <View style={[styles.dot, { backgroundColor: "#E4423F" }]} />
       </View>
       
       {/* Loading Indicator */}
@@ -392,27 +432,44 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: "flex-start",
-    backgroundColor: "#F5F5F5",
     borderRadius: 20,
-    padding: 8,
-    marginTop: 30,
     marginBottom: 20,
+    marginTop: 30,
   },
   heartsContainer: {
     flexDirection: "row",
     justifyContent: "center",
     marginBottom: 20,
   },
-  heartImage: {
+  heartWrapper: {
     width: 60,
     height: 60,
-    resizeMode: "cover",
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: "#FF4081",
+    position: 'relative',
   },
-  heartOverlap: {
+  secondHeartWrapper: {
     marginLeft: -20,
+  },
+  maskedView: {
+    width: 60,
+    height: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  maskImage: {
+    width: 60,
+    height: 60,
+  },
+  fullImage: {
+    width: 60,
+    height: 60,
+    resizeMode: 'cover',
+  },
+  heartOutline: {
+    position: 'absolute',
+    width: 60,
+    height: 60,
+    top: 0,
+    left: 0,
   },
   title: {
     fontSize: 24,

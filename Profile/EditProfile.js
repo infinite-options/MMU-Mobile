@@ -35,6 +35,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import { allInterests } from "../src/config/interests";
 import * as Camera from 'expo-camera';
 import Constants from 'expo-constants';
+import { MaterialIcons } from '@expo/vector-icons';
 
 // Fallback to a placeholder to prevent crashes - replace with your actual key when testing
 const GOOGLE_API_KEY = Constants.expoConfig?.extra?.googleApiKey || 
@@ -74,6 +75,44 @@ const DEFAULT_REGION = {
   longitudeDelta: 0.06,
 };
 
+// Add these helper functions from BirthdayInput.js to EditProfile.js
+function calculateAge(birthdateString) {
+  const [day, month, year] = birthdateString.split("/").map(Number);
+  const today = new Date();
+  const birthDate = new Date(year, month - 1, day); // JS months are 0-indexed
+  let age = today.getFullYear() - birthDate.getFullYear();
+
+  // If birth month/day is later in the year than today's month/day, subtract 1 from age
+  const hasNotHadBirthdayThisYear = today.getMonth() < birthDate.getMonth() || (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate());
+
+  if (hasNotHadBirthdayThisYear) {
+    age -= 1;
+  }
+
+  return age;
+}
+
+function formatBirthdate(input) {
+  // Remove non-digit characters
+  const digitsOnly = input.replace(/\D/g, "");
+
+  // Build up "DD/MM/YYYY" format step by step
+  let formatted = digitsOnly;
+  if (digitsOnly.length > 2) {
+    formatted = digitsOnly.slice(0, 2) + "/" + digitsOnly.slice(2);
+  }
+  if (digitsOnly.length > 4) {
+    formatted = digitsOnly.slice(0, 2) + "/" + digitsOnly.slice(2, 4) + "/" + digitsOnly.slice(4, 8); // limit to 8 digits total
+  }
+  return formatted;
+}
+
+// Simple regex to check dd/mm/yyyy format
+const isValidDate = (date) => {
+  const dateRegex = /^(0[1-9]|[12]\d|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
+  return dateRegex.test(date);
+};
+
 export default function EditProfile() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
@@ -90,6 +129,7 @@ export default function EditProfile() {
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [location, setLocation] = useState(null);
   const [address, setAddress] = useState(null);
+  const [deletedVideo, setDeletedVideo] = useState(false);
 
   // Default map region
   const [region, setRegion] = useState(DEFAULT_REGION);
@@ -451,7 +491,7 @@ export default function EditProfile() {
           bio: fetched.user_profile_bio || "",
           availableTimes: fetched.user_available_time || "",
           birthdate: fetched.user_birthdate || "",
-          children: fetched.user_kids || 0,
+          children: fetched.user_kids || "",
           gender: fetched.user_gender || "",
           identity: fetched.user_identity || "",
           // orientation: fetched.user_sexuality || "",
@@ -719,8 +759,10 @@ export default function EditProfile() {
   };
 
   const handleRemoveVideo = () => {
+    // Modify this function to just mark the video as deleted
+    // but don't allow saving unless a new video is uploaded
     setVideoUri(null);
-    setIsVideoPlaying(false);
+    setDeletedVideo(true);
   };
   const handlePlayPause = async () => {
     if (!videoRef.current) return;
@@ -973,6 +1015,47 @@ export default function EditProfile() {
     setDateTypes((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Add this state for birthdate validation
+  const [birthdateWarning, setBirthdateWarning] = useState("");
+  
+  // Add this handler for birthdate changes
+  const handleBirthdateChange = (text) => {
+    // Format user input to dd/mm/yyyy
+    const formatted = formatBirthdate(text);
+    
+    // Update form value with formatted text
+    const updatedValues = { ...formValues, birthdate: formatted };
+    
+    // Clear previous warnings
+    setBirthdateWarning("");
+    
+    // If length < 10, user hasn't typed a full "dd/mm/yyyy" yet
+    if (formatted.length < 10) {
+      setFormValues(updatedValues);
+      return;
+    }
+    
+    // Validate format
+    if (!isValidDate(formatted)) {
+      setBirthdateWarning("Please enter a valid date in dd/mm/yyyy format.");
+      setFormValues(updatedValues);
+      return;
+    }
+    
+    // Calculate age
+    const age = calculateAge(formatted);
+    
+    // Check if user is at least 18
+    if (age < 18) {
+      setBirthdateWarning("You must be 18+ to use MeetMeUp.");
+      setFormValues(updatedValues);
+      return;
+    }
+    
+    // If all checks pass, update form values with age
+    setFormValues({ ...updatedValues, age: age });
+  };
+
   // Updated handleSaveChanges function
   const handleSaveChanges = async () => {
     console.log("\n=== Starting Profile Update ===");
@@ -1014,6 +1097,12 @@ export default function EditProfile() {
       const uploadData = new FormData();
       uploadData.append("user_uid", userData.user_uid);
       uploadData.append("user_email_id", userData.user_email_id);
+      
+      // Add age calculation from birthdate
+      if (formValues.birthdate && isValidDate(formValues.birthdate)) {
+        const calculatedAge = calculateAge(formValues.birthdate);
+        uploadData.append("user_age", calculatedAge.toString());
+      }
 
       // Separate S3 photos from new local photos
       const s3Photos = [];
@@ -1065,8 +1154,7 @@ export default function EditProfile() {
       // Check if video was deleted or changed
       if (originalVideoUrl && !videoUri) {
         // Video was deleted
-        console.log("Video was deleted, setting user_delete_video flag");
-        uploadData.append("user_delete_video", "true");
+        
       } else if (videoUri && videoUri !== originalVideoUrl) {
         // New video to upload (not from S3)
         if (!videoUri.startsWith("https://s3")) {
@@ -1095,7 +1183,7 @@ export default function EditProfile() {
         user_available_time: userData.user_available_time || "",
         user_birthdate: userData.user_birthdate || "",
         user_height: userData.user_height || "",
-        user_kids: userData.user_kids?.toString() || "0",
+        user_kids: userData.user_kids || "",
         user_gender: userData.user_gender || "",
         user_identity: userData.user_identity || "",
         // user_sexuality: userData.user_sexuality || "",
@@ -1124,7 +1212,7 @@ export default function EditProfile() {
         user_available_time: formValues.availableTimes,
         user_birthdate: formValues.birthdate,
         user_height: heightCm,
-        user_kids: formValues.children.toString(),
+        user_kids: formValues.children,
         user_gender: genderValue,
         user_identity: identityValue,
         // user_sexuality: orientationValue,
@@ -1181,6 +1269,23 @@ export default function EditProfile() {
       if (favoritePhotoIndex !== null && photos[favoritePhotoIndex]) {
         const isNewPhoto = !photos[favoritePhotoIndex].startsWith("https://s3");
         uploadData.append("user_favorite_photo", isNewPhoto ? `img_${newLocalPhotos.indexOf(photos[favoritePhotoIndex])}` : photos[favoritePhotoIndex]);
+      }
+
+      // Ensure age is calculated from birthdate before saving
+      if (formValues.birthdate && isValidDate(formValues.birthdate)) {
+        const calculatedAge = calculateAge(formValues.birthdate);
+        // Make sure age is included in the data sent to the endpoint
+        newValues.age = calculatedAge;
+      }
+
+      // Add validation to prevent saving without a video
+      if (deletedVideo && !videoUri) {
+        Alert.alert(
+          "Video Required", 
+          "Please upload a new video before saving changes.",
+          [{ text: "OK" }]
+        );
+        return; // Stop the save process
       }
 
       // Make the upload request
@@ -1587,13 +1692,24 @@ export default function EditProfile() {
 
             <Text style={styles.label}>Birthdate</Text>
             <TextInput
-              placeholder='Birthdate'
+              placeholder='Birthdate (dd/mm/yyyy)'
               mode='outlined'
               style={styles.inputField}
               value={formValues.birthdate}
-              onChangeText={(text) => setFormValues({ ...formValues, birthdate: text })}
-              outlineStyle={styles.textInputOutline}
+              onChangeText={handleBirthdateChange}
+              outlineStyle={[
+                styles.textInputOutline, 
+                birthdateWarning !== "" && { borderColor: "#E4423F", borderWidth: 2, borderRadius: 10 }
+              ]}
+              keyboardType='numeric'
+              maxLength={10}
             />
+            {birthdateWarning !== "" && (
+              <View style={{ flexDirection: "row", alignItems: "center", marginTop: 5, marginBottom: 10 }}>
+                <MaterialIcons name='error-outline' size={20} color='red' />
+                <Text style={{ color: "red", fontSize: 14, marginLeft: 8 }}>{birthdateWarning}</Text>
+              </View>
+            )}
 
             {/* Height Input */}
             <Text style={styles.label}>Height</Text>
@@ -1652,8 +1768,11 @@ export default function EditProfile() {
               placeholder='# of Children'
               mode='outlined'
               style={styles.inputField}
-              value={formValues.children.toString()}
-              onChangeText={(text) => setFormValues({ ...formValues, children: parseInt(text) })}
+              value={formValues.children === null || isNaN(formValues.children) ? '' : formValues.children.toString()}
+              onChangeText={(text) => {
+                const value = text.trim() === '' ? null : parseInt(text);
+                setFormValues({ ...formValues, children: value });
+              }}
               keyboardType='numeric'
               outlineStyle={styles.textInputOutline}
             />

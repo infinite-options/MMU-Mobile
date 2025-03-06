@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import MaskedView from '@react-native-masked-view/masked-view';
 
 export default function DateType({ navigation }) {
   const route = useRoute();
@@ -144,25 +145,61 @@ export default function DateType({ navigation }) {
     <SafeAreaView style={styles.container}>
       <ScrollView>
         {/* Back Button */}
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={28} color="red" />
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Image source={require("../assets/icons/backarrow.png")} />
         </TouchableOpacity>
 
-        {/* Profile images */}
+        {/* Profile images as hearts */}
         <View style={styles.heartsContainer}>
-          <Image
-            source={currentUserImage ? { uri: currentUserImage } : require('../src/Assets/Images/account.png')}
-            style={styles.heartImage}
-            defaultSource={require('../src/Assets/Images/account.png')}
-          />
-          <Image
-            source={matchedUserImage ? { uri: matchedUserImage } : require('../src/Assets/Images/account.png')}
-            style={[styles.heartImage, styles.heartOverlap]}
-            defaultSource={require('../src/Assets/Images/account.png')}
-          />
+          {/* First heart using MaskedView */}
+          <View style={styles.heartWrapper}>
+            <MaskedView
+              style={styles.maskedView}
+              maskElement={
+                <Image
+                  source={require('../assets/icons/Primaryheart.png')}
+                  style={styles.maskImage}
+                  resizeMode="contain"
+                />
+              }
+            >
+              <Image
+                source={currentUserImage ? { uri: currentUserImage } : require('../src/Assets/Images/account.png')}
+                style={styles.fullImage}
+                defaultSource={require('../src/Assets/Images/account.png')}
+              />
+            </MaskedView>
+            <Image
+              source={require('../assets/icons/primaryheartoutline.png')}
+              style={styles.heartOutline}
+              resizeMode="contain"
+            />
+          </View>
+          
+          {/* Second heart using MaskedView */}
+          <View style={[styles.heartWrapper, styles.secondHeartWrapper]}>
+            <MaskedView
+              style={styles.maskedView}
+              maskElement={
+                <Image
+                  source={require('../assets/icons/Secondaryheart.png')}
+                  style={styles.maskImage}
+                  resizeMode="contain"
+                />
+              }
+            >
+              <Image
+                source={matchedUserImage ? { uri: matchedUserImage } : require('../src/Assets/Images/account.png')}
+                style={styles.fullImage}
+                defaultSource={require('../src/Assets/Images/account.png')}
+              />
+            </MaskedView>
+            <Image
+              source={require('../assets/icons/secondaryheartoutline.png')}
+              style={styles.heartOutline}
+              resizeMode="contain"
+            />
+          </View>
         </View>
 
         {/* Title and subtitle */}
@@ -230,10 +267,8 @@ const styles = StyleSheet.create({
   },
   // Back button style
   backButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#F5F5F5',
+    alignSelf: "flex-start",
     borderRadius: 20,
-    padding: 8,
     marginBottom: 20,
     marginTop: 30,
   },
@@ -243,18 +278,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 20,
   },
-  // Heart images
-  heartImage: {
+  // Heart images using MaskedView
+  heartWrapper: {
+    width: 60,
+    height: 60,
+    position: 'relative',
+  },
+  secondHeartWrapper: {
+    marginLeft: -20,
+  },
+  maskedView: {
+    width: 60,
+    height: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  maskImage: {
+    width: 60,
+    height: 60,
+  },
+  fullImage: {
     width: 60,
     height: 60,
     resizeMode: 'cover',
-    borderRadius: 30, // If you use a heart-shaped PNG, you can remove this
-    borderWidth: 2,
-    borderColor: '#FC6767',
   },
-  // Slight overlap for the second heart
-  heartOverlap: {
-    marginLeft: -20,
+  heartOutline: {
+    position: 'absolute',
+    width: 60,
+    height: 60,
+    top: 0,
+    left: 0,
   },
   // Body content
   content: {

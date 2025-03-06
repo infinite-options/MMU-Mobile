@@ -27,29 +27,116 @@ const BackIcon = () => <Text style={{ fontSize: 18, color: 'red' }}>{'<'} </Text
 const InfoIcon = () => <Text style={{ fontSize: 16, color: 'gray' }}>i</Text>;
 const HeartIcon = () => <Text style={{ fontSize: 16, color: '#fff' }}>♥</Text>;
 
-// Add this function to format dates
-const formatDate = (dateString) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+/**
+ * Formats a timestamp for display in consistent format
+ * @param {string|Date} dateValue - The date to format
+ * @param {string} format - 'date' for date labels, 'time' for message timestamps
+ * @returns {string} Formatted date or time string
+ */
+const formatDateTime = (dateValue, format = 'date') => {
+  try {
+    // Handle different input formats to create a proper Date object
+    let date;
+    
+    if (dateValue instanceof Date) {
+      date = dateValue;
+    } else if (typeof dateValue === 'string') {
+      // Important: How we parse the string depends on whether it has a Z suffix
+      if (dateValue.endsWith('Z')) {
+        // This is UTC time, JavaScript will convert it to local automatically
+        date = new Date(dateValue);
+      } else {
+        // This is already local time, we need to be careful not to adjust it again
+        
+        // FIXED: For local timestamps without Z (from convertToLocalTimestamp)
+        // We need to add Z to ensure JavaScript treats it as already being in the right timezone
+        date = new Date(dateValue + 'Z');
+      }
+      
+      console.log(`Formatting: ${dateValue}, parsed as: ${date.toISOString()}, local: ${date.toString()}`);
+    } else {
+      console.warn('Invalid date value:', dateValue);
+      return format === 'date' ? 'Unknown Date' : 'Unknown Time';
+    }
+    
+    // Format using locale-specific methods
+    if (format === 'date') {
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric'
+      });
+    } else if (format === 'time') {
+      // Only show hours and minutes in UI
+      return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    } else if (format === 'full') {
+      // Full timestamp with seconds for debugging
+      return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+    }
+  } catch (err) {
+    console.warn('Error formatting date:', dateValue, err);
+    return format === 'date' ? 'Unknown Date' : 'Unknown Time';
+  }
 };
 
-// Group messages by date
+/**
+ * Groups messages by date and sorts them chronologically within each date
+ * @param {Array} messages - The messages to group
+ * @returns {Object} Date-grouped messages with each group sorted by timestamp
+ */
 const groupMessagesByDate = (messages) => {
-  return messages.reduce((groups, message) => {
-    const date = formatDate(message.timestamp);
+  // First create groups by date
+  const groups = messages.reduce((groups, message) => {
+    const date = formatDateTime(message.timestamp, 'date');
     if (!groups[date]) groups[date] = [];
     groups[date].push(message);
     return groups;
   }, {});
+  
+  // Then sort messages within each date group chronologically
+  Object.keys(groups).forEach(date => {
+    groups[date].sort((a, b) => {
+      const dateA = new Date(a.timestamp);
+      const dateB = new Date(b.timestamp);
+      return dateA - dateB; // Chronological order (oldest to newest)
+    });
+  });
+
+  // Now sort the date keys to ensure newest dates are at the bottom
+  const sortedGroups = {};
+  Object.keys(groups)
+    .sort((a, b) => {
+      // Convert date strings back to Date objects for comparison
+      const dateA = new Date(a);
+      const dateB = new Date(b);
+      return dateA - dateB; // Chronological order for date headers
+    })
+    .forEach(date => {
+      sortedGroups[date] = groups[date];
+    });
+  
+  return sortedGroups;
 };
 
-// Add this utility function to parse JSON safely (copied from MatchResultsPage.js)
+/**
+ * Safely parses JSON with fallback
+ * @param {string} value - The JSON string to parse
+ * @param {*} fallback - The fallback value if parsing fails
+ * @returns {*} Parsed JSON or fallback
+ */
 function safeJsonParse(value, fallback = []) {
-  // If value is null or not a string, just return fallback
   if (typeof value !== "string") {
     return fallback;
   }
-  // Otherwise parse
+  
   try {
     return JSON.parse(value);
   } catch (err) {
@@ -58,33 +145,106 @@ function safeJsonParse(value, fallback = []) {
   }
 }
 
+/**
+ * Standardizes timestamp format for consistent storage and display
+ * @param {string|Date} timestamp - The timestamp to standardize
+ * @returns {string} ISO string timestamp with milliseconds for precise sorting
+ */
+const standardizeTimestamp = (timestamp) => {
+  try {
+    let date;
+    
+    // If timestamp is already a Date object
+    if (timestamp instanceof Date) {
+      date = timestamp;
+    } else if (typeof timestamp === 'string') {
+      // Common server timestamp format: "2023-03-06 04:30:00"
+      if (!timestamp.includes('T') && !timestamp.includes('Z')) {
+        // Convert server timestamp from UTC to standard format
+        const parts = timestamp.split(/[- :]/);
+        // Note: months are 0-based in JS Date
+        date = new Date(Date.UTC(
+          parseInt(parts[0]), // year
+          parseInt(parts[1]) - 1, // month (0-based)
+          parseInt(parts[2]), // day
+          parseInt(parts[3]), // hour
+          parseInt(parts[4]), // minute
+          parts.length > 5 ? parseInt(parts[5]) : 0, // second
+          0 // add milliseconds for precision (default 0)
+        ));
+      } else if (timestamp.includes('T') && !timestamp.includes('Z')) {
+        // Treat as UTC by adding Z
+        date = new Date(timestamp + 'Z');
+      } else if (timestamp.includes('Z')) {
+        // Already in ISO format with Z
+        date = new Date(timestamp);
+      } else {
+        // Unknown format, use current time
+        console.warn('Unknown timestamp format:', timestamp);
+        date = new Date();
+      }
+    } else {
+      // Default to current time if format not recognized
+      console.warn('Unrecognized timestamp type:', timestamp);
+      date = new Date();
+    }
+    
+    // CRITICAL: Always return timestamps in UTC ISO format for consistent storage
+    return date.toISOString();
+  } catch (err) {
+    console.error('Error standardizing timestamp:', err);
+    return new Date().toISOString();
+  }
+};
+
+/**
+ * Converts UTC timestamp to local timezone timestamp
+ * @param {string} utcTimestamp - UTC timestamp in ISO format
+ * @returns {string} Timestamp converted to local timezone
+ */
+const convertToLocalTimestamp = (utcTimestamp) => {
+  try {
+    // Parse the UTC timestamp
+    const date = new Date(utcTimestamp);
+    
+    // IMPORTANT: Simply removing the 'Z' from an ISO string is not sufficient
+    // to convert from UTC to local. Instead, we need to create a new ISO string
+    // that represents the same time but in the local timezone.
+    
+    // The date object automatically converts to local time when using toString methods
+    const localDate = new Date(date);
+    
+    // Format as ISO string but remove the 'Z' suffix to indicate it's local time
+    // This works because our formatDateTime function will add Z back when parsing
+    const localIsoString = localDate.toISOString().slice(0, -1);
+    
+    console.log(`Converting UTC (${utcTimestamp}) to local: ${localIsoString}`);
+    return localIsoString;
+  } catch (err) {
+    console.error('Error converting timestamp to local time:', err);
+    return utcTimestamp; // Return original on error
+  }
+};
+
 export default function Chat() {
   const navigation = useNavigation();
   const route = useRoute();
   const matchedUserId = route.params?.matchedUserId || null;
-  
-  // Now you have matchedUserId from MatchResultsPage
-  // e.g.: display it, or fetch data for that specific matched user
-  console.log('Navigated to Chat with matchedUserId:', matchedUserId);
-
   const scrollViewRef = useRef(null);
 
+  // State variables
   const [localUid, setLocalUid] = useState(null);
   const [loading, setLoading] = useState(true);
-
   const [chatPartnerName, setChatPartnerName] = useState('');
   const [chatPartnerPhoto, setChatPartnerPhoto] = useState(gemmaChatIcon);
-
-  // Typed messages
   const [currentMessage, setCurrentMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [invitationResponseSent, setInvitationResponseSent] = useState(false);
   const [meetConfirmed, setMeetConfirmed] = useState(false);
   const [meetUid, setMeetUid] = useState(null);
+  const [serverTimeOffset, setServerTimeOffset] = useState(0); // Track time difference between server and client
 
-  /**
-   * Load user UID
-   */
+  // Load user UID from storage
   useEffect(() => {
     const loadLocalUid = async () => {
       try {
@@ -97,7 +257,7 @@ export default function Chat() {
     loadLocalUid();
   }, []);
 
-  // Modified fetchMessages useEffect to handle loading state
+  // Fetch messages when user ID or matched user changes - only on initial load
   useEffect(() => {
     const fetchMessages = async () => {
       if (!localUid || !matchedUserId) {
@@ -117,22 +277,67 @@ export default function Chat() {
           }
         );
         
-        // Gracefully handle API response structure
+        // Process messages with standardized timestamps
         let apiMessages = [];
         if (response.data && Array.isArray(response.data.result)) {
-          apiMessages = response.data.result.map(msg => ({
-            id: msg.message_uid || `msg-${Date.now()}-${Math.random()}`,
-            text: msg.message_content || '',
-            timestamp: msg.message_sent_at || new Date().toISOString(),
-            isSent: msg.message_sender_user_id === localUid,
-            isReceived: msg.message_sender_user_id !== localUid
-          }));
+          // First, check if we need to calculate server time offset
+          if (response.data.result.length > 0 && response.data.server_time) {
+            // If server provides current time, calculate offset
+            try {
+              const serverTime = new Date(response.data.server_time).getTime();
+              const localTime = Date.now();
+              const offset = serverTime - localTime;
+              
+              // Only apply significant offsets (>5 seconds) to avoid minor discrepancies
+              if (Math.abs(offset) > 5000) {
+                console.log(`Server-client time offset: ${offset}ms`);
+                setServerTimeOffset(offset);
+              }
+            } catch (err) {
+              console.warn('Error calculating time offset:', err);
+            }
+          }
           
-          // Log messages for debugging
+          // If no server time available, try to estimate based on most recent message
+          if (serverTimeOffset === 0 && response.data.result.length > 0) {
+            const latestMsg = response.data.result.reduce((latest, msg) => {
+              const msgTime = new Date(msg.message_sent_at || 0).getTime();
+              return msgTime > latest ? msgTime : latest;
+            }, 0);
+            
+            // If latest message is in the future, use its offset
+            const now = Date.now();
+            if (latestMsg > now) {
+              const estimatedOffset = latestMsg - now + 1000; // Add 1 second buffer
+              console.log(`Estimated time offset from messages: ${estimatedOffset}ms`);
+              setServerTimeOffset(estimatedOffset);
+            }
+          }
+          
+          apiMessages = response.data.result.map(msg => {
+            // First standardize the timestamp to UTC format
+            const standardizedTimestamp = standardizeTimestamp(msg.message_sent_at);
+            
+            // Then convert to local time for display
+            const localTimestamp = convertToLocalTimestamp(standardizedTimestamp);
+            
+            // Debug log to compare timestamps
+            console.log(`Original: ${msg.message_sent_at}, Standardized: ${standardizedTimestamp}, Local: ${localTimestamp}`);
+            
+            return {
+              id: msg.message_uid || `msg-${Date.now()}-${Math.random()}`,
+              text: msg.message_content || '',
+              timestamp: localTimestamp, // Store local timestamp for display
+              isSent: msg.message_sender_user_id === localUid,
+              isReceived: msg.message_sender_user_id !== localUid
+            };
+          });
+          
           console.log('Fetched messages:', apiMessages);
         } else {
           console.warn('Warning: response.data.result is not an array in fetchMessages', response.data);
         }
+        
         setMessages(apiMessages);
       } catch (err) {
         console.warn('Error fetching messages:', err);
@@ -144,9 +349,10 @@ export default function Chat() {
     fetchMessages();
   }, [localUid, matchedUserId]);
 
-  // Add new useEffect to fetch meeting details
+  // Fetch meeting details
   useEffect(() => {
     if (!localUid || !matchedUserId) return;
+    
     const getMeeting = async () => {
       try {
         const response = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet/${matchedUserId}`);
@@ -154,7 +360,7 @@ export default function Chat() {
           console.warn('Warning: fetch meeting returned empty data.');
           return;
         }
-        console.log(response.data);
+        
         let resultArray = [];
         if (Array.isArray(response.data)) {
           resultArray = response.data;
@@ -162,7 +368,9 @@ export default function Chat() {
           resultArray = response.data.result;
         } else {
           console.warn('Warning: Unexpected meeting data structure', response.data);
+          return;
         }
+        
         const matchingMeet = resultArray.find(item => item.meet_date_user_id === localUid);
         if (matchingMeet) {
           if (matchingMeet.meet_confirmed == 1 || matchingMeet.meet_confirmed === "1") {
@@ -172,49 +380,40 @@ export default function Chat() {
         }
       } catch (error) {
         if (error.response && error.response.status === 404) {
-          console.log(matchedUserId);
           console.log('Warning: Meeting endpoint returned 404.');
         } else {
           console.error('Error fetching meeting:', error);
         }
       }
     };
+    
     getMeeting();
   }, [localUid, matchedUserId]);
 
-  // Update useEffect to fetch matched user details with the correct endpoint
+  // Fetch matched user details
   useEffect(() => {
     if (!matchedUserId) return;
     
     const fetchUserDetails = async () => {
-      console.log('Fetching user details for:', matchedUserId);
       try {
         const response = await axios.get(
           `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${matchedUserId}`
         );
         
-        console.log('User details response:', response.data);
-        
         if (response.data && response.data.result && response.data.result.length > 0) {
-          // Get user info from the result array
           const userData = response.data.result[0];
           
-          // Set name from first and last name
+          // Set user name
           const firstName = userData.user_first_name || '';
           const lastName = userData.user_last_name || '';
           const fullName = `${firstName} ${lastName}`.trim() || 'Chat Partner';
-          console.log('Setting chat partner name:', fullName);
           setChatPartnerName(fullName);
           
-          // Handle profile photo like in MatchResultsPage.js
+          // Set user photo
           const photoUrls = safeJsonParse(userData.user_photo_url, []);
-          console.log('Parsed photo URLs:', photoUrls);
           const firstPhoto = photoUrls[0] || null;
           if (firstPhoto) {
-            console.log('Setting chat partner photo to:', firstPhoto);
             setChatPartnerPhoto({ uri: firstPhoto });
-          } else {
-            console.log('No photo found, using default icon');
           }
         } else {
           console.warn('User details response missing data:', response.data);
@@ -222,7 +421,6 @@ export default function Chat() {
         }
       } catch (err) {
         console.error('Error fetching user details:', err);
-        console.error('Error details:', err.response || err.message);
         setChatPartnerName('Chat Partner');
       }
     };
@@ -230,24 +428,50 @@ export default function Chat() {
     fetchUserDetails();
   }, [matchedUserId]);
 
+  // Handle sending messages
   const handleSend = async (text) => {
     const trimmed = text?.trim() || currentMessage.trim();
     if (!trimmed || !localUid || !matchedUserId) return;
 
-    // Optimistic UI update
+    // Create timestamp in UTC format for consistent storage
+    const now = new Date();
+    
+    // Apply the server time offset if needed for consistency
+    if (serverTimeOffset !== 0) {
+      now.setTime(now.getTime() + serverTimeOffset);
+    }
+    
+    // Get timestamp in UTC format
+    const utcTimestamp = now.toISOString();
+    
+    // Convert to local time for display
+    // IMPORTANT: For new messages, we want to store in the same format as fetched messages
+    // So they display consistently
+    const localTimestamp = convertToLocalTimestamp(utcTimestamp);
+    
+    // Add debugging to compare formats
+    console.log('handleSend timestamps:', { 
+      utcTimestamp, 
+      localTimestamp,
+      localFormatted: formatDateTime(localTimestamp, 'time'),
+      utcFormatted: formatDateTime(utcTimestamp, 'time')
+    });
+    
+    // Create temporary message with client-generated ID
     const tempMessage = {
-      id: `temp-${Date.now()}`,
+      id: `temp-${Date.now()}-${Math.random()}`,
       text: trimmed,
-      timestamp: new Date().toISOString(),
+      timestamp: localTimestamp, // Use local timestamp
       isSent: true
     };
     
+    // Update messages state immediately
     setMessages(prev => [...prev, tempMessage]);
     setCurrentMessage('');
 
     try {
       // Send to backend
-      await axios.post(
+      const messageResponse = await axios.post(
         'https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/messages',
         {
           sender_id: localUid,
@@ -260,57 +484,81 @@ export default function Chat() {
           }
         }
       );
-
-      // Replace temporary message with confirmed message from server
-      setMessages(prev => 
-        prev.filter(m => m.id !== tempMessage.id) // Remove temp message
-            .concat({ ...tempMessage, id: Date.now().toString() })
-      );
+      
+      // If server returns the created message with its timestamp, update our local copy
+      if (messageResponse.data && messageResponse.data.message_uid) {
+        // Get standardized UTC timestamp from server
+        const serverUtcTimestamp = standardizeTimestamp(messageResponse.data.message_sent_at || utcTimestamp);
+        
+        // Convert to local time
+        const serverLocalTimestamp = convertToLocalTimestamp(serverUtcTimestamp);
+        
+        const serverMessage = {
+          id: messageResponse.data.message_uid,
+          text: trimmed,
+          timestamp: serverLocalTimestamp, // Use local timestamp
+          isSent: true
+        };
+        
+        // Replace temporary message with server version
+        setMessages(prev => 
+          prev.filter(m => m.id !== tempMessage.id).concat(serverMessage)
+        );
+      }
       
     } catch (err) {
       console.warn('Error sending message:', err);
-      // Rollback optimistic update
+      // Remove the message if sending failed
       setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
     }
   };
 
-  /**
-   * Scroll to bottom when messages change
-   */
-  useEffect(() => {
-    scrollViewRef.current?.scrollToEnd({ animated: true });
-  }, [messages]);
-
-  // Get grouped messages
-  const groupedMessages = groupMessagesByDate(messages);
-
-  // New function to handle meeting response
+  // Handle meeting response with proper time conversion
   const handleMeetResponse = async (responseText) => {
     if (!localUid || !matchedUserId) return;
+    
+    // Create timestamp in UTC format for consistent storage
+    const now = new Date();
+    
+    // Apply the server time offset if needed for consistency
+    if (serverTimeOffset !== 0) {
+      now.setTime(now.getTime() + serverTimeOffset);
+    }
+    
+    // Get timestamp in UTC format  
+    const utcTimestamp = now.toISOString();
+    
+    // Convert to local time for display
+    const localTimestamp = convertToLocalTimestamp(utcTimestamp);
+    
+    // Create temporary message with client-generated ID
+    const tempMessage = {
+      id: `temp-${Date.now()}-${Math.random()}`,
+      text: responseText,
+      timestamp: localTimestamp, // Use local timestamp
+      isSent: true
+    };
+    
     if (responseText === "Yes, I'd love to!") {
       try {
+        // Update UI state first with temporary message
+        setMeetConfirmed(true);
+        setMessages(prev => [...prev, tempMessage]);
+        
+        // Send confirmation to meet endpoint
         const formData = new FormData();
         formData.append('meet_uid', meetUid);
         formData.append('meet_user_id', matchedUserId);
         formData.append('meet_date_user_id', localUid);
         formData.append('meet_confirmed', 1);
-        console.log(formData);
 
         await fetch('https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet', {
           method: "PUT",
           body: formData,
         });
-        setMeetConfirmed(true);
-        const responseMessage = {
-          id: Date.now().toString(),
-          text: responseText,
-          timestamp: new Date().toISOString(),
-          isSent: true
-        };
-        setMessages(prev => [...prev, responseMessage]);
 
-        // Also send the confirmation message to the backend messages endpoint
-        await axios.post(
+        // Also send confirmation message to backend
+        const messageResponse = await axios.post(
           'https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/messages',
           {
             sender_id: localUid,
@@ -321,12 +569,42 @@ export default function Chat() {
             headers: { 'Content-Type': 'application/json' }
           }
         );
+        
+        // If server returns the created message with its timestamp, update our local copy
+        if (messageResponse.data && messageResponse.data.message_uid) {
+          // Get standardized UTC timestamp from server
+          const serverUtcTimestamp = standardizeTimestamp(messageResponse.data.message_sent_at || utcTimestamp);
+          
+          // Convert to local time
+          const serverLocalTimestamp = convertToLocalTimestamp(serverUtcTimestamp);
+          
+          const serverMessage = {
+            id: messageResponse.data.message_uid,
+            text: responseText,
+            timestamp: serverLocalTimestamp, // Use local timestamp
+            isSent: true
+          };
+          
+          // Replace temporary message with server version
+          setMessages(prev => 
+            prev.filter(m => m.id !== tempMessage.id).concat(serverMessage)
+          );
+        }
+        
       } catch (err) {
         console.error('Error confirming meeting:', err);
+        // Revert UI changes if API call fails
+        setMeetConfirmed(false);
+        setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
       }
     } else {
       try {
-        await axios.post(
+        // Update UI state first with temporary message
+        setInvitationResponseSent(true);
+        setMessages(prev => [...prev, tempMessage]);
+
+        // Send message to backend
+        const messageResponse = await axios.post(
           'https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/messages',
           {
             sender_id: localUid,
@@ -337,34 +615,74 @@ export default function Chat() {
             headers: { 'Content-Type': 'application/json' }
           }
         );
-        setInvitationResponseSent(true);
-        const responseMessage = {
-          id: Date.now().toString(),
-          text: responseText,
-          timestamp: new Date().toISOString(),
-          isSent: true
-        };
-        setMessages(prev => [...prev, responseMessage]);
+        
+        // If server returns the created message with its timestamp, update our local copy
+        if (messageResponse.data && messageResponse.data.message_uid) {
+          // Get standardized UTC timestamp from server
+          const serverUtcTimestamp = standardizeTimestamp(messageResponse.data.message_sent_at || utcTimestamp);
+          
+          // Convert to local time
+          const serverLocalTimestamp = convertToLocalTimestamp(serverUtcTimestamp);
+          
+          const serverMessage = {
+            id: messageResponse.data.message_uid,
+            text: responseText,
+            timestamp: serverLocalTimestamp, // Use local timestamp
+            isSent: true
+          };
+          
+          // Replace temporary message with server version
+          setMessages(prev => 
+            prev.filter(m => m.id !== tempMessage.id).concat(serverMessage)
+          );
+        }
+        
       } catch (err) {
         console.error('Error sending meeting response:', err);
+        // Revert UI changes if API call fails
+        setInvitationResponseSent(false);
+        setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
       }
     }
   };
 
-  // Compute the latest received Date Invitation (received and starts with 'Date Invitation:')
+  // Scroll to bottom when messages change (only for new messages, not initial load)
+  const initialLoadRef = useRef(true);
+  
+  useEffect(() => {
+    // Skip scrolling on initial render
+    if (initialLoadRef.current) {
+      initialLoadRef.current = false;
+      return;
+    }
+    
+    // Only animate scrolling for subsequent message updates
+    scrollViewRef.current?.scrollToEnd({ animated: true });
+  }, [messages]);
+
+  // Clear the initial load flag when loading completes
+  useEffect(() => {
+    if (!loading) {
+      initialLoadRef.current = false;
+    }
+  }, [loading]);
+
+  // Get grouped messages
+  const groupedMessages = groupMessagesByDate(messages);
+
+  // Compute the latest received Date Invitation
   const receivedInvitations = messages.filter(m => 
     m.isReceived && m.text && m.text.startsWith('Date Invitation:')
   );
-  const sortedInvitations = receivedInvitations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  
+  // Sort invitations by timestamp (newest first)
+  const sortedInvitations = receivedInvitations.sort((a, b) => 
+    new Date(b.timestamp) - new Date(a.timestamp)
+  );
+  
   const latestInvitation = sortedInvitations.length > 0 ? sortedInvitations[0] : null;
 
-  // Log invitation status for debugging
-  useEffect(() => {
-    console.log('Latest invitation:', latestInvitation);
-    console.log('Invitation response sent:', invitationResponseSent);
-    console.log('Meet confirmed:', meetConfirmed);
-  }, [latestInvitation, invitationResponseSent, meetConfirmed]);
-
+  // Loading state
   if (loading) {
     return (
       <View style={styles.loaderContainer}>
@@ -393,49 +711,154 @@ export default function Chat() {
       <ScrollView
         ref={scrollViewRef}
         style={styles.chatScrollView}
-        contentContainerStyle={[styles.chatScrollViewContent, { flexGrow: 1 }]}
+        contentContainerStyle={[
+          styles.chatScrollViewContent, 
+          { flexGrow: 1, justifyContent: 'flex-end' }
+        ]}
+        onContentSizeChange={() => {
+          // Only use non-animated scroll to avoid visible jumping
+          scrollViewRef.current?.scrollToEnd({ animated: false });
+        }}
+        onLayout={() => {
+          // Ensure we're at the bottom on initial layout
+          scrollViewRef.current?.scrollToEnd({ animated: false });
+        }}
+        showsVerticalScrollIndicator={false}
+        // Maintain position when keyboard appears/content changes
+        keyboardShouldPersistTaps="handled"
+        // Prevent automatic scrolling for iOS keyboard
+        keyboardDismissMode="on-drag"
       >
-        {/* Grouped messages from the messages endpoint */}
+        {/* Grouped messages by date */}
         {Object.entries(groupedMessages).map(([date, dateMessages]) => (
           <View key={date}>
             <Text style={styles.dateHeader}>{date}</Text>
             {dateMessages.map((item) => {
-              // Ensure text is a string before calling startsWith
               const textContent = item.text || '';
               const isDateInvitation = textContent.startsWith('Date Invitation:');
               const containerStyle = item.isSent ? styles.rightBubbleWrapper : styles.leftBubbleWrapper;
               
-              // Enhanced bubble content with better handling of invitation formatting
-              const bubbleContent = (
-                <LinearGradient
-                  colors={item.isSent ? ['#FF5E62', '#FF9966'] : ['#F5F5F5', '#F5F5F5']}
-                  style={styles.bubbleContainer}
-                >
-                  <Text style={item.isSent ? styles.rightBubbleText : styles.leftBubbleText}>
-                    {isDateInvitation ? (
-                      // Format date invitation nicely
-                      textContent.split('\n').map((line, index) => (
-                        <Text key={index} style={index === 0 ? {fontWeight: 'bold'} : {}}>
-                          {line}{'\n'}
-                        </Text>
-                      ))
-                    ) : textContent}
-                  </Text>
-                  <Text style={styles.messageTimestamp}>
-                    {new Date(item.timestamp.replace(' ', 'T')).toLocaleTimeString([], {
-                      hour: 'numeric',
-                      minute: '2-digit'
-                    })}
-                  </Text>
-                  {item.isSent ? (
-                    <View style={styles.rightArrow} />
-                  ) : (
-                    <View style={styles.leftArrow} />
-                  )}
-                </LinearGradient>
-              );
+              // Render appropriate bubble content based on message type
+              let bubbleContent;
               
               if (isDateInvitation) {
+                // Parse date invitation content
+                const lines = textContent.split('\n');
+                const title = lines[0].replace('Date Invitation:', '').trim() || "Hi! Wanna go on a date with me?";
+                
+                // Extract details with defaults
+                let activity = "Dinner";
+                let date = "Sat, Aug 17";
+                let time = "7:00 pm";
+                let location = "96 S 1st St, San Jose, CA 95113";
+                
+                // Parse from text
+                lines.forEach(line => {
+                  if (line.includes('Activity:')) activity = line.replace('Activity:', '').trim();
+                  if (line.includes('Date:')) date = line.replace('Date:', '').trim();
+                  if (line.includes('Time:')) time = line.replace('Time:', '').trim();
+                  if (line.includes('Location:')) location = line.replace('Location:', '').trim();
+                });
+                
+                if (item.isReceived) {
+                  // Received date invitation (white card)
+                  bubbleContent = (
+                    <View style={styles.receivedDateCard}>
+                      <Text style={styles.receivedDateTitle}>{title}</Text>
+                      
+                      <View style={styles.receivedDateDetail}>
+                        <Ionicons name="people-outline" size={18} color="#999" style={styles.receivedDateIcon} />
+                        <Text style={styles.receivedDateText}>{activity}</Text>
+                      </View>
+                      
+                      <View style={styles.receivedDateDetail}>
+                        <Ionicons name="calendar-outline" size={18} color="#999" style={styles.receivedDateIcon} />
+                        <Text style={styles.receivedDateText}>{date}</Text>
+                      </View>
+                      
+                      <View style={styles.receivedDateDetail}>
+                        <Ionicons name="time-outline" size={18} color="#999" style={styles.receivedDateIcon} />
+                        <Text style={styles.receivedDateText}>{time}</Text>
+                      </View>
+                      
+                      <View style={styles.receivedDateDetail}>
+                        <Ionicons name="location-outline" size={18} color="#999" style={styles.receivedDateIcon} />
+                        <Text style={styles.receivedDateText}>{location}</Text>
+                      </View>
+                      
+                      <Text style={[styles.messageTimestamp, {color: '#999'}]}>
+                        {formatDateTime(item.timestamp, 'time')}
+                      </Text>
+                      
+                      <View style={styles.leftArrowDate} />
+                      
+                      {/* User avatar */}
+                      <View style={styles.dateAvatarContainer}>
+                        <Image source={chatPartnerPhoto} style={styles.dateAvatar} />
+                      </View>
+                    </View>
+                  );
+                } else {
+                  // Sent date invitation (gradient card)
+                  bubbleContent = (
+                    <LinearGradient
+                      colors={['#FF5E62', '#FF9966']}
+                      style={styles.dateInvitationCard}
+                    >
+                      <Text style={styles.dateInvitationTitle}>{title}</Text>
+                      
+                      <View style={styles.dateInvitationDetail}>
+                        <Ionicons name="people" size={18} color="#fff" style={styles.dateInvitationIcon} />
+                        <Text style={styles.dateInvitationText}>{activity}</Text>
+                      </View>
+                      
+                      <View style={styles.dateInvitationDetail}>
+                        <Ionicons name="calendar" size={18} color="#fff" style={styles.dateInvitationIcon} />
+                        <Text style={styles.dateInvitationText}>{date}</Text>
+                      </View>
+                      
+                      <View style={styles.dateInvitationDetail}>
+                        <Ionicons name="time" size={18} color="#fff" style={styles.dateInvitationIcon} />
+                        <Text style={styles.dateInvitationText}>{time}</Text>
+                      </View>
+                      
+                      <View style={styles.dateInvitationDetail}>
+                        <Ionicons name="location" size={18} color="#fff" style={styles.dateInvitationIcon} />
+                        <Text style={styles.dateInvitationText}>{location}</Text>
+                      </View>
+                      
+                      <Text style={styles.messageTimestamp}>
+                        {formatDateTime(item.timestamp, 'time')}
+                      </Text>
+                      
+                      <View style={styles.rightArrow} />
+                    </LinearGradient>
+                  );
+                }
+              } else {
+                // Regular message (not date invitation)
+                bubbleContent = (
+                  <LinearGradient
+                    colors={item.isSent ? ['#FF5E62', '#FF9966'] : ['#F5F5F5', '#F5F5F5']}
+                    style={styles.bubbleContainer}
+                  >
+                    <Text style={item.isSent ? styles.rightBubbleText : styles.leftBubbleText}>
+                      {textContent}
+                    </Text>
+                    <Text style={item.isSent ? styles.messageTimestamp : styles.messageTimestampDark}>
+                      {formatDateTime(item.timestamp, 'time')}
+                    </Text>
+                    {item.isSent ? (
+                      <View style={styles.rightArrow} />
+                    ) : (
+                      <View style={styles.leftArrow} />
+                    )}
+                  </LinearGradient>
+                );
+              }
+              
+              // Make sent date invitations clickable
+              if (isDateInvitation && !item.isReceived) {
                 return (
                   <TouchableOpacity 
                     key={item.id} 
@@ -456,10 +879,10 @@ export default function Chat() {
           </View>
         ))}
 
-        {/* New right bubble for response to latest received Date Invitation */}
+        {/* Date invitation response buttons */}
         {latestInvitation && !invitationResponseSent && !meetConfirmed && (
-          <View style={styles.rightBubbleWrapper}>
-            <LinearGradient colors={['#FF5E62', '#FF9966']} style={styles.bubbleContainer}>
+          <View style={styles.responseButtonContainer}>
+            <LinearGradient colors={['#FF5E62', '#FF9966']} style={{borderRadius: 25, padding: 15}}>
               <TouchableOpacity
                 style={styles.acceptButton}
                 onPress={() => handleMeetResponse("Yes, I'd love to!")}
@@ -508,7 +931,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     justifyContent: "flex-start",
     alignItems: "stretch",
-    paddingHorizontal: 25,
+    paddingHorizontal: 20,
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   loaderContainer: {
@@ -557,106 +980,212 @@ const styles = StyleSheet.create({
   /* ---------------- CHAT BODY ------------------ */
   chatScrollView: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
   },
   chatScrollViewContent: {
     flexGrow: 1,
     justifyContent: 'flex-end',
     paddingTop: 12,
     paddingBottom: 20,
+    minHeight: '100%', // Ensures content can be positioned at the bottom
   },
-  timestamp: {
+  dateHeader: {
     fontSize: 12,
     color: '#888',
     alignSelf: 'center',
-    marginBottom: 8,
+    marginVertical: 16,
+    backgroundColor: '#F5F5F5',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
   },
 
-  /* ---------- Bubble Right (initiator, typed msgs) ---------- */
-  bubbleRightWrapper: {
+  /* Right Bubble (sent messages) */
+  rightBubbleWrapper: {
     alignSelf: 'flex-end',
     maxWidth: '80%',
     marginBottom: 12,
     overflow: 'visible',
   },
-  bubbleRight: {
-    borderRadius: 16,
-    padding: 12,
-    // If you want a single-color background for typed messages:
-    // backgroundColor: '#FF5E62',
+  bubbleContainer: {
+    padding: 10,
+    borderRadius: 20,
+    marginBottom: 8,
+    maxWidth: '80%',
+    position: 'relative',
   },
-  bubbleRightTail: {
-    position: 'absolute',
+  rightBubbleText: {
+    fontSize: 15,
+    color: '#FFF',
+  },
+  messageTimestamp: {
+    fontSize: 12,
+    color: '#EEE',
+    alignSelf: 'flex-end',
+    marginTop: 4,
+  },
+  messageTimestampDark: {
+    fontSize: 12,
+    color: '#999',
+    alignSelf: 'flex-end',
+    marginTop: 4,
+  },
+  rightArrow: {
+    position: "absolute",
+    backgroundColor: '#FF9966',
+    width: 20,
+    height: 25,
     bottom: 0,
-    right: -6,
-    width: 0,
-    height: 0,
-    borderStyle: 'solid',
-    borderLeftWidth: 0,
-    borderRightWidth: 6,
-    borderTopWidth: 6,
-    borderBottomWidth: 6,
-    borderRightColor: '#FF9966',
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
+    borderBottomLeftRadius: 25,
+    right: -10,
+    zIndex: 1,
   },
 
-  /* ---------- Bubble Left (received meet) ---------- */
-  bubbleLeftWrapper: {
+  /* Left Bubble (received messages) */
+  leftBubbleWrapper: {
     alignSelf: 'flex-start',
     maxWidth: '80%',
     marginBottom: 12,
   },
-  bubbleLeft: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 16,
-    padding: 12,
+  leftBubbleText: {
+    fontSize: 15,
+    color: '#000',
   },
-  bubbleLeftTail: {
-    position: 'absolute',
+  leftArrow: {
+    position: "absolute",
+    backgroundColor: "#F5F5F5",
+    width: 20,
+    height: 25,
     bottom: 0,
-    left: -6,
-    width: 0,
-    height: 0,
-    borderStyle: 'solid',
-    borderLeftWidth: 6,
-    borderRightWidth: 0,
-    borderTopWidth: 6,
-    borderBottomWidth: 6,
-    borderLeftColor: '#F5F5F5',
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
+    borderBottomRightRadius: 25,
+    left: -10,
+    zIndex: 1,
   },
 
-  /* ---------- Shared styles ---------- */
-  bubbleTitle: {
-    fontWeight: '600',
-    fontSize: 16,
-    marginBottom: 4,
-    color: '#FFF', // White text on pinkish gradient
+  /* Date Invitation - Sent */
+  dateInvitationCard: {
+    padding: 10,
+    borderRadius: 20,
+    marginBottom: 8,
+    maxWidth: '80%',
+    position: 'relative',
   },
-  bubbleDetailRow: {
+  dateInvitationTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFF',
+    marginBottom: 4,
+  },
+  dateInvitationDetail: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
   },
-  bubbleDetailIcon: {
+  dateInvitationIcon: {
     marginRight: 6,
+  },
+  dateInvitationText: {
     fontSize: 14,
     color: '#FFF',
-  },
-  bubbleDetailText: {
-    fontSize: 14,
-    color: '#FFF',
-  },
-  bubbleTimestamp: {
-    marginTop: 4,
-    fontSize: 12,
-    color: '#EEE',
-    alignSelf: 'flex-end',
   },
 
-  /* ---------- Bottom bar ---------- */
+  /* Date Invitation - Received */
+  receivedDateCard: {
+    backgroundColor: "#FAFAFA",
+    padding: 16,
+    borderRadius: 20,
+    marginRight: '10%',
+    marginLeft: "17%",
+    maxWidth: '80%',
+    position: 'relative',
+    marginBottom: 30, // Extra space for avatar
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  receivedDateTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FF5E62',
+    marginBottom: 12,
+  },
+  receivedDateDetail: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  receivedDateIcon: {
+    marginRight: 10,
+  },
+  receivedDateText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  leftArrowDate: {
+    position: "absolute",
+    backgroundColor: "#FAFAFA",
+    width: 20,
+    height: 25,
+    bottom: 10,
+    borderBottomRightRadius: 25,
+    left: -10,
+  },
+  dateAvatarContainer: {
+    position: 'absolute',
+    bottom: -10,
+    left: -40,
+    zIndex: 10,
+  },
+  dateAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+
+  /* Response buttons */
+  responseButtonContainer: {
+    alignSelf: 'flex-end',
+    marginTop: 10,
+    marginBottom: 15,
+    borderRadius: 25,
+    overflow: 'hidden',
+    width: '80%',
+  },
+  acceptButton: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    marginVertical: 10,
+    marginHorizontal: 15,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  acceptButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  declineButton: {
+    marginVertical: 5,
+    marginHorizontal: 15,
+    marginBottom: 15,
+  },
+  declineButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+  },
+
+  /* Bottom input bar */
   bottomBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -697,197 +1226,5 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     tintColor: '#FF5E62',
-  },
-
-  /* Right Bubble (sent messages) */
-  rightBubbleWrapper: {
-    alignSelf: 'flex-end',
-    maxWidth: '80%',
-    marginBottom: 12,
-    overflow: 'visible',
-  },
-  rightBubbleContainer: {
-    padding: 10,
-    borderRadius: 20,
-    marginBottom: 8,
-    maxWidth: '80%',
-    position: 'relative',
-  },
-  rightBubbleText: {
-    fontSize: 15,
-    color: '#FFF',
-  },
-  timestampSmall: {
-    fontSize: 12,
-    color: '#EEE',
-    alignSelf: 'flex-end',
-  },
-  rightArrow: {
-    position: "absolute",
-    backgroundColor: '#FF9966',
-    width: 20,
-    height: 25,
-    bottom: 0,
-    borderBottomLeftRadius: 25,
-    right: -10,
-    zIndex: 1,
-  },
-  rightArrowOverlap: {
-    position: "absolute",
-    backgroundColor: '#FFF',
-    width: 20,
-    height: 35,
-    bottom: -6,
-    borderBottomLeftRadius: 18,
-    right: -20,
-  },
-
-  /* Left Bubble (received messages) */
-  leftBubbleContainer: {
-    backgroundColor: "#FAFAFA",
-    padding: 16,
-    borderRadius: 20,
-    marginRight: '45%',
-    marginTop: 5,
-    marginLeft: "5%",
-    maxWidth: '50%',
-    // Add shadow if needed
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  inviteTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#E4423F',
-    marginBottom: 12,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  icon: {
-    fontSize: 20,
-    color: '#999',
-    marginRight: 8,
-  },
-  detailText: {
-    fontSize: 16,
-    color: '#333',
-    flexShrink: 1,
-  },
-  avatarContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 20,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: '#FFF',
-  },
-  leftArrow: {
-    position: "absolute",
-    backgroundColor: "#FAFAFA",
-    width: 20,
-    height: 25,
-    bottom: 0,
-    borderBottomRightRadius: 25,
-    left: -10,
-    zIndex: 1,
-  },
-
-  dateHeader: {
-    fontSize: 12,
-    color: '#888',
-    alignSelf: 'center',
-    marginVertical: 16,
-    backgroundColor: '#F5F5F5',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  messageTimestamp: {
-    fontSize: 12,
-    color: '#EEE',
-    alignSelf: 'flex-end',
-    marginTop: 4,
-  },
-
-  responseContainer: {
-    alignSelf: 'flex-end',
-    maxWidth: '70%',
-    marginVertical: 10,
-    marginHorizontal: 15,
-  },
-  responseGradient: {
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  acceptButton: {
-    backgroundColor: '#E4423F',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    marginBottom: 15,
-    marginHorizontal: 5,
-  },
-  acceptButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  declineButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    marginBottom: 15,
-    marginHorizontal: 5,
-  },
-  declineButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  bubbleContainer: {
-    padding: 10,
-    borderRadius: 20,
-    marginBottom: 8,
-    maxWidth: '80%',
-    position: 'relative',
-  },
-  leftBubbleText: {
-    fontSize: 15,
-    color: '#000',
-  },
-  card: {
-    backgroundColor: '#FFF',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 8,
-  },
-  avatarLeftContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: '#FFF',
-    marginRight: 12,
-    alignSelf: 'flex-start',
-  },
-  leftArrow: {
-    position: "absolute",
-    backgroundColor: "#FAFAFA",
-    width: 20,
-    height: 25,
-    bottom: 10,
-    borderBottomRightRadius: 25,
-    left: -10,
   },
 });

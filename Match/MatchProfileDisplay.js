@@ -196,6 +196,27 @@ export default function MatchProfileDisplay() {
     handleRightArrowPress();
   };
 
+  // Calculate distance between two coordinates
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    // Radius of the Earth in miles
+    const earthRadius = 3958.8;
+    
+    // Convert latitude and longitude from degrees to radians
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    
+    // Haversine formula
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = earthRadius * c;
+    
+    return distance;
+  };
+
   const fetchData = async (position) => {
     try {
       console.log("userUid", userUid);
@@ -224,7 +245,29 @@ export default function MatchProfileDisplay() {
             console.log("fetchedData", fetchedData);
             console.log("userInfo", fetchedData.user_uid);
             console.log("isLiked", fetchedData["Liked by"]);
-            setUserInfo(fetchedData);
+            
+            // Get current user info to calculate distance
+            const currentUserData = await fetchUserInfo(userUid);
+            
+            // Calculate distance between users
+            let distance = 0;
+            if (currentUserData && currentUserData.user_latitude && currentUserData.user_longitude && 
+                fetchedData.user_latitude && fetchedData.user_longitude) {
+              try {
+                distance = calculateDistance(
+                  parseFloat(currentUserData.user_latitude),
+                  parseFloat(currentUserData.user_longitude),
+                  parseFloat(fetchedData.user_latitude),
+                  parseFloat(fetchedData.user_longitude)
+                );
+                console.log("Calculated distance:", distance);
+              } catch (error) {
+                console.error("Error calculating distance:", error);
+              }
+            }
+            
+            // Add distance to the userInfo object
+            setUserInfo({...fetchedData, distance: distance});
 
             // Update isLiked state based on the new userInfo
             setIsLiked(fetchedData["Liked by"] === "YES");
@@ -493,7 +536,9 @@ export default function MatchProfileDisplay() {
               {/* Distances */}
               <View style={styles.detailRow}>
                 <Ionicons name='location' size={16} color='#bbb' style={{ marginRight: 8 }} />
-                <Text style={styles.detailText}>{userInfo?.distance ? `${userInfo.distance.toFixed(2)} miles away` : "Distance unavailable"}</Text>
+                <Text style={styles.detailText}>
+                  {userInfo?.distance !== undefined ? `${userInfo.distance.toFixed(2)} miles away` : "Distance unavailable"}
+                </Text>
               </View>
 
               {/* Height */}

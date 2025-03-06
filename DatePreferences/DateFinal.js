@@ -388,7 +388,7 @@ export default function DateFinal({ navigation }) {
             style={styles.backButton}
             onPress={() => navigation.navigate('MatchResultsPage',{  matchedUserId: matchedUserId })}
           >
-            <Text style={styles.backButtonText}>Back to my matches(Temp chat)</Text>
+            <Text style={styles.backButtonText}>Back to my matches</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

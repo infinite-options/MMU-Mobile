@@ -108,9 +108,9 @@ export default function Login() {
       // Sign in - this is the part that was failing before
       let userInfo;
       try {
-        console.log("Starting Google sign in process...");
+        console.log("Starting Google sign in process in try block...");
         userInfo = await GoogleSignin.signIn();
-        console.log("Sign-in successful:", userInfo);
+        // console.log("Sign-in successful:", userInfo);
         console.log("Google Sign-In successful", JSON.stringify(userInfo, null, 2));
       } catch (signInError) {
         console.error("Sign in specific error:", signInError);

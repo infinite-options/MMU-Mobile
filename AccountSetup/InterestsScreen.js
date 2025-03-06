@@ -153,9 +153,9 @@ export default function InterestsScreen({ navigation }) {
         </View>
       </ScrollView>
       {/* Continue Button */}
-      <Pressable style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5", marginBottom: 20 }]} onPress={handleTemp} disabled={!isFormComplete}>
+      {/* <Pressable style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5", marginBottom: 20 }]} onPress={handleTemp} disabled={!isFormComplete}>
         <Text style={[styles.continueButtonText, { color: isFormComplete ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Temp Button to Summary</Text>
-      </Pressable>
+      </Pressable> */}
       {/* Continue Button */}
       <Pressable style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5" }]} onPress={handleContinue} disabled={!isFormComplete}>
         <Text style={[styles.continueButtonText, { color: isFormComplete ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>

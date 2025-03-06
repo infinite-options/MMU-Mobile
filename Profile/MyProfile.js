@@ -461,7 +461,10 @@ export default function MyProfile() {
               )}
             </View>
           ) : (
-            <TouchableOpacity style={styles.uploadVideoButton}>
+            <TouchableOpacity 
+              style={styles.uploadVideoButton} 
+              onPress={() => navigation.navigate("EditProfile")}
+            >
               <Ionicons name='cloud-upload-outline' size={20} color='#E4423F' />
               <Text style={styles.uploadVideoText}>Upload Video File</Text>
             </TouchableOpacity>

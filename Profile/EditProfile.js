@@ -129,6 +129,7 @@ export default function EditProfile() {
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [location, setLocation] = useState(null);
   const [address, setAddress] = useState(null);
+  const [deletedVideo, setDeletedVideo] = useState(false);
 
   // Default map region
   const [region, setRegion] = useState(DEFAULT_REGION);
@@ -758,8 +759,10 @@ export default function EditProfile() {
   };
 
   const handleRemoveVideo = () => {
+    // Modify this function to just mark the video as deleted
+    // but don't allow saving unless a new video is uploaded
     setVideoUri(null);
-    setIsVideoPlaying(false);
+    setDeletedVideo(true);
   };
   const handlePlayPause = async () => {
     if (!videoRef.current) return;
@@ -1151,8 +1154,7 @@ export default function EditProfile() {
       // Check if video was deleted or changed
       if (originalVideoUrl && !videoUri) {
         // Video was deleted
-        console.log("Video was deleted, setting user_delete_video flag");
-        uploadData.append("user_delete_video", "true");
+        
       } else if (videoUri && videoUri !== originalVideoUrl) {
         // New video to upload (not from S3)
         if (!videoUri.startsWith("https://s3")) {
@@ -1274,6 +1276,16 @@ export default function EditProfile() {
         const calculatedAge = calculateAge(formValues.birthdate);
         // Make sure age is included in the data sent to the endpoint
         newValues.age = calculatedAge;
+      }
+
+      // Add validation to prevent saving without a video
+      if (deletedVideo && !videoUri) {
+        Alert.alert(
+          "Video Required", 
+          "Please upload a new video before saving changes.",
+          [{ text: "OK" }]
+        );
+        return; // Stop the save process
       }
 
       // Make the upload request

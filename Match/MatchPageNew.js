@@ -13,6 +13,7 @@ import { useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import MaskedView from '@react-native-masked-view/masked-view';
 // If you have your images locally, you can import/require them:
 const DefaultMale = require('../src/Assets/Images/account.png');
 const DefaultFeMale = require('../src/Assets/Images/account.png');
@@ -82,28 +83,60 @@ const MatchPageNew = () => {
         navigation.navigate('DateType', { matchedUserId: meet_date_user_id });
     }
   return (
-    <LinearGradient colors={['#FC6767', '#EC008C']} style={styles.container}>
+    <LinearGradient colors={['#a09076', '#c67d6d']} style={styles.container}>
       {/* Title */}
       <Text style={styles.title}>It's a Match!</Text>
       <Text style={styles.subtitle}>You and {matchedUserName} have liked each other.</Text>
 
       {/* Images container */}
-      <View style={styles.imagesContainer}>
+      <View style={styles.heartsContainer}>
         {/* Current user's image */}
-        <View style={[styles.imageWrapper, { zIndex: 2, marginRight: -20 }]}>
-          <Image 
-            source={userPhoto ? { uri: userPhoto } : DefaultMale} 
-            style={styles.image}
-            defaultSource={DefaultMale} // Fallback while loading
+        <View style={[styles.heartWrapper, { zIndex: 2, marginRight: -25 }]}>
+          <MaskedView
+            style={styles.maskedView}
+            maskElement={
+              <Image
+                source={require('../assets/icons/Primaryheart.png')}
+                style={styles.maskImage}
+                resizeMode="contain"
+              />
+            }
+          >
+            <Image
+              source={userPhoto ? { uri: userPhoto } : DefaultMale}
+              style={styles.fullImage}
+              defaultSource={DefaultMale}
+            />
+          </MaskedView>
+          <Image
+            source={require('../assets/icons/primaryheartoutlinewhite.png')}
+            style={styles.heartOutline}
+            resizeMode="contain"
           />
         </View>
         
         {/* Matched user's image */}
-        <View style={[styles.imageWrapper, { zIndex: 1, marginLeft: -20 }]}>
-          <Image 
-            source={matchedUserPhoto ? { uri: matchedUserPhoto } : DefaultFeMale} 
-            style={styles.image}
-            defaultSource={DefaultFeMale} // Fallback while loading
+        <View style={[styles.heartWrapper, styles.secondHeartWrapper]}>
+          <MaskedView
+            style={styles.maskedView}
+            maskElement={
+              <Image
+                source={require('../assets/icons/Secondaryheart.png')}
+                style={styles.maskImage}
+                resizeMode="contain"
+              />
+            }
+          >
+            <Image
+              source={matchedUserPhoto ? { uri: matchedUserPhoto } : DefaultFeMale}
+              style={styles.fullImage}
+              defaultSource={DefaultFeMale}
+            />
+          </MaskedView>
+          <Image
+            source={require('../assets/icons/secondaryheartoutlinewhite.png')}
+            style={styles.heartOutline}
+            resizeMode="contain"
           />
         </View>
       </View>
@@ -141,23 +174,42 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginBottom: 24,
   },
-  imagesContainer: {
+  heartsContainer: {
     flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
   },
-  imageWrapper: {
-    width: 140,
-    height: 140,
-    borderWidth: 4,
-    borderColor: '#fff',
-    borderRadius: 70, // This makes the image circular
-    overflow: 'hidden',
+  heartWrapper: {
+    width: 130,
+    height: 130,
+    position: 'relative',
   },
-  image: {
-    width: '100%',
-    height: '100%',
+  secondHeartWrapper: {
+    marginLeft: -25,
+    marginTop: -15,
+  },
+  maskedView: {
+    width: 130,
+    height: 130,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  maskImage: {
+    width: 130,
+    height: 130,
+  },
+  fullImage: {
+    width: 130,
+    height: 130,
     resizeMode: 'cover',
+  },
+  heartOutline: {
+    position: 'absolute',
+    width: 130,
+    height: 130,
+    top: 0,
+    left: 0,
   },
   button: {
     backgroundColor: '#fff',

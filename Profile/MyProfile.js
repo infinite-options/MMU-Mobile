@@ -597,42 +597,40 @@ export default function MyProfile() {
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>A little bit about me</Text>
 
-          {user_age ? (
-            <View style={styles.aboutItem}>
-              <Image source={require("../assets/icons/dob.png")} style={{ width: 14, height: 16 }} />
-              <Text style={styles.aboutItemText}>
-                Born on {formatDate(user_birthdate)} (Age: {user_age})
-              </Text>
-            </View>
-          ) : null}
+          <View style={styles.aboutItem}>
+            <Image source={require("../assets/icons/dob.png")} style={{ width: 14, height: 16 }} />
+            <Text style={[styles.aboutItemText, !user_age && { color: "gray" }]}>
+              {user_age ? `Born on ${formatDate(user_birthdate)} (Age: ${user_age})` : "Not Provided"}
+            </Text>
+          </View>
 
-          {user_height ? (
-            <View style={styles.aboutItem}>
-              <Image source={require("../assets/icons/height.png")} style={{ width: 14, height: 16 }} />
-              <Text style={styles.aboutItemText}>{user_height}</Text>
-            </View>
-          ) : null}
+          <View style={styles.aboutItem}>
+            <Image source={require("../assets/icons/height.png")} style={{ width: 14, height: 16 }} />
+            <Text style={[styles.aboutItemText, !user_height && { color: "gray" }]}>
+              {user_height || "Not Provided"}
+            </Text>
+          </View>
 
-          {user_kids ? (
-            <View style={styles.aboutItem}>
-              <Image source={require("../assets/icons/kids.png")} style={{ width: 14, height: 16 }} />
-              <Text style={styles.aboutItemText}>{user_kids} children</Text>
-            </View>
-          ) : null}
+          <View style={styles.aboutItem}>
+            <Image source={require("../assets/icons/kids.png")} style={{ width: 14, height: 16 }} />
+            <Text style={[styles.aboutItemText, !user_kids && { color: "gray" }]}>
+              {user_kids ? `${user_kids} children` : "Not Provided"}
+            </Text>
+          </View>
 
-          {user_gender ? (
-            <View style={styles.aboutItem}>
-              <Image source={require("../assets/icons/gender.png")} style={{ width: 14, height: 16 }} />
-              <Text style={styles.aboutItemText}>Sex assigned at birth was {user_gender}</Text>
-            </View>
-          ) : null}
+          <View style={styles.aboutItem}>
+            <Image source={require("../assets/icons/gender.png")} style={{ width: 14, height: 16 }} />
+            <Text style={[styles.aboutItemText, !user_gender && { color: "gray" }]}>
+              {user_gender ? `Sex assigned at birth was ${user_gender}` : "Not Provided"}
+            </Text>
+          </View>
 
-          {user_identity ? (
-            <View style={styles.aboutItem}>
-              <Image source={require("../assets/icons/user_identity.png")} style={{ width: 14, height: 16 }} />
-              <Text style={styles.aboutItemText}>Identifies as {user_identity}</Text>
-            </View>
-          ) : null}
+          <View style={styles.aboutItem}>
+            <Image source={require("../assets/icons/user_identity.png")} style={{ width: 14, height: 16 }} />
+            <Text style={[styles.aboutItemText, !user_identity && { color: "gray" }]}>
+              {user_identity ? `Identifies as ${user_identity}` : "Not Provided"}
+            </Text>
+          </View>
 
           {/* {user_sexuality ? (
             <View style={styles.aboutItem}>
@@ -641,9 +639,9 @@ export default function MyProfile() {
             </View>
           ) : null} */}
 
-          {user_open_to ? (
-            <View style={styles.aboutItem}>
-              <Image source={require("../assets/icons/opento.png")} style={{ width: 14, height: 16 }} />
+          <View style={styles.aboutItem}>
+            <Image source={require("../assets/icons/opento.png")} style={{ width: 14, height: 16 }} />
+            {user_open_to ? (
               <View style={styles.aboutItemText}>
                 <Text style={styles.openToLabel}>Open to:</Text>
                 {openToList.map((item, index) => (
@@ -652,15 +650,17 @@ export default function MyProfile() {
                   </Text>
                 ))}
               </View>
-            </View>
-          ) : null}
+            ) : (
+              <Text style={[styles.aboutItemText, { color: "gray" }]}>Not Provided</Text>
+            )}
+          </View>
 
-          {user_address ? (
-            <View style={styles.aboutItem}>
-              <Image source={require("../assets/icons/location.png")} style={{ width: 14, height: 16 }} />
-              <Text style={styles.aboutItemText}>{user_address}</Text>
-            </View>
-          ) : null}
+          <View style={styles.aboutItem}>
+            <Image source={require("../assets/icons/location.png")} style={{ width: 14, height: 16 }} />
+            <Text style={[styles.aboutItemText, !user_address && { color: "gray" }]}>
+              {user_address || "Not Provided"}
+            </Text>
+          </View>
 
           {/* Add more fields as needed */}
           <View style={styles.aboutItem}>

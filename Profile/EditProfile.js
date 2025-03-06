@@ -491,7 +491,7 @@ export default function EditProfile() {
           bio: fetched.user_profile_bio || "",
           availableTimes: fetched.user_available_time || "",
           birthdate: fetched.user_birthdate || "",
-          children: fetched.user_kids || 0,
+          children: fetched.user_kids || "",
           gender: fetched.user_gender || "",
           identity: fetched.user_identity || "",
           // orientation: fetched.user_sexuality || "",
@@ -1183,7 +1183,7 @@ export default function EditProfile() {
         user_available_time: userData.user_available_time || "",
         user_birthdate: userData.user_birthdate || "",
         user_height: userData.user_height || "",
-        user_kids: userData.user_kids?.toString() || "0",
+        user_kids: userData.user_kids || "",
         user_gender: userData.user_gender || "",
         user_identity: userData.user_identity || "",
         // user_sexuality: userData.user_sexuality || "",
@@ -1212,7 +1212,7 @@ export default function EditProfile() {
         user_available_time: formValues.availableTimes,
         user_birthdate: formValues.birthdate,
         user_height: heightCm,
-        user_kids: formValues.children.toString(),
+        user_kids: formValues.children,
         user_gender: genderValue,
         user_identity: identityValue,
         // user_sexuality: orientationValue,
@@ -1768,8 +1768,11 @@ export default function EditProfile() {
               placeholder='# of Children'
               mode='outlined'
               style={styles.inputField}
-              value={formValues.children.toString()}
-              onChangeText={(text) => setFormValues({ ...formValues, children: parseInt(text) })}
+              value={formValues.children === null || isNaN(formValues.children) ? '' : formValues.children.toString()}
+              onChangeText={(text) => {
+                const value = text.trim() === '' ? null : parseInt(text);
+                setFormValues({ ...formValues, children: value });
+              }}
               keyboardType='numeric'
               outlineStyle={styles.textInputOutline}
             />

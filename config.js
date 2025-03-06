@@ -10,13 +10,19 @@ const ENV = {
 };
 
 // Log available environment variables
-console.log("Environment variables loaded:", {
-  iosClientId: ENV.IOS_CLIENT_ID,
-  androidClientIdDebug: ENV.ANDROID_CLIENT_ID_Debug,
-  androidClientIdRelease: ENV.ANDROID_CLIENT_ID_Release,
-  webClientId: ENV.WEB_CLIENT_ID,
-  googleUrlScheme: ENV.GOOGLE_URL_SCHEME
-});
+// console.log("Environment variables loaded:", {
+//   iosClientId: ENV.IOS_CLIENT_ID,
+//   androidClientIdDebug: ENV.ANDROID_CLIENT_ID_Debug,
+//   androidClientIdRelease: ENV.ANDROID_CLIENT_ID_Release,
+//   webClientId: ENV.WEB_CLIENT_ID,
+//   googleUrlScheme: ENV.GOOGLE_URL_SCHEME
+// });
+
+console.log("IOS Client ID:", ENV.IOS_CLIENT_ID);
+console.log("Android Client ID Debug:", ENV.ANDROID_CLIENT_ID_Debug);
+console.log("Android Client ID Release:", ENV.ANDROID_CLIENT_ID_Release);
+console.log("Web Client ID:", ENV.WEB_CLIENT_ID);
+console.log("Google URL Scheme:", ENV.GOOGLE_URL_SCHEME);
 
 // Validate required environment variables
 if (!ENV.IOS_CLIENT_ID) {
@@ -37,13 +43,12 @@ if (!ENV.GOOGLE_URL_SCHEME) {
 
 // Get Android client ID based on environment
 const getAndroidClientId = () => {
-  const clientId = __DEV__ 
-    ? ENV.ANDROID_CLIENT_ID_Debug 
-    : ENV.ANDROID_CLIENT_ID_Release;
+  // console.log("System Environment:", __DEV__);
+  const clientId = __DEV__ ? ENV.ANDROID_CLIENT_ID_Debug : ENV.ANDROID_CLIENT_ID_Release;
 
-  console.log("Android Environment:", __DEV__ ? "Development" : "Production");
+  console.log("\nAndroid Environment:", __DEV__ ? "Development" : "Production");
   console.log("Selected Android Client ID:", clientId);
-  
+
   return clientId;
 };
 
@@ -53,6 +58,7 @@ const config = {
     ios: ENV.IOS_CLIENT_ID,
     android: getAndroidClientId(),
     web: ENV.WEB_CLIENT_ID,
+    googleURLScheme: ENV.GOOGLE_URL_SCHEME,
   },
   googleURLScheme: ENV.GOOGLE_URL_SCHEME,
 };

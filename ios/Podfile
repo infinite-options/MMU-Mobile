@@ -34,21 +34,19 @@ install! 'cocoapods',
 
 prepare_react_native_project!
 
-target 'MeetMeUpvi' do
+target 'MMUApp' do
   use_expo_modules!
   config = use_native_modules!
-  
-  # Add Google Maps
-  pod 'GoogleMaps', '7.4.0'  # Use the latest version
-  pod 'Google-Maps-iOS-Utils', '4.2.2'
-  
+
   use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
   use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
 
-  require_relative '../node_modules/react-native/scripts/react_native_pods'
   use_react_native!(
     :path => config[:reactNativePath],
-    # Additional configuration options if needed
+    :hermes_enabled => podfile_properties['expo.jsEngine'] == nil || podfile_properties['expo.jsEngine'] == 'hermes',
+    # An absolute path to your application root.
+    :app_path => "#{Pod::Config.instance.installation_root}/..",
+    :privacy_file_aggregation_enabled => podfile_properties['apple.privacyManifestAggregationEnabled'] != 'false',
   )
 
   post_install do |installer|

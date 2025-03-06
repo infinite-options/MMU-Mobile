@@ -11,7 +11,7 @@ import { getProfileSteps, getProfileCompletion } from "./profileStepsState";
 import { REACT_APP_GOOGLE_API_KEY } from "@env";
 
 const GOOGLE_API_KEY = REACT_APP_GOOGLE_API_KEY;
-console.log(GOOGLE_API_KEY);
+console.log("In My Profile:", GOOGLE_API_KEY);
 
 // Example placeholders for bottom navigation icons
 const BottomNav = () => {
@@ -119,21 +119,21 @@ export default function MyProfile() {
           console.log("Cleaned video url:", rawVideoUrl);
           setVideoUri(rawVideoUrl);
         }
-        
+
         // Adjust profile steps based on available user data
         const hasDateInterests = !!fetched?.user_date_interests;
         const hasAvailableTime = !!fetched?.user_available_time;
-        
+
         // Get profile steps and modify them based on available data
         const steps = getProfileSteps();
-        
+
         if (hasDateInterests && hasAvailableTime) {
           // Remove date preferences step entirely if both are complete
-          const filteredSteps = steps.filter(step => step.title !== "your date preferences");
+          const filteredSteps = steps.filter((step) => step.title !== "your date preferences");
           setProfileSteps(filteredSteps);
         } else {
           // Update date preferences step count based on available data
-          const updatedSteps = steps.map(step => {
+          const updatedSteps = steps.map((step) => {
             if (step.title === "your date preferences") {
               if (hasDateInterests) {
                 // Only need DateAvailability
@@ -151,7 +151,6 @@ export default function MyProfile() {
           setProfileSteps(updatedSteps);
         }
         setProfileCompletion(getProfileCompletion());
-        
       } catch (error) {
         console.log("Error fetching user info:", error);
       }
@@ -167,13 +166,13 @@ export default function MyProfile() {
   // Toggle video play/pause
   const handlePlayPause = async () => {
     if (!videoRef.current) return;
-    
+
     try {
       // Get the current playback status
       const status = await videoRef.current.getStatusAsync();
-      
+
       // If video is at the end or paused, reset and play from beginning
-      if (status.didJustFinish || (status.positionMillis >= status.durationMillis - 100) || !isVideoPlaying) {
+      if (status.didJustFinish || status.positionMillis >= status.durationMillis - 100 || !isVideoPlaying) {
         await videoRef.current.setPositionAsync(0);
         await videoRef.current.playAsync();
         setIsVideoPlaying(true);
@@ -195,7 +194,7 @@ export default function MyProfile() {
       // Check user data to determine appropriate navigation
       const hasDateInterests = !!userData?.user_date_interests;
       const hasAvailableTime = !!userData?.user_available_time;
-      
+
       if (hasDateInterests) {
         // If date interests already filled, navigate to DateAvailability
         navigation.navigate("DateAvailability", { stepIndex: index });

@@ -14,7 +14,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.infiniteoptions.meetmeupapp",
-      "buildNumber": "15",
+      "buildNumber": "17",
       "infoPlist": {
         "CFBundleURLTypes": [
           {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StatusBar, Platform, SafeAreaView, View, StyleSheet, Pressable, TouchableOpacity, Alert, Image, ActivityIndicator } from "react-native";
+import { StatusBar, Platform, SafeAreaView, ScrollView, View, StyleSheet, Pressable, TouchableOpacity, Alert, Image, ActivityIndicator } from "react-native";
 import { Text, TextInput } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -12,8 +12,8 @@ import { GoogleSignin, statusCodes, GoogleSigninButton } from "@react-native-goo
 import config from "../config"; // Import config
 
 export default function Login() {
-  console.log("LoginPage");
-  console.log("LP from login .env:", process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG);
+  // console.log("LoginPage");
+  // console.log("LP from login .env:", process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG);
   const navigation = useNavigation();
 
   // Local states
@@ -22,6 +22,14 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [showSpinner, setShowSpinner] = useState(false);
   const [isGoogleConfigured, setIsGoogleConfigured] = useState(false);
+  const [isGoogleConfiguring, setIsGoogleConfiguring] = useState(true); // New state to track configuration process
+  const [configAttemptCount, setConfigAttemptCount] = useState(0); // Track configuration attempts
+  const maxAttempts = 3; // Define maxAttempts at component level
+
+  // Helper function to check state values
+  const checkGoogleStates = () => {
+    console.log(`LP CURRENT STATES: isGoogleConfigured=${isGoogleConfigured}, isGoogleConfiguring=${isGoogleConfiguring}, configAttemptCount=${configAttemptCount}`);
+  };
 
   // Endpoints
   const SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/MMU";
@@ -31,8 +39,19 @@ export default function Login() {
 
   // Initialize Google Sign In
   useEffect(() => {
+    let configAttempts = 0;
+
+    console.log("==============>      LP Starting Google Sign-In configuration process...");
+
     const configureGoogleSignIn = async () => {
+      configAttempts++;
+      setConfigAttemptCount(configAttempts); // Update the state with current attempt count
+      console.log(`LP Google Sign-In configuration attempt ${configAttempts}/${maxAttempts}`);
+      console.log(`LP Current states before configuration: isGoogleConfigured=${isGoogleConfigured}, isGoogleConfiguring=${isGoogleConfiguring}`);
+      // Alert.alert("LP Ok So Far", `isGoogleConfigured: ${isGoogleConfigured}\nisGoogleConfiguring: ${isGoogleConfiguring}`);
+
       try {
+        setIsGoogleConfiguring(true); // Set configuring state to true
         console.log("LP from login configure useeffect .env:", process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG);
         console.log("LP Configuring Google Sign-In with config:", {
           iosClientId: config.googleClientIds.ios,
@@ -48,19 +67,57 @@ export default function Login() {
           webClientId: config.googleClientIds.web,
           offlineAccess: true,
         };
+
+        // Add URL scheme for iOS if available
+        if (Platform.OS === "ios" && config.googleClientIds.googleURLScheme) {
+          googleSignInConfig.googleURLScheme = config.googleClientIds.googleURLScheme;
+          console.log(`LP Added googleURLScheme for iOS: ${config.googleClientIds.googleURLScheme}`);
+        }
+
         console.log("LP googleSignInConfig:", googleSignInConfig);
 
         // Configure Google Sign-In
+        console.log("LP Calling GoogleSignin.configure()...");
         await GoogleSignin.configure(googleSignInConfig);
+        console.log("LP GoogleSignin.configure() completed successfully");
+
+        console.log("LP About to update states: Setting isGoogleConfigured=true, isGoogleConfiguring=false");
         setIsGoogleConfigured(true);
-        console.log("LP Google Sign-In configured successfully1");
+        setIsGoogleConfiguring(false); // Configuration complete
+
+        // Check states after a delay
+        setTimeout(checkGoogleStates, 100);
+        setTimeout(checkGoogleStates, 500);
+        setTimeout(checkGoogleStates, 1000);
+
+        console.log("LP Google Sign-In configured successfully - isGoogleConfigured set to TRUE");
       } catch (error) {
-        console.error("LP Google Sign-In configuration error:", error);
-        setIsGoogleConfigured(false);
+        console.error(`LP Google Sign-In configuration error (attempt ${configAttempts}/${maxAttempts}):`, error);
+
+        if (configAttempts < maxAttempts) {
+          console.log(`LP Retrying Google Sign-In configuration in 1 second (attempt ${configAttempts}/${maxAttempts} failed)`);
+          // Wait a bit before retrying
+          setTimeout(configureGoogleSignIn, 1000);
+        } else {
+          console.error("LP Failed to configure Google Sign-In after multiple attempts");
+          setIsGoogleConfigured(false);
+          setIsGoogleConfiguring(false); // Configuration failed but no longer configuring
+          console.log("LP Google Sign-In configuration failed - isGoogleConfigured set to FALSE, isGoogleConfiguring set to FALSE");
+
+          // Don't show alert here, only when user tries to use the feature
+        }
       }
     };
 
     configureGoogleSignIn();
+
+    // Cleanup function
+    return () => {
+      console.log("LP Cleanup: Resetting Google Sign-In configuration state");
+      // Reset configuration state when component unmounts
+      setIsGoogleConfigured(false);
+      setIsGoogleConfiguring(false);
+    };
   }, []);
 
   // Check if email is valid
@@ -71,10 +128,48 @@ export default function Login() {
 
   // Handle Google Sign In
   const handleGoogleSignIn = async () => {
-    if (!isGoogleConfigured) {
-      Alert.alert("Error", "Google Sign-In is not configured properly. Please try again later.");
+    console.log("LP handleGoogleSignIn called - Current states:", {
+      isGoogleConfiguring,
+      isGoogleConfigured,
+    });
+
+    // Check current states
+    checkGoogleStates();
+
+    // Check if still configuring
+    if (isGoogleConfiguring) {
+      console.log("LP Google Sign-In is still being configured, please wait...");
+      Alert.alert("LP Please Wait", "Google Sign-In is still being configured. Please try again in a moment.");
       return;
     }
+
+    // Check if configuration failed
+    // if (!isGoogleConfigured) {
+    //   console.log("LP Google Sign-In configuration failed");
+    //   Alert.alert("Error", "LP Google Sign-In is not configured properly. Please try again later.");
+    //   return;
+    // }
+    if (!isGoogleConfigured) {
+      console.log("LP Google Sign-In configuration failed");
+
+      Alert.alert(
+        "Error",
+        `LP Google Sign-In is not configured properly. Please try again later.\n\n` +
+          `iOS: ${getLastTwoDigits(config.googleClientIds.ios)}\n` +
+          `URL Scheme: ${config.googleClientIds.googleURLScheme ? "..." + config.googleClientIds.googleURLScheme.slice(-2) : "Not set"}\n\n` +
+          `isGoogleConfigured: ${isGoogleConfigured}\n` +
+          `isGoogleConfiguring: ${isGoogleConfiguring}`
+      );
+
+      return;
+    }
+
+    console.log("LP Google Sign-In configuration check passed, proceeding with sign-in");
+    console.log("==============>  LP Starting Google sign in process...");
+    console.log("==============>  LP Google Sign-In States:", {
+      isGoogleConfigured,
+      isGoogleConfiguring,
+    });
 
     try {
       setShowSpinner(true);
@@ -94,7 +189,7 @@ export default function Login() {
         }
       }
 
-      console.log("LP Starting Google sign in process...");
+      console.log("==============>   LP Starting Google sign in process...");
 
       // First try to sign out to ensure a clean state
       try {
@@ -108,7 +203,7 @@ export default function Login() {
       // Sign in - this is the part that was failing before
       let userInfo;
       try {
-        console.log("LP Starting Google sign in process in try block...");
+        console.log("==============> LP Starting Google sign in process in try block...");
         userInfo = await GoogleSignin.signIn();
         // console.log("Sign-in successful:", userInfo);
         console.log("LP Google Sign-In successful", JSON.stringify(userInfo, null, 2));
@@ -274,88 +369,123 @@ export default function Login() {
   const isFormComplete = () => email !== "" && password !== "" && isValidEmail(email);
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Back Button */}
-      {/* <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={28} color="red" />
-      </TouchableOpacity> */}
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
+        <StatusBar barStyle='dark-content' backgroundColor='#FFF' />
 
-      {/* Progress Bar (optional) */}
-      <ProgressBar startProgress={0} endProgress={10} style={styles.progressBar} />
+        {/* Progress Bar */}
+        <ProgressBar startProgress={0} endProgress={10} style={styles.progressBar} />
 
-      {/* Title and Subtitle */}
-      <Text style={styles.title}>Welcome Back!</Text>
-      <Text style={styles.subtitle}>Please choose a login option to continue.</Text>
+        {/* Title and Subtitle */}
+        <Text style={styles.title}>Welcome Back!</Text>
+        <Text style={styles.subtitle}>Please choose a login option to continue.</Text>
 
-      {/* Spinner (optional) */}
-      {showSpinner && <ActivityIndicator size='large' color='#E4423F' style={{ marginBottom: 10 }} />}
+        {/* Spinner (optional) */}
+        {showSpinner && <ActivityIndicator size='large' color='#E4423F' style={{ marginBottom: 10 }} />}
 
-      {/* Input Fields */}
-      <View style={styles.inputContainer}>
-        <TextInput label='Email' mode='outlined' keyboardType='email-address' value={email} onChangeText={setEmail} style={styles.input} outlineStyle={styles.textInputOutline} />
+        {/* Input Fields */}
+        <View style={styles.inputContainer}>
+          <TextInput label='Email' mode='outlined' keyboardType='email-address' value={email} onChangeText={setEmail} style={styles.input} outlineStyle={styles.textInputOutline} />
 
-        <TextInput
-          label='Password'
-          mode='outlined'
-          secureTextEntry={!showPassword}
-          value={password}
-          onChangeText={setPassword}
-          right={<TextInput.Icon icon={showPassword ? "eye" : "eye-off"} onPress={() => setShowPassword(!showPassword)} size={20} color='gray' style={styles.eyeIcon} />}
-          style={styles.input}
-          outlineStyle={styles.textInputOutline}
-        />
-      </View>
+          <TextInput
+            label='Password'
+            mode='outlined'
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+            right={<TextInput.Icon icon={showPassword ? "eye" : "eye-off"} onPress={() => setShowPassword(!showPassword)} size={20} color='gray' style={styles.eyeIcon} />}
+            style={styles.input}
+            outlineStyle={styles.textInputOutline}
+          />
+        </View>
 
-      {/* Continue (Login) Button */}
-      <Pressable
-        style={[styles.continueButton, { backgroundColor: isFormComplete() ? "#E4423F" : "#F5F5F5" }]}
-        onPress={() => {
-          if (isFormComplete()) {
-            handleSubmitLogin();
-          }
-        }}
-        disabled={!isFormComplete()}
-      >
-        <Text style={[styles.continueButtonText, { color: isFormComplete() ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
-      </Pressable>
+        {/* Continue (Login) Button */}
+        <Pressable
+          style={[styles.continueButton, { backgroundColor: isFormComplete() ? "#E4423F" : "#F5F5F5" }]}
+          onPress={() => {
+            if (isFormComplete()) {
+              handleSubmitLogin();
+            }
+          }}
+          disabled={!isFormComplete()}
+        >
+          <Text style={[styles.continueButtonText, { color: isFormComplete() ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
+        </Pressable>
 
-      {/* OR Separator */}
-      <View style={styles.orSeparator}>
-        <View style={styles.separatorLine} />
-        <Text style={styles.orText}>OR</Text>
-        <View style={styles.separatorLine} />
-      </View>
+        {/* OR Separator */}
+        <View style={styles.orSeparator}>
+          <View style={styles.separatorLine} />
+          <Text style={styles.orText}>OR</Text>
+          <View style={styles.separatorLine} />
+        </View>
 
-      {/* Social Login Buttons */}
-      <View style={styles.socialContainer}>
-        <TouchableOpacity style={styles.socialLoginButton} onPress={handleGoogleSignIn}>
-          <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
+        {/* Social Login Buttons */}
+        <View style={styles.socialContainer}>
+          <TouchableOpacity style={styles.socialLoginButton} onPress={handleGoogleSignIn}>
+            <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.socialLoginButton}>
+            <Image source={require("../assets/apple_logo.png")} style={styles.appleLogo} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Google Sign-In Button */}
+        {/* <GoogleSigninButton
+          style={styles.googleButton}
+          size={GoogleSigninButton.Size.Wide}
+          color={GoogleSigninButton.Color.Dark}
+          onPress={handleGoogleSignIn}
+        /> */}
+
+        {/* Don't have an account? Sign up */}
+        <TouchableOpacity onPress={() => navigation.navigate("AccountSetup2Create")}>
+          <Text style={styles.footerText}>
+            Don't have an account yet? <Text style={styles.loginLink}>Sign Up</Text>
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.socialLoginButton}>
-          <Image source={require("../assets/apple_logo.png")} style={styles.appleLogo} />
-        </TouchableOpacity>
-      </View>
 
-      {/* Google Sign-In Button */}
-      {/* <GoogleSigninButton
-        style={styles.googleButton}
-        size={GoogleSigninButton.Size.Wide}
-        color={GoogleSigninButton.Color.Dark}
-        onPress={handleGoogleSignIn}
-      /> */}
+        {/* Google Sign-In Configuration Status - For debugging */}
+        <View style={styles.debugContainer}>
+          <Text style={styles.debugText}>Google Sign-In Status:</Text>
+          <Text style={styles.debugText}>
+            isGoogleConfigured: <Text style={{ color: isGoogleConfigured ? "#00AA00" : "#FF0000", fontWeight: "bold", fontSize: 14 }}>{isGoogleConfigured ? "TRUE" : "FALSE"}</Text>
+          </Text>
+          <Text style={styles.debugText}>
+            isGoogleConfiguring: <Text style={{ color: isGoogleConfiguring ? "#00AA00" : "#FF0000", fontWeight: "bold", fontSize: 14 }}>{isGoogleConfiguring ? "TRUE" : "FALSE"}</Text>
+          </Text>
+          <Text style={styles.debugText}>
+            Config Attempts:{" "}
+            <Text style={{ fontWeight: "bold", fontSize: 14 }}>
+              {configAttemptCount}/{maxAttempts}
+            </Text>
+          </Text>
 
-      {/* Don't have an account? Sign up */}
-      <TouchableOpacity onPress={() => navigation.navigate("AccountSetup2Create")}>
-        <Text style={styles.footerText}>
-          Don't have an account yet? <Text style={styles.loginLink}>Sign Up</Text>
-        </Text>
-      </TouchableOpacity>
+          {/* Debug button to check Google Sign-In status */}
+          <TouchableOpacity style={styles.debugButton} onPress={handleGoogleSignIn}>
+            <Text style={styles.debugButtonText}>Check Google Sign-In Status</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 // Styles can be nearly identical to your signup page
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#FFF",
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    paddingHorizontal: 25,
+    paddingBottom: 30, // Add padding at the bottom for better scrolling
+    justifyContent: "flex-start", // Align content to the top
+    alignItems: "stretch",
+  },
   container: {
     flex: 1,
     paddingHorizontal: 25,
@@ -364,14 +494,6 @@ const styles = StyleSheet.create({
     alignItems: "stretch",
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
-  // backButton: {
-  //   alignSelf: 'flex-start',
-  //   backgroundColor: '#F5F5F5',
-  //   borderRadius: 20,
-  //   padding: 8,
-  //   marginBottom: 20,
-  //   marginTop: 30,
-  // },
   progressBar: {
     marginTop: 110,
     marginBottom: 30,
@@ -471,5 +593,44 @@ const styles = StyleSheet.create({
     height: 48,
     alignSelf: "center",
     marginBottom: 20,
+  },
+  // Add new styles for debug information
+  debugContainer: {
+    marginTop: 20,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    backgroundColor: "#f9f9f9",
+  },
+  debugText: {
+    fontSize: 12,
+    color: "#333",
+    marginBottom: 4,
+  },
+  debugSuccess: {
+    color: "green",
+    fontWeight: "bold",
+  },
+  debugError: {
+    color: "red",
+    fontWeight: "bold",
+  },
+  debugWarning: {
+    color: "orange",
+    fontWeight: "bold",
+  },
+  debugButton: {
+    backgroundColor: "#E4423F",
+    borderRadius: 5,
+    padding: 10,
+    marginTop: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  debugButtonText: {
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "bold",
   },
 });

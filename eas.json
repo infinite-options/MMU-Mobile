@@ -10,12 +10,22 @@
       "ios": {
         "resourceClass": "m-medium",
         "env": {
-          "GOOGLE_URL_SCHEME": "${process.env.EXPO_PUBLIC_GOOGLE_URL_SCHEME}"
+          "EXPO_PUBLIC_IOS_CLIENT_ID": "${process.env.EXPO_PUBLIC_IOS_CLIENT_ID}",
+          "EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG": "${process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG}",
+          "EXPO_PUBLIC_ANDROID_CLIENT_ID_RELEASE": "${process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_RELEASE}",
+          "EXPO_PUBLIC_WEB_CLIENT_ID": "${process.env.EXPO_PUBLIC_WEB_CLIENT_ID}",
+          "EXPO_PUBLIC_GOOGLE_URL_SCHEME": "${process.env.EXPO_PUBLIC_GOOGLE_URL_SCHEME}",
+          "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "${process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY}"
         }
       },
       "android": {
         "env": {
-          "GOOGLE_URL_SCHEME": "${process.env.EXPO_PUBLIC_GOOGLE_URL_SCHEME}"
+          "EXPO_PUBLIC_IOS_CLIENT_ID": "${process.env.EXPO_PUBLIC_IOS_CLIENT_ID}",
+          "EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG": "${process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG}",
+          "EXPO_PUBLIC_ANDROID_CLIENT_ID_RELEASE": "${process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_RELEASE}",
+          "EXPO_PUBLIC_WEB_CLIENT_ID": "${process.env.EXPO_PUBLIC_WEB_CLIENT_ID}",
+          "EXPO_PUBLIC_GOOGLE_URL_SCHEME": "${process.env.EXPO_PUBLIC_GOOGLE_URL_SCHEME}",
+          "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "${process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY}"
         }
       }
     },
@@ -24,12 +34,22 @@
       "ios": {
         "resourceClass": "m-medium",
         "env": {
-          "GOOGLE_URL_SCHEME": "${process.env.EXPO_PUBLIC_GOOGLE_URL_SCHEME}"
+          "EXPO_PUBLIC_IOS_CLIENT_ID": "${process.env.EXPO_PUBLIC_IOS_CLIENT_ID}",
+          "EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG": "${process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG}",
+          "EXPO_PUBLIC_ANDROID_CLIENT_ID_RELEASE": "${process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_RELEASE}",
+          "EXPO_PUBLIC_WEB_CLIENT_ID": "${process.env.EXPO_PUBLIC_WEB_CLIENT_ID}",
+          "EXPO_PUBLIC_GOOGLE_URL_SCHEME": "${process.env.EXPO_PUBLIC_GOOGLE_URL_SCHEME}",
+          "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "${process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY}"
         }
       },
       "android": {
         "env": {
-          "GOOGLE_URL_SCHEME": "${process.env.EXPO_PUBLIC_GOOGLE_URL_SCHEME}"
+          "EXPO_PUBLIC_IOS_CLIENT_ID": "${process.env.EXPO_PUBLIC_IOS_CLIENT_ID}",
+          "EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG": "${process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG}",
+          "EXPO_PUBLIC_ANDROID_CLIENT_ID_RELEASE": "${process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_RELEASE}",
+          "EXPO_PUBLIC_WEB_CLIENT_ID": "${process.env.EXPO_PUBLIC_WEB_CLIENT_ID}",
+          "EXPO_PUBLIC_GOOGLE_URL_SCHEME": "${process.env.EXPO_PUBLIC_GOOGLE_URL_SCHEME}",
+          "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "${process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY}"
         }
       }
     },
@@ -38,12 +58,22 @@
       "ios": {
         "resourceClass": "m-medium",
         "env": {
-          "GOOGLE_URL_SCHEME": "${process.env.EXPO_PUBLIC_GOOGLE_URL_SCHEME}"
+          "EXPO_PUBLIC_IOS_CLIENT_ID": "${process.env.EXPO_PUBLIC_IOS_CLIENT_ID}",
+          "EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG": "${process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG}",
+          "EXPO_PUBLIC_ANDROID_CLIENT_ID_RELEASE": "${process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_RELEASE}",
+          "EXPO_PUBLIC_WEB_CLIENT_ID": "${process.env.EXPO_PUBLIC_WEB_CLIENT_ID}",
+          "EXPO_PUBLIC_GOOGLE_URL_SCHEME": "${process.env.EXPO_PUBLIC_GOOGLE_URL_SCHEME}",
+          "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "${process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY}"
         }
       },
       "android": {
         "env": {
-          "GOOGLE_URL_SCHEME": "${process.env.EXPO_PUBLIC_GOOGLE_URL_SCHEME}"
+          "EXPO_PUBLIC_IOS_CLIENT_ID": "${process.env.EXPO_PUBLIC_IOS_CLIENT_ID}",
+          "EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG": "${process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG}",
+          "EXPO_PUBLIC_ANDROID_CLIENT_ID_RELEASE": "${process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_RELEASE}",
+          "EXPO_PUBLIC_WEB_CLIENT_ID": "${process.env.EXPO_PUBLIC_WEB_CLIENT_ID}",
+          "EXPO_PUBLIC_GOOGLE_URL_SCHEME": "${process.env.EXPO_PUBLIC_GOOGLE_URL_SCHEME}",
+          "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "${process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY}"
         }
       }
     }

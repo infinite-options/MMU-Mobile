@@ -28,19 +28,17 @@ import * as ImagePicker from "expo-image-picker";
 import { Video } from "expo-av";
 import { Picker } from "@react-native-picker/picker";
 import MapView, { Marker } from "react-native-maps";
-import { REACT_APP_GOOGLE_API_KEY } from "@env";
+import { EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY } from "@env";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import DropDownPicker from "react-native-dropdown-picker";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { allInterests } from "../src/config/interests";
-import * as Camera from 'expo-camera';
-import Constants from 'expo-constants';
-import { MaterialIcons } from '@expo/vector-icons';
+import * as Camera from "expo-camera";
+import Constants from "expo-constants";
+import { MaterialIcons } from "@expo/vector-icons";
 
 // Fallback to a placeholder to prevent crashes - replace with your actual key when testing
-const GOOGLE_API_KEY = Constants.expoConfig?.extra?.googleApiKey || 
-                       process.env.REACT_APP_GOOGLE_API_KEY || 
-                       "YOUR_GOOGLE_API_KEY_HERE";
+const GOOGLE_API_KEY = Constants.expoConfig?.extra?.googleApiKey || process.env.EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY || "YOUR_GOOGLE_API_KEY_HERE";
 
 // Add this debug line below to see if key is loaded
 console.log("Google API Key status:", GOOGLE_API_KEY ? "Key found (length: " + GOOGLE_API_KEY.length + ")" : "No key found");
@@ -328,16 +326,16 @@ export default function EditProfile() {
 
   // Add these validation state variables with other state variables
   const [nameErrors, setNameErrors] = useState({
-    firstName: '',
-    lastName: ''
+    firstName: "",
+    lastName: "",
   });
 
   // Add this validation function
   const validateName = (name, field) => {
     // Name should only contain letters, spaces, hyphens, and apostrophes
     const nameRegex = /^[A-Za-z\s\-']+$/;
-    
-    if (!name || name.trim() === '') {
+
+    if (!name || name.trim() === "") {
       return `${field} is required`;
     } else if (name.length < 2) {
       return `${field} must be at least 2 characters`;
@@ -346,7 +344,7 @@ export default function EditProfile() {
     } else if (!nameRegex.test(name)) {
       return `${field} can only contain letters, spaces, hyphens, and apostrophes`;
     }
-    return '';
+    return "";
   };
 
   // -------------------------------
@@ -553,12 +551,12 @@ export default function EditProfile() {
             // If parsing fails, use the raw string
             videoUrl = fetched.user_video_url;
           }
-          
+
           // Clean up any extra quotes that might be present
           if (typeof videoUrl === "string") {
-            videoUrl = videoUrl.replace(/^"|"$/g, '');
+            videoUrl = videoUrl.replace(/^"|"$/g, "");
           }
-          
+
           console.log("Cleaned video url:", videoUrl);
           setVideoUri(videoUrl);
         }
@@ -690,21 +688,17 @@ export default function EditProfile() {
       // Platform-specific permission handling
       const mediaLibraryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-      if (mediaLibraryPermission.status !== 'granted') {
-        Alert.alert(
-          'Permission Required',
-          'Storage access is required to select video. Please enable it in your device settings.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Settings', onPress: () => Linking.openSettings() }
-          ]
-        );
+      if (mediaLibraryPermission.status !== "granted") {
+        Alert.alert("Permission Required", "Storage access is required to select video. Please enable it in your device settings.", [
+          { text: "Cancel", style: "cancel" },
+          { text: "Settings", onPress: () => Linking.openSettings() },
+        ]);
         return;
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-        allowsEditing: Platform.OS === 'ios', // Video editing only works well on iOS
+        allowsEditing: Platform.OS === "ios", // Video editing only works well on iOS
         quality: 1,
         videoQuality: getVideoQuality(),
         maxDuration: 60,
@@ -716,8 +710,8 @@ export default function EditProfile() {
         setIsVideoPlaying(false);
       }
     } catch (error) {
-      console.error('Error picking video:', error);
-      Alert.alert('Error', 'There was an issue selecting the video. Please try again.');
+      console.error("Error picking video:", error);
+      Alert.alert("Error", "There was an issue selecting the video. Please try again.");
     }
   };
 
@@ -726,15 +720,11 @@ export default function EditProfile() {
       // Platform-specific permission handling
       const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
 
-      if (cameraPermission.status !== 'granted') {
-        Alert.alert(
-          'Permission Required',
-          'Camera access is required to record video. Please enable it in your device settings.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Settings', onPress: () => Linking.openSettings() }
-          ]
-        );
+      if (cameraPermission.status !== "granted") {
+        Alert.alert("Permission Required", "Camera access is required to record video. Please enable it in your device settings.", [
+          { text: "Cancel", style: "cancel" },
+          { text: "Settings", onPress: () => Linking.openSettings() },
+        ]);
         return;
       }
 
@@ -753,8 +743,8 @@ export default function EditProfile() {
         setIsVideoPlaying(false);
       }
     } catch (error) {
-      console.error('Error recording video:', error);
-      Alert.alert('Error', 'There was an issue recording the video. Please check your permissions and try again.');
+      console.error("Error recording video:", error);
+      Alert.alert("Error", "There was an issue recording the video. Please check your permissions and try again.");
     }
   };
 
@@ -833,7 +823,7 @@ export default function EditProfile() {
       if (detailsData.status === "OK") {
         const { lat, lng } = detailsData.result.geometry.location;
         setLocation({ latitude: lat, longitude: lng });
-        
+
         // Update the region with the new coordinates
         const newRegion = {
           latitude: lat,
@@ -842,7 +832,7 @@ export default function EditProfile() {
           longitudeDelta: 0.06,
         };
         setRegion(newRegion);
-        
+
         setFormValues((prev) => ({
           ...prev,
           address: suggestion.description,
@@ -901,63 +891,62 @@ export default function EditProfile() {
   // Simplify the checkForChanges function and add more logging
   const checkForChanges = useCallback(() => {
     console.log("Running checkForChanges");
-    
+
     if (!originalValues || !formValues) {
       console.log("Missing originalValues or formValues");
       return false;
     }
-    
+
     // Create value objects in same format used for saving
     const original = {
       user_first_name: originalValues.firstName || "",
       user_last_name: originalValues.lastName || "",
       // ...other fields
     };
-    
+
     const current = {
       user_first_name: formValues.firstName || "",
       user_last_name: formValues.lastName || "",
       // ...other fields
     };
-    
+
     // Add debugging for media changes
-    const photosChanged = JSON.stringify(photos) !== JSON.stringify(userData?.user_photo_url ? 
-      (typeof userData.user_photo_url === 'string' ? JSON.parse(userData.user_photo_url) : userData.user_photo_url) : []);
-    
+    const photosChanged =
+      JSON.stringify(photos) !== JSON.stringify(userData?.user_photo_url ? (typeof userData.user_photo_url === "string" ? JSON.parse(userData.user_photo_url) : userData.user_photo_url) : []);
+
     const hasDeletedPhotos = deletedPhotos.length > 0;
-    
+
     // Get proper video URL format for comparison
-    const originalVideoUrl = userData?.user_video_url ? 
-      (typeof userData.user_video_url === 'string' ? userData.user_video_url.replace(/^"|"$/g, '') : userData.user_video_url) : null;
+    const originalVideoUrl = userData?.user_video_url ? (typeof userData.user_video_url === "string" ? userData.user_video_url.replace(/^"|"$/g, "") : userData.user_video_url) : null;
     const videoChanged = videoUri !== originalVideoUrl;
-    
+
     console.log("Media changed?", { photosChanged, hasDeletedPhotos, videoChanged });
-    
+
     // Check form values with explicit debug logs
     let formValuesChanged = false;
     let changedFields = [];
-    
+
     Object.entries(current).forEach(([key, value]) => {
       const originalValue = original[key];
-      
+
       // Special handling for comparing empty strings and null values
       const isOriginalEmpty = originalValue === "" || originalValue === null || originalValue === undefined;
       const isNewEmpty = value === "" || value === null || value === undefined;
-      
+
       // Only consider it a change if they're not both empty in some form
       if (!(isOriginalEmpty && isNewEmpty)) {
         const newValueStr = typeof value === "object" ? JSON.stringify(value) : String(value);
         const originalValueStr = typeof originalValue === "object" ? JSON.stringify(originalValue) : String(originalValue);
-        
+
         if (newValueStr !== originalValueStr) {
           formValuesChanged = true;
           changedFields.push(`${key}: "${originalValueStr}" → "${newValueStr}"`);
         }
       }
     });
-    
+
     console.log("Form values changed?", formValuesChanged, changedFields);
-    
+
     const result = formValuesChanged || photosChanged || hasDeletedPhotos || videoChanged;
     console.log("Final hasChanges result:", result);
     return result;
@@ -971,7 +960,7 @@ export default function EditProfile() {
     if (userData) {
       // Set the loaded flag
       setUserDataLoaded(true);
-      
+
       // Existing code to set original values...
     }
   }, [userData]);
@@ -1017,41 +1006,41 @@ export default function EditProfile() {
 
   // Add this state for birthdate validation
   const [birthdateWarning, setBirthdateWarning] = useState("");
-  
+
   // Add this handler for birthdate changes
   const handleBirthdateChange = (text) => {
     // Format user input to dd/mm/yyyy
     const formatted = formatBirthdate(text);
-    
+
     // Update form value with formatted text
     const updatedValues = { ...formValues, birthdate: formatted };
-    
+
     // Clear previous warnings
     setBirthdateWarning("");
-    
+
     // If length < 10, user hasn't typed a full "dd/mm/yyyy" yet
     if (formatted.length < 10) {
       setFormValues(updatedValues);
       return;
     }
-    
+
     // Validate format
     if (!isValidDate(formatted)) {
       setBirthdateWarning("Please enter a valid date in dd/mm/yyyy format.");
       setFormValues(updatedValues);
       return;
     }
-    
+
     // Calculate age
     const age = calculateAge(formatted);
-    
+
     // Check if user is at least 18
     if (age < 18) {
       setBirthdateWarning("You must be 18+ to use MeetMeUp.");
       setFormValues(updatedValues);
       return;
     }
-    
+
     // If all checks pass, update form values with age
     setFormValues({ ...updatedValues, age: age });
   };
@@ -1060,16 +1049,16 @@ export default function EditProfile() {
   const handleSaveChanges = async () => {
     console.log("\n=== Starting Profile Update ===");
     console.log("Creating new FormData object");
-    
+
     // Check for validation errors
-    const firstNameError = validateName(formValues.firstName, 'First name');
-    const lastNameError = validateName(formValues.lastName, 'Last name');
-    
+    const firstNameError = validateName(formValues.firstName, "First name");
+    const lastNameError = validateName(formValues.lastName, "Last name");
+
     setNameErrors({
       firstName: firstNameError,
-      lastName: lastNameError
+      lastName: lastNameError,
     });
-    
+
     if (firstNameError || lastNameError) {
       Alert.alert("Validation Error", "Please correct the errors in the form before saving.");
       return;
@@ -1097,7 +1086,7 @@ export default function EditProfile() {
       const uploadData = new FormData();
       uploadData.append("user_uid", userData.user_uid);
       uploadData.append("user_email_id", userData.user_email_id);
-      
+
       // Add age calculation from birthdate
       if (formValues.birthdate && isValidDate(formValues.birthdate)) {
         const calculatedAge = calculateAge(formValues.birthdate);
@@ -1147,14 +1136,13 @@ export default function EditProfile() {
 
       // Handle video upload
       console.log("\n=== Video Upload Debug ===");
-      const originalVideoUrl = userData.user_video_url ? (typeof userData.user_video_url === 'string' ? userData.user_video_url.replace(/^"|"$/g, '') : userData.user_video_url) : null;
+      const originalVideoUrl = userData.user_video_url ? (typeof userData.user_video_url === "string" ? userData.user_video_url.replace(/^"|"$/g, "") : userData.user_video_url) : null;
       console.log("Original video URL:", originalVideoUrl);
       console.log("Current video URL:", videoUri);
 
       // Check if video was deleted or changed
       if (originalVideoUrl && !videoUri) {
         // Video was deleted
-        
       } else if (videoUri && videoUri !== originalVideoUrl) {
         // New video to upload (not from S3)
         if (!videoUri.startsWith("https://s3")) {
@@ -1240,16 +1228,16 @@ export default function EditProfile() {
       console.log("\n=== Changed Fields ===");
       Object.entries(newValues).forEach(([key, value]) => {
         const originalValue = originalValues[key];
-        
+
         // Special handling for comparing empty strings and null values
         const isOriginalEmpty = originalValue === "" || originalValue === null || originalValue === undefined;
         const isNewEmpty = value === "" || value === null || value === undefined;
-        
+
         // Only consider it a change if they're not both empty in some form
         if (!(isOriginalEmpty && isNewEmpty)) {
           const newValueStr = typeof value === "object" ? JSON.stringify(value) : value;
           const originalValueStr = typeof originalValue === "object" ? JSON.stringify(originalValue) : originalValue;
-          
+
           if (newValueStr !== originalValueStr) {
             console.log(`${key}: ${originalValueStr} -> ${newValueStr}`);
             uploadData.append(key, newValueStr);
@@ -1280,11 +1268,7 @@ export default function EditProfile() {
 
       // Add validation to prevent saving without a video
       if (deletedVideo && !videoUri) {
-        Alert.alert(
-          "Video Required", 
-          "Please upload a new video before saving changes.",
-          [{ text: "OK" }]
-        );
+        Alert.alert("Video Required", "Please upload a new video before saving changes.", [{ text: "OK" }]);
         return; // Stop the save process
       }
 
@@ -1330,7 +1314,7 @@ export default function EditProfile() {
     if (formValues.latitude && formValues.longitude && !mapReady) {
       const lat = parseFloat(formValues.latitude);
       const lng = parseFloat(formValues.longitude);
-      
+
       // Set both the region and location state
       setRegion({
         latitude: lat,
@@ -1338,13 +1322,13 @@ export default function EditProfile() {
         latitudeDelta: 0.06,
         longitudeDelta: 0.06,
       });
-      
+
       // Also set the location state to show the marker
       setLocation({
         latitude: lat,
-        longitude: lng
+        longitude: lng,
       });
-      
+
       setMapReady(true);
     }
   }, [formValues.latitude, formValues.longitude, mapReady]);
@@ -1400,12 +1384,12 @@ export default function EditProfile() {
             ) : (
               <View style={styles.videoUploadOptions}>
                 <TouchableOpacity onPress={handleRecordVideo} style={styles.uploadVideoButton}>
-                  <Ionicons name="videocam-outline" size={20} color="#E4423F" />
+                  <Ionicons name='videocam-outline' size={20} color='#E4423F' />
                   <Text style={styles.uploadVideoText}>Record Video</Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity onPress={handleVideoUpload} style={[styles.uploadVideoButton, {marginTop: 10}]}>
-                  <Ionicons name="cloud-upload-outline" size={20} color="#E4423F" />
+
+                <TouchableOpacity onPress={handleVideoUpload} style={[styles.uploadVideoButton, { marginTop: 10 }]}>
+                  <Ionicons name='cloud-upload-outline' size={20} color='#E4423F' />
                   <Text style={styles.uploadVideoText}>Select Video</Text>
                 </TouchableOpacity>
               </View>
@@ -1482,12 +1466,12 @@ export default function EditProfile() {
               value={formValues.firstName}
               onChangeText={(text) => {
                 // Allow spaces during typing but trim when setting the value
-                const validatedText = text.replace(/[^A-Za-z\s\-']/g, '');
+                const validatedText = text.replace(/[^A-Za-z\s\-']/g, "");
                 setFormValues((prev) => ({
                   ...prev,
                   firstName: validatedText,
                 }));
-                
+
                 // Capitalize first letter when there's content
                 if (validatedText.length > 0 && validatedText[0] !== validatedText[0].toUpperCase()) {
                   setFormValues((prev) => ({
@@ -1495,11 +1479,11 @@ export default function EditProfile() {
                     firstName: validatedText.charAt(0).toUpperCase() + validatedText.slice(1),
                   }));
                 }
-                
+
                 // Validate
-                setNameErrors(prev => ({
+                setNameErrors((prev) => ({
                   ...prev,
-                  firstName: validateName(validatedText, 'First name')
+                  firstName: validateName(validatedText, "First name"),
                 }));
               }}
               autoCorrect={false}
@@ -1516,12 +1500,12 @@ export default function EditProfile() {
               value={formValues.lastName}
               onChangeText={(text) => {
                 // Allow spaces during typing but trim when setting the value
-                const validatedText = text.replace(/[^A-Za-z\s\-']/g, '');
+                const validatedText = text.replace(/[^A-Za-z\s\-']/g, "");
                 setFormValues((prev) => ({
                   ...prev,
                   lastName: validatedText,
                 }));
-                
+
                 // Capitalize first letter when there's content
                 if (validatedText.length > 0 && validatedText[0] !== validatedText[0].toUpperCase()) {
                   setFormValues((prev) => ({
@@ -1529,11 +1513,11 @@ export default function EditProfile() {
                     lastName: validatedText.charAt(0).toUpperCase() + validatedText.slice(1),
                   }));
                 }
-                
+
                 // Validate
-                setNameErrors(prev => ({
+                setNameErrors((prev) => ({
                   ...prev,
-                  lastName: validateName(validatedText, 'Last name')
+                  lastName: validateName(validatedText, "Last name"),
                 }));
               }}
               autoCorrect={false}
@@ -1549,12 +1533,12 @@ export default function EditProfile() {
               value={formValues.phoneNumber}
               onChangeText={(text) => {
                 // Only allow digits in the input
-                if (/^\d*$/.test(text.replace(/[().\- ]/g, ''))) {
+                if (/^\d*$/.test(text.replace(/[().\- ]/g, ""))) {
                   // Remove all non-digit characters for processing
-                  const digitsOnly = text.replace(/\D/g, '');
-                  
+                  const digitsOnly = text.replace(/\D/g, "");
+
                   // Format phone number
-                  let formattedNumber = '';
+                  let formattedNumber = "";
                   if (digitsOnly.length <= 3) {
                     formattedNumber = digitsOnly;
                   } else if (digitsOnly.length <= 6) {
@@ -1562,16 +1546,16 @@ export default function EditProfile() {
                   } else {
                     formattedNumber = `(${digitsOnly.slice(0, 3)}) ${digitsOnly.slice(3, 6)}-${digitsOnly.slice(6, 10)}`;
                   }
-                  
+
                   // Validate and update state
                   setFormValues((prev) => ({
                     ...prev,
                     phoneNumber: formattedNumber,
-                    phoneNumberValid: digitsOnly.length === 10 // Basic validation
+                    phoneNumberValid: digitsOnly.length === 10, // Basic validation
                   }));
                 }
               }}
-              keyboardType="phone-pad"
+              keyboardType='phone-pad'
               autoCorrect={false}
               autoCapitalize='none'
               outlineStyle={styles.textInputOutline}
@@ -1586,7 +1570,7 @@ export default function EditProfile() {
               onChangeText={(text) =>
                 setFormValues((prev) => ({
                   ...prev,
-                  bio: text,  // Remove the .trim() here to allow spaces
+                  bio: text, // Remove the .trim() here to allow spaces
                 }))
               }
               autoCorrect={false}
@@ -1697,10 +1681,7 @@ export default function EditProfile() {
               style={styles.inputField}
               value={formValues.birthdate}
               onChangeText={handleBirthdateChange}
-              outlineStyle={[
-                styles.textInputOutline, 
-                birthdateWarning !== "" && { borderColor: "#E4423F", borderWidth: 2, borderRadius: 10 }
-              ]}
+              outlineStyle={[styles.textInputOutline, birthdateWarning !== "" && { borderColor: "#E4423F", borderWidth: 2, borderRadius: 10 }]}
               keyboardType='numeric'
               maxLength={10}
             />
@@ -1768,9 +1749,9 @@ export default function EditProfile() {
               placeholder='# of Children'
               mode='outlined'
               style={styles.inputField}
-              value={formValues.children === null || isNaN(formValues.children) ? '' : formValues.children.toString()}
+              value={formValues.children === null || isNaN(formValues.children) ? "" : formValues.children.toString()}
               onChangeText={(text) => {
-                const value = text.trim() === '' ? null : parseInt(text);
+                const value = text.trim() === "" ? null : parseInt(text);
                 setFormValues({ ...formValues, children: value });
               }}
               keyboardType='numeric'
@@ -2047,19 +2028,13 @@ export default function EditProfile() {
             <View style={styles.searchRow}>
               <View style={styles.searchWrapper}>
                 <TextInput
-                  placeholder="Search your location..."
-                  mode="outlined"
+                  placeholder='Search your location...'
+                  mode='outlined'
                   style={styles.inputField}
                   value={searchText}
                   onChangeText={handleSearchTextChange}
                   outlineStyle={styles.textInputOutline}
-                  right={
-                    <TextInput.Icon
-                      icon="magnify"
-                      onPress={handleSearch}
-                      color="#E4423F"
-                    />
-                  }
+                  right={<TextInput.Icon icon='magnify' onPress={handleSearch} color='#E4423F' />}
                 />
               </View>
             </View>
@@ -2068,11 +2043,7 @@ export default function EditProfile() {
             {suggestions.length > 0 && (
               <View style={styles.suggestionsContainer}>
                 {suggestions.map((suggestion) => (
-                  <TouchableOpacity
-                    key={suggestion.place_id}
-                    style={styles.suggestionItem}
-                    onPress={() => handleSuggestionPress(suggestion)}
-                  >
+                  <TouchableOpacity key={suggestion.place_id} style={styles.suggestionItem} onPress={() => handleSuggestionPress(suggestion)}>
                     <Text>{suggestion.description}</Text>
                   </TouchableOpacity>
                 ))}
@@ -2081,14 +2052,13 @@ export default function EditProfile() {
 
             {/* Map View */}
             <View style={styles.mapContainer}>
-              <MapView 
-                style={styles.map} 
+              <MapView
+                style={styles.map}
                 region={region}
                 onMapReady={() => setMapReady(true)}
                 onRegionChangeComplete={(newRegion) => {
                   // Only update region if user is actually moving the map
-                  if (Math.abs(newRegion.latitude - region.latitude) > 0.0001 ||
-                      Math.abs(newRegion.longitude - region.longitude) > 0.0001) {
+                  if (Math.abs(newRegion.latitude - region.latitude) > 0.0001 || Math.abs(newRegion.longitude - region.longitude) > 0.0001) {
                     setRegion(newRegion);
                   }
                 }}
@@ -2668,7 +2638,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   videoUploadOptions: {
-    flexDirection: 'column',
+    flexDirection: "column",
     gap: 10,
     marginBottom: 20,
   },
@@ -2677,10 +2647,10 @@ const styles = StyleSheet.create({
   },
   textInputOutlineError: {
     borderWidth: 1,
-    borderColor: '#E4423F',
+    borderColor: "#E4423F",
   },
   errorText: {
-    color: '#E4423F',
+    color: "#E4423F",
     fontSize: 12,
     marginTop: -10,
     marginBottom: 10,

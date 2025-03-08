@@ -4,10 +4,10 @@ import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-si
 import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
 import { formatPhoneNumber } from "./helper";
-import { REACT_APP_GOOGLE_CLIENT_ID, REACT_APP_GOOGLE_CLIENT_SECRET, REACT_APP_GOOGLE_LOGIN } from "@env";
+import { EXPO_PUBLIC_MMU_WEB_CLIENT_ID, EXPO_PUBLIC_MMU_WEB_CLIENT_SECRET, REACT_APP_GOOGLE_LOGIN } from "@env";
 
-const CLIENT_ID = REACT_APP_GOOGLE_CLIENT_ID;
-const CLIENT_SECRET = REACT_APP_GOOGLE_CLIENT_SECRET;
+const CLIENT_ID = EXPO_PUBLIC_MMU_WEB_CLIENT_ID;
+const CLIENT_SECRET = EXPO_PUBLIC_MMU_WEB_CLIENT_SECRET;
 const GOOGLE_LOGIN = REACT_APP_GOOGLE_LOGIN;
 const SCOPES = ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"];
 

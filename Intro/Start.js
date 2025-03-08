@@ -23,7 +23,7 @@ const StartPage = () => {
   const navigation = useNavigation();
 
   // Get Maps API Key from environment variables
-  const mapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const mapsApiKey = process.env.EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY;
   const mapsApiKeyDisplay = mapsApiKey ? "..." + mapsApiKey.slice(-4) : "Not set";
 
   return (

@@ -3,14 +3,14 @@ import { SafeAreaView, Platform, StatusBar, View, Text, TouchableOpacity, StyleS
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker } from "react-native-maps";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { REACT_APP_GOOGLE_API_KEY } from "@env";
+import { EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY } from "@env";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import MaskedView from "@react-native-masked-view/masked-view";
 // Remove GooglePlacesAutocomplete
 // import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 
 // Use conditional check to ensure API key is properly loaded
-const GOOGLE_API_KEY = REACT_APP_GOOGLE_API_KEY || '';
+const GOOGLE_API_KEY = EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY || "";
 
 // Add console log to debug API key (remove in production)
 console.log("API Key defined:", !!GOOGLE_API_KEY);
@@ -18,33 +18,32 @@ console.log("API Key defined:", !!GOOGLE_API_KEY);
 export default function DateLocation({ navigation }) {
   const route = useRoute();
   const [matchedUserId, setMatchedUserId] = useState(route.params?.matchedUserId || null);
-  
+
   // State for custom place search
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState(null);
-  
+
   // Add a ref for the map
   const mapRef = useRef(null);
-  
+
   // Add state for user images
   const [matchedUserImage, setMatchedUserImage] = useState(null);
   const [currentUserImage, setCurrentUserImage] = useState(null);
-  
+
   useEffect(() => {
     const initMatchedUserId = async () => {
       if (!matchedUserId) {
-        const storedId = await AsyncStorage.getItem('matchedUserId');
+        const storedId = await AsyncStorage.getItem("matchedUserId");
         if (storedId) setMatchedUserId(storedId);
-      }
-      else {
-        await AsyncStorage.setItem('matchedUserId', matchedUserId);
+      } else {
+        await AsyncStorage.setItem("matchedUserId", matchedUserId);
       }
     };
     initMatchedUserId();
   }, []);
-  
+
   const [location, setLocation] = useState(null);
 
   // Default map region
@@ -86,14 +85,13 @@ export default function DateLocation({ navigation }) {
     const fetchUserImages = async () => {
       try {
         // Get current user ID from storage
-        const currentUserId = await AsyncStorage.getItem('user_uid');
-        
+        const currentUserId = await AsyncStorage.getItem("user_uid");
+
         // Fetch current user's image
         if (currentUserId) {
           const currentUserResponse = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${currentUserId}`);
           const currentUserData = await currentUserResponse.json();
-          const currentUserPhotoUrls = currentUserData.result[0]?.user_photo_url ? 
-            JSON.parse(currentUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
+          const currentUserPhotoUrls = currentUserData.result[0]?.user_photo_url ? JSON.parse(currentUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
           setCurrentUserImage(currentUserPhotoUrls[0] || null);
         }
 
@@ -101,12 +99,11 @@ export default function DateLocation({ navigation }) {
         if (matchedUserId) {
           const matchedUserResponse = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${matchedUserId}`);
           const matchedUserData = await matchedUserResponse.json();
-          const matchedUserPhotoUrls = matchedUserData.result[0]?.user_photo_url ? 
-            JSON.parse(matchedUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
+          const matchedUserPhotoUrls = matchedUserData.result[0]?.user_photo_url ? JSON.parse(matchedUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
           setMatchedUserImage(matchedUserPhotoUrls[0] || null);
         }
       } catch (error) {
-        console.error('Error fetching user images:', error);
+        console.error("Error fetching user images:", error);
       }
     };
 
@@ -116,34 +113,30 @@ export default function DateLocation({ navigation }) {
   const handleRegionChangeComplete = (newRegion) => {
     setRegion(newRegion);
   };
-  
+
   // Custom function to search places using fetch
   const searchPlaces = async (query) => {
     if (!query || query.length < 3 || !GOOGLE_API_KEY) return;
-    
+
     setIsSearching(true);
     try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-          query
-        )}&key=${GOOGLE_API_KEY}&components=country:us`
-      );
-      
+      const response = await fetch(`https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&key=${GOOGLE_API_KEY}&components=country:us`);
+
       const data = await response.json();
-      if (data.status === 'OK') {
+      if (data.status === "OK") {
         setSearchResults(data.predictions);
       } else {
-        console.error('Place Autocomplete Error:', data.status);
+        console.error("Place Autocomplete Error:", data.status);
         setSearchResults([]);
       }
     } catch (error) {
-      console.error('Error fetching places:', error);
-      Alert.alert('Error', 'Failed to search locations. Please try again.');
+      console.error("Error fetching places:", error);
+      Alert.alert("Error", "Failed to search locations. Please try again.");
     } finally {
       setIsSearching(false);
     }
   };
-  
+
   // Debounce search to avoid too many API calls
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -151,22 +144,22 @@ export default function DateLocation({ navigation }) {
         searchPlaces(searchText);
       }
     }, 500);
-    
+
     return () => clearTimeout(timer);
   }, [searchText]);
-  
+
   // Add a useEffect to load previously chosen location
   useEffect(() => {
     const loadSavedLocation = async () => {
       try {
         // Try to load previously saved location
-        const savedLocationJSON = await AsyncStorage.getItem('savedLocation');
+        const savedLocationJSON = await AsyncStorage.getItem("savedLocation");
         if (savedLocationJSON) {
           const savedLocation = JSON.parse(savedLocationJSON);
           setLocation(savedLocation);
-          setSearchText(savedLocation.name || '');
-          setSelectedPlace(savedLocation.name || '');
-          
+          setSearchText(savedLocation.name || "");
+          setSelectedPlace(savedLocation.name || "");
+
           // Update the map to show the saved location
           setRegion({
             latitude: savedLocation.latitude,
@@ -174,39 +167,40 @@ export default function DateLocation({ navigation }) {
             latitudeDelta: 0.06,
             longitudeDelta: 0.06,
           });
-          
+
           // Use setTimeout to ensure the map has rendered before animating
           setTimeout(() => {
             if (mapRef.current) {
-              mapRef.current.animateToRegion({
-                latitude: savedLocation.latitude,
-                longitude: savedLocation.longitude,
-                latitudeDelta: 0.06,
-                longitudeDelta: 0.06,
-              }, 1000);
+              mapRef.current.animateToRegion(
+                {
+                  latitude: savedLocation.latitude,
+                  longitude: savedLocation.longitude,
+                  latitudeDelta: 0.06,
+                  longitudeDelta: 0.06,
+                },
+                1000
+              );
             }
           }, 500);
         }
       } catch (error) {
-        console.error('Error loading saved location:', error);
+        console.error("Error loading saved location:", error);
       }
     };
-    
+
     loadSavedLocation();
   }, []);
-  
+
   // Modify the getPlaceDetails function to make map updates more reliable
   const getPlaceDetails = async (placeId) => {
     if (!placeId || !GOOGLE_API_KEY) return;
-    
+
     setLocationLoading(true);
     try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,geometry&key=${GOOGLE_API_KEY}`
-      );
-      
+      const response = await fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,geometry&key=${GOOGLE_API_KEY}`);
+
       const data = await response.json();
-      if (data.status === 'OK' && data.result) {
+      if (data.status === "OK" && data.result) {
         const placeDetails = data.result;
         const newRegion = {
           latitude: placeDetails.geometry.location.lat,
@@ -214,7 +208,7 @@ export default function DateLocation({ navigation }) {
           latitudeDelta: 0.06,
           longitudeDelta: 0.06,
         };
-        
+
         const locationData = {
           latitude: placeDetails.geometry.location.lat,
           longitude: placeDetails.geometry.location.lng,
@@ -222,37 +216,37 @@ export default function DateLocation({ navigation }) {
           address: placeDetails.formatted_address,
           placeId: placeDetails.place_id,
         };
-        
+
         // Update location state
         setLocation(locationData);
-        
+
         // Clear search results after selection
         setSearchResults([]);
         setSelectedPlace(placeDetails.name);
         setSearchText(placeDetails.name);
-        
+
         // Update region state
         setRegion(newRegion);
-        
+
         // Use both methods to ensure map updates:
         // 1. Set region state (above)
         // 2. Directly animate map to new location
         if (mapRef.current) {
           // Immediate update
           mapRef.current.animateToRegion(newRegion, 1000);
-          
+
           // Delayed update as backup
           setTimeout(() => {
             mapRef.current.animateToRegion(newRegion, 500);
           }, 500);
         }
       } else {
-        console.error('Place Details Error:', data.status);
-        Alert.alert('Error', 'Could not get details for this location.');
+        console.error("Place Details Error:", data.status);
+        Alert.alert("Error", "Could not get details for this location.");
       }
     } catch (error) {
-      console.error('Error fetching place details:', error);
-      Alert.alert('Error', 'Failed to get location details. Please try again.');
+      console.error("Error fetching place details:", error);
+      Alert.alert("Error", "Failed to get location details. Please try again.");
     } finally {
       setLocationLoading(false);
     }
@@ -263,24 +257,24 @@ export default function DateLocation({ navigation }) {
     if (location) {
       try {
         // Save complete location object
-        await AsyncStorage.setItem('savedLocation', JSON.stringify(location));
-        
+        await AsyncStorage.setItem("savedLocation", JSON.stringify(location));
+
         // Also save individual fields for DateFinal.js to access
         if (location.name) {
-          await AsyncStorage.setItem('selected_location_name', location.name);
+          await AsyncStorage.setItem("selected_location_name", location.name);
         }
         if (location.address) {
-          await AsyncStorage.setItem('selected_location_address', location.address);
+          await AsyncStorage.setItem("selected_location_address", location.address);
         }
-        await AsyncStorage.setItem('selected_date_location_lat', String(location.latitude));
-        await AsyncStorage.setItem('selected_date_location_lng', String(location.longitude));
-        
+        await AsyncStorage.setItem("selected_date_location_lat", String(location.latitude));
+        await AsyncStorage.setItem("selected_date_location_lng", String(location.longitude));
+
         console.log("Location chosen:", location, "for user:", userUid);
-        
+
         // Navigate onward with complete location data
-        navigation.navigate("DateFinal", { 
-          location, 
-          matchedUserId: matchedUserId 
+        navigation.navigate("DateFinal", {
+          location,
+          matchedUserId: matchedUserId,
         });
       } catch (error) {
         console.error("Error saving location:", error);
@@ -301,52 +295,26 @@ export default function DateLocation({ navigation }) {
         <View style={styles.heartsContainer}>
           {/* First heart using MaskedView */}
           <View style={styles.heartWrapper}>
-            <MaskedView
-              style={styles.maskedView}
-              maskElement={
-                <Image
-                  source={require('../assets/icons/Primaryheart.png')}
-                  style={styles.maskImage}
-                  resizeMode="contain"
-                />
-              }
-            >
+            <MaskedView style={styles.maskedView} maskElement={<Image source={require("../assets/icons/Primaryheart.png")} style={styles.maskImage} resizeMode='contain' />}>
               <Image
-                source={currentUserImage ? { uri: currentUserImage } : require('../src/Assets/Images/account.png')}
+                source={currentUserImage ? { uri: currentUserImage } : require("../src/Assets/Images/account.png")}
                 style={styles.fullImage}
-                defaultSource={require('../src/Assets/Images/account.png')}
+                defaultSource={require("../src/Assets/Images/account.png")}
               />
             </MaskedView>
-            <Image
-              source={require('../assets/icons/primaryheartoutline.png')}
-              style={styles.heartOutline}
-              resizeMode="contain"
-            />
+            <Image source={require("../assets/icons/primaryheartoutline.png")} style={styles.heartOutline} resizeMode='contain' />
           </View>
-          
+
           {/* Second heart using MaskedView */}
           <View style={[styles.heartWrapper, styles.secondHeartWrapper]}>
-            <MaskedView
-              style={styles.maskedView}
-              maskElement={
-                <Image
-                  source={require('../assets/icons/Secondaryheart.png')}
-                  style={styles.maskImage}
-                  resizeMode="contain"
-                />
-              }
-            >
+            <MaskedView style={styles.maskedView} maskElement={<Image source={require("../assets/icons/Secondaryheart.png")} style={styles.maskImage} resizeMode='contain' />}>
               <Image
-                source={matchedUserImage ? { uri: matchedUserImage } : require('../src/Assets/Images/account.png')}
+                source={matchedUserImage ? { uri: matchedUserImage } : require("../src/Assets/Images/account.png")}
                 style={styles.fullImage}
-                defaultSource={require('../src/Assets/Images/account.png')}
+                defaultSource={require("../src/Assets/Images/account.png")}
               />
             </MaskedView>
-            <Image
-              source={require('../assets/icons/secondaryheartoutline.png')}
-              style={styles.heartOutline}
-              resizeMode="contain"
-            />
+            <Image source={require("../assets/icons/secondaryheartoutline.png")} style={styles.heartOutline} resizeMode='contain' />
           </View>
         </View>
 
@@ -356,18 +324,10 @@ export default function DateLocation({ navigation }) {
 
         {/* Custom Search Input */}
         <View style={styles.searchContainer}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search a location..."
-            value={searchText}
-            onChangeText={setSearchText}
-            onFocus={() => setSelectedPlace(null)}
-          />
-          {isSearching && (
-            <ActivityIndicator size="small" color="#E4423F" style={styles.searchLoader} />
-          )}
+          <TextInput style={styles.searchInput} placeholder='Search a location...' value={searchText} onChangeText={setSearchText} onFocus={() => setSelectedPlace(null)} />
+          {isSearching && <ActivityIndicator size='small' color='#E4423F' style={styles.searchLoader} />}
         </View>
-        
+
         {/* Search Results List */}
         {searchResults.length > 0 && !selectedPlace && (
           <View style={styles.resultsContainer}>
@@ -375,11 +335,8 @@ export default function DateLocation({ navigation }) {
               data={searchResults}
               keyExtractor={(item) => item.place_id}
               renderItem={({ item }) => (
-                <TouchableOpacity 
-                  style={styles.resultItem}
-                  onPress={() => getPlaceDetails(item.place_id)}
-                >
-                  <Ionicons name="location-outline" size={20} color="#666" />
+                <TouchableOpacity style={styles.resultItem} onPress={() => getPlaceDetails(item.place_id)}>
+                  <Ionicons name='location-outline' size={20} color='#666' />
                   <Text style={styles.resultText}>{item.description}</Text>
                 </TouchableOpacity>
               )}
@@ -391,12 +348,7 @@ export default function DateLocation({ navigation }) {
 
       {/* Map */}
       <View style={styles.mapContainer}>
-        <MapView 
-          ref={mapRef}
-          style={styles.map} 
-          region={region} 
-          onRegionChangeComplete={handleRegionChangeComplete}
-        >
+        <MapView ref={mapRef} style={styles.map} region={region} onRegionChangeComplete={handleRegionChangeComplete}>
           {location && <Marker coordinate={location} title={location.name} pinColor='red' />}
         </MapView>
       </View>
@@ -412,11 +364,11 @@ export default function DateLocation({ navigation }) {
         <View style={[styles.dot, { backgroundColor: "#ccc" }]} />
         <View style={[styles.dot, { backgroundColor: "#E4423F" }]} />
       </View>
-      
+
       {/* Loading Indicator */}
       {locationLoading && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#E4423F" />
+          <ActivityIndicator size='large' color='#E4423F' />
         </View>
       )}
     </SafeAreaView>
@@ -444,7 +396,7 @@ const styles = StyleSheet.create({
   heartWrapper: {
     width: 60,
     height: 60,
-    position: 'relative',
+    position: "relative",
   },
   secondHeartWrapper: {
     marginLeft: -20,
@@ -452,8 +404,8 @@ const styles = StyleSheet.create({
   maskedView: {
     width: 60,
     height: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   maskImage: {
     width: 60,
@@ -462,10 +414,10 @@ const styles = StyleSheet.create({
   fullImage: {
     width: 60,
     height: 60,
-    resizeMode: 'cover',
+    resizeMode: "cover",
   },
   heartOutline: {
-    position: 'absolute',
+    position: "absolute",
     width: 60,
     height: 60,
     top: 0,
@@ -483,39 +435,39 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 10,
   },
   searchInput: {
     flex: 1,
     height: 48,
     borderWidth: 1,
-    borderColor: '#CCC',
+    borderColor: "#CCC",
     borderRadius: 25,
     paddingHorizontal: 15,
     fontSize: 16,
   },
   searchLoader: {
-    position: 'absolute',
+    position: "absolute",
     right: 15,
   },
   resultsContainer: {
     maxHeight: 200,
     borderWidth: 1,
-    borderColor: '#DDD',
+    borderColor: "#DDD",
     borderRadius: 10,
     marginBottom: 10,
   },
   resultsList: {
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
   },
   resultItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEE',
+    borderBottomColor: "#EEE",
   },
   resultText: {
     fontSize: 14,
@@ -557,13 +509,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   loadingOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255,255,255,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

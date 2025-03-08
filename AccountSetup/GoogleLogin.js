@@ -4,9 +4,9 @@ import axios from "axios";
 import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
 import { useNavigation } from "@react-navigation/native";
 import UserDoesNotExistModal from "./UserDoesNotExistModal";
-import { REACT_APP_GOOGLE_CLIENT_ID } from "@env";
+import { EXPO_PUBLIC_MMU_WEB_CLIENT_ID } from "@env";
 
-const CLIENT_ID = REACT_APP_GOOGLE_CLIENT_ID;
+const CLIENT_ID = EXPO_PUBLIC_MMU_WEB_CLIENT_ID;
 
 function GoogleLogin(props) {
   const navigation = useNavigation();

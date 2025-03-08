@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, Alert, Pressable } from "react-native";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import MapView, { Marker } from 'react-native-maps';
-import 'react-native-get-random-values';
-import {GooglePlacesAutocomplete} from 'react-native-google-places-autocomplete';
+import MapView, { Marker } from "react-native-maps";
+import "react-native-get-random-values";
+import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 // Replace this with your Google Maps API key
-const GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_API_KEY;
+const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY;
 
 export default function AccountSetup3Create({ navigation }) {
-  
   const genders = [
     { label: "Male", value: "Male" },
     { label: "Female", value: "Female" },
@@ -50,7 +49,7 @@ export default function AccountSetup3Create({ navigation }) {
     profileBio: "",
     suburb: "",
     country: "",
-    sexuality:"",
+    sexuality: "",
     openTo: [],
   });
   const [isChanged, setIsChanged] = useState(false);
@@ -69,7 +68,7 @@ export default function AccountSetup3Create({ navigation }) {
           console.log(response.data.result[0]);
           const fetchedData = response.data.result[0];
           const openToArray = fetchedData.user_open_to ? fetchedData.user_open_to.split(",") : [];
-          console.log("openToArray", openToArray)
+          console.log("openToArray", openToArray);
           setUserData(fetchedData);
           setFormData({
             ...formData,
@@ -123,18 +122,16 @@ export default function AccountSetup3Create({ navigation }) {
   };
   const handleButton = (id, type) => {
     setIsChanged(true);
-  
-    if (type === 'sexuality') {
+
+    if (type === "sexuality") {
       setFormData({
         ...formData,
         sexuality: id, // Set the selected value directly
       });
-    }
-  
-    else if (type === 'openTo') {
+    } else if (type === "openTo") {
       // Ensure formData[type] is an array before using includes
       const selectedOptions = formData[type] || []; // Initialize as an empty array if undefined
-  
+
       if (selectedOptions.includes(id)) {
         // Remove the option if it's already selected
         const newArray = selectedOptions.filter((item) => item !== id);
@@ -151,8 +148,7 @@ export default function AccountSetup3Create({ navigation }) {
       }
     }
   };
-  
-  
+
   const handleNext = async () => {
     const url = "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo";
     const fd = new FormData();
@@ -172,7 +168,7 @@ export default function AccountSetup3Create({ navigation }) {
     fd.append("user_latitude", center["lat"]);
     fd.append("user_longitude", center["lng"]);
     fd.append("user_sexuality", formData.sexuality);
-    fd.append("user_open_to", JSON.stringify(formData["openTo"]))
+    fd.append("user_open_to", JSON.stringify(formData["openTo"]));
 
     if (isChanged) {
       try {
@@ -196,54 +192,25 @@ export default function AccountSetup3Create({ navigation }) {
       <Text style={styles.headerText}>About You</Text>
       <Text style={styles.subHeaderText}>These details are about you and will be public to potential matches on meet me up.</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Full Name"
-        value={formData.name}
-        onChangeText={(text) => handleChange("name", text)}
-      />
+      <TextInput style={styles.input} placeholder='Full Name' value={formData.name} onChangeText={(text) => handleChange("name", text)} />
       <View style={styles.row}>
-        <TextInput
-          style={[styles.input, { width: "48%" }]}
-          label= "Age"
-          placeholder="Age"
-          value={formData.age}
-          keyboardType="numeric"
-          onChangeText={(text) => handleChange("age", text)}
-        />
-        <TextInput
-          style={[styles.input, { width: "48%" }]}
-          placeholder="Gender"
-          value={formData.gender}
-          onChangeText={(text) => handleChange("gender", text)}
-        />
+        <TextInput style={[styles.input, { width: "48%" }]} label='Age' placeholder='Age' value={formData.age} keyboardType='numeric' onChangeText={(text) => handleChange("age", text)} />
+        <TextInput style={[styles.input, { width: "48%" }]} placeholder='Gender' value={formData.gender} onChangeText={(text) => handleChange("gender", text)} />
       </View>
       <Text style={styles.label}>Suburb</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Suburb"
-        value={formData.suburb}
-        onChangeText={(text) => handleChange("suburb", text)}
-      />
+      <TextInput style={styles.input} placeholder='Suburb' value={formData.suburb} onChangeText={(text) => handleChange("suburb", text)} />
       <Text style={styles.label}>Profile Bio</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Profile Bio"
-        value={formData.profileBio}
-        multiline={true}
-        numberOfLines={4}
-        onChangeText={(text) => handleChange("profileBio", text)}
-      />
+      <TextInput style={styles.input} placeholder='Profile Bio' value={formData.profileBio} multiline={true} numberOfLines={4} onChangeText={(text) => handleChange("profileBio", text)} />
 
       <Text style={styles.headerText}>Location</Text>
       <Text style={styles.subHeaderText}>Your location helps us pin point where you are to provide better matches to you.</Text>
       <GooglePlacesAutocomplete
-        placeholder="Search for a location"
-        fetchDetails={true}  // This enables fetching more detailed location data
+        placeholder='Search for a location'
+        fetchDetails={true} // This enables fetching more detailed location data
         onPress={handleAddressSelection}
         query={{
           key: GOOGLE_API_KEY,
-          language: 'en',  // Language of the search results
+          language: "en", // Language of the search results
         }}
         styles={{
           textInput: {
@@ -267,72 +234,69 @@ export default function AccountSetup3Create({ navigation }) {
       >
         <Marker coordinate={{ latitude: center.lat, longitude: center.lng }} />
       </MapView>
-         {/* Your Sexuality Section */}
-    <View style={styles.optionContainer}>
-  <Text style={styles.header}>Your Sexuality</Text>
-  <Text style={styles.subHeader}>Select the field that best describes your sexuality</Text>
-  {sexualityOptions.map((option) => (
-    <TouchableOpacity
-      key={option.key}
-      onPress={() => handleButton(option.label, 'sexuality')} 
-      style={[
-        styles.option,
-        {
-          backgroundColor: formData['sexuality'] === option.label ? 'red' : 'white', 
-        },
-      ]}
-    >
-      <Text
-        style={[
-          styles.optionText,
-          {
-            color: formData['sexuality'] === option.label ? 'white' : 'black', // Set text color to white if selected
-          },
-        ]}
-      >
-        {option.label}
-      </Text>
-    </TouchableOpacity>
-  ))}
-</View>
-
-      {/* Open To Section */}
+      {/* Your Sexuality Section */}
       <View style={styles.optionContainer}>
-          <Text style={styles.header}>Open To...</Text>
-          <Text style={styles.subHeader}>Select the fields that best describe what you are open to in a partner</Text>
-          {openTo.map((option) => (
-            <TouchableOpacity
-              key={option.key}
-              onPress={() => handleButton(option.label, 'openTo')} 
+        <Text style={styles.header}>Your Sexuality</Text>
+        <Text style={styles.subHeader}>Select the field that best describes your sexuality</Text>
+        {sexualityOptions.map((option) => (
+          <TouchableOpacity
+            key={option.key}
+            onPress={() => handleButton(option.label, "sexuality")}
+            style={[
+              styles.option,
+              {
+                backgroundColor: formData["sexuality"] === option.label ? "red" : "white",
+              },
+            ]}
+          >
+            <Text
               style={[
-                styles.option,
+                styles.optionText,
                 {
-                  backgroundColor: formData['openTo'].includes(option.label) ? 'red' : 'white', 
+                  color: formData["sexuality"] === option.label ? "white" : "black", // Set text color to white if selected
                 },
               ]}
             >
-       <Text
-        style={[
-          styles.optionText,
-          {
-            color: formData['openTo'].includes(option.label) ? 'white' : 'black', // Set text color to white if selected
-          },
-        ]}
-      >
-        {option.label}
-      </Text>
-            </TouchableOpacity>
-          ))}
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
+      {/* Open To Section */}
+      <View style={styles.optionContainer}>
+        <Text style={styles.header}>Open To...</Text>
+        <Text style={styles.subHeader}>Select the fields that best describe what you are open to in a partner</Text>
+        {openTo.map((option) => (
+          <TouchableOpacity
+            key={option.key}
+            onPress={() => handleButton(option.label, "openTo")}
+            style={[
+              styles.option,
+              {
+                backgroundColor: formData["openTo"].includes(option.label) ? "red" : "white",
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.optionText,
+                {
+                  color: formData["openTo"].includes(option.label) ? "white" : "black", // Set text color to white if selected
+                },
+              ]}
+            >
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
-        <View style = {styles.buttonContainer}>
-             <Pressable style= {styles.button}onPress={handleNext}>
-              <Text style={styles.buttonText}>
-                Next
-              </Text>
-             </Pressable>
-             </View>
+      <View style={styles.buttonContainer}>
+        <Pressable style={styles.button} onPress={handleNext}>
+          <Text style={styles.buttonText}>Next</Text>
+        </Pressable>
+      </View>
     </ScrollView>
   );
 }
@@ -366,7 +330,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#E4423F",
     marginBottom: 5,
-},
+  },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -379,22 +343,22 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     marginTop: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginVertical: 40,
-},
-button: {
-  width: 130,
-  backgroundColor: '#E4423F',
-  borderRadius: 25,
-  height: 45,
-  justifyContent: 'center',
-  alignItems: 'center',
-},
-buttonText: {
-  color: 'white',
-  fontSize: 18,
-},
+  },
+  button: {
+    width: 130,
+    backgroundColor: "#E4423F",
+    borderRadius: 25,
+    height: 45,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 18,
+  },
   option: {
     backgroundColor: "#ffffff",
     borderRadius: 41,
@@ -419,4 +383,3 @@ buttonText: {
     marginBottom: 20,
   },
 });
-

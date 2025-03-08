@@ -1,31 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import {
-  SafeAreaView,
-  Platform,
-  StatusBar,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  TextInput,
-  Pressable,
-  FlatList,
-  Keyboard,
-  Alert,
-  Image,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import MapView, { Marker } from 'react-native-maps';
-import ProgressBar from '../src/Assets/Components/ProgressBar';
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { REACT_APP_GOOGLE_API_KEY } from '@env';
+import React, { useState, useEffect } from "react";
+import { SafeAreaView, Platform, StatusBar, View, Text, TouchableOpacity, StyleSheet, TextInput, Pressable, FlatList, Keyboard, Alert, Image } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import MapView, { Marker } from "react-native-maps";
+import ProgressBar from "../src/Assets/Components/ProgressBar";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY } from "@env";
 
-const GOOGLE_API_KEY = REACT_APP_GOOGLE_API_KEY;
+const GOOGLE_API_KEY = EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY;
 
 export default function LocationScreen({ navigation }) {
   // Track the text in the search bar
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState("");
   // Track location (latitude & longitude). Null if not chosen yet
   const [location, setLocation] = useState(null);
   const [address, setAddress] = useState(null);
@@ -44,7 +30,6 @@ export default function LocationScreen({ navigation }) {
   // Credentials from AsyncStorage (we'll fetch them in `useEffect`)
   const [userUid, setUserUid] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
-  
 
   // Check if location is selected
   const isFormComplete = !!location;
@@ -53,8 +38,8 @@ export default function LocationScreen({ navigation }) {
   useEffect(() => {
     const fetchUserCredentials = async () => {
       try {
-        const uid = await AsyncStorage.getItem('user_uid');
-        const email = await AsyncStorage.getItem('user_email_id');
+        const uid = await AsyncStorage.getItem("user_uid");
+        const email = await AsyncStorage.getItem("user_email_id");
         if (!uid || !email) {
           Alert.alert("Error", "User credentials not found in AsyncStorage.");
           navigation.goBack();
@@ -77,20 +62,18 @@ export default function LocationScreen({ navigation }) {
     }
 
     try {
-      const endpoint = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-        input
-      )}&key=${GOOGLE_API_KEY}&components=country:us`;
+      const endpoint = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&key=${GOOGLE_API_KEY}&components=country:us`;
       const response = await fetch(endpoint);
       const data = await response.json();
 
-      if (data.status === 'OK') {
+      if (data.status === "OK") {
         setSuggestions(data.predictions);
       } else {
         setSuggestions([]);
-        console.warn('Autocomplete request error:', data.status, data.error_message);
+        console.warn("Autocomplete request error:", data.status, data.error_message);
       }
     } catch (error) {
-      console.error('Error fetching autocomplete:', error);
+      console.error("Error fetching autocomplete:", error);
     }
   };
 
@@ -105,13 +88,13 @@ export default function LocationScreen({ navigation }) {
     Keyboard.dismiss();
     setSearchText(suggestion.description);
     setSuggestions([]);
-    
+
     // Store selected address to AsyncStorage
     try {
-      await AsyncStorage.setItem('user_address', suggestion.description);
+      await AsyncStorage.setItem("user_address", suggestion.description);
       setAddress(suggestion.description);
     } catch (error) {
-      console.error('Error saving address:', error);
+      console.error("Error saving address:", error);
     }
 
     try {
@@ -119,26 +102,26 @@ export default function LocationScreen({ navigation }) {
       const detailsResp = await fetch(detailsEndpoint);
       const detailsData = await detailsResp.json();
 
-      if (detailsData.status === 'OK') {
+      if (detailsData.status === "OK") {
         const { lat, lng } = detailsData.result.geometry.location;
         setLocation({ latitude: lat, longitude: lng });
         setRegion((prev) => ({ ...prev, latitude: lat, longitude: lng }));
       } else {
-        console.warn('Place Details error:', detailsData.status, detailsData.error_message);
+        console.warn("Place Details error:", detailsData.status, detailsData.error_message);
       }
     } catch (error) {
-      console.error('Error fetching place details:', error);
-      Alert.alert('Error', 'Could not fetch place details. Please try again.');
+      console.error("Error fetching place details:", error);
+      Alert.alert("Error", "Could not fetch place details. Please try again.");
     }
   };
 
   // Optional: user presses search icon
   const handleSearch = () => {
     if (!searchText.trim()) {
-      Alert.alert('Warning', 'Please enter a location or pick from suggestions.');
+      Alert.alert("Warning", "Please enter a location or pick from suggestions.");
       return;
     }
-    console.log('Search icon pressed:', searchText);
+    console.log("Search icon pressed:", searchText);
   };
 
   // Track map region changes
@@ -146,19 +129,18 @@ export default function LocationScreen({ navigation }) {
     setRegion(newRegion);
   };
 
-
   // Continue => Save lat/long to server
   const handleContinue = async () => {
     if (location) {
       const url = "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo";
-    const fd = new FormData();
+      const fd = new FormData();
 
-    fd.append("user_uid", userUid);
-    fd.append("user_email_id", userEmail);
-    fd.append("user_latitude", location.latitude);
-    fd.append("user_longitude", location.longitude);
-    fd.append("user_address", address);
-    
+      fd.append("user_uid", userUid);
+      fd.append("user_email_id", userEmail);
+      fd.append("user_latitude", location.latitude);
+      fd.append("user_longitude", location.longitude);
+      fd.append("user_address", address);
+
       try {
         const response = await fetch(url, {
           method: "PUT",
@@ -172,7 +154,7 @@ export default function LocationScreen({ navigation }) {
         console.log("Error updating user data:", error);
       }
       // Then navigate to the next screen
-      navigation.navigate('EnableLocationScreen', { location });
+      navigation.navigate("EnableLocationScreen", { location });
     }
   };
 
@@ -180,11 +162,11 @@ export default function LocationScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Image source={require('../assets/icons/backarrow.png')} />
+        <Image source={require("../assets/icons/backarrow.png")} />
       </TouchableOpacity>
 
       {/* Progress Bar */}
-      <ProgressBar startProgress={80} endProgress={90} style={styles.progressBar}/>
+      <ProgressBar startProgress={80} endProgress={90} style={styles.progressBar} />
 
       {/* Title & Subtitle */}
       <Text style={styles.title}>Add your location</Text>
@@ -194,23 +176,17 @@ export default function LocationScreen({ navigation }) {
       <View style={styles.trialBox}>
         <Text style={styles.trialHeading}>TRIAL VERSION</Text>
         <Text style={styles.trialBody}>
-          For the testing phase, the location function is only available{' '}
-          <Text style={styles.link}>here</Text> and the <Text style={styles.link}>map setting</Text> in your profile.
+          For the testing phase, the location function is only available <Text style={styles.link}>here</Text> and the <Text style={styles.link}>map setting</Text> in your profile.
         </Text>
       </View>
 
       {/* Search Row */}
       <View style={styles.searchRow}>
         <View style={styles.searchWrapper}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search your location..."
-            value={searchText}
-            onChangeText={handleSearchTextChange}
-          />
+          <TextInput style={styles.searchInput} placeholder='Search your location...' value={searchText} onChangeText={handleSearchTextChange} />
         </View>
         <TouchableOpacity onPress={handleSearch} style={styles.searchIconWrapper}>
-          <Ionicons name="search" size={24} color="#888" />
+          <Ionicons name='search' size={24} color='#888' />
         </TouchableOpacity>
       </View>
 
@@ -221,10 +197,7 @@ export default function LocationScreen({ navigation }) {
             data={suggestions}
             keyExtractor={(item) => item.place_id}
             renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.suggestionItem}
-                onPress={() => handleSuggestionPress(item)}
-              >
+              <TouchableOpacity style={styles.suggestionItem} onPress={() => handleSuggestionPress(item)}>
                 <Text numberOfLines={1}>{item.description}</Text>
               </TouchableOpacity>
             )}
@@ -234,31 +207,15 @@ export default function LocationScreen({ navigation }) {
 
       {/* Map */}
       <View style={styles.mapContainer}>
-        <MapView
-          style={styles.map}
-          initialRegion={region}
-          region={region}
-          onRegionChangeComplete={handleRegionChangeComplete}
-        >
+        <MapView style={styles.map} initialRegion={region} region={region} onRegionChangeComplete={handleRegionChangeComplete}>
           {/* Marker if user has chosen a location */}
-          {location && (
-            <Marker
-              coordinate={location}
-              title="Selected Location"
-              description={searchText || 'Location'}
-              pinColor="red"
-            />
-          )}
+          {location && <Marker coordinate={location} title='Selected Location' description={searchText || "Location"} pinColor='red' />}
         </MapView>
       </View>
 
       {/* Continue Button */}
-      <Pressable
-        style={[styles.continueButton, { backgroundColor: isFormComplete ? '#E4423F' : '#F5F5F5' }]}
-        onPress={handleContinue}
-        disabled={!isFormComplete}
-      >
-        <Text style={[styles.continueButtonText, { color: isFormComplete ? '#FFF' : 'rgba(26, 26, 26, 0.25)' }]}>Continue</Text>
+      <Pressable style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5" }]} onPress={handleContinue} disabled={!isFormComplete}>
+        <Text style={[styles.continueButtonText, { color: isFormComplete ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -268,14 +225,14 @@ export default function LocationScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
-    justifyContent: 'flex-start',
-    alignItems: 'stretch',
+    backgroundColor: "#FFF",
+    justifyContent: "flex-start",
+    alignItems: "stretch",
     paddingHorizontal: 25,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   backButton: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     borderRadius: 20,
     marginBottom: 20,
     marginTop: 30,
@@ -285,13 +242,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
     marginBottom: 20,
   },
   subtitle: {
     fontSize: 14,
-    color: 'gray',
+    color: "gray",
     marginBottom: 50,
   },
   trialBox: {
@@ -299,43 +256,43 @@ const styles = StyleSheet.create({
   },
   trialHeading: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 5,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   trialBody: {
     fontSize: 14,
-    color: '#000',
+    color: "#000",
     lineHeight: 20,
   },
   link: {
-    fontWeight: 'bold',
-    textDecorationLine: 'underline',
+    fontWeight: "bold",
+    textDecorationLine: "underline",
   },
   searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 10,
   },
   searchWrapper: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#CCC',
+    borderColor: "#CCC",
     borderRadius: 25,
     paddingHorizontal: 15,
   },
   searchInput: {
     height: 48,
     fontSize: 16,
-    color: '#000',
+    color: "#000",
   },
   searchIconWrapper: {
-    position: 'absolute',
+    position: "absolute",
     right: 15,
   },
   suggestionsContainer: {
-    backgroundColor: '#FFF',
-    borderColor: '#CCC',
+    backgroundColor: "#FFF",
+    borderColor: "#CCC",
     borderWidth: 1,
     borderRadius: 5,
     marginBottom: 5,
@@ -343,13 +300,13 @@ const styles = StyleSheet.create({
   suggestionItem: {
     padding: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEE',
+    borderBottomColor: "#EEE",
   },
   mapContainer: {
-    width: '100%',
+    width: "100%",
     height: 250,
     borderRadius: 10,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: 20,
   },
   map: {
@@ -358,13 +315,13 @@ const styles = StyleSheet.create({
   continueButton: {
     height: 50,
     borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 50,
   },
   continueButtonText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });

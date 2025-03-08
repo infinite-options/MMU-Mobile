@@ -8,9 +8,9 @@ import { Video } from "expo-av";
 import { useFocusEffect } from "@react-navigation/native";
 import ProgressBar from "../src/Assets/Components/ProgressBar";
 import { getProfileSteps, getProfileCompletion } from "./profileStepsState";
-import { REACT_APP_GOOGLE_API_KEY } from "@env";
+import { EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY } from "@env";
 
-const GOOGLE_API_KEY = REACT_APP_GOOGLE_API_KEY;
+const GOOGLE_API_KEY = EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY;
 console.log("In My Profile:", GOOGLE_API_KEY);
 
 // Example placeholders for bottom navigation icons
@@ -460,10 +460,7 @@ export default function MyProfile() {
               )}
             </View>
           ) : (
-            <TouchableOpacity 
-              style={styles.uploadVideoButton} 
-              onPress={() => navigation.navigate("EditProfile")}
-            >
+            <TouchableOpacity style={styles.uploadVideoButton} onPress={() => navigation.navigate("EditProfile")}>
               <Ionicons name='cloud-upload-outline' size={20} color='#E4423F' />
               <Text style={styles.uploadVideoText}>Upload Video File</Text>
             </TouchableOpacity>
@@ -598,37 +595,27 @@ export default function MyProfile() {
 
           <View style={styles.aboutItem}>
             <Image source={require("../assets/icons/dob.png")} style={{ width: 14, height: 16 }} />
-            <Text style={[styles.aboutItemText, !user_age && { color: "gray" }]}>
-              {user_age ? `Born on ${formatDate(user_birthdate)} (Age: ${user_age})` : "Not Provided"}
-            </Text>
+            <Text style={[styles.aboutItemText, !user_age && { color: "gray" }]}>{user_age ? `Born on ${formatDate(user_birthdate)} (Age: ${user_age})` : "Not Provided"}</Text>
           </View>
 
           <View style={styles.aboutItem}>
             <Image source={require("../assets/icons/height.png")} style={{ width: 14, height: 16 }} />
-            <Text style={[styles.aboutItemText, !user_height && { color: "gray" }]}>
-              {user_height || "Not Provided"}
-            </Text>
+            <Text style={[styles.aboutItemText, !user_height && { color: "gray" }]}>{user_height || "Not Provided"}</Text>
           </View>
 
           <View style={styles.aboutItem}>
             <Image source={require("../assets/icons/kids.png")} style={{ width: 14, height: 16 }} />
-            <Text style={[styles.aboutItemText, !user_kids && { color: "gray" }]}>
-              {user_kids ? `${user_kids} children` : "Not Provided"}
-            </Text>
+            <Text style={[styles.aboutItemText, !user_kids && { color: "gray" }]}>{user_kids ? `${user_kids} children` : "Not Provided"}</Text>
           </View>
 
           <View style={styles.aboutItem}>
             <Image source={require("../assets/icons/gender.png")} style={{ width: 14, height: 16 }} />
-            <Text style={[styles.aboutItemText, !user_gender && { color: "gray" }]}>
-              {user_gender ? `Sex assigned at birth was ${user_gender}` : "Not Provided"}
-            </Text>
+            <Text style={[styles.aboutItemText, !user_gender && { color: "gray" }]}>{user_gender ? `Sex assigned at birth was ${user_gender}` : "Not Provided"}</Text>
           </View>
 
           <View style={styles.aboutItem}>
             <Image source={require("../assets/icons/user_identity.png")} style={{ width: 14, height: 16 }} />
-            <Text style={[styles.aboutItemText, !user_identity && { color: "gray" }]}>
-              {user_identity ? `Identifies as ${user_identity}` : "Not Provided"}
-            </Text>
+            <Text style={[styles.aboutItemText, !user_identity && { color: "gray" }]}>{user_identity ? `Identifies as ${user_identity}` : "Not Provided"}</Text>
           </View>
 
           {/* {user_sexuality ? (
@@ -656,9 +643,7 @@ export default function MyProfile() {
 
           <View style={styles.aboutItem}>
             <Image source={require("../assets/icons/location.png")} style={{ width: 14, height: 16 }} />
-            <Text style={[styles.aboutItemText, !user_address && { color: "gray" }]}>
-              {user_address || "Not Provided"}
-            </Text>
+            <Text style={[styles.aboutItemText, !user_address && { color: "gray" }]}>{user_address || "Not Provided"}</Text>
           </View>
 
           {/* Add more fields as needed */}

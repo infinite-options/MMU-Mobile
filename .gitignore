@@ -41,3 +41,7 @@ yarn-error.*
 # Build directories
 # ios/
 # android/
+
+# Secrets
+secrets.json
+*.sh

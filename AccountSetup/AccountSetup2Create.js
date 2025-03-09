@@ -451,6 +451,55 @@ export default function AccountSetup2Create() {
       console.log("AS2C Apple User Name:", user.name);
       console.log("AS2C Apple ID Token Length:", idToken ? idToken.length : 0);
 
+      // First, check if the user already exists by calling the appleLogin endpoint
+      const appleLoginEndpoint = "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/appleLogin";
+      console.log("AS2C Calling appleLogin endpoint with ID:", user.id);
+
+      try {
+        const loginResponse = await fetch(appleLoginEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: user.id }),
+        });
+
+        const loginResult = await loginResponse.json();
+        console.log("AS2C Apple Login endpoint response:", loginResult);
+
+        // Check if the response contains valid user data
+        if (loginResult?.result?.[0]?.user_uid) {
+          console.log("AS2C User already exists, navigating to MyProfile");
+
+          const userData = loginResult.result[0];
+
+          // Store user data in AsyncStorage
+          await AsyncStorage.setItem("user_uid", userData.user_uid);
+          await AsyncStorage.setItem("user_email_id", userData.user_email_id || user.email || "");
+
+          // Store first and last name for use in other screens
+          if (userData.user_first_name) {
+            await AsyncStorage.setItem("user_first_name", userData.user_first_name);
+          }
+          if (userData.user_last_name) {
+            await AsyncStorage.setItem("user_last_name", userData.user_last_name);
+          }
+
+          // Navigate to MyProfile
+          navigation.navigate("MyProfile");
+
+          // Clean up and return
+          clearTimeout(signInTimeoutId);
+          setShowSpinner(false);
+          setSignInInProgress(false);
+          return;
+        }
+
+        // If we get here, the user doesn't exist, so continue with sign up
+        console.log("AS2C User doesn't exist, continuing with sign up");
+      } catch (loginError) {
+        console.error("AS2C Error checking if user exists:", loginError);
+        // Continue with sign up if there's an error checking if the user exists
+      }
+
       // Log the first and last parts of the token for debugging (without exposing the full token)
       if (idToken) {
         console.log("AS2C Apple ID Token Start:", idToken.substring(0, 20) + "...");
@@ -459,7 +508,7 @@ export default function AccountSetup2Create() {
 
       // Create user data payload for backend - matching the structure used for Google Sign In
       const userData = {
-        email: user.email,
+        email: user.email || `apple_${user.id}@example.com`, // Use a placeholder email if not provided
         password: "APPLE_LOGIN", // Special password for social login
         phone_number: "", // Phone number would be collected separately if needed
         google_auth_token: idToken, // Using the same field name as Google Sign In
@@ -901,11 +950,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     marginBottom: 25,
+    alignItems: "center",
   },
   socialLoginButton: {
     backgroundColor: "#F5F5F5",
-    borderRadius: 50,
-    padding: 15,
+    borderRadius: 37.5, // Half of width/height for perfect circle
+    width: 75,
+    height: 75,
     marginHorizontal: 10,
     alignItems: "center",
     justifyContent: "center",
@@ -920,12 +971,14 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   googleLogo: {
-    width: 45,
-    height: 45,
+    width: 30,
+    height: 30,
+    resizeMode: "contain",
   },
   appleLogo: {
-    width: 45,
-    height: 45,
+    width: 30,
+    height: 30,
+    resizeMode: "contain",
   },
   textInputOutline: {
     borderWidth: 0,

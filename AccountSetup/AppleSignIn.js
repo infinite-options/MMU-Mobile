@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Platform, TouchableOpacity, Text } from "react-native";
+import { StyleSheet, View, Platform, TouchableOpacity, Text, Image } from "react-native";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as WebBrowser from "expo-web-browser";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -107,13 +107,9 @@ const AppleSignIn = ({ onSignIn, onError }) => {
   if (Platform.OS === "ios" && isAppleAuthAvailable) {
     return (
       <View style={styles.container}>
-        <AppleAuthentication.AppleAuthenticationButton
-          buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-          buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
-          cornerRadius={5}
-          style={styles.appleButton}
-          onPress={handleAppleSignIn}
-        />
+        <TouchableOpacity style={styles.socialLoginButton} onPress={handleAppleSignIn}>
+          <Image source={require("../assets/apple_logo.png")} style={styles.appleLogo} />
+        </TouchableOpacity>
       </View>
     );
   }
@@ -121,8 +117,8 @@ const AppleSignIn = ({ onSignIn, onError }) => {
   // Android button or iOS without Apple Authentication
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.androidAppleButton} onPress={handleAppleSignIn}>
-        <Text style={styles.androidAppleButtonText}>Sign in with Apple</Text>
+      <TouchableOpacity style={styles.socialLoginButton} onPress={handleAppleSignIn}>
+        <Image source={require("../assets/apple_logo.png")} style={styles.appleLogo} />
       </TouchableOpacity>
     </View>
   );
@@ -130,11 +126,24 @@ const AppleSignIn = ({ onSignIn, onError }) => {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 16,
+    marginTop: 0,
   },
   appleButton: {
     width: 192,
     height: 48,
+  },
+  socialLoginButton: {
+    backgroundColor: "#F5F5F5",
+    borderRadius: 37.5,
+    width: 75,
+    height: 75,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  appleLogo: {
+    width: 30,
+    height: 30,
+    resizeMode: "contain",
   },
   androidAppleButton: {
     width: 192,

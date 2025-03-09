@@ -1,14 +1,5 @@
-import React, { useState } from "react";
-import {
-  StatusBar,
-  Platform,
-  SafeAreaView,
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Pressable,
-  Image,
-} from "react-native";
+import React, { useState, useEffect } from "react";
+import { StatusBar, Platform, SafeAreaView, View, StyleSheet, TouchableOpacity, Pressable, Image } from "react-native";
 import { Text, TextInput } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import ProgressBar from "../src/Assets/Components/ProgressBar";
@@ -19,26 +10,48 @@ export default function NameInput({ navigation }) {
     firstName: "",
     lastName: "",
   });
-  
+
   // Add error state
   const [nameErrors, setNameErrors] = useState({
-    firstName: '',
-    lastName: ''
+    firstName: "",
+    lastName: "",
   });
 
+  // Load existing name data if available from social sign-in
+  useEffect(() => {
+    const loadExistingNameData = async () => {
+      try {
+        // Check if we have first_name and last_name from social sign-in
+        const firstName = await AsyncStorage.getItem("user_first_name");
+        const lastName = await AsyncStorage.getItem("user_last_name");
+
+        if (firstName || lastName) {
+          console.log("Found existing name data from social sign-in:", { firstName, lastName });
+
+          // Update form data with existing name data
+          setFormData((prevData) => ({
+            ...prevData,
+            firstName: firstName || prevData.firstName,
+            lastName: lastName || prevData.lastName,
+          }));
+        }
+      } catch (error) {
+        console.error("Error loading existing name data:", error);
+      }
+    };
+
+    loadExistingNameData();
+  }, []);
+
   // Modify form completion check to also check for validation errors
-  const isFormComplete = 
-    formData.firstName.trim() !== "" && 
-    formData.lastName.trim() !== "" && 
-    !nameErrors.firstName && 
-    !nameErrors.lastName;
+  const isFormComplete = formData.firstName.trim() !== "" && formData.lastName.trim() !== "" && !nameErrors.firstName && !nameErrors.lastName;
 
   // Add validation function
   const validateName = (name, field) => {
     // Name should only contain letters, spaces, hyphens, and apostrophes
     const nameRegex = /^[A-Za-z\s\-']+$/;
-    
-    if (!name || name.trim() === '') {
+
+    if (!name || name.trim() === "") {
       return `${field} is required`;
     } else if (name.length < 2) {
       return `${field} must be at least 2 characters`;
@@ -47,7 +60,7 @@ export default function NameInput({ navigation }) {
     } else if (!nameRegex.test(name)) {
       return `${field} can only contain letters, spaces, hyphens, and apostrophes`;
     }
-    return '';
+    return "";
   };
 
   /**
@@ -66,14 +79,14 @@ export default function NameInput({ navigation }) {
 
   const handleContinue = async () => {
     // Validate once more before continuing
-    const firstNameError = validateName(formData.firstName, 'First name');
-    const lastNameError = validateName(formData.lastName, 'Last name');
-    
+    const firstNameError = validateName(formData.firstName, "First name");
+    const lastNameError = validateName(formData.lastName, "Last name");
+
     setNameErrors({
       firstName: firstNameError,
-      lastName: lastNameError
+      lastName: lastNameError,
     });
-    
+
     if (isFormComplete) {
       // 1) Store the data for future usage
       await saveUserName(formData.firstName, formData.lastName);
@@ -86,15 +99,12 @@ export default function NameInput({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       {/* Back Button */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Image source={require('../assets/icons/backarrow.png')} />
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Image source={require("../assets/icons/backarrow.png")} />
       </TouchableOpacity>
 
       {/* Progress Bar */}
-      <ProgressBar startProgress={10} endProgress={20} style={styles.progressBar}/>
+      <ProgressBar startProgress={10} endProgress={20} style={styles.progressBar} />
 
       {/* Title and Input Fields */}
       <View style={styles.content}>
@@ -102,56 +112,52 @@ export default function NameInput({ navigation }) {
         <Text style={styles.subtitle}>Your full name will be public.</Text>
 
         <TextInput
-          label="First Name"
-          mode="outlined"
+          label='First Name'
+          mode='outlined'
           value={formData.firstName}
           onChangeText={(text) => {
             // Allow spaces during typing but validate the input
-            const validatedText = text.replace(/[^A-Za-z\s\-']/g, '');
-            
+            const validatedText = text.replace(/[^A-Za-z\s\-']/g, "");
+
             // Capitalize first letter when there's content
-            const formattedText = validatedText.length > 0 
-              ? validatedText.charAt(0).toUpperCase() + validatedText.slice(1)
-              : validatedText;
-              
+            const formattedText = validatedText.length > 0 ? validatedText.charAt(0).toUpperCase() + validatedText.slice(1) : validatedText;
+
             setFormData({ ...formData, firstName: formattedText });
-            
+
             // Validate
-            setNameErrors(prev => ({
+            setNameErrors((prev) => ({
               ...prev,
-              firstName: validateName(formattedText, 'First name')
+              firstName: validateName(formattedText, "First name"),
             }));
           }}
           autoCorrect={false}
-          autoCapitalize="words"
+          autoCapitalize='words'
           style={[styles.input, nameErrors.firstName ? styles.inputError : null]}
           outlineStyle={[styles.textInputOutline, nameErrors.firstName ? styles.textInputOutlineError : null]}
         />
         {nameErrors.firstName ? <Text style={styles.errorText}>{nameErrors.firstName}</Text> : null}
 
         <TextInput
-          label="Last Name"
-          mode="outlined"
+          label='Last Name'
+          mode='outlined'
           value={formData.lastName}
           onChangeText={(text) => {
             // Allow spaces during typing but validate the input
-            const validatedText = text.replace(/[^A-Za-z\s\-']/g, '');
-            
+            const validatedText = text.replace(/[^A-Za-z\s\-']/g, "");
+
             // Capitalize first letter when there's content
-            const formattedText = validatedText.length > 0 
-              ? validatedText.charAt(0).toUpperCase() + validatedText.slice(1)
-              : validatedText;
-              
+            const formattedText = validatedText.length > 0 ? validatedText.charAt(0).toUpperCase() + validatedText.slice(1) : validatedText;
+
             setFormData({ ...formData, lastName: formattedText });
-            
+
             // Validate
-            setNameErrors(prev => ({
+            setNameErrors((prev) => ({
               ...prev,
-              lastName: validateName(formattedText, 'Last name')
+              lastName: validateName(formattedText, "Last name"),
             }));
           }}
           autoCorrect={false}
-          autoCapitalize="words"
+          autoCapitalize='words'
           style={[styles.input, nameErrors.lastName ? styles.inputError : null]}
           outlineStyle={[styles.textInputOutline, nameErrors.lastName ? styles.textInputOutlineError : null]}
         />
@@ -159,15 +165,8 @@ export default function NameInput({ navigation }) {
       </View>
 
       {/* Continue Button */}
-      <Pressable
-        style={[
-          styles.continueButton,
-          { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5" },
-        ]}
-        onPress={handleContinue}
-        disabled={!isFormComplete}
-      >
-        <Text style={[styles.continueButtonText, { color: isFormComplete ? '#FFF' : 'rgba(26, 26, 26, 0.25)' }]}>Continue</Text>
+      <Pressable style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5" }]} onPress={handleContinue} disabled={!isFormComplete}>
+        <Text style={[styles.continueButtonText, { color: isFormComplete ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -240,10 +239,10 @@ const styles = StyleSheet.create({
   },
   textInputOutlineError: {
     borderWidth: 1,
-    borderColor: '#E4423F',
+    borderColor: "#E4423F",
   },
   errorText: {
-    color: '#E4423F',
+    color: "#E4423F",
     fontSize: 12,
     marginTop: -10,
     marginBottom: 10,

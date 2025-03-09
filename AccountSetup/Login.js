@@ -316,6 +316,69 @@ export default function Login() {
     }
   };
 
+  // Handle Apple Sign In
+  const handleAppleSignIn = async (userInfo) => {
+    try {
+      setShowSpinner(true);
+      console.log("LP Apple Sign-In successful", JSON.stringify(userInfo, null, 2));
+
+      const { user, idToken } = userInfo;
+
+      // Call the appleLogin endpoint with the user ID
+      const appleLoginEndpoint = "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/appleLogin";
+      console.log("LP Calling appleLogin endpoint with ID:", user.id);
+
+      const response = await axios.post(
+        appleLoginEndpoint,
+        { id: user.id },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
+
+      console.log("LP Apple Login endpoint response:", response.data);
+
+      // Check if the response contains valid user data
+      if (response.data?.result?.[0]?.user_uid) {
+        const userData = response.data.result[0];
+
+        // Store user data in AsyncStorage
+        await AsyncStorage.setItem("user_uid", userData.user_uid);
+        await AsyncStorage.setItem("user_email_id", userData.user_email_id || user.email || "");
+
+        // Navigate to next screen
+        navigation.navigate("MyProfile");
+      } else {
+        // If no user data is returned, the user might not exist in the system
+        // We could either create a new user or show an error
+        Alert.alert("Account Not Found", "No account found for this Apple ID. Would you like to create a new account?", [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Sign Up",
+            onPress: () => navigation.navigate("AccountSetup2Create"),
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error("LP Apple sign-in error:", error);
+      Alert.alert("Error", "Something went wrong with Apple sign-in. Please try again.");
+    } finally {
+      setShowSpinner(false);
+    }
+  };
+
+  // Handle Apple Sign In Error
+  const handleAppleSignInError = (error) => {
+    console.error("LP Apple Sign-In Error:", error);
+    Alert.alert("Error", `Apple Sign-In failed: ${error}`);
+  };
+
   // Attempt to login with salt
   const handleSubmitLogin = async () => {
     if (!email || !password) {
@@ -430,9 +493,13 @@ export default function Login() {
           <TouchableOpacity style={styles.socialLoginButton} onPress={handleGoogleSignIn}>
             <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.socialLoginButton}>
-            <Image source={require("../assets/apple_logo.png")} style={styles.appleLogo} />
-          </TouchableOpacity>
+          {Platform.OS === "ios" ? (
+            <AppleSignIn onSignIn={handleAppleSignIn} onError={handleAppleSignInError} />
+          ) : (
+            <TouchableOpacity style={styles.socialLoginButton} disabled={showSpinner}>
+              <Image source={require("../assets/apple_logo.png")} style={styles.appleLogo} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Google Sign-In Button */}
@@ -558,22 +625,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     marginBottom: 25,
+    alignItems: "center",
   },
   socialLoginButton: {
     backgroundColor: "#F5F5F5",
-    borderRadius: 50,
-    padding: 15,
+    borderRadius: 37.5, // Half of width/height for perfect circle
+    width: 75,
+    height: 75,
     marginHorizontal: 10,
     alignItems: "center",
     justifyContent: "center",
   },
   googleLogo: {
-    width: 45,
-    height: 45,
+    width: 30,
+    height: 30,
+    resizeMode: "contain",
   },
   appleLogo: {
-    width: 45,
-    height: 45,
+    width: 30,
+    height: 30,
+    resizeMode: "contain",
   },
   footerText: {
     textAlign: "center",

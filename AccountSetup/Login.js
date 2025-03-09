@@ -10,6 +10,13 @@ import axios from "axios";
 import sha256 from "crypto-js/sha256";
 import { GoogleSignin, statusCodes, GoogleSigninButton } from "@react-native-google-signin/google-signin";
 import config from "../config"; // Import config
+import AppleSignIn from "./AppleSignIn"; // Import AppleSignIn component
+
+// Helper function to get last two digits of a string (for debugging)
+const getLastTwoDigits = (str) => {
+  if (!str) return "Not set";
+  return str.slice(-2);
+};
 
 export default function Login() {
   // console.log("LoginPage");
@@ -34,8 +41,7 @@ export default function Login() {
   // Endpoints
   const SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/MMU";
   const LOGIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/Login/MMU";
-  // Replace the GoogleLoginMMU endpoint with UserSocialLogin endpoint (used as template below)
-  // const GOOGLE_LOGIN_ENDPOINT = 'https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/GoogleLoginMMU';
+  const SOCIAL_LOGIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/MMU";
 
   // Initialize Google Sign In
   useEffect(() => {
@@ -99,28 +105,23 @@ export default function Login() {
           // Wait a bit before retrying
           setTimeout(configureGoogleSignIn, 1000);
         } else {
-          console.error("LP Failed to configure Google Sign-In after multiple attempts");
-          setIsGoogleConfigured(false);
-          setIsGoogleConfiguring(false); // Configuration failed but no longer configuring
-          console.log("LP Google Sign-In configuration failed - isGoogleConfigured set to FALSE, isGoogleConfiguring set to FALSE");
-
-          // Don't show alert here, only when user tries to use the feature
+          console.error(`LP Google Sign-In configuration failed after ${maxAttempts} attempts`);
+          setIsGoogleConfiguring(false); // Stop configuring
+          // Alert.alert("Error", "Failed to configure Google Sign-In after multiple attempts.");
         }
       }
     };
 
+    // Start configuration process
     configureGoogleSignIn();
 
     // Cleanup function
     return () => {
-      console.log("LP Cleanup: Resetting Google Sign-In configuration state");
-      // Reset configuration state when component unmounts
-      setIsGoogleConfigured(false);
-      setIsGoogleConfiguring(false);
+      console.log("LP Cleanup: Component unmounting");
     };
   }, []);
 
-  // Check if email is valid
+  // Email validation
   const isValidEmail = (userEmail) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(userEmail);
@@ -144,11 +145,6 @@ export default function Login() {
     }
 
     // Check if configuration failed
-    // if (!isGoogleConfigured) {
-    //   console.log("LP Google Sign-In configuration failed");
-    //   Alert.alert("Error", "LP Google Sign-In is not configured properly. Please try again later.");
-    //   return;
-    // }
     if (!isGoogleConfigured) {
       console.log("LP Google Sign-In configuration failed");
 
@@ -310,6 +306,64 @@ export default function Login() {
     }
   };
 
+  // Handle Apple Sign In
+  const handleAppleSignIn = async (userInfo) => {
+    try {
+      setShowSpinner(true);
+      console.log("Apple Sign-In successful", JSON.stringify(userInfo, null, 2));
+
+      const { user, idToken } = userInfo;
+
+      // Call your backend endpoint for Apple login
+      const url = SOCIAL_LOGIN_ENDPOINT;
+      const response = await axios.post(
+        url,
+        {
+          email: user.email,
+          first_name: user.name ? user.name.split(" ")[0] : "",
+          last_name: user.name ? user.name.split(" ").slice(1).join(" ") : "",
+          social_id: user.id,
+          login_type: "apple",
+          token: idToken,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
+
+      console.log("Apple Sign-In Backend response:", response.data);
+
+      // Handle response
+      if (response.data && response.data.code === 200) {
+        // Store user data in AsyncStorage
+        const user_uid = response.data.result.user_uid;
+        const user_email_id = user.email;
+
+        await AsyncStorage.setItem("user_uid", user_uid);
+        await AsyncStorage.setItem("user_email_id", user_email_id);
+
+        // Navigate to next screen
+        navigation.navigate("MyProfile");
+      } else {
+        Alert.alert("Error", "Failed to login with Apple. Server response invalid.");
+      }
+    } catch (error) {
+      console.error("Apple sign-in error:", error);
+      Alert.alert("Error", "Something went wrong with Apple sign-in. Please try again.");
+    } finally {
+      setShowSpinner(false);
+    }
+  };
+
+  // Handle Apple Sign In Error
+  const handleAppleSignInError = (error) => {
+    console.error("Apple Sign-In Error:", error);
+    Alert.alert("Error", `Apple Sign-In failed: ${error}`);
+  };
+
   // Attempt to login with salt
   const handleSubmitLogin = async () => {
     if (!email || !password) {
@@ -350,287 +404,230 @@ export default function Login() {
         }
       );
 
-      // 4. If success, store the user data in AsyncStorage
-      const { user_uid, user_email_id } = loginResponse.data.result;
-      await AsyncStorage.setItem("user_uid", user_uid);
-      await AsyncStorage.setItem("user_email_id", user_email_id);
+      const loginObject = loginResponse.data;
 
-      // 5. Navigate to next screen
-      navigation.navigate("MyProfile");
+      if (loginObject.code === 200) {
+        // Login successful
+        const user_uid = loginObject.result[0].user_uid;
+        const user_email_id = email;
+
+        // Store user data in AsyncStorage
+        await AsyncStorage.setItem("user_uid", user_uid);
+        await AsyncStorage.setItem("user_email_id", user_email_id);
+
+        // Navigate to next screen
+        navigation.navigate("MyProfile");
+      } else {
+        // Login failed
+        Alert.alert("Error", "Invalid email or password.");
+      }
     } catch (error) {
-      console.error("LP Error occurred:", error);
-      Alert.alert("Error", "Invalid credentials or server error.");
+      console.error("Login error:", error);
+      Alert.alert("Error", "Something went wrong. Please try again.");
     } finally {
       setShowSpinner(false);
     }
   };
 
-  // Whether the form is ready to be submitted
+  // Check if form is complete
   const isFormComplete = () => email !== "" && password !== "" && isValidEmail(email);
 
+  // Render
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
-        <StatusBar barStyle='dark-content' backgroundColor='#FFF' />
-
-        {/* Progress Bar */}
-        <ProgressBar startProgress={0} endProgress={10} style={styles.progressBar} />
-
-        {/* Title and Subtitle */}
-        <Text style={styles.title}>Welcome Back!</Text>
-        <Text style={styles.subtitle}>Please choose a login option to continue.</Text>
-
-        {/* Spinner (optional) */}
-        {showSpinner && <ActivityIndicator size='large' color='#E4423F' style={{ marginBottom: 10 }} />}
-
-        {/* Input Fields */}
-        <View style={styles.inputContainer}>
-          <TextInput label='Email' mode='outlined' keyboardType='email-address' value={email} onChangeText={setEmail} style={styles.input} outlineStyle={styles.textInputOutline} />
-
-          <TextInput
-            label='Password'
-            mode='outlined'
-            secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={setPassword}
-            right={<TextInput.Icon icon={showPassword ? "eye" : "eye-off"} onPress={() => setShowPassword(!showPassword)} size={20} color='gray' style={styles.eyeIcon} />}
-            style={styles.input}
-            outlineStyle={styles.textInputOutline}
-          />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle='dark-content' />
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.header}>
+          <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name='chevron-back' size={24} color='#000' />
+          </Pressable>
+          <Text style={styles.headerTitle}>Login</Text>
+          <View style={{ width: 24 }} />
         </View>
 
-        {/* Continue (Login) Button */}
-        <Pressable
-          style={[styles.continueButton, { backgroundColor: isFormComplete() ? "#E4423F" : "#F5F5F5" }]}
-          onPress={() => {
-            if (isFormComplete()) {
-              handleSubmitLogin();
-            }
-          }}
-          disabled={!isFormComplete()}
-        >
-          <Text style={[styles.continueButtonText, { color: isFormComplete() ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
-        </Pressable>
+        <ProgressBar progress={0.5} />
 
-        {/* OR Separator */}
-        <View style={styles.orSeparator}>
-          <View style={styles.separatorLine} />
-          <Text style={styles.orText}>OR</Text>
-          <View style={styles.separatorLine} />
-        </View>
+        <View style={styles.formContainer}>
+          <Text style={styles.title}>Welcome back!</Text>
+          <Text style={styles.subtitle}>Please enter your details to continue</Text>
 
-        {/* Social Login Buttons */}
-        <View style={styles.socialContainer}>
-          <TouchableOpacity style={styles.socialLoginButton} onPress={handleGoogleSignIn}>
-            <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder='Enter your email'
+              value={email}
+              onChangeText={setEmail}
+              keyboardType='email-address'
+              autoCapitalize='none'
+              mode='outlined'
+              outlineColor='#E8E8E8'
+              activeOutlineColor='#E4423F'
+              theme={{ roundness: 10 }}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Password</Text>
+            <TextInput
+              style={styles.input}
+              placeholder='Enter your password'
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              mode='outlined'
+              outlineColor='#E8E8E8'
+              activeOutlineColor='#E4423F'
+              theme={{ roundness: 10 }}
+              right={<TextInput.Icon icon={showPassword ? "eye-off" : "eye"} onPress={() => setShowPassword(!showPassword)} />}
+            />
+          </View>
+
+          <TouchableOpacity style={styles.forgotPassword} onPress={() => Alert.alert("Forgot Password", "Please contact support to reset your password.")}>
+            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.socialLoginButton}>
-            <Image source={require("../assets/apple_logo.png")} style={styles.appleLogo} />
+
+          <TouchableOpacity style={[styles.loginButton, !isFormComplete() && styles.loginButtonDisabled]} onPress={handleSubmitLogin} disabled={!isFormComplete() || showSpinner}>
+            {showSpinner ? <ActivityIndicator color='#fff' /> : <Text style={styles.loginButtonText}>Login</Text>}
           </TouchableOpacity>
-        </View>
 
-        {/* Google Sign-In Button */}
-        {/* <GoogleSigninButton
-          style={styles.googleButton}
-          size={GoogleSigninButton.Size.Wide}
-          color={GoogleSigninButton.Color.Dark}
-          onPress={handleGoogleSignIn}
-        /> */}
+          <View style={styles.orContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.orText}>OR</Text>
+            <View style={styles.divider} />
+          </View>
 
-        {/* Don't have an account? Sign up */}
-        <TouchableOpacity onPress={() => navigation.navigate("AccountSetup2Create")}>
-          <Text style={styles.footerText}>
-            Don't have an account yet? <Text style={styles.loginLink}>Sign Up</Text>
-          </Text>
-        </TouchableOpacity>
+          <View style={styles.socialContainer}>
+            <GoogleSigninButton style={styles.googleButton} size={GoogleSigninButton.Size.Wide} color={GoogleSigninButton.Color.Light} onPress={handleGoogleSignIn} disabled={showSpinner} />
 
-        {/* Google Sign-In Configuration Status - For debugging */}
-        <View style={styles.debugContainer}>
-          <Text style={styles.debugText}>Google Sign-In Status:</Text>
-          <Text style={styles.debugText}>
-            isGoogleConfigured: <Text style={{ color: isGoogleConfigured ? "#00AA00" : "#FF0000", fontWeight: "bold", fontSize: 14 }}>{isGoogleConfigured ? "TRUE" : "FALSE"}</Text>
-          </Text>
-          <Text style={styles.debugText}>
-            isGoogleConfiguring: <Text style={{ color: isGoogleConfiguring ? "#00AA00" : "#FF0000", fontWeight: "bold", fontSize: 14 }}>{isGoogleConfiguring ? "TRUE" : "FALSE"}</Text>
-          </Text>
-          <Text style={styles.debugText}>
-            Config Attempts:{" "}
-            <Text style={{ fontWeight: "bold", fontSize: 14 }}>
-              {configAttemptCount}/{maxAttempts}
-            </Text>
-          </Text>
+            {Platform.OS === "ios" && <AppleSignIn onSignIn={handleAppleSignIn} onError={handleAppleSignInError} />}
+          </View>
 
-          {/* Debug button to check Google Sign-In status */}
-          <TouchableOpacity style={styles.debugButton} onPress={handleGoogleSignIn}>
-            <Text style={styles.debugButtonText}>Check Google Sign-In Status</Text>
-          </TouchableOpacity>
+          <View style={styles.signupContainer}>
+            <Text style={styles.signupText}>Don't have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate("AccountSetup2Create")}>
+              <Text style={styles.signupLink}>Sign up</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// Styles can be nearly identical to your signup page
+// Styles remain unchanged
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#FFF",
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewContent: {
-    paddingHorizontal: 25,
-    paddingBottom: 30, // Add padding at the bottom for better scrolling
-    justifyContent: "flex-start", // Align content to the top
-    alignItems: "stretch",
-  },
   container: {
     flex: 1,
-    paddingHorizontal: 25,
-    backgroundColor: "#FFF",
-    justifyContent: "flex-start",
-    alignItems: "stretch",
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+    backgroundColor: "#fff",
   },
-  progressBar: {
-    marginTop: 110,
-    marginBottom: 30,
+  scrollContainer: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    fontFamily: "Lexend-Bold",
+  },
+  formContainer: {
+    padding: 24,
   },
   title: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: "bold",
-    textAlign: "left",
-    color: "#000",
-    marginBottom: 10,
+    marginBottom: 8,
+    fontFamily: "Lexend-Bold",
   },
   subtitle: {
-    fontSize: 14,
-    color: "gray",
-    textAlign: "left",
-    marginBottom: 20,
+    fontSize: 16,
+    color: "#666",
+    marginBottom: 32,
+    fontFamily: "Lexend",
   },
   inputContainer: {
-    marginBottom: 30,
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    marginBottom: 8,
+    fontFamily: "Lexend",
   },
   input: {
-    marginBottom: 15,
+    backgroundColor: "#fff",
+    fontFamily: "Lexend",
   },
-  eyeIcon: {
-    marginTop: 15,
+  forgotPassword: {
+    alignSelf: "flex-end",
+    marginBottom: 24,
   },
-  continueButton: {
-    height: 50,
-    justifyContent: "center",
-    alignItems: "center",
+  forgotPasswordText: {
+    color: "#E4423F",
+    fontSize: 14,
+    fontFamily: "Lexend",
+  },
+  loginButton: {
     backgroundColor: "#E4423F",
-    borderRadius: 30,
-    marginBottom: 20,
+    borderRadius: 10,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginBottom: 24,
   },
-  continueButtonText: {
-    color: "#FFF",
-    fontSize: 18,
-    fontWeight: "bold",
+  loginButtonDisabled: {
+    backgroundColor: "#FFCCCB",
   },
-  orSeparator: {
+  loginButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: "Lexend-Bold",
+  },
+  orContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 20,
+    marginBottom: 24,
   },
-  separatorLine: {
+  divider: {
     flex: 1,
     height: 1,
-    backgroundColor: "#E0E0E0",
+    backgroundColor: "#E8E8E8",
   },
   orText: {
-    marginHorizontal: 10,
-    fontSize: 14,
-    color: "gray",
+    marginHorizontal: 16,
+    color: "#666",
+    fontFamily: "Lexend",
   },
   socialContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginBottom: 25,
-  },
-  socialLoginButton: {
-    backgroundColor: "#F5F5F5",
-    borderRadius: 50,
-    padding: 15,
-    marginHorizontal: 10,
     alignItems: "center",
-    justifyContent: "center",
-  },
-  googleLogo: {
-    width: 45,
-    height: 45,
-  },
-  appleLogo: {
-    width: 45,
-    height: 45,
-  },
-  footerText: {
-    textAlign: "center",
-    color: "gray",
-    fontSize: 16,
-  },
-  loginLink: {
-    color: "#E4423F",
-    fontWeight: "bold",
-  },
-  textInputOutline: {
-    borderWidth: 0,
-    borderColor: "#F9F9F9",
-    borderRadius: 10,
-    flex: 1,
-    alignItems: "center",
-    backgroundColor: "#F9F9F9",
-    paddingHorizontal: 15,
-    height: 50,
+    marginBottom: 24,
+    gap: 16,
   },
   googleButton: {
     width: 192,
     height: 48,
-    alignSelf: "center",
-    marginBottom: 20,
   },
-  // Add new styles for debug information
-  debugContainer: {
-    marginTop: 20,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-    backgroundColor: "#f9f9f9",
-  },
-  debugText: {
-    fontSize: 12,
-    color: "#333",
-    marginBottom: 4,
-  },
-  debugSuccess: {
-    color: "green",
-    fontWeight: "bold",
-  },
-  debugError: {
-    color: "red",
-    fontWeight: "bold",
-  },
-  debugWarning: {
-    color: "orange",
-    fontWeight: "bold",
-  },
-  debugButton: {
-    backgroundColor: "#E4423F",
-    borderRadius: 5,
-    padding: 10,
-    marginTop: 10,
-    alignItems: "center",
+  signupContainer: {
+    flexDirection: "row",
     justifyContent: "center",
   },
-  debugButtonText: {
-    color: "#FFF",
-    fontSize: 14,
-    fontWeight: "bold",
+  signupText: {
+    color: "#666",
+    fontFamily: "Lexend",
+  },
+  signupLink: {
+    color: "#E4423F",
+    fontWeight: "600",
+    fontFamily: "Lexend-Bold",
   },
 });

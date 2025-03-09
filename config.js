@@ -7,6 +7,7 @@ const ENV = {
   ANDROID_CLIENT_ID_Release: process.env.EXPO_PUBLIC_MMU_ANDROID_CLIENT_ID_RELEASE,
   WEB_CLIENT_ID: process.env.EXPO_PUBLIC_MMU_WEB_CLIENT_ID,
   GOOGLE_URL_SCHEME: process.env.EXPO_PUBLIC_MMU_GOOGLE_URL_SCHEME,
+  APPLE_SERVICE_ID: process.env.EXPO_PUBLIC_MMU_APPLE_SERVICE_ID,
 };
 
 // Log available environment variables
@@ -40,6 +41,9 @@ if (!ENV.WEB_CLIENT_ID) {
 if (!ENV.GOOGLE_URL_SCHEME) {
   console.error("ERROR: EXPO_PUBLIC_MMU_GOOGLE_URL_SCHEME is not defined in .env file");
 }
+if (!ENV.APPLE_SERVICE_ID) {
+  console.error("ERROR: EXPO_PUBLIC_MMU_APPLE_SERVICE_ID is not defined in .env file");
+}
 
 // Get Android client ID based on environment
 const getAndroidClientId = () => {
@@ -59,6 +63,7 @@ const config = {
     android: getAndroidClientId(),
     web: ENV.WEB_CLIENT_ID,
     googleURLScheme: ENV.GOOGLE_URL_SCHEME,
+    appleServicesId: ENV.APPLE_SERVICE_ID,
   },
   googleURLScheme: ENV.GOOGLE_URL_SCHEME,
 };

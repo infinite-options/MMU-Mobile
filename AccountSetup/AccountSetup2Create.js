@@ -6,6 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import ProgressBar from "../src/Assets/Components/ProgressBar";
 import { GoogleSignin, statusCodes, GoogleSigninButton } from "@react-native-google-signin/google-signin";
 import config from "../config"; // Import config
+import AppleSignIn from "./AppleSignIn"; // Import AppleSignIn component
 
 // Static utility function to reset Google Sign-In state
 export const resetGoogleSignIn = async () => {
@@ -427,6 +428,104 @@ export default function AccountSetup2Create() {
     }
   };
 
+  // Handle Apple Sign In
+  const handleAppleSignIn = async (userInfo) => {
+    console.log("AS2C handleAppleSignIn called with userInfo:", JSON.stringify(userInfo, null, 2));
+
+    // Set a timeout to reset the sign-in state in case the process hangs
+    const signInTimeoutId = setTimeout(() => {
+      console.log("AS2C Apple sign-in timeout - resetting state");
+      setSignInInProgress(false);
+      setShowSpinner(false);
+    }, 30000); // 30 seconds timeout
+
+    try {
+      setShowSpinner(true);
+      setSignInInProgress(true);
+
+      // Extract user data from Apple Sign In response
+      const { user, idToken } = userInfo;
+
+      console.log("AS2C Apple User ID:", user.id);
+      console.log("AS2C Apple User Email:", user.email);
+      console.log("AS2C Apple User Name:", user.name);
+      console.log("AS2C Apple ID Token Length:", idToken ? idToken.length : 0);
+
+      // Log the first and last parts of the token for debugging (without exposing the full token)
+      if (idToken) {
+        console.log("AS2C Apple ID Token Start:", idToken.substring(0, 20) + "...");
+        console.log("AS2C Apple ID Token End:", "..." + idToken.substring(idToken.length - 20));
+      }
+
+      // Create user data payload for backend - matching the structure used for Google Sign In
+      const userData = {
+        email: user.email,
+        password: "APPLE_LOGIN", // Special password for social login
+        phone_number: "", // Phone number would be collected separately if needed
+        google_auth_token: idToken, // Using the same field name as Google Sign In
+        google_refresh_token: "apple", // Using "apple" as the refresh token value
+        social_id: user.id,
+        first_name: user.name ? user.name.split(" ")[0] : "",
+        last_name: user.name ? user.name.split(" ").slice(1).join(" ") : "",
+        profile_picture: "", // Apple doesn't provide profile pictures
+        login_type: "apple", // Specify login type
+      };
+
+      console.log("AS2C Sending Apple data to backend:", JSON.stringify(userData, null, 2));
+
+      // Call your backend endpoint for Apple signup - using the same endpoint as Google
+      const response = await fetch(GOOGLE_SIGNUP_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData),
+      });
+
+      const result = await response.json();
+      console.log("AS2C Backend response for Apple Sign In:", JSON.stringify(result, null, 2));
+
+      // Handle response - same logic as Google Sign In
+      if (result.message === "User already exists") {
+        setExisting(true);
+        Alert.alert("User Already Exists", "This Apple account is already registered. Would you like to log in instead?", [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Log In",
+            onPress: () => navigation.navigate("Login"),
+          },
+        ]);
+      } else {
+        // Store user data in AsyncStorage - assuming the API returns user_uid
+        if (result.user_uid) {
+          console.log("AS2C Storing Apple user data in AsyncStorage - user_uid:", result.user_uid);
+          await AsyncStorage.setItem("user_uid", result.user_uid);
+          await AsyncStorage.setItem("user_email_id", user.email);
+
+          // Navigate to next screen
+          navigation.navigate("NameInput");
+        } else {
+          console.log("AS2C Signup successful, redirecting to login");
+          Alert.alert("Success", "Your account has been created successfully! Please log in now.", [{ text: "OK", onPress: () => navigation.navigate("Login") }]);
+        }
+      }
+    } catch (error) {
+      console.error("AS2C Apple sign-in error:", error);
+      Alert.alert("Error", "Something went wrong with Apple sign-in. Please try again.");
+    } finally {
+      clearTimeout(signInTimeoutId); // Clear the timeout if sign-in completes normally
+      setShowSpinner(false);
+      setSignInInProgress(false);
+    }
+  };
+
+  // Handle Apple Sign In Error
+  const handleAppleSignInError = (error) => {
+    console.error("AS2C Apple Sign-In Error:", error);
+    Alert.alert("Error", `Apple Sign-In failed: ${error}`);
+  };
+
   const isValidEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -658,9 +757,13 @@ export default function AccountSetup2Create() {
           <TouchableOpacity style={[styles.socialLoginButton, signInInProgress && styles.disabledButton]} onPress={handleGoogleSignIn} disabled={signInInProgress}>
             <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.socialLoginButton}>
-            <Image source={require("../assets/apple_logo.png")} style={styles.appleLogo} />
-          </TouchableOpacity>
+          {Platform.OS === "ios" ? (
+            <AppleSignIn onSignIn={handleAppleSignIn} onError={handleAppleSignInError} />
+          ) : (
+            <TouchableOpacity style={[styles.socialLoginButton, signInInProgress && styles.disabledButton]} disabled={signInInProgress}>
+              <Image source={require("../assets/apple_logo.png")} style={styles.appleLogo} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Already Have an Account */}

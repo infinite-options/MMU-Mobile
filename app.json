@@ -12,6 +12,7 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
+      "usesAppleSignIn": true,
       "supportsTablet": true,
       "bundleIdentifier": "com.infiniteoptions.meetmeupapp",
       "buildNumber": "24",
@@ -38,10 +39,7 @@
         "backgroundColor": "#E4423F"
       },
       "package": "com.infiniteoptions.meetmeupapp",
-      "permissions": [
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
-      ],
+      "permissions": ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"],
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyBHZlcN8UeLNySmAf66WOfu1N_hDBaq0-I"
@@ -51,9 +49,7 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "assetBundlePatterns": [
-      "assets/fonts/*"
-    ],
+    "assetBundlePatterns": ["assets/fonts/*"],
     "owner": "pmarathay",
     "extra": {
       "eas": {

@@ -7,6 +7,8 @@ import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
+import AppleSignIn from "./AccountSetup/AppleSignIn";
+
 import AccountSetup2Create from "./AccountSetup/AccountSetup2Create";
 import AccountSetup3Create from "./AccountSetup/AccountSetup3Create";
 import AccountSetup4Create from "./AccountSetup/AccountSetup4Create";

@@ -1,14 +1,7 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  Pressable,
-} from "react-native";
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import ProgressBar from '../src/Assets/Components/ProgressBar';
+import ProgressBar from "../src/Assets/Components/ProgressBar";
 export default function PersonalInformation({ navigation }) {
   const [formData, setFormData] = useState({
     fullName: "",
@@ -29,60 +22,37 @@ export default function PersonalInformation({ navigation }) {
     });
   };
 
-  const isFormComplete =
-    formData.fullName !== "" && formData.birthdate !== "";
+  const isFormComplete = formData.fullName !== "" && formData.birthdate !== "";
 
   return (
     <View style={styles.container}>
       {/* Back Button */}
-                  <TouchableOpacity
-                      style={styles.backButton}
-                      onPress={() => navigation.goBack()}
-                  >
-                      <Ionicons name="arrow-back" size={28} color="red" />
-                  </TouchableOpacity>
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Ionicons name='arrow-back' size={28} color='red' />
+      </TouchableOpacity>
 
       {/* Progress Bar */}
-        <ProgressBar progress={20} />
+      <ProgressBar startProgress={0} endProgress={40} />
 
       {/* Title and Subtitle */}
       <Text style={styles.title}>Some personal information</Text>
-      <Text style={styles.subtitle}>
-        Your full name, age, height, and # of children will be public.
-      </Text>
+      <Text style={styles.subtitle}>Your full name, age, height, and # of children will be public.</Text>
 
       {/* Input Fields */}
-      <TextInput
-        style={styles.input}
-        placeholder="Full Name"
-        value={formData.fullName}
-        onChangeText={(text) => setFormData({ ...formData, fullName: text })}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Birthdate (dd/mm/yyyy)"
-        value={formData.birthdate}
-        keyboardType="numeric"
-        onChangeText={(text) => setFormData({ ...formData, birthdate: text })}
-      />
+      <TextInput style={styles.input} placeholder='Full Name' value={formData.fullName} onChangeText={(text) => setFormData({ ...formData, fullName: text })} />
+      <TextInput style={styles.input} placeholder='Birthdate (dd/mm/yyyy)' value={formData.birthdate} keyboardType='numeric' onChangeText={(text) => setFormData({ ...formData, birthdate: text })} />
 
       {/* Height Section */}
       <View style={styles.row}>
         <View style={styles.fieldWrapper}>
           <Text style={styles.fieldLabel}>Height (ft)</Text>
           <View style={styles.field}>
-          <Text style={styles.fieldValue}>{formData.heightFt}</Text>
-            <TouchableOpacity
-              onPress={() => handleDecrement("heightFt")}
-              style={styles.fieldButton}
-            >
+            <Text style={styles.fieldValue}>{formData.heightFt}</Text>
+            <TouchableOpacity onPress={() => handleDecrement("heightFt")} style={styles.fieldButton}>
               <Text style={styles.fieldButtonText}>−</Text>
             </TouchableOpacity>
             <View style={styles.separator} />
-            <TouchableOpacity
-              onPress={() => handleIncrement("heightFt")}
-              style={styles.fieldButton}
-            >
+            <TouchableOpacity onPress={() => handleIncrement("heightFt")} style={styles.fieldButton}>
               <Text style={styles.fieldButtonText}>+</Text>
             </TouchableOpacity>
           </View>
@@ -90,19 +60,13 @@ export default function PersonalInformation({ navigation }) {
         <View style={styles.fieldWrapper}>
           <Text style={styles.fieldLabel}>Height (in)</Text>
           <View style={styles.field}>
-          <Text style={styles.fieldValue}>{formData.heightIn}</Text>
-            <TouchableOpacity
-              onPress={() => handleDecrement("heightIn")}
-              style={styles.fieldButton}
-            >
+            <Text style={styles.fieldValue}>{formData.heightIn}</Text>
+            <TouchableOpacity onPress={() => handleDecrement("heightIn")} style={styles.fieldButton}>
               <Text style={styles.fieldButtonText}>−</Text>
             </TouchableOpacity>
-            
+
             <View style={styles.separator} />
-            <TouchableOpacity
-              onPress={() => handleIncrement("heightIn")}
-              style={styles.fieldButton}
-            >
+            <TouchableOpacity onPress={() => handleIncrement("heightIn")} style={styles.fieldButton}>
               <Text style={styles.fieldButtonText}>+</Text>
             </TouchableOpacity>
           </View>
@@ -113,18 +77,12 @@ export default function PersonalInformation({ navigation }) {
       <View style={styles.fieldWrapperFull}>
         <Text style={styles.fieldLabel}># of Children</Text>
         <View style={styles.field}>
-        <Text style={styles.fieldValue}>{formData.numChildren}</Text>
-          <TouchableOpacity
-            onPress={() => handleDecrement("numChildren")}
-            style={styles.fieldButton}
-          >
+          <Text style={styles.fieldValue}>{formData.numChildren}</Text>
+          <TouchableOpacity onPress={() => handleDecrement("numChildren")} style={styles.fieldButton}>
             <Text style={styles.fieldButtonText}>−</Text>
           </TouchableOpacity>
           <View style={styles.separator} />
-          <TouchableOpacity
-            onPress={() => handleIncrement("numChildren")}
-            style={styles.fieldButton}
-          >
+          <TouchableOpacity onPress={() => handleIncrement("numChildren")} style={styles.fieldButton}>
             <Text style={styles.fieldButtonText}>+</Text>
           </TouchableOpacity>
         </View>
@@ -132,10 +90,7 @@ export default function PersonalInformation({ navigation }) {
 
       {/* Continue Button */}
       <Pressable
-        style={[
-          styles.continueButton,
-          { backgroundColor: isFormComplete ? "#E4423F" : "#ccc" },
-        ]}
+        style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#ccc" }]}
         onPress={isFormComplete ? () => navigation.navigate("AssignedSex") : null}
         disabled={!isFormComplete}
       >
@@ -146,23 +101,22 @@ export default function PersonalInformation({ navigation }) {
 }
 
 const styles = StyleSheet.create({
- 
   container: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingHorizontal: 20,
-    backgroundColor: '#FFF',
-    justifyContent: 'flex-start', // Align content to the top
-    alignItems: 'stretch',
-},
-backButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#FFF",
+    justifyContent: "flex-start", // Align content to the top
+    alignItems: "stretch",
+  },
+  backButton: {
+    alignSelf: "flex-start",
+    backgroundColor: "#F5F5F5",
     borderRadius: 20,
     padding: 8,
     marginBottom: 20,
     marginTop: 30,
-},
+  },
   title: {
     fontSize: 24,
     fontWeight: "bold",
@@ -236,4 +190,3 @@ backButton: {
     fontWeight: "bold",
   },
 });
-

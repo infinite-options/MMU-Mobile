@@ -10,6 +10,11 @@ import axios from "axios";
 import sha256 from "crypto-js/sha256";
 import { GoogleSignin, statusCodes, GoogleSigninButton } from "@react-native-google-signin/google-signin";
 import config from "../config"; // Import config
+import * as AuthSession from "expo-auth-session";
+import * as WebBrowser from "expo-web-browser";
+
+// Register the redirect URI for web browser redirects
+WebBrowser.maybeCompleteAuthSession();
 
 export default function Login() {
   // console.log("LoginPage");
@@ -25,6 +30,8 @@ export default function Login() {
   const [isGoogleConfiguring, setIsGoogleConfiguring] = useState(true); // New state to track configuration process
   const [configAttemptCount, setConfigAttemptCount] = useState(0); // Track configuration attempts
   const maxAttempts = 3; // Define maxAttempts at component level
+  const [isAppleSignInAvailable, setIsAppleSignInAvailable] = useState(false);
+  const [signInInProgress, setSignInInProgress] = useState(false);
 
   // Helper function to check state values
   const checkGoogleStates = () => {
@@ -118,6 +125,14 @@ export default function Login() {
       setIsGoogleConfigured(false);
       setIsGoogleConfiguring(false);
     };
+  }, []);
+
+  // Check if Apple Sign-In is available
+  useEffect(() => {
+    // Check if Apple Authentication is supported on this device
+    if (Platform.OS === "ios") {
+      setIsAppleSignInAvailable(true);
+    }
   }, []);
 
   // Check if email is valid
@@ -310,6 +325,127 @@ export default function Login() {
     }
   };
 
+  // Handle Apple Sign In
+  const handleAppleSignIn = async () => {
+    // Prevent multiple simultaneous sign-in attempts
+    if (signInInProgress) {
+      console.log("LP Sign-in already in progress, ignoring additional attempts");
+      return;
+    }
+
+    // Check if Apple Sign-In is available
+    if (!isAppleSignInAvailable) {
+      console.log("LP Apple Sign-In is not available on this device");
+      Alert.alert("Error", "Apple Sign-In is not available on this device.");
+      return;
+    }
+
+    // Set a timeout to reset the sign-in state in case the process hangs
+    const signInTimeoutId = setTimeout(() => {
+      console.log("Apple sign-in timeout - resetting state");
+      setSignInInProgress(false);
+      setShowSpinner(false);
+    }, 30000); // 30 seconds timeout
+
+    try {
+      setShowSpinner(true);
+      setSignInInProgress(true);
+
+      console.log("==============>  LP Starting Apple sign in process...");
+
+      // Configure the Apple authentication request
+      const redirectUri = AuthSession.makeRedirectUri({
+        scheme: "com.infiniteoptions.meetmeupapp",
+      });
+
+      console.log("Redirect URI:", redirectUri);
+
+      const appleAuthRequest = await AuthSession.startAsync({
+        authUrl: `https://appleid.apple.com/auth/authorize?client_id=${config.appleSignIn.serviceId}&redirect_uri=${encodeURIComponent(
+          redirectUri
+        )}&response_type=code id_token&scope=name email&response_mode=fragment`,
+      });
+
+      console.log("Apple Auth Response:", appleAuthRequest);
+
+      if (appleAuthRequest.type !== "success") {
+        throw new Error("Apple Sign-In was cancelled or failed");
+      }
+
+      // Extract the authorization data
+      const { params } = appleAuthRequest;
+      const { id_token, code, user } = params;
+
+      if (!id_token) {
+        throw new Error("No authentication token received from Apple Sign-In");
+      }
+
+      console.log("Apple Sign-In successful", JSON.stringify(params, null, 2));
+
+      // Create user data payload for your backend
+      const backendUserData = {
+        email: params.email || `apple-user-${Date.now()}@privaterelay.appleid.com`, // Fallback email if not provided
+        password: "APPLE_LOGIN", // Special password for social login
+        apple_auth_token: id_token,
+        apple_code: code,
+        social_id: params.sub || params.user_id || `apple-${Date.now()}`, // Fallback ID if not provided
+        service_id: config.appleSignIn.serviceId, // Add service ID
+      };
+
+      console.log("Sending data to backend:", backendUserData);
+
+      // Call your backend endpoint for Apple login
+      const APPLE_LOGIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialLogin/MMU";
+
+      const response = await fetch(APPLE_LOGIN_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(backendUserData),
+      });
+
+      const result = await response.json();
+      console.log("Backend response:", result);
+
+      // Handle response
+      if (result.message === "User does not exist") {
+        Alert.alert("User Not Found", "This Apple account is not registered. Would you like to sign up?", [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Sign Up",
+            onPress: () => navigation.navigate("AccountSetup2Create"),
+          },
+        ]);
+      } else if (result.user_uid) {
+        // Login successful, store user data
+        await AsyncStorage.setItem("user_uid", result.user_uid);
+        await AsyncStorage.setItem("user_email_id", backendUserData.email);
+
+        // Navigate to home screen or dashboard
+        navigation.navigate("Dashboard");
+      } else {
+        Alert.alert("Error", "Failed to log in with Apple. Please try again.");
+      }
+    } catch (error) {
+      console.error("Apple sign-in error:", error);
+
+      let errorMessage = "Something went wrong with Apple sign-in. Please try again.";
+
+      if (error.message === "Apple Sign-In was cancelled or failed") {
+        console.log("Apple sign-in cancelled");
+        errorMessage = "Sign-in was cancelled";
+      }
+
+      Alert.alert("Error", errorMessage);
+    } finally {
+      clearTimeout(signInTimeoutId); // Clear the timeout if sign-in completes normally
+      setShowSpinner(false);
+      setSignInInProgress(false);
+    }
+  };
+
   // Attempt to login with salt
   const handleSubmitLogin = async () => {
     if (!email || !password) {
@@ -424,7 +560,7 @@ export default function Login() {
           <TouchableOpacity style={styles.socialLoginButton} onPress={handleGoogleSignIn}>
             <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.socialLoginButton}>
+          <TouchableOpacity style={[styles.socialLoginButton, !isAppleSignInAvailable && styles.disabledButton]} onPress={handleAppleSignIn} disabled={!isAppleSignInAvailable || signInInProgress}>
             <Image source={require("../assets/apple_logo.png")} style={styles.appleLogo} />
           </TouchableOpacity>
         </View>
@@ -632,5 +768,8 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 14,
     fontWeight: "bold",
+  },
+  disabledButton: {
+    backgroundColor: "#ccc",
   },
 });

@@ -6,6 +6,15 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import ProgressBar from "../src/Assets/Components/ProgressBar";
 import { GoogleSignin, statusCodes, GoogleSigninButton } from "@react-native-google-signin/google-signin";
 import config from "../config"; // Import config
+import { appleAuth } from "@invertase/react-native-apple-authentication";
+import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
+import sha256 from "crypto-js/sha256";
+import * as AuthSession from "expo-auth-session";
+import * as WebBrowser from "expo-web-browser";
+
+// Register the redirect URI for web browser redirects
+WebBrowser.maybeCompleteAuthSession();
 
 // Static utility function to reset Google Sign-In state
 export const resetGoogleSignIn = async () => {
@@ -50,6 +59,7 @@ export default function AccountSetup2Create() {
   const [signInInProgress, setSignInInProgress] = useState(false);
   const [configAttemptCount, setConfigAttemptCount] = useState(0);
   const maxAttempts = 3;
+  const [isAppleSignInAvailable, setIsAppleSignInAvailable] = useState(false);
 
   const navigation = useNavigation();
   const [existing, setExisting] = useState(false);
@@ -181,6 +191,14 @@ export default function AccountSetup2Create() {
       setIsGoogleConfigured(false);
       setIsGoogleConfiguring(false);
     };
+  }, []);
+
+  // Check if Apple Sign-In is available
+  useEffect(() => {
+    // Check if Apple Authentication is supported on this device
+    if (Platform.OS === "ios") {
+      setIsAppleSignInAvailable(true);
+    }
   }, []);
 
   // Handle Google Sign In
@@ -427,6 +445,153 @@ export default function AccountSetup2Create() {
     }
   };
 
+  // Handle Apple Sign In
+  const handleAppleSignIn = async () => {
+    // Prevent multiple simultaneous sign-in attempts
+    if (signInInProgress) {
+      console.log("AS2C Sign-in already in progress, ignoring additional attempts");
+      return;
+    }
+
+    // Check if Apple Sign-In is available
+    if (!isAppleSignInAvailable) {
+      console.log("AS2C Apple Sign-In is not available on this device");
+      Alert.alert("Error", "Apple Sign-In is not available on this device.");
+      return;
+    }
+
+    // Set a timeout to reset the sign-in state in case the process hangs
+    const signInTimeoutId = setTimeout(() => {
+      console.log("Apple sign-in timeout - resetting state");
+      setSignInInProgress(false);
+      setShowSpinner(false);
+    }, 30000); // 30 seconds timeout
+
+    try {
+      setShowSpinner(true);
+      setSignInInProgress(true);
+
+      console.log("==============>  AS2C Starting Apple sign in process...");
+
+      // Configure the Apple authentication request
+      const redirectUri = AuthSession.makeRedirectUri({
+        scheme: "com.infiniteoptions.meetmeupapp",
+      });
+
+      console.log("Redirect URI:", redirectUri);
+
+      const appleAuthRequest = await AuthSession.startAsync({
+        authUrl: `https://appleid.apple.com/auth/authorize?client_id=${config.appleSignIn.serviceId}&redirect_uri=${encodeURIComponent(
+          redirectUri
+        )}&response_type=code id_token&scope=name email&response_mode=fragment`,
+      });
+
+      console.log("Apple Auth Response:", appleAuthRequest);
+
+      if (appleAuthRequest.type !== "success") {
+        throw new Error("Apple Sign-In was cancelled or failed");
+      }
+
+      // Extract the authorization data
+      const { params } = appleAuthRequest;
+      const { id_token, code, user } = params;
+
+      if (!id_token) {
+        throw new Error("No authentication token received from Apple Sign-In");
+      }
+
+      // Parse the user data if available
+      let userData = {
+        email: "",
+        firstName: "",
+        lastName: "",
+      };
+
+      if (user) {
+        try {
+          const parsedUser = JSON.parse(user);
+          userData.email = parsedUser.email || "";
+          userData.firstName = parsedUser.name?.firstName || "";
+          userData.lastName = parsedUser.name?.lastName || "";
+        } catch (e) {
+          console.log("Error parsing user data:", e);
+        }
+      }
+
+      console.log("Apple Sign-In successful", JSON.stringify(params, null, 2));
+
+      // Create user data payload for your backend
+      const backendUserData = {
+        email: userData.email || `apple-user-${Date.now()}@privaterelay.appleid.com`, // Fallback email if not provided
+        password: "APPLE_LOGIN", // Special password for social login
+        phone_number: "", // Phone number would be collected separately if needed
+        apple_auth_token: id_token,
+        apple_code: code,
+        social_id: params.sub || params.user_id || `apple-${Date.now()}`, // Fallback ID if not provided
+        first_name: userData.firstName || "",
+        last_name: userData.lastName || "",
+        profile_picture: "", // Apple doesn't provide a profile picture
+        service_id: config.appleSignIn.serviceId, // Add service ID
+      };
+
+      console.log("Sending data to backend:", backendUserData);
+
+      // Call your backend endpoint for Apple signup
+      const APPLE_SIGNUP_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialLogin/MMU";
+
+      const response = await fetch(APPLE_SIGNUP_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(backendUserData),
+      });
+
+      const result = await response.json();
+      console.log("Backend response:", result);
+
+      // Handle response
+      if (result.message === "User already exists") {
+        setExisting(true);
+        Alert.alert("User Already Exists", "This Apple account is already registered. Would you like to log in instead?", [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Log In",
+            onPress: () => navigation.navigate("Login"),
+          },
+        ]);
+      } else {
+        // Store user data in AsyncStorage - assuming the API returns user_uid
+        if (result.user_uid) {
+          await AsyncStorage.setItem("user_uid", result.user_uid);
+          await AsyncStorage.setItem("user_email_id", backendUserData.email);
+
+          // Navigate to next screen
+          navigation.navigate("NameInput");
+        } else {
+          console.log("Signup successful, redirecting to login");
+          Alert.alert("Success", "Your account has been created successfully! Please log in now.", [{ text: "OK", onPress: () => navigation.navigate("Login") }]);
+        }
+      }
+    } catch (error) {
+      console.error("Apple sign-in error:", error);
+
+      let errorMessage = "Something went wrong with Apple sign-in. Please try again.";
+
+      if (error.message === "Apple Sign-In was cancelled or failed") {
+        console.log("Apple sign-in cancelled");
+        errorMessage = "Sign-in was cancelled";
+      }
+
+      Alert.alert("Error", errorMessage);
+    } finally {
+      clearTimeout(signInTimeoutId); // Clear the timeout if sign-in completes normally
+      setShowSpinner(false);
+      setSignInInProgress(false);
+    }
+  };
+
   const isValidEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -658,7 +823,7 @@ export default function AccountSetup2Create() {
           <TouchableOpacity style={[styles.socialLoginButton, signInInProgress && styles.disabledButton]} onPress={handleGoogleSignIn} disabled={signInInProgress}>
             <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.socialLoginButton}>
+          <TouchableOpacity style={[styles.socialLoginButton, signInInProgress && styles.disabledButton]} onPress={handleAppleSignIn} disabled={signInInProgress || !isAppleSignInAvailable}>
             <Image source={require("../assets/apple_logo.png")} style={styles.appleLogo} />
           </TouchableOpacity>
         </View>
@@ -844,7 +1009,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   disabledButton: {
-    backgroundColor: "#E0E0E0",
+    backgroundColor: "#ccc",
   },
   // Add new styles for debug information
   debugContainer: {

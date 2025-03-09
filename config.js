@@ -7,6 +7,8 @@ const ENV = {
   ANDROID_CLIENT_ID_Release: process.env.EXPO_PUBLIC_MMU_ANDROID_CLIENT_ID_RELEASE,
   WEB_CLIENT_ID: process.env.EXPO_PUBLIC_MMU_WEB_CLIENT_ID,
   GOOGLE_URL_SCHEME: process.env.EXPO_PUBLIC_MMU_GOOGLE_URL_SCHEME,
+  APPLE_SERVICE_ID: process.env.EXPO_PUBLIC_MMU_APPLE_SERVICE_ID,
+  APPLE_REDIRECT_URI: process.env.EXPO_PUBLIC_MMU_APPLE_REDIRECT_URI,
 };
 
 // Log available environment variables
@@ -23,6 +25,8 @@ console.log("Android Client ID Debug:", ENV.ANDROID_CLIENT_ID_Debug);
 console.log("Android Client ID Release:", ENV.ANDROID_CLIENT_ID_Release);
 console.log("Web Client ID:", ENV.WEB_CLIENT_ID);
 console.log("Google URL Scheme:", ENV.GOOGLE_URL_SCHEME);
+console.log("Apple Service ID:", ENV.APPLE_SERVICE_ID);
+console.log("Apple Redirect URI:", ENV.APPLE_REDIRECT_URI);
 
 // Validate required environment variables
 if (!ENV.IOS_CLIENT_ID) {
@@ -39,6 +43,9 @@ if (!ENV.WEB_CLIENT_ID) {
 }
 if (!ENV.GOOGLE_URL_SCHEME) {
   console.error("ERROR: EXPO_PUBLIC_MMU_GOOGLE_URL_SCHEME is not defined in .env file");
+}
+if (!ENV.APPLE_SERVICE_ID) {
+  console.error("ERROR: EXPO_PUBLIC_MMU_APPLE_SERVICE_ID is not defined in .env file");
 }
 
 // Get Android client ID based on environment
@@ -61,6 +68,10 @@ const config = {
     googleURLScheme: ENV.GOOGLE_URL_SCHEME,
   },
   googleURLScheme: ENV.GOOGLE_URL_SCHEME,
+  appleSignIn: {
+    serviceId: ENV.APPLE_SERVICE_ID,
+    redirectUri: ENV.APPLE_REDIRECT_URI || null,
+  },
 };
 
 console.log("Exporting Google Sign-In config:", config);

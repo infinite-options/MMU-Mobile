@@ -1,22 +1,29 @@
 import React, { useState, useEffect } from "react";
 import { StyleSheet, View, Platform, TouchableOpacity, Text, Image } from "react-native";
-import * as AppleAuthentication from "expo-apple-authentication";
 import * as WebBrowser from "expo-web-browser";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import config from "../config"; // Fix the import path
 
+// Conditionally import AppleAuthentication only on iOS
+const AppleAuthentication = Platform.OS === "ios" ? require("expo-apple-authentication") : null;
+
 const AppleSignIn = ({ onSignIn, onError }) => {
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
 
-  // Check if Apple Authentication is available
+  // Check if Apple Authentication is available (only on iOS)
   useEffect(() => {
     const checkAvailability = async () => {
-      try {
-        const isAvailable = await AppleAuthentication.isAvailableAsync();
-        setIsAppleAuthAvailable(isAvailable);
-        console.log("Apple Authentication available:", isAvailable);
-      } catch (error) {
-        console.log("Error checking Apple Authentication availability:", error);
+      if (Platform.OS === "ios") {
+        try {
+          const isAvailable = await AppleAuthentication.isAvailableAsync();
+          setIsAppleAuthAvailable(isAvailable);
+          console.log("Apple Authentication available:", isAvailable);
+        } catch (error) {
+          console.log("Error checking Apple Authentication availability:", error);
+          setIsAppleAuthAvailable(false);
+        }
+      } else {
+        // On Android, Apple Authentication is not available natively
         setIsAppleAuthAvailable(false);
       }
     };
@@ -26,7 +33,7 @@ const AppleSignIn = ({ onSignIn, onError }) => {
 
   const handleAppleSignIn = async () => {
     try {
-      if (Platform.OS === "ios" && isAppleAuthAvailable) {
+      if (Platform.OS === "ios" && isAppleAuthAvailable && AppleAuthentication) {
         const credential = await AppleAuthentication.signInAsync({
           requestedScopes: [AppleAuthentication.AppleAuthenticationScope.FULL_NAME, AppleAuthentication.AppleAuthenticationScope.EMAIL],
         });
@@ -104,7 +111,7 @@ const AppleSignIn = ({ onSignIn, onError }) => {
   };
 
   // Render platform-specific button
-  if (Platform.OS === "ios" && isAppleAuthAvailable) {
+  if (Platform.OS === "ios" && isAppleAuthAvailable && AppleAuthentication) {
     return (
       <View style={styles.container}>
         <TouchableOpacity style={styles.socialLoginButton} onPress={handleAppleSignIn}>

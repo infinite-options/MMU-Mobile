@@ -822,7 +822,13 @@ export default function AccountSetup2Create() {
           <TouchableOpacity style={[styles.socialLoginButton, signInInProgress && styles.disabledButton]} onPress={handleGoogleSignIn} disabled={signInInProgress}>
             <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
           </TouchableOpacity>
-          <AppleSignIn onSignIn={handleAppleSignIn} onError={handleAppleSignInError} />
+          {Platform.OS === "ios" ? (
+            <AppleSignIn onSignIn={handleAppleSignIn} onError={handleAppleSignInError} />
+          ) : (
+            <TouchableOpacity style={[styles.socialLoginButton, signInInProgress && styles.disabledButton]} disabled={signInInProgress}>
+              <Image source={require("../assets/apple_logo.png")} style={styles.appleLogo} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Already Have an Account */}

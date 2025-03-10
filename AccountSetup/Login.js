@@ -288,6 +288,21 @@ export default function Login() {
         await AsyncStorage.setItem("user_uid", user_uid);
         await AsyncStorage.setItem("user_email_id", user_email_id);
 
+        // Store name data in AsyncStorage for use in other screens
+        if (user.givenName) {
+          await AsyncStorage.setItem("user_first_name", user.givenName);
+          console.log("LP - Stored first name in AsyncStorage:", user.givenName);
+        } else {
+          console.log("LP - No first name provided by Google Sign-In");
+        }
+
+        if (user.familyName) {
+          await AsyncStorage.setItem("user_last_name", user.familyName);
+          console.log("LP - Stored last name in AsyncStorage:", user.familyName);
+        } else {
+          console.log("LP - No last name provided by Google Sign-In");
+        }
+
         // Navigate to next screen
         navigation.navigate("MyProfile");
       } else {
@@ -493,7 +508,7 @@ export default function Login() {
           <TouchableOpacity style={styles.socialLoginButton} onPress={handleGoogleSignIn}>
             <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
           </TouchableOpacity>
-          <AppleSignIn onSignIn={handleAppleSignIn} onError={handleAppleSignInError} />
+          {Platform.OS === "ios" && <AppleSignIn onSignIn={handleAppleSignIn} onError={handleAppleSignInError} />}
         </View>
 
         {/* Google Sign-In Button */}

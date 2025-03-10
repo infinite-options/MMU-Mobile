@@ -25,8 +25,12 @@ export default function NameInput({ navigation }) {
         const firstName = await AsyncStorage.getItem("user_first_name");
         const lastName = await AsyncStorage.getItem("user_last_name");
 
+        console.log("NameInput - Checking for existing name data:");
+        console.log("NameInput - First Name from AsyncStorage:", firstName);
+        console.log("NameInput - Last Name from AsyncStorage:", lastName);
+
         if (firstName || lastName) {
-          console.log("Found existing name data from social sign-in:", { firstName, lastName });
+          console.log("NameInput - Found existing name data from social sign-in:", { firstName, lastName });
 
           // Update form data with existing name data
           setFormData((prevData) => ({
@@ -34,6 +38,11 @@ export default function NameInput({ navigation }) {
             firstName: firstName || prevData.firstName,
             lastName: lastName || prevData.lastName,
           }));
+
+          console.log("NameInput - Updated form data:", {
+            firstName: firstName || formData.firstName,
+            lastName: lastName || formData.lastName,
+          });
         }
       } catch (error) {
         console.error("Error loading existing name data:", error);

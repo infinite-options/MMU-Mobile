@@ -362,9 +362,16 @@ export default function AccountSetup2Create() {
         // Store name data in AsyncStorage for use in the name input screen
         if (user.givenName) {
           await AsyncStorage.setItem("user_first_name", user.givenName);
+          console.log("AS2C - Stored first name in AsyncStorage:", user.givenName);
+        } else {
+          console.log("AS2C - No first name provided by Google Sign-In");
         }
+
         if (user.familyName) {
           await AsyncStorage.setItem("user_last_name", user.familyName);
+          console.log("AS2C - Stored last name in AsyncStorage:", user.familyName);
+        } else {
+          console.log("AS2C - No last name provided by Google Sign-In");
         }
 
         console.log("Sending data to backend:", userData);
@@ -822,7 +829,7 @@ export default function AccountSetup2Create() {
           <TouchableOpacity style={[styles.socialLoginButton, signInInProgress && styles.disabledButton]} onPress={handleGoogleSignIn} disabled={signInInProgress}>
             <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
           </TouchableOpacity>
-          <AppleSignIn onSignIn={handleAppleSignIn} onError={handleAppleSignInError} />
+          {Platform.OS === "ios" && <AppleSignIn onSignIn={handleAppleSignIn} onError={handleAppleSignInError} />}
         </View>
 
         {/* Already Have an Account */}

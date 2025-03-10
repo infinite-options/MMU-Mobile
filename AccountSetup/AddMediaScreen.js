@@ -146,13 +146,12 @@ export default function AddMediaScreen({ navigation }) {
     try {
       // Only request camera permissions - not microphone through ImagePicker
       const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
-      
-      if (cameraPermission.status !== 'granted') {
-        Alert.alert("Permissions Required", 
-          "Please enable camera permissions to record video.");
+
+      if (cameraPermission.status !== "granted") {
+        Alert.alert("Permissions Required", "Please enable camera permissions to record video.");
         return;
       }
-      
+
       // Try using launchImageLibraryAsync instead, which is more reliable for videos
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
@@ -163,7 +162,7 @@ export default function AddMediaScreen({ navigation }) {
       });
 
       console.log("Video picker result:", result);
-      
+
       if (!result.canceled && result.assets?.[0]?.uri) {
         console.log("Video selection success:", result.assets[0]);
         setVideoUri(result.assets[0].uri);
@@ -174,8 +173,7 @@ export default function AddMediaScreen({ navigation }) {
       }
     } catch (error) {
       console.error("Error details:", error);
-      Alert.alert("Video Selection Error", 
-        "There was an issue selecting the video. Please try again.");
+      Alert.alert("Video Selection Error", "There was an issue selecting the video. Please try again.");
     }
   };
 
@@ -184,13 +182,12 @@ export default function AddMediaScreen({ navigation }) {
     try {
       // Only request camera permissions - not microphone through ImagePicker
       const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
-      
-      if (cameraPermission.status !== 'granted') {
-        Alert.alert("Permissions Required", 
-          "Please enable camera permissions to record video.");
+
+      if (cameraPermission.status !== "granted") {
+        Alert.alert("Permissions Required", "Please enable camera permissions to record video.");
         return;
       }
-      
+
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
         allowsEditing: false, // Set to false for more reliable results
@@ -198,7 +195,7 @@ export default function AddMediaScreen({ navigation }) {
       });
 
       console.log("Video recording result:", result);
-      
+
       if (!result.canceled && result.assets?.[0]?.uri) {
         console.log("Video recording success:", result.assets[0]);
         setVideoUri(result.assets[0].uri);
@@ -341,7 +338,6 @@ export default function AddMediaScreen({ navigation }) {
             <Text style={styles.trialHeading}>TRIAL VERSION</Text>
             <Text style={styles.trialBody}>
               For the testing phase, please keep your video <Text style={styles.bold}>short</Text>.{"\n"}Example: "Hi! I'm Hannah and I enjoy outdoor activities."
-              {"\n\n"}We are also unable to crop your photos for the testing phase, so please use <Text style={styles.bold}>centered photos</Text>.
             </Text>
           </View>
 
@@ -384,9 +380,9 @@ export default function AddMediaScreen({ navigation }) {
                   <Image source={require("../assets/icons/record.png")} />
                   <Text style={styles.uploadVideoText}>Record Video</Text>
                 </TouchableOpacity>
-                
+
                 <TouchableOpacity onPress={handleVideoUpload} style={styles.selectVideoButton}>
-                  <Ionicons name="images-outline" size={24} color="#E4423F" />
+                  <Ionicons name='images-outline' size={24} color='#E4423F' />
                   <Text style={styles.uploadVideoText}>Select Video</Text>
                 </TouchableOpacity>
               </View>
@@ -525,7 +521,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   videoUploadOptions: {
-    flexDirection: 'column',
+    flexDirection: "column",
     gap: 10,
     marginBottom: 20,
   },

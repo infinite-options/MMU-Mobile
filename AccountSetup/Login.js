@@ -291,7 +291,7 @@ export default function Login() {
         // Navigate to next screen
         navigation.navigate("MyProfile");
       } else {
-        Alert.alert("Error", "Failed to login with Google. Server response invalid.");
+        Alert.alert("Error", "Failed to login with Google. Please Check your Password or Signup.");
       }
     } catch (error) {
       console.error("LP Google sign-in error:", error);
@@ -493,13 +493,7 @@ export default function Login() {
           <TouchableOpacity style={styles.socialLoginButton} onPress={handleGoogleSignIn}>
             <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
           </TouchableOpacity>
-          {Platform.OS === "ios" ? (
-            <AppleSignIn onSignIn={handleAppleSignIn} onError={handleAppleSignInError} />
-          ) : (
-            <TouchableOpacity style={styles.socialLoginButton} disabled={showSpinner}>
-              <Image source={require("../assets/apple_logo.png")} style={styles.appleLogo} />
-            </TouchableOpacity>
-          )}
+          <AppleSignIn onSignIn={handleAppleSignIn} onError={handleAppleSignInError} />
         </View>
 
         {/* Google Sign-In Button */}

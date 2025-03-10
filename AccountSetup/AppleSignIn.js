@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Platform, TouchableOpacity, Text, Image } from "react-native";
+import { StyleSheet, View, Platform, TouchableOpacity, Text, Image, Alert } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import config from "../config"; // Fix the import path
@@ -73,30 +73,61 @@ const AppleSignIn = ({ onSignIn, onError }) => {
         onSignIn(userInfo);
       } else {
         // For Android or iOS without Apple Authentication, open web-based Sign in with Apple
-        const result = await WebBrowser.openAuthSessionAsync(
-          `https://appleid.apple.com/auth/authorize?client_id=${config.googleClientIds.appleServicesId}&redirect_uri=${encodeURIComponent(
-            "https://auth.expo.io/@pmarathay/meetmeup/redirect"
-          )}&response_type=code id_token&scope=name email&response_mode=form_post`,
-          "https://auth.expo.io/@pmarathay/meetmeup/redirect"
-        );
+        console.log("Using web-based Apple Sign-In fallback");
+        console.log("Apple Services ID:", config.googleClientIds.appleServicesId);
 
-        if (result.type === "success") {
-          // Handle successful web authentication
-          // You'll need to implement server-side validation for the web flow
-          console.log("Web authentication successful:", result);
-          // Parse the authentication response and create userInfo object
-          // This is a simplified example - you'll need to implement proper token validation
-          const userInfo = {
-            user: {
-              id: "web_user_id",
-              email: "email_from_response",
-              name: "name_from_response",
-            },
-            idToken: "token_from_response",
-          };
-          onSignIn(userInfo);
-        } else {
-          console.log("Web authentication cancelled or failed");
+        // Show a loading indicator or message
+        Alert.alert("Sign in with Apple", "You'll be redirected to sign in with your Apple ID.");
+
+        const redirectUri = "https://auth.expo.io/@pmarathay/meetmeup/redirect";
+        const authUrl = `https://appleid.apple.com/auth/authorize?client_id=${config.googleClientIds.appleServicesId}&redirect_uri=${encodeURIComponent(
+          redirectUri
+        )}&response_type=code id_token&scope=name email&response_mode=form_post`;
+
+        console.log("Opening auth URL:", authUrl);
+
+        try {
+          const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+          console.log("Web authentication result:", result);
+
+          if (result.type === "success") {
+            // Handle successful web authentication
+            console.log("Web authentication successful");
+
+            // Extract parameters from the URL
+            const params = new URLSearchParams(result.url.split("?")[1]);
+            const code = params.get("code");
+            const id_token = params.get("id_token");
+            const user_id = params.get("user") || "web_user_id";
+            const email = params.get("email") || "";
+            const name = params.get("name") || "Apple User";
+
+            console.log("Extracted params:", { code, id_token: id_token ? "exists" : "missing", user_id, email, name });
+
+            // Create userInfo object
+            const userInfo = {
+              user: {
+                id: user_id,
+                email: email,
+                name: name,
+              },
+              idToken: id_token || code, // Use id_token if available, otherwise use code
+            };
+
+            onSignIn(userInfo);
+          } else {
+            console.log("Web authentication cancelled or failed");
+            if (result.type === "cancel") {
+              // User cancelled the flow
+              console.log("User cancelled web authentication");
+            } else {
+              // Authentication failed
+              onError("Web authentication failed");
+            }
+          }
+        } catch (webError) {
+          console.error("Web browser error:", webError);
+          onError(webError.message);
         }
       }
     } catch (error) {

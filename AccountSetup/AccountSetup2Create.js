@@ -359,6 +359,14 @@ export default function AccountSetup2Create() {
           profile_picture: user.photo || "",
         };
 
+        // Store name data in AsyncStorage for use in the name input screen
+        if (user.givenName) {
+          await AsyncStorage.setItem("user_first_name", user.givenName);
+        }
+        if (user.familyName) {
+          await AsyncStorage.setItem("user_last_name", user.familyName);
+        }
+
         console.log("Sending data to backend:", userData);
 
         // Call your backend endpoint for Google signup
@@ -519,6 +527,14 @@ export default function AccountSetup2Create() {
         profile_picture: "", // Apple doesn't provide profile pictures
         login_type: "apple", // Specify login type
       };
+
+      // Store name data in AsyncStorage for use in the name input screen
+      if (userData.first_name) {
+        await AsyncStorage.setItem("user_first_name", userData.first_name);
+      }
+      if (userData.last_name) {
+        await AsyncStorage.setItem("user_last_name", userData.last_name);
+      }
 
       console.log("AS2C Sending Apple data to backend:", JSON.stringify(userData, null, 2));
 
@@ -806,13 +822,7 @@ export default function AccountSetup2Create() {
           <TouchableOpacity style={[styles.socialLoginButton, signInInProgress && styles.disabledButton]} onPress={handleGoogleSignIn} disabled={signInInProgress}>
             <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
           </TouchableOpacity>
-          {Platform.OS === "ios" ? (
-            <AppleSignIn onSignIn={handleAppleSignIn} onError={handleAppleSignInError} />
-          ) : (
-            <TouchableOpacity style={[styles.socialLoginButton, signInInProgress && styles.disabledButton]} disabled={signInInProgress}>
-              <Image source={require("../assets/apple_logo.png")} style={styles.appleLogo} />
-            </TouchableOpacity>
-          )}
+          <AppleSignIn onSignIn={handleAppleSignIn} onError={handleAppleSignInError} />
         </View>
 
         {/* Already Have an Account */}
@@ -964,6 +974,7 @@ const styles = StyleSheet.create({
   footerText: {
     textAlign: "center",
     marginTop: 20,
+    fontSize: 16,
     color: "#666",
   },
   loginLink: {

@@ -316,6 +316,63 @@ export default function Login() {
     }
   };
 
+  // Handle Apple Sign In
+  const handleAppleSignIn = async (userInfo) => {
+    console.log("LP handleAppleSignIn called with userInfo:", JSON.stringify(userInfo, null, 2));
+
+    try {
+      setShowSpinner(true);
+
+      // Extract user data from Apple Sign In response
+      const { user, idToken } = userInfo;
+
+      console.log("LP Apple User ID:", user.id);
+      console.log("LP Apple User Email:", user.email);
+      console.log("LP Apple User Name:", user.name);
+      console.log("LP Apple ID Token Length:", idToken ? idToken.length : 0);
+
+      // Call your backend endpoint for Apple login
+      const url = `https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialLogin/MMU/${user.email}`;
+      const response = await axios.get(url, {
+        params: {
+          id_token: idToken,
+        },
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+
+      console.log("LP Backend response for Apple Sign In:", response.data);
+
+      // Handle response
+      if (response.data && response.data.message === "Correct Email" && Array.isArray(response.data.result) && response.data.result.length >= 1) {
+        // Store user data in AsyncStorage
+        const user_uid = response.data.result[0];
+        const user_email_id = user.email;
+
+        await AsyncStorage.setItem("user_uid", user_uid);
+        await AsyncStorage.setItem("user_email_id", user_email_id);
+
+        // Navigate to next screen
+        navigation.navigate("MyProfile");
+      } else {
+        Alert.alert("Error", "Failed to login with Apple. Server response invalid.");
+      }
+    } catch (error) {
+      console.error("LP Apple sign-in error:", error);
+      Alert.alert("Error", "Something went wrong with Apple sign-in. Please try again.");
+    } finally {
+      setShowSpinner(false);
+    }
+  };
+
+  // Handle Apple Sign In Error
+  const handleAppleSignInError = (error) => {
+    console.error("LP Apple Sign-In Error:", error);
+    Alert.alert("Error", `Apple Sign-In failed: ${error}`);
+  };
+
   // Attempt to login with salt
   const handleSubmitLogin = async () => {
     if (!email || !password) {
@@ -430,9 +487,7 @@ export default function Login() {
           <TouchableOpacity style={styles.socialLoginButton} onPress={handleGoogleSignIn}>
             <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.socialLoginButton}>
-            <Image source={require("../assets/apple_logo.png")} style={styles.appleLogo} />
-          </TouchableOpacity>
+          <AppleSignIn onSignIn={handleAppleSignIn} onError={handleAppleSignInError} />
         </View>
 
         {/* Google Sign-In Button */}

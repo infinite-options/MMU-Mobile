@@ -491,18 +491,39 @@ export default function AccountSetup2Create() {
       console.log("AS2C Backend response for Apple Sign In:", JSON.stringify(result, null, 2));
 
       // Handle response - same logic as Google Sign In
+      console.log("AS2C result.message: ", result.message);
       if (result.message === "User already exists") {
         setExisting(true);
-        Alert.alert("User Already Exists", "This Apple account is already registered. Would you like to log in instead?", [
-          {
-            text: "Cancel",
-            style: "cancel",
+        console.log("AS2C user_id: ", user.id);
+
+        const appleLoginEndpoint = "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/appleLogin";
+        console.log("LP Calling appleLogin endpoint with ID:", user.id);
+
+        const response = await fetch(appleLoginEndpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
           },
-          {
-            text: "Log In",
-            onPress: () => navigation.navigate("Login"),
-          },
-        ]);
+          body: JSON.stringify({ id: user.id }),
+        });
+
+        const responseData = await response.json();
+        console.log("LP Apple Login endpoint response:", responseData);
+
+        // Check if the response contains valid user data
+        if (responseData?.result?.[0]?.user_uid) {
+          const userData = responseData.result[0];
+
+          // Store user data in AsyncStorage
+          await AsyncStorage.setItem("user_uid", userData.user_uid);
+          await AsyncStorage.setItem("user_email_id", userData.user_email_id || user.email || "");
+
+          // Navigate to next screen
+          navigation.navigate("MyProfile");
+        } else {
+          Alert.alert("Error", "Failed to login with Apple. Server response invalid.");
+        }
       } else {
         // Store user data in AsyncStorage - assuming the API returns user_uid
         if (result.user_uid) {

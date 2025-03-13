@@ -909,11 +909,13 @@ const styles = StyleSheet.create({
   footerText: {
     textAlign: "center",
     marginTop: 20,
+    fontSize: 16,
     color: "#666",
   },
   loginLink: {
     color: "#E4423F",
     fontWeight: "bold",
+    fontSize: 16,
   },
   googleLogo: {
     width: 45,

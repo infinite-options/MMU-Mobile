@@ -293,7 +293,7 @@ export default function Login() {
         // Navigate to next screen
         navigation.navigate("MyProfile");
       } else {
-        Alert.alert("Error", "Failed to login with Google. Server response invalid.");
+        Alert.alert("Error", "Failed to login with Google. Please check your email and password or Sign Up.");
       }
     } catch (error) {
       console.error("LP Google sign-in error:", error);

@@ -374,6 +374,27 @@ export default function AccountSetup2Create() {
         // Handle response
         if (result.message === "User already exists") {
           setExisting(true);
+
+          // Check if the result contains user_uid directly or in result array
+          if (result.user_uid) {
+            console.log("User exists, logging in with returned user_uid:", result.user_uid);
+            await AsyncStorage.setItem("user_uid", result.user_uid);
+            await AsyncStorage.setItem("user_email_id", user.email);
+
+            // Navigate to profile page
+            navigation.navigate("MyProfile");
+            return;
+          } else if (result.result && result.result[0] && result.result[0].user_uid) {
+            console.log("User exists, logging in with returned user_uid from result array:", result.result[0].user_uid);
+            await AsyncStorage.setItem("user_uid", result.result[0].user_uid);
+            await AsyncStorage.setItem("user_email_id", user.email);
+
+            // Navigate to profile page
+            navigation.navigate("MyProfile");
+            return;
+          }
+
+          // If no user_uid in result, show the alert as before
           Alert.alert("User Already Exists", "This Google account is already registered. Would you like to log in instead?", [
             {
               text: "Cancel",
@@ -494,6 +515,27 @@ export default function AccountSetup2Create() {
       console.log("AS2C result.message: ", result.message);
       if (result.message === "User already exists") {
         setExisting(true);
+
+        // Check if the result contains user_uid directly or in result array
+        // if (result.user_uid) {
+        //   console.log("User exists, logging in with returned user_uid:", result.user_uid);
+        //   await AsyncStorage.setItem("user_uid", result.user_uid);
+        //   await AsyncStorage.setItem("user_email_id", user.email);
+
+        //   // Navigate to profile page
+        //   navigation.navigate("MyProfile");
+        //   return;
+        // } else if (result.result && result.result[0] && result.result[0].user_uid) {
+        //   console.log("User exists, logging in with returned user_uid from result array:", result.result[0].user_uid);
+        //   await AsyncStorage.setItem("user_uid", result.result[0].user_uid);
+        //   await AsyncStorage.setItem("user_email_id", user.email);
+
+        //   // Navigate to profile page
+        //   navigation.navigate("MyProfile");
+        //   return;
+        // }
+
+        // If no user_uid in result, proceed with the existing Apple login flow
         console.log("AS2C user_id: ", user.id);
 
         const appleLoginEndpoint = "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/appleLogin";

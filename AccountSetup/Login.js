@@ -134,6 +134,8 @@ export default function Login() {
 
   // Handle Google Sign In
   const handleGoogleSignIn = async () => {
+    console.log("LP Google button clicked - handleGoogleSignIn called");
+
     console.log("LP handleGoogleSignIn called - Current states:", {
       isGoogleConfiguring,
       isGoogleConfigured,
@@ -318,6 +320,7 @@ export default function Login() {
 
   // Handle Apple Sign In
   const handleAppleSignIn = async (userInfo) => {
+    console.log("LP handleAppleSignIn callback triggered in Login.js");
     console.log("LP handleAppleSignIn called with userInfo:", JSON.stringify(userInfo, null, 2));
 
     try {
@@ -369,6 +372,7 @@ export default function Login() {
 
   // Handle Apple Sign In Error
   const handleAppleSignInError = (error) => {
+    console.log("LP handleAppleSignInError callback triggered in Login.js");
     console.error("LP Apple Sign-In Error:", error);
     Alert.alert("Error", `Apple Sign-In failed: ${error}`);
   };

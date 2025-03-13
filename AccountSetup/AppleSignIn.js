@@ -25,6 +25,9 @@ const AppleSignIn = ({ onSignIn, onError }) => {
   }, []);
 
   const handleAppleSignIn = async () => {
+    console.log("Apple button clicked - handleAppleSignIn called");
+    console.log("Platform:", Platform.OS, "isAppleAuthAvailable:", isAppleAuthAvailable);
+
     try {
       if (Platform.OS === "ios" && isAppleAuthAvailable) {
         const credential = await AppleAuthentication.signInAsync({
@@ -121,7 +124,13 @@ const AppleSignIn = ({ onSignIn, onError }) => {
   // Android button or iOS without Apple Authentication
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.androidAppleButton} onPress={handleAppleSignIn}>
+      <TouchableOpacity
+        style={styles.androidAppleButton}
+        onPress={() => {
+          console.log("Apple icon TouchableOpacity pressed directly");
+          handleAppleSignIn();
+        }}
+      >
         <Image source={require("../assets/apple_logo.png")} style={styles.appleLogo} />
       </TouchableOpacity>
     </View>

@@ -390,6 +390,13 @@ export default function AccountSetup2Create() {
             await AsyncStorage.setItem("user_uid", result.user_uid);
             await AsyncStorage.setItem("user_email_id", user.email);
 
+            // Store first and last name for prepopulating the NameInput page
+            if (user.givenName || user.familyName) {
+              await AsyncStorage.setItem("user_first_name", user.givenName || "");
+              await AsyncStorage.setItem("user_last_name", user.familyName || "");
+              console.log("AS2C Stored Google user name in AsyncStorage:", user.givenName, user.familyName);
+            }
+
             // Navigate to next screen
             navigation.navigate("NameInput");
           } else {
@@ -502,6 +509,15 @@ export default function AccountSetup2Create() {
           console.log("AS2C Storing Apple user data in AsyncStorage - user_uid:", result.user_uid);
           await AsyncStorage.setItem("user_uid", result.user_uid);
           await AsyncStorage.setItem("user_email_id", user.email);
+
+          // Store first and last name for prepopulating the NameInput page
+          if (user.name) {
+            const firstName = user.name.split(" ")[0] || "";
+            const lastName = user.name.split(" ").slice(1).join(" ") || "";
+            await AsyncStorage.setItem("user_first_name", firstName);
+            await AsyncStorage.setItem("user_last_name", lastName);
+            console.log("AS2C Stored Apple user name in AsyncStorage:", firstName, lastName);
+          }
 
           // Navigate to next screen
           navigation.navigate("NameInput");

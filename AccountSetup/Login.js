@@ -334,28 +334,54 @@ export default function Login() {
       console.log("LP Apple User Name:", user.name);
       console.log("LP Apple ID Token Length:", idToken ? idToken.length : 0);
 
-      // Call your backend endpoint for Apple login
-      const url = `https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialLogin/MMU/${user.email}`;
-      const response = await axios.get(url, {
-        params: {
-          id_token: idToken,
-        },
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-      });
+      // Call the appleLogin endpoint with the user ID
+      // const appleLoginEndpoint = "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/appleLogin";
+      // console.log("LP Calling appleLogin endpoint with ID:", user.id);
 
-      console.log("LP Backend response for Apple Sign In:", response.data);
+      // const response = await axios.get(url, {
+      //   params: {
+      //     id_token: idToken,
+      //   },
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     "Access-Control-Allow-Origin": "*",
+      //   },
+      // });
 
-      // Handle response
-      if (response.data && response.data.message === "Correct Email" && Array.isArray(response.data.result) && response.data.result.length >= 1) {
+      // console.log("LP Backend response for Apple Sign In:", response.data);
+
+      // // Handle response
+      // if (response.data && response.data.message === "Correct Email" && Array.isArray(response.data.result) && response.data.result.length >= 1) {
+      //   // Store user data in AsyncStorage
+      //   const user_uid = response.data.result[0];
+      //   const user_email_id = user.email;
+
+      //   await AsyncStorage.setItem("user_uid", user_uid);
+      //   await AsyncStorage.setItem("user_email_id", user_email_id);
+      // Call the appleLogin endpoint with the user ID
+      const appleLoginEndpoint = "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/appleLogin";
+      console.log("LP Calling appleLogin endpoint with ID:", user.id);
+
+      const response = await axios.post(
+        appleLoginEndpoint,
+        { id: user.id },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
+
+      console.log("LP Apple Login endpoint response:", response.data);
+
+      // Check if the response contains valid user data
+      if (response.data?.result?.[0]?.user_uid) {
+        const userData = response.data.result[0];
+
         // Store user data in AsyncStorage
-        const user_uid = response.data.result[0];
-        const user_email_id = user.email;
-
-        await AsyncStorage.setItem("user_uid", user_uid);
-        await AsyncStorage.setItem("user_email_id", user_email_id);
+        await AsyncStorage.setItem("user_uid", userData.user_uid);
+        await AsyncStorage.setItem("user_email_id", userData.user_email_id || user.email || "");
 
         // Navigate to next screen
         navigation.navigate("MyProfile");

@@ -566,6 +566,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     alignItems: "center",
     justifyContent: "center",
+    width: 75,
+    height: 75,
   },
   googleLogo: {
     width: 45,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Platform, TouchableOpacity, Text } from "react-native";
+import { StyleSheet, View, Platform, TouchableOpacity, Text, Image } from "react-native";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as WebBrowser from "expo-web-browser";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -103,26 +103,26 @@ const AppleSignIn = ({ onSignIn, onError }) => {
     }
   };
 
-  // Render platform-specific button
-  if (Platform.OS === "ios" && isAppleAuthAvailable) {
-    return (
-      <View style={styles.container}>
-        <AppleAuthentication.AppleAuthenticationButton
-          buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-          buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
-          cornerRadius={5}
-          style={styles.appleButton}
-          onPress={handleAppleSignIn}
-        />
-      </View>
-    );
-  }
+  // Render platform-specific button - By hiding it for now we force the use of the Apple
+  // if (Platform.OS === "ios" && isAppleAuthAvailable) {
+  //   return (
+  //     <View style={styles.container}>
+  //       <AppleAuthentication.AppleAuthenticationButton
+  //         buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+  //         buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+  //         cornerRadius={5}
+  //         style={styles.appleButton}
+  //         onPress={handleAppleSignIn}
+  //       />
+  //     </View>
+  //   );
+  // }
 
   // Android button or iOS without Apple Authentication
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.androidAppleButton} onPress={handleAppleSignIn}>
-        <Text style={styles.androidAppleButtonText}>Sign in with Apple</Text>
+        <Image source={require("../assets/apple_logo.png")} style={styles.appleLogo} />
       </TouchableOpacity>
     </View>
   );
@@ -130,24 +130,25 @@ const AppleSignIn = ({ onSignIn, onError }) => {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 16,
+    // Remove marginTop to align with Google button
   },
   appleButton: {
     width: 192,
     height: 48,
   },
   androidAppleButton: {
-    width: 192,
-    height: 48,
-    backgroundColor: "#000",
-    justifyContent: "center",
+    backgroundColor: "#F5F5F5",
+    borderRadius: 50,
+    padding: 15,
+    marginHorizontal: 10,
     alignItems: "center",
-    borderRadius: 5,
+    justifyContent: "center",
+    width: 75, // Set fixed width to match Google button
+    height: 75, // Set fixed height to match Google button
   },
-  androidAppleButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
+  appleLogo: {
+    width: 45,
+    height: 45,
   },
 });
 

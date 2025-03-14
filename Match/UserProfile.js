@@ -608,19 +608,6 @@ export default function UserProfile() {
         </View>
       )}
 
-      {/* MATCH ACTIONS CONTAINER */}
-      <View style={styles.matchActionsContainer}>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TouchableOpacity style={[styles.roundButton, { backgroundColor: "#fff" }]} onPress={handleClosePress}>
-            <Ionicons name='close' size={24} color='red' />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.roundButton, { backgroundColor: isLiked ? "red" : "white", marginLeft: 25 }]} onPress={handleLikePress}>
-            <Ionicons name={isLiked ? "heart" : "heart-outline"} size={24} color={isLiked ? "white" : "red"} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
       {/* BOTTOM SHEET */}
       <Animated.View
         {...panResponder.panHandlers}
@@ -631,10 +618,6 @@ export default function UserProfile() {
           },
         ]}
       >
-        <TouchableOpacity onPress={toggleBottomSheet} activeOpacity={0.7} style={styles.dragIndicatorContainer}>
-          <View style={styles.dragIndicator} />
-        </TouchableOpacity>
-
         {/* Action buttons in the middle of the sheet */}
         <View style={styles.matchActionsContainer}>
           <TouchableOpacity style={[styles.roundButton, { backgroundColor: "#fff" }]} onPress={handleClosePress}>
@@ -794,20 +777,6 @@ export default function UserProfile() {
             <Text style={styles.detailText}>{userInfo?.user_star_sign || "Sign not specified"}</Text>
           </View>
         </ScrollView>
-
-        {/* Progress slider positioned above bottom nav */}
-        <View style={styles.progressContainer}>
-          <Slider
-            style={styles.slider}
-            minimumValue={0}
-            maximumValue={videoDuration}
-            value={videoPosition}
-            onValueChange={handleSeek}
-            minimumTrackTintColor='#FFFFFF'
-            maximumTrackTintColor='#000000'
-            thumbTintColor='#FF6347'
-          />
-        </View>
       </Animated.View>
 
       {/* BOTTOM NAV BAR */}
@@ -952,6 +921,7 @@ const styles = StyleSheet.create({
     color: "#ccc",
     fontSize: 14,
   },
+
   progressContainer: {
     position: "absolute",
     bottom: 70,
@@ -1029,11 +999,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     zIndex: 11,
-  },
-  dragIndicatorContainer: {
-    width: "100%",
-    paddingVertical: 8,
-    alignItems: "center",
   },
   dragIndicator: {
     width: 40,

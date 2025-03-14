@@ -36,7 +36,7 @@ const BottomNav = () => {
 export default function UserProfile() {
   const screenHeight = Dimensions.get("window").height;
   const sheetOpenY = screenHeight * 0.15; // how far from top when "open"
-  const sheetClosedY = screenHeight * 0.75; // Adjusted to show just name, rating, and interests
+  const sheetClosedY = screenHeight * 0.73; // Adjusted to show name, rating, and buttons
   const navigation = useNavigation();
   const route = useRoute();
   const matchedUserId = route.params?.meet_date_user_id;
@@ -510,7 +510,7 @@ export default function UserProfile() {
   if (userInfo?.user_general_interests) {
     try {
       // Log the raw data
-      console.log("Raw user_general_interests:", userInfo.user_general_interests);
+      // console.log("Raw user_general_interests:", userInfo.user_general_interests);
 
       // Attempt to parse as JSON
       if (typeof userInfo.user_general_interests === "string" && userInfo.user_general_interests.trim().startsWith("[")) {
@@ -634,16 +634,28 @@ export default function UserProfile() {
         <TouchableOpacity onPress={toggleBottomSheet} activeOpacity={0.7} style={styles.dragIndicatorContainer}>
           <View style={styles.dragIndicator} />
         </TouchableOpacity>
-        <ScrollView style={styles.bottomSheetScroll}>
-          {/* Name, Age, and Heart */}
+
+        {/* Action buttons in the middle of the sheet */}
+        <View style={styles.matchActionsContainer}>
+          <TouchableOpacity style={[styles.roundButton, { backgroundColor: "#fff" }]} onPress={handleClosePress}>
+            <Ionicons name='close' size={24} color='red' />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.roundButton, { backgroundColor: isLiked ? "red" : "white" }]} onPress={handleLikePress}>
+            <Ionicons name={isLiked ? "heart" : "heart-outline"} size={24} color={isLiked ? "white" : "red"} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Name, Age and Rating at the bottom */}
+        <View style={styles.nameContainer}>
           <View style={styles.nameRow}>
             <Text style={styles.nameText}>
               {userInfo?.user_first_name}, {userInfo?.user_age}
             </Text>
-            <Ionicons name={userInfo?.["Liked by"] === "YES" ? "heart" : "heart-outline"} size={20} color='red' style={{ marginLeft: 6 }} />
+            {userInfo?.["Liked by"] === "YES" && <Ionicons name='heart' size={20} color='red' style={{ marginLeft: 6 }} />}
           </View>
 
-          {/* 5-star rating + attendance rating (example placeholder) */}
+          {/* 5-star rating + attendance rating */}
           <View style={styles.starRatingContainer}>
             {[...Array(5).keys()].map((i) => (
               <Ionicons key={i} name='star' size={18} color='#FFD700' />
@@ -651,7 +663,12 @@ export default function UserProfile() {
             <Text style={styles.attendanceText}> attendance rating</Text>
             <Text style={styles.attendanceText}> • UID: {userInfo?.user_uid}</Text>
           </View>
+        </View>
 
+        {/* Horizontal line */}
+        <View style={styles.horizontalLine} />
+
+        <ScrollView style={styles.bottomSheetScroll}>
           {/* Interests chips */}
           <View style={styles.chipsRow}>
             {allInterests.map((interest, idx) => (
@@ -857,76 +874,43 @@ const styles = StyleSheet.create({
   },
 
   matchActionsContainer: {
-    position: "absolute",
-    bottom: 120,
-    left: 0,
-    right: 0,
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "center",
     alignItems: "center",
-    zIndex: 9999,
+    paddingVertical: 10,
+    marginBottom: 5,
+    gap: 30,
   },
   roundButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 50,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "center",
     alignItems: "center",
+    margin: 5,
   },
-  centerImage: {
-    width: 20,
-    height: 20,
-    resizeMode: "contain",
-  },
-
-  bottomSheet: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    zIndex: 11,
-  },
-  dragIndicatorContainer: {
-    width: "100%",
-    paddingVertical: 10,
-    alignItems: "center",
-  },
-  dragIndicator: {
-    alignSelf: "center",
-    width: 40,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#888",
-    marginVertical: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 1,
-    elevation: 2,
-  },
-  bottomSheetScroll: {
+  nameContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 120,
+    paddingBottom: 10,
   },
-
   nameRow: {
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 6,
   },
   nameText: {
     color: "#fff",
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "bold",
+    textAlign: "center",
   },
   starRatingContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    justifyContent: "center",
+    marginBottom: 5,
   },
   attendanceText: {
     color: "#fff",
@@ -1034,5 +1018,38 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 10,
     marginRight: 8,
+  },
+
+  bottomSheet: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    zIndex: 11,
+  },
+  dragIndicatorContainer: {
+    width: "100%",
+    paddingVertical: 8,
+    alignItems: "center",
+  },
+  dragIndicator: {
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "#888",
+    marginVertical: 8,
+  },
+  horizontalLine: {
+    height: 1,
+    backgroundColor: "#444",
+    marginHorizontal: 20,
+    marginBottom: 10,
+  },
+  bottomSheetScroll: {
+    paddingHorizontal: 20,
+    paddingBottom: 120,
   },
 });

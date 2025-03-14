@@ -688,7 +688,7 @@ export default function MyProfile() {
 
         {/* Find My Match Button */}
         <TouchableOpacity style={styles.findMatchButton} onPress={() => navigation.navigate("Preferences")}>
-          <Text style={styles.findMatchButtonText}>Find my match!</Text>
+          <Text style={styles.findMatchButtonText}>Set Match Preferences</Text>
         </TouchableOpacity>
       </ScrollView>
 

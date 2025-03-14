@@ -374,7 +374,7 @@ const Preferences = () => {
       </ScrollView>
 
       <Pressable style={styles.continueButton} onPress={handleFindMatch}>
-        <Text style={styles.continueButtonText}>Find my match!</Text>
+        <Text style={styles.continueButtonText}>Find My Match!</Text>
       </Pressable>
     </SafeAreaView>
   );

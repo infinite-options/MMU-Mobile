@@ -36,7 +36,7 @@ const BottomNav = () => {
 export default function UserProfile() {
   const screenHeight = Dimensions.get("window").height;
   const sheetOpenY = screenHeight * 0.15; // how far from top when "open"
-  const sheetClosedY = screenHeight * 0.55; // how far from top when "closed"
+  const sheetClosedY = screenHeight * 0.75; // Adjusted to show just name, rating, and interests
   const navigation = useNavigation();
   const route = useRoute();
   const matchedUserId = route.params?.meet_date_user_id;
@@ -51,7 +51,7 @@ export default function UserProfile() {
   const [userUid, setUserUid] = useState(null);
   const [likeStatus, setLikeStatus] = useState({
     isLikedByMe: false,
-    isLikedByOther: false
+    isLikedByOther: false,
   });
 
   // For video slider (optional)
@@ -61,6 +61,9 @@ export default function UserProfile() {
   // Animated value controlling bottom sheet's vertical position
   const sheetAnim = useRef(new Animated.Value(sheetClosedY)).current;
 
+  // Track the starting position of the sheet for smooth dragging
+  const startPositionRef = useRef(sheetClosedY);
+
   // PanResponder to handle dragging of bottom sheet
   const panResponder = useRef(
     PanResponder.create({
@@ -68,31 +71,72 @@ export default function UserProfile() {
         // Start capturing if we have a significant vertical move
         return Math.abs(gestureState.dy) > 5;
       },
-      onPanResponderMove: Animated.event([null, { dy: sheetAnim }], { useNativeDriver: false }),
+      onPanResponderGrant: () => {
+        // Save the current position when the user starts dragging
+        startPositionRef.current = sheetAnim._value;
+        // Stop any ongoing animations
+        sheetAnim.stopAnimation();
+      },
+      onPanResponderMove: (_, gestureState) => {
+        // Calculate new position based on the starting position and the drag distance
+        const newPosition = Math.max(
+          sheetOpenY, // Don't allow dragging above the open position
+          Math.min(
+            startPositionRef.current + gestureState.dy,
+            screenHeight - 100 // Don't allow dragging below the screen
+          )
+        );
+        // Update the animated value
+        sheetAnim.setValue(newPosition);
+      },
       onPanResponderRelease: (_, gestureState) => {
-        const newPosition = gestureState.moveY || 0;
-        // If the drag ended in the upper half of the screen, open; else close
-        if (newPosition < screenHeight / 2) {
-          // snap to open
-          Animated.spring(sheetAnim, {
-            toValue: sheetOpenY,
-            useNativeDriver: false,
-          }).start();
-        } else {
-          // snap to closed
-          Animated.spring(sheetAnim, {
-            toValue: sheetClosedY,
-            useNativeDriver: false,
-          }).start();
+        // Get the current position and velocity
+        const currentPosition = sheetAnim._value;
+        const velocity = gestureState.vy;
+
+        // Determine target position based on current position, velocity, and thresholds
+        let targetPosition;
+
+        // If velocity is significant, use it to determine direction
+        if (Math.abs(velocity) > 0.5) {
+          targetPosition = velocity > 0 ? sheetClosedY : sheetOpenY;
         }
+        // Otherwise use position thresholds
+        else {
+          const threshold = (sheetOpenY + sheetClosedY) / 2;
+          targetPosition = currentPosition < threshold ? sheetOpenY : sheetClosedY;
+        }
+
+        // Animate to the target position with spring physics
+        Animated.spring(sheetAnim, {
+          toValue: targetPosition,
+          velocity: velocity * 0.1, // Use the gesture velocity for natural feel
+          tension: 50,
+          friction: 10,
+          useNativeDriver: false,
+        }).start();
       },
     })
   ).current;
 
   const [isLiked, setIsLiked] = useState(false);
 
+  // Add a function to toggle the bottom sheet
+  const toggleBottomSheet = () => {
+    // Determine if we're closer to open or closed position
+    const isCurrentlyMoreOpen = sheetAnim._value < (sheetOpenY + sheetClosedY) / 2;
+
+    // Animate to the opposite position
+    Animated.spring(sheetAnim, {
+      toValue: isCurrentlyMoreOpen ? sheetClosedY : sheetOpenY,
+      tension: 50,
+      friction: 10,
+      useNativeDriver: false,
+    }).start();
+  };
+
   useEffect(() => {
-    // On mount, we want the sheet at the "semi-open" position.
+    // On mount, we want the sheet at the position shown in the image
     sheetAnim.setValue(sheetClosedY);
   }, []);
 
@@ -166,9 +210,9 @@ export default function UserProfile() {
             "Content-Type": "application/x-www-form-urlencoded",
           },
         });
-        
+
         // Update like status after successful API call
-        setLikeStatus(prev => ({...prev, isLikedByMe: true}));
+        setLikeStatus((prev) => ({ ...prev, isLikedByMe: true }));
       } else {
         await axios.delete("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/likes", {
           data: formData.toString(),
@@ -176,9 +220,9 @@ export default function UserProfile() {
             "Content-Type": "application/x-www-form-urlencoded",
           },
         });
-        
+
         // Update like status after successful API call
-        setLikeStatus(prev => ({...prev, isLikedByMe: false}));
+        setLikeStatus((prev) => ({ ...prev, isLikedByMe: false }));
       }
     } catch (error) {
       console.error("Error handling like action", error.message);
@@ -210,20 +254,17 @@ export default function UserProfile() {
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     // Radius of the Earth in miles
     const earthRadius = 3958.8;
-    
+
     // Convert latitude and longitude from degrees to radians
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
     // Haversine formula
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = earthRadius * c;
-    
+
     return distance;
   };
 
@@ -231,27 +272,25 @@ export default function UserProfile() {
   const getLikeStatus = async (currentUserUid, matchedUserUid) => {
     try {
       console.log(`Getting like status for current user ${currentUserUid} and matched user ${matchedUserUid}`);
-      
+
       // Get likes data for current user using the correct endpoint format
-      const response = await axios.get(
-        `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/likes/${currentUserUid}`
-      );
-      
+      const response = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/likes/${currentUserUid}`);
+
       console.log("Likes response received:", JSON.stringify(response.data).substring(0, 300) + "...");
-      
+
       // Check if response has the expected structure
       if (!response.data || response.data.code !== 200) {
         console.error("Unexpected response from likes endpoint:", response.data);
         return { isLikedByMe: false, isLikedByOther: false };
       }
-      
+
       // Deep logging of response structure to debug
       console.log("Response structure:", Object.keys(response.data));
       console.log("Result array type:", Array.isArray(response.data.result));
       if (response.data.result) {
         console.log("Result array length:", response.data.result.length);
       }
-      
+
       // Extract data from the response - checking both top-level and nested structures
       let isLikedByMe = false;
       let isLikedByOther = false;
@@ -259,45 +298,45 @@ export default function UserProfile() {
       // Check top-level arrays first
       if (Array.isArray(response.data.people_whom_you_selected)) {
         console.log("Checking top-level people_whom_you_selected array");
-        isLikedByMe = response.data.people_whom_you_selected.some(user => user.user_uid === matchedUserUid);
+        isLikedByMe = response.data.people_whom_you_selected.some((user) => user.user_uid === matchedUserUid);
       }
-      
+
       if (Array.isArray(response.data.people_who_selected_you)) {
         console.log("Checking top-level people_who_selected_you array");
-        isLikedByOther = response.data.people_who_selected_you.some(user => user.user_uid === matchedUserUid);
+        isLikedByOther = response.data.people_who_selected_you.some((user) => user.user_uid === matchedUserUid);
       }
-      
+
       // If we couldn't find the info in top-level arrays, look in the result array
       if ((!isLikedByMe || !isLikedByOther) && Array.isArray(response.data.result)) {
         response.data.result.forEach((item, index) => {
           console.log(`Checking result[${index}] keys:`, Object.keys(item));
-          
+
           if (Array.isArray(item.people_whom_you_selected)) {
             console.log(`Checking nested people_whom_you_selected at index ${index}`);
-            if (item.people_whom_you_selected.some(user => user.user_uid === matchedUserUid)) {
+            if (item.people_whom_you_selected.some((user) => user.user_uid === matchedUserUid)) {
               isLikedByMe = true;
             }
           }
-          
+
           if (Array.isArray(item.people_who_selected_you)) {
             console.log(`Checking nested people_who_selected_you at index ${index}`);
-            if (item.people_who_selected_you.some(user => user.user_uid === matchedUserUid)) {
+            if (item.people_who_selected_you.some((user) => user.user_uid === matchedUserUid)) {
               isLikedByOther = true;
             }
           }
         });
       }
-      
+
       // Check matched_results as well, which might contain mutual matches
       if (Array.isArray(response.data.matched_results)) {
         console.log("Checking matched_results array");
-        const isMutualMatch = response.data.matched_results.some(user => user.user_uid === matchedUserUid);
+        const isMutualMatch = response.data.matched_results.some((user) => user.user_uid === matchedUserUid);
         if (isMutualMatch) {
           isLikedByMe = true;
           isLikedByOther = true;
         }
       }
-      
+
       console.log("Final like status:", { isLikedByMe, isLikedByOther });
       return { isLikedByMe, isLikedByOther };
     } catch (error) {
@@ -313,7 +352,7 @@ export default function UserProfile() {
       const userData = await fetchUserInfo(userUid);
       return {
         latitude: parseFloat(userData.user_latitude || 0),
-        longitude: parseFloat(userData.user_longitude || 0)
+        longitude: parseFloat(userData.user_longitude || 0),
       };
     } catch (error) {
       console.error("Error getting current user location:", error);
@@ -324,61 +363,61 @@ export default function UserProfile() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
+
       if (!matchedUserId || !userUid) {
         setError("Missing user information");
         setLoading(false);
         return;
       }
-      
+
       // 1. Get matched user information directly
       const matchedUserData = await fetchUserInfo(matchedUserId);
       console.log("Matched user data:", matchedUserData);
-      
+
       if (!matchedUserData) {
         setError("Could not retrieve matched user data");
         setLoading(false);
         return;
       }
-      
+
       // 2. Get like status between users
       const likeStatusData = await getLikeStatus(userUid, matchedUserId);
       setLikeStatus(likeStatusData);
-      
+
       // 3. Calculate distance between users - with enhanced validation
       let distance = 0;
       try {
         const currentUserData = await fetchUserInfo(userUid);
-        
+
         // Log coordinates to help debug
         console.log("Current user coordinates:", {
           latitude: currentUserData.user_latitude,
-          longitude: currentUserData.user_longitude
+          longitude: currentUserData.user_longitude,
         });
-        
+
         console.log("Matched user coordinates:", {
           latitude: matchedUserData.user_latitude,
-          longitude: matchedUserData.user_longitude
+          longitude: matchedUserData.user_longitude,
         });
-        
+
         // Validate coordinates before calculation
         const currentUserLat = parseFloat(currentUserData.user_latitude);
         const currentUserLng = parseFloat(currentUserData.user_longitude);
         const matchedUserLat = parseFloat(matchedUserData.user_latitude);
         const matchedUserLng = parseFloat(matchedUserData.user_longitude);
-        
-        if (!isNaN(currentUserLat) && !isNaN(currentUserLng) && 
-            !isNaN(matchedUserLat) && !isNaN(matchedUserLng) &&
-            currentUserLat !== 0 && currentUserLng !== 0 && 
-            matchedUserLat !== 0 && matchedUserLng !== 0) {
-          
-          distance = calculateDistance(
-            currentUserLat,
-            currentUserLng,
-            matchedUserLat,
-            matchedUserLng
-          );
-          
+
+        if (
+          !isNaN(currentUserLat) &&
+          !isNaN(currentUserLng) &&
+          !isNaN(matchedUserLat) &&
+          !isNaN(matchedUserLng) &&
+          currentUserLat !== 0 &&
+          currentUserLng !== 0 &&
+          matchedUserLat !== 0 &&
+          matchedUserLng !== 0
+        ) {
+          distance = calculateDistance(currentUserLat, currentUserLng, matchedUserLat, matchedUserLng);
+
           console.log("Calculated distance:", distance);
         } else {
           console.warn("Invalid coordinates for distance calculation, using default distance");
@@ -388,25 +427,24 @@ export default function UserProfile() {
         console.error("Error calculating distance:", locationError);
         distance = 0;
       }
-      
+
       // 4. Combine all data
       const completeUserInfo = {
         ...matchedUserData,
         "Liked by": likeStatusData.isLikedByOther ? "YES" : "NO",
-        "Likes": likeStatusData.isLikedByMe ? "YES" : "NO",
-        distance: distance
+        Likes: likeStatusData.isLikedByMe ? "YES" : "NO",
+        distance: distance,
       };
-      
+
       // Force immediate update by using a functional update
       setUserInfo(() => completeUserInfo);
-      
+
       // Use actual API data instead of forcing it to true
       setIsLiked(likeStatusData.isLikedByMe);
-      
+
       console.log("API like status:", likeStatusData.isLikedByMe);
       console.log("Setting complete user info:", completeUserInfo);
       console.log("User updated info:", userInfo);
-      
     } catch (err) {
       setError(err.message || "An error occurred while fetching user information.");
     } finally {
@@ -572,7 +610,6 @@ export default function UserProfile() {
 
       {/* MATCH ACTIONS CONTAINER */}
       <View style={styles.matchActionsContainer}>
-
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <TouchableOpacity style={[styles.roundButton, { backgroundColor: "#fff" }]} onPress={handleClosePress}>
             <Ionicons name='close' size={24} color='red' />
@@ -594,19 +631,16 @@ export default function UserProfile() {
           },
         ]}
       >
-        <View style={styles.dragIndicator} />
+        <TouchableOpacity onPress={toggleBottomSheet} activeOpacity={0.7} style={styles.dragIndicatorContainer}>
+          <View style={styles.dragIndicator} />
+        </TouchableOpacity>
         <ScrollView style={styles.bottomSheetScroll}>
           {/* Name, Age, and Heart */}
           <View style={styles.nameRow}>
             <Text style={styles.nameText}>
               {userInfo?.user_first_name}, {userInfo?.user_age}
             </Text>
-            <Ionicons 
-              name={userInfo?.["Liked by"] === "YES" ? "heart" : "heart-outline"} 
-              size={20} 
-              color='red' 
-              style={{ marginLeft: 6 }} 
-            />
+            <Ionicons name={userInfo?.["Liked by"] === "YES" ? "heart" : "heart-outline"} size={20} color='red' style={{ marginLeft: 6 }} />
           </View>
 
           {/* 5-star rating + attendance rating (example placeholder) */}
@@ -615,9 +649,7 @@ export default function UserProfile() {
               <Ionicons key={i} name='star' size={18} color='#FFD700' />
             ))}
             <Text style={styles.attendanceText}> attendance rating</Text>
-          </View>
-          <View style={styles.starRatingContainer}>
-            <Text style={styles.nameText}>{userInfo?.user_uid}</Text>
+            <Text style={styles.attendanceText}> • UID: {userInfo?.user_uid}</Text>
           </View>
 
           {/* Interests chips */}
@@ -629,14 +661,28 @@ export default function UserProfile() {
             ))}
           </View>
 
+          {/* User Photos */}
+          {userInfo?.user_photo_url && (
+            <View style={styles.photoContainer}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoScroll}>
+                {(() => {
+                  try {
+                    const photoUrls = typeof userInfo.user_photo_url === "string" ? JSON.parse(userInfo.user_photo_url.replace(/\\"/g, '"')) : userInfo.user_photo_url || [];
+
+                    return photoUrls.map((photoUrl, index) => (photoUrl ? <Image key={index} source={{ uri: photoUrl }} style={styles.userPhoto} resizeMode='cover' /> : null));
+                  } catch (e) {
+                    console.error("Error parsing photo URLs:", e);
+                    return null;
+                  }
+                })()}
+              </ScrollView>
+            </View>
+          )}
+
           {/* Distances */}
           <View style={styles.detailRow}>
             <Ionicons name='location' size={16} color='#bbb' style={{ marginRight: 8 }} />
-            <Text style={styles.detailText}>
-              {typeof userInfo.distance === 'number'
-                ? `${userInfo.distance.toFixed(2)} miles away`
-                : "Distance unavailable"}
-            </Text>
+            <Text style={styles.detailText}>{typeof userInfo.distance === "number" ? `${userInfo.distance.toFixed(2)} miles away` : "Distance unavailable"}</Text>
           </View>
 
           {/* Height */}
@@ -844,13 +890,23 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     zIndex: 11,
   },
+  dragIndicatorContainer: {
+    width: "100%",
+    paddingVertical: 10,
+    alignItems: "center",
+  },
   dragIndicator: {
     alignSelf: "center",
     width: 40,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#555",
+    backgroundColor: "#888",
     marginVertical: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 1,
+    elevation: 2,
   },
   bottomSheetScroll: {
     paddingHorizontal: 20,
@@ -965,5 +1021,18 @@ const styles = StyleSheet.create({
 
   infoText: {
     color: "#fff",
+  },
+
+  photoContainer: {
+    marginBottom: 15,
+  },
+  photoScroll: {
+    flexDirection: "row",
+  },
+  userPhoto: {
+    width: 100,
+    height: 100,
+    borderRadius: 10,
+    marginRight: 8,
   },
 });

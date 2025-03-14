@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { StyleSheet, TouchableOpacity, View, Image, Text, Animated, PanResponder, Dimensions, ScrollView ,Alert} from "react-native";
+import { StyleSheet, TouchableOpacity, View, Image, Text, Animated, PanResponder, Dimensions, ScrollView, Alert } from "react-native";
 import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
@@ -36,7 +36,7 @@ const BottomNav = () => {
 export default function MatchProfileDisplay() {
   const screenHeight = Dimensions.get("window").height;
   const sheetOpenY = screenHeight * 0.15; // how far from top when "open"
-  const sheetClosedY = screenHeight * 0.55; // how far from top when "closed"
+  const sheetClosedY = screenHeight * 0.75; // Adjusted to show just name, rating, and interests
   const navigation = useNavigation();
   const videoRef = useRef(null);
   const [status, setStatus] = useState({});
@@ -54,6 +54,9 @@ export default function MatchProfileDisplay() {
   // Animated value controlling bottom sheet's vertical position
   const sheetAnim = useRef(new Animated.Value(sheetClosedY)).current;
 
+  // Track the starting position of the sheet for smooth dragging
+  const startPositionRef = useRef(sheetClosedY);
+
   // PanResponder to handle dragging of bottom sheet
   const panResponder = useRef(
     PanResponder.create({
@@ -61,31 +64,72 @@ export default function MatchProfileDisplay() {
         // Start capturing if we have a significant vertical move
         return Math.abs(gestureState.dy) > 5;
       },
-      onPanResponderMove: Animated.event([null, { dy: sheetAnim }], { useNativeDriver: false }),
+      onPanResponderGrant: () => {
+        // Save the current position when the user starts dragging
+        startPositionRef.current = sheetAnim._value;
+        // Stop any ongoing animations
+        sheetAnim.stopAnimation();
+      },
+      onPanResponderMove: (_, gestureState) => {
+        // Calculate new position based on the starting position and the drag distance
+        const newPosition = Math.max(
+          sheetOpenY, // Don't allow dragging above the open position
+          Math.min(
+            startPositionRef.current + gestureState.dy,
+            screenHeight - 100 // Don't allow dragging below the screen
+          )
+        );
+        // Update the animated value
+        sheetAnim.setValue(newPosition);
+      },
       onPanResponderRelease: (_, gestureState) => {
-        const newPosition = gestureState.moveY || 0;
-        // If the drag ended in the upper half of the screen, open; else close
-        if (newPosition < screenHeight / 2) {
-          // snap to open
-          Animated.spring(sheetAnim, {
-            toValue: sheetOpenY,
-            useNativeDriver: false,
-          }).start();
-        } else {
-          // snap to closed
-          Animated.spring(sheetAnim, {
-            toValue: sheetClosedY,
-            useNativeDriver: false,
-          }).start();
+        // Get the current position and velocity
+        const currentPosition = sheetAnim._value;
+        const velocity = gestureState.vy;
+
+        // Determine target position based on current position, velocity, and thresholds
+        let targetPosition;
+
+        // If velocity is significant, use it to determine direction
+        if (Math.abs(velocity) > 0.5) {
+          targetPosition = velocity > 0 ? sheetClosedY : sheetOpenY;
         }
+        // Otherwise use position thresholds
+        else {
+          const threshold = (sheetOpenY + sheetClosedY) / 2;
+          targetPosition = currentPosition < threshold ? sheetOpenY : sheetClosedY;
+        }
+
+        // Animate to the target position with spring physics
+        Animated.spring(sheetAnim, {
+          toValue: targetPosition,
+          velocity: velocity * 0.1, // Use the gesture velocity for natural feel
+          tension: 50,
+          friction: 10,
+          useNativeDriver: false,
+        }).start();
       },
     })
   ).current;
 
   const [isLiked, setIsLiked] = useState(false);
 
+  // Add a function to toggle the bottom sheet
+  const toggleBottomSheet = () => {
+    // Determine if we're closer to open or closed position
+    const isCurrentlyMoreOpen = sheetAnim._value < (sheetOpenY + sheetClosedY) / 2;
+
+    // Animate to the opposite position
+    Animated.spring(sheetAnim, {
+      toValue: isCurrentlyMoreOpen ? sheetClosedY : sheetOpenY,
+      tension: 50,
+      friction: 10,
+      useNativeDriver: false,
+    }).start();
+  };
+
   useEffect(() => {
-    // On mount, we want the sheet at the "semi-open" position.
+    // On mount, we want the sheet at the position shown in the image
     sheetAnim.setValue(sheetClosedY);
   }, []);
 
@@ -200,20 +244,17 @@ export default function MatchProfileDisplay() {
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     // Radius of the Earth in miles
     const earthRadius = 3958.8;
-    
+
     // Convert latitude and longitude from degrees to radians
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
     // Haversine formula
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = earthRadius * c;
-    
+
     return distance;
   };
 
@@ -229,14 +270,13 @@ export default function MatchProfileDisplay() {
         console.log("Message from API:", response.data["message"]);
         setUserInfo(null);
         return;
-      }
-      else {
-          let matchResults = response.data.hasOwnProperty("result of 1 way match") ? response.data["result of 1 way match"] : response.data["result"];
-          console.log("matchResults", matchResults);
+      } else {
+        let matchResults = response.data.hasOwnProperty("result of 1 way match") ? response.data["result of 1 way match"] : response.data["result"];
+        console.log("matchResults", matchResults);
         if (Array.isArray(matchResults)) {
           const arrsize = matchResults.length;
           setArrlength(arrsize);
-          
+
           const fetchedData = matchResults[position];
           if (fetchedData) {
             const uid = fetchedData.user_uid;
@@ -245,14 +285,13 @@ export default function MatchProfileDisplay() {
             console.log("fetchedData", fetchedData);
             console.log("userInfo", fetchedData.user_uid);
             console.log("isLiked", fetchedData["Liked by"]);
-            
+
             // Get current user info to calculate distance
             const currentUserData = await fetchUserInfo(userUid);
-            
+
             // Calculate distance between users
             let distance = 0;
-            if (currentUserData && currentUserData.user_latitude && currentUserData.user_longitude && 
-                fetchedData.user_latitude && fetchedData.user_longitude) {
+            if (currentUserData && currentUserData.user_latitude && currentUserData.user_longitude && fetchedData.user_latitude && fetchedData.user_longitude) {
               try {
                 distance = calculateDistance(
                   parseFloat(currentUserData.user_latitude),
@@ -265,9 +304,9 @@ export default function MatchProfileDisplay() {
                 console.error("Error calculating distance:", error);
               }
             }
-            
+
             // Add distance to the userInfo object
-            setUserInfo({...fetchedData, distance: distance});
+            setUserInfo({ ...fetchedData, distance: distance });
 
             // Update isLiked state based on the new userInfo
             setIsLiked(fetchedData["Liked by"] === "YES");
@@ -278,7 +317,6 @@ export default function MatchProfileDisplay() {
           setError("Invalid response format.");
         }
       }
-        
     } catch (err) {
       setError(err.message || "An error occurred while fetching matches.");
     } finally {
@@ -443,15 +481,13 @@ export default function MatchProfileDisplay() {
                 style={styles.playPauseButton}
                 onPress={async () => {
                   if (!videoRef.current) return;
-                  
+
                   try {
                     // Get current playback status
                     const currentStatus = await videoRef.current.getStatusAsync();
-                    
+
                     // If video is at the end or paused, reset and play from beginning
-                    if (currentStatus.didJustFinish || 
-                        (currentStatus.positionMillis >= currentStatus.durationMillis - 100) || 
-                        !currentStatus.isPlaying) {
+                    if (currentStatus.didJustFinish || currentStatus.positionMillis >= currentStatus.durationMillis - 100 || !currentStatus.isPlaying) {
                       await videoRef.current.setPositionAsync(0);
                       await videoRef.current.playAsync();
                     } else {
@@ -503,7 +539,9 @@ export default function MatchProfileDisplay() {
               },
             ]}
           >
-            <View style={styles.dragIndicator} />
+            <TouchableOpacity onPress={toggleBottomSheet} activeOpacity={0.7} style={styles.dragIndicatorContainer}>
+              <View style={styles.dragIndicator} />
+            </TouchableOpacity>
             <ScrollView style={styles.bottomSheetScroll}>
               {/* Name, Age, and Heart */}
               <View style={styles.nameRow}>
@@ -519,9 +557,7 @@ export default function MatchProfileDisplay() {
                   <Ionicons key={i} name='star' size={18} color='#FFD700' />
                 ))}
                 <Text style={styles.attendanceText}> attendance rating</Text>
-              </View>
-              <View style={styles.starRatingContainer}>
-                <Text style={styles.nameText}>{userInfo?.user_uid}</Text>
+                <Text style={styles.attendanceText}> • UID: {userInfo?.user_uid}</Text>
               </View>
 
               {/* Interests chips */}
@@ -533,12 +569,28 @@ export default function MatchProfileDisplay() {
                 ))}
               </View>
 
+              {/* User Photos */}
+              {userInfo?.user_photo_url && (
+                <View style={styles.photoContainer}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoScroll}>
+                    {(() => {
+                      try {
+                        const photoUrls = typeof userInfo.user_photo_url === "string" ? JSON.parse(userInfo.user_photo_url.replace(/\\"/g, '"')) : userInfo.user_photo_url || [];
+
+                        return photoUrls.map((photoUrl, index) => (photoUrl ? <Image key={index} source={{ uri: photoUrl }} style={styles.userPhoto} resizeMode='cover' /> : null));
+                      } catch (e) {
+                        console.error("Error parsing photo URLs:", e);
+                        return null;
+                      }
+                    })()}
+                  </ScrollView>
+                </View>
+              )}
+
               {/* Distances */}
               <View style={styles.detailRow}>
                 <Ionicons name='location' size={16} color='#bbb' style={{ marginRight: 8 }} />
-                <Text style={styles.detailText}>
-                  {userInfo?.distance !== undefined ? `${userInfo.distance.toFixed(2)} miles away` : "Distance unavailable"}
-                </Text>
+                <Text style={styles.detailText}>{userInfo?.distance !== undefined ? `${userInfo.distance.toFixed(2)} miles away` : "Distance unavailable"}</Text>
               </View>
 
               {/* Height */}
@@ -748,13 +800,22 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     zIndex: 11,
   },
+  dragIndicatorContainer: {
+    width: "100%",
+    paddingVertical: 10,
+    alignItems: "center",
+  },
   dragIndicator: {
-    alignSelf: "center",
     width: 40,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#555",
+    backgroundColor: "#888",
     marginVertical: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 1,
+    elevation: 2,
   },
   bottomSheetScroll: {
     paddingHorizontal: 20,
@@ -873,7 +934,20 @@ const styles = StyleSheet.create({
 
   centerContent: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  photoContainer: {
+    marginBottom: 15,
+  },
+  photoScroll: {
+    flexDirection: "row",
+  },
+  userPhoto: {
+    width: 100,
+    height: 100,
+    borderRadius: 10,
+    marginRight: 8,
   },
 });

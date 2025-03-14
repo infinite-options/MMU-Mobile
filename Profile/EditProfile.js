@@ -217,8 +217,8 @@ export default function EditProfile() {
   const [genderItems, setGenderItems] = useState([
     { label: "Male", value: "Male" },
     { label: "Female", value: "Female" },
-    { label: "Non-binary", value: "Non-binary" },
-    { label: "Other", value: "Other" },
+    { label: "Prefer not to say", value: "Prefer not to say" },
+    // { label: "Other", value: "Other" },
   ]);
 
   // Identity

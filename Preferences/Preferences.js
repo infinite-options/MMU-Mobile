@@ -12,7 +12,7 @@ const Preferences = () => {
   const [maxDistance, setMaxDistance] = useState(80);
   const [ageRange, setAgeRange] = useState([18, 99]);
   const [heightRange, setHeightRange] = useState([122, 213]);
-  const [numChildren, setNumChildren] = useState(0);
+  const [numChildren, setNumChildren] = useState(3);
 
   // Body types selected with a checkbox-like circle
   const [bodyType, setBodyType] = useState(["Slim", "Athletic", "Curvy"]);
@@ -144,16 +144,12 @@ const Preferences = () => {
       try {
         console.log(`Checking matches: https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/${uid}`);
         const matchesResponse = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/${uid}`);
-        
+
         console.log("Matches response:", matchesResponse.data);
-        
+
         // Check if there are no matches
         if (matchesResponse.data["message"].startsWith("No matches found")) {
-          Alert.alert(
-            "No matches found",
-            "Please adjust your preferences.",
-            [{ text: "OK" }]
-          );
+          Alert.alert("No matches found", "Please adjust your preferences.", [{ text: "OK" }]);
           // Stay on the preferences page (no navigation)
         } else {
           // Navigate to MatchProfileDisplay since matches were found
@@ -161,11 +157,7 @@ const Preferences = () => {
         }
       } catch (matchError) {
         console.error("Error fetching matches:", matchError);
-        Alert.alert(
-          "Error",
-          "Unable to retrieve matches. Please try again later.",
-          [{ text: "OK" }]
-        );
+        Alert.alert("Error", "Unable to retrieve matches. Please try again later.", [{ text: "OK" }]);
       }
     } catch (error) {
       console.error("Error details:", {
@@ -273,7 +265,7 @@ const Preferences = () => {
           </View>
 
           {/* Body Type – using circle checkmarks */}
-          <Text style={[styles.label, { marginTop: 15, color: '#AAAAAA' }]}>Body Type</Text>
+          <Text style={[styles.label, { marginTop: 15, color: "#AAAAAA" }]}>Body Type</Text>
           <View style={styles.interestsContainer}>
             {["Slim", "Athletic", "Curvy", "Plus Sized", "Few Extra Pounds"].map((type) => {
               const isSelected = bodyType.includes(type);
@@ -284,7 +276,7 @@ const Preferences = () => {
                   style={[
                     styles.bodyTypeButton,
                     {
-                      borderColor: '#CCCCCC',
+                      borderColor: "#CCCCCC",
                       opacity: 0.6,
                     },
                   ]}
@@ -300,7 +292,7 @@ const Preferences = () => {
                   >
                     {isSelected && <Ionicons name='checkmark' size={14} color='#FFF' />}
                   </View>
-                  <Text style={[styles.bodyTypeText, { color: '#AAAAAA' }]}>{type}</Text>
+                  <Text style={[styles.bodyTypeText, { color: "#AAAAAA" }]}>{type}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -310,7 +302,7 @@ const Preferences = () => {
           </View>
 
           {/* Smoking Habits – black pill for selected */}
-          <Text style={[styles.label, { color: '#AAAAAA' }]}>Smoking Habits</Text>
+          <Text style={[styles.label, { color: "#AAAAAA" }]}>Smoking Habits</Text>
           <View style={styles.pillsContainer}>
             {["Yes", "No", "Either"].map((option) => {
               const isSelected = smokingHabit === option;
@@ -337,7 +329,7 @@ const Preferences = () => {
           </View>
 
           {/* Drinking Habits – black pill for selected */}
-          <Text style={[styles.label, { color: '#AAAAAA' }]}>Drinking Habits</Text>
+          <Text style={[styles.label, { color: "#AAAAAA" }]}>Drinking Habits</Text>
           <View style={styles.pillsContainer}>
             {["Yes", "No", "Either"].map((option) => {
               const isSelected = drinkingHabit === option;
@@ -364,14 +356,14 @@ const Preferences = () => {
           </View>
 
           {/* Religious Preference */}
-          <Text style={[styles.label, { color: '#AAAAAA' }]}>Religious Preference</Text>
+          <Text style={[styles.label, { color: "#AAAAAA" }]}>Religious Preference</Text>
           <View style={styles.inputContainer}>
-            <TextInput 
-              style={[styles.input, { borderColor: '#CCCCCC', backgroundColor: '#F5F5F5', color: '#AAAAAA' }]} 
-              value={religiousPreference} 
-              onChangeText={setReligiousPreference} 
+            <TextInput
+              style={[styles.input, { borderColor: "#CCCCCC", backgroundColor: "#F5F5F5", color: "#AAAAAA" }]}
+              value={religiousPreference}
+              onChangeText={setReligiousPreference}
               placeholder='Any'
-              placeholderTextColor="#CCCCCC"
+              placeholderTextColor='#CCCCCC'
               editable={false}
             />
             <View style={styles.premiumFeatureOverlay}>
@@ -535,28 +527,28 @@ const styles = StyleSheet.create({
 
   // Add these new styles to the StyleSheet
   premiumFeatureOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
     zIndex: 1,
   },
   premiumFeatureText: {
-    color: '#E4423F',
-    fontWeight: 'bold',
+    color: "#E4423F",
+    fontWeight: "bold",
     fontSize: 14,
-    textAlign: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    textAlign: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 10,
   },
   inputContainer: {
-    position: 'relative',
+    position: "relative",
     marginBottom: 25,
   },
 });

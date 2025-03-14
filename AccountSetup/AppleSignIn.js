@@ -100,7 +100,7 @@ const AppleSignIn = ({ onSignIn, onError }) => {
         // Handle user canceling the sign-in flow
         console.log("User canceled Apple Sign-in");
       } else {
-        console.error("Apple Sign-In Error:", error);
+        console.error("Apple Sign-In Error 3:", error);
         onError(error.message);
       }
     }

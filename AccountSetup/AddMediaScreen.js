@@ -146,13 +146,12 @@ export default function AddMediaScreen({ navigation }) {
     try {
       // Only request camera permissions - not microphone through ImagePicker
       const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
-      
-      if (cameraPermission.status !== 'granted') {
-        Alert.alert("Permissions Required", 
-          "Please enable camera permissions to record video.");
+
+      if (cameraPermission.status !== "granted") {
+        Alert.alert("Permissions Required", "Please enable camera permissions to record video.");
         return;
       }
-      
+
       // Try using launchImageLibraryAsync instead, which is more reliable for videos
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
@@ -163,7 +162,7 @@ export default function AddMediaScreen({ navigation }) {
       });
 
       console.log("Video picker result:", result);
-      
+
       if (!result.canceled && result.assets?.[0]?.uri) {
         console.log("Video selection success:", result.assets[0]);
         setVideoUri(result.assets[0].uri);
@@ -174,8 +173,7 @@ export default function AddMediaScreen({ navigation }) {
       }
     } catch (error) {
       console.error("Error details:", error);
-      Alert.alert("Video Selection Error", 
-        "There was an issue selecting the video. Please try again.");
+      Alert.alert("Video Selection Error", "There was an issue selecting the video. Please try again.");
     }
   };
 
@@ -184,13 +182,12 @@ export default function AddMediaScreen({ navigation }) {
     try {
       // Only request camera permissions - not microphone through ImagePicker
       const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
-      
-      if (cameraPermission.status !== 'granted') {
-        Alert.alert("Permissions Required", 
-          "Please enable camera permissions to record video.");
+
+      if (cameraPermission.status !== "granted") {
+        Alert.alert("Permissions Required", "Please enable camera permissions to record video.");
         return;
       }
-      
+
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
         allowsEditing: false, // Set to false for more reliable results
@@ -198,7 +195,7 @@ export default function AddMediaScreen({ navigation }) {
       });
 
       console.log("Video recording result:", result);
-      
+
       if (!result.canceled && result.assets?.[0]?.uri) {
         console.log("Video recording success:", result.assets[0]);
         setVideoUri(result.assets[0].uri);
@@ -255,16 +252,19 @@ export default function AddMediaScreen({ navigation }) {
     uploadData.append("user_uid", userId);
     uploadData.append("user_email_id", userEmail);
 
-    // Append each photo if it exists
-    photos.forEach((uri, index) => {
-      if (uri) {
-        uploadData.append(`img_${index}`, {
-          uri,
-          type: "image/jpeg", // Ensure this matches the actual image type
-          name: `img_${index}.jpg`,
-        });
-        console.log(`Appending photo img_${index}:`, uri);
-      }
+    // Filter out null photos and get only valid URIs
+    const validPhotos = photos.filter((uri) => uri !== null);
+    console.log("Valid photos to upload:", validPhotos);
+
+    // Append each valid photo with sequential index (img_0, img_1, img_2)
+    // regardless of which slot it was in originally
+    validPhotos.forEach((uri, index) => {
+      uploadData.append(`img_${index}`, {
+        uri,
+        type: "image/jpeg",
+        name: `img_${index}.jpg`,
+      });
+      console.log(`Appending photo img_${index}:`, uri);
     });
 
     // Append video if it exists
@@ -278,6 +278,12 @@ export default function AddMediaScreen({ navigation }) {
     }
 
     try {
+      // Log the complete FormData for debugging
+      console.log("FormData contents:");
+      for (let [key, value] of uploadData._parts) {
+        console.log(`- ${key}: ${value}`);
+      }
+
       const response = await axios.put("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo", uploadData, { headers: { "Content-Type": "multipart/form-data" } });
 
       if (response.status === 200) {
@@ -290,8 +296,8 @@ export default function AddMediaScreen({ navigation }) {
     } catch (error) {
       console.error("Upload Error:", error);
       if (error.response) {
-        console.error("Error Response:", error.response);
-        Alert.alert("Error", `Error: ${error.response.status} - ${error.response.statusText}`);
+        console.error("Error Response:", error.response.data || error.response);
+        Alert.alert("Error", `Error: ${error.response.status} - ${error.response.data?.message || error.response.statusText || "Unknown error"}`);
       } else if (error.request) {
         console.error("Error Request:", error.request);
         Alert.alert("Error", "Network error. Please check your internet connection.");
@@ -384,9 +390,9 @@ export default function AddMediaScreen({ navigation }) {
                   <Image source={require("../assets/icons/record.png")} />
                   <Text style={styles.uploadVideoText}>Record Video</Text>
                 </TouchableOpacity>
-                
+
                 <TouchableOpacity onPress={handleVideoUpload} style={styles.selectVideoButton}>
-                  <Ionicons name="images-outline" size={24} color="#E4423F" />
+                  <Ionicons name='images-outline' size={24} color='#E4423F' />
                   <Text style={styles.uploadVideoText}>Select Video</Text>
                 </TouchableOpacity>
               </View>
@@ -525,7 +531,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   videoUploadOptions: {
-    flexDirection: 'column',
+    flexDirection: "column",
     gap: 10,
     marginBottom: 20,
   },

@@ -485,9 +485,35 @@ export default function AccountSetup2Create() {
         console.log("AS2C Apple ID Token End:", "..." + idToken.substring(idToken.length - 20));
       }
 
+      // Extract email from idToken if user.email is null
+      let userEmail = user.email;
+
+      // If email is null, try to extract it from the idToken
+      if (!userEmail && idToken) {
+        try {
+          // The idToken is a JWT - split it and decode the payload (middle part)
+          const tokenParts = idToken.split(".");
+          if (tokenParts.length >= 2) {
+            const payload = JSON.parse(atob(tokenParts[1]));
+            if (payload.email) {
+              userEmail = payload.email;
+              console.log("AS2C Extracted email from idToken:", userEmail);
+            }
+          }
+        } catch (e) {
+          console.log("AS2C Error extracting email from idToken:", e);
+        }
+      }
+
+      // If still no email, use a placeholder
+      if (!userEmail) {
+        userEmail = `apple_user_${user.id}@example.com`;
+        console.log("AS2C Using placeholder email:", userEmail);
+      }
+
       // Create user data payload for backend - matching the structure used for Google Sign In
       const userData = {
-        email: user.email,
+        email: userEmail, // Use the extracted or placeholder email
         password: "APPLE_LOGIN", // Special password for social login
         phone_number: "", // Phone number would be collected separately if needed
         google_auth_token: idToken, // Using the same field name as Google Sign In
@@ -516,25 +542,6 @@ export default function AccountSetup2Create() {
       if (result.message === "User already exists") {
         setExisting(true);
 
-        // Check if the result contains user_uid directly or in result array
-        // if (result.user_uid) {
-        //   console.log("User exists, logging in with returned user_uid:", result.user_uid);
-        //   await AsyncStorage.setItem("user_uid", result.user_uid);
-        //   await AsyncStorage.setItem("user_email_id", user.email);
-
-        //   // Navigate to profile page
-        //   navigation.navigate("MyProfile");
-        //   return;
-        // } else if (result.result && result.result[0] && result.result[0].user_uid) {
-        //   console.log("User exists, logging in with returned user_uid from result array:", result.result[0].user_uid);
-        //   await AsyncStorage.setItem("user_uid", result.result[0].user_uid);
-        //   await AsyncStorage.setItem("user_email_id", user.email);
-
-        //   // Navigate to profile page
-        //   navigation.navigate("MyProfile");
-        //   return;
-        // }
-
         // If no user_uid in result, proceed with the existing Apple login flow
         console.log("AS2C user_id: ", user.id);
 
@@ -559,19 +566,22 @@ export default function AccountSetup2Create() {
 
           // Store user data in AsyncStorage
           await AsyncStorage.setItem("user_uid", userData.user_uid);
-          await AsyncStorage.setItem("user_email_id", userData.user_email_id || user.email || "");
+
+          // Use the email from the response or the extracted/placeholder email
+          const emailToStore = userData.user_email_id || userEmail;
+          await AsyncStorage.setItem("user_email_id", emailToStore);
 
           // Navigate to next screen
           navigation.navigate("MyProfile");
         } else {
-          Alert.alert("Error", "Failed to login with Apple. Server response invalid.");
+          Alert.alert("Error", "Failed to login with Apple 1. Server response invalid.");
         }
       } else {
         // Store user data in AsyncStorage - assuming the API returns user_uid
         if (result.user_uid) {
           console.log("AS2C Storing Apple user data in AsyncStorage - user_uid:", result.user_uid);
           await AsyncStorage.setItem("user_uid", result.user_uid);
-          await AsyncStorage.setItem("user_email_id", user.email);
+          await AsyncStorage.setItem("user_email_id", userEmail);
 
           // Store first and last name for prepopulating the NameInput page
           if (user.name) {
@@ -590,8 +600,8 @@ export default function AccountSetup2Create() {
         }
       }
     } catch (error) {
-      console.error("AS2C Apple sign-in error:", error);
-      Alert.alert("Error", "Something went wrong with Apple sign-in. Please try again.");
+      console.error("AS2C Apple sign-in error 1:", error);
+      Alert.alert("Error", "Something went wrong with Apple sign-in AS2C. Please try again.");
     } finally {
       clearTimeout(signInTimeoutId); // Clear the timeout if sign-in completes normally
       setShowSpinner(false);
@@ -601,7 +611,7 @@ export default function AccountSetup2Create() {
 
   // Handle Apple Sign In Error
   const handleAppleSignInError = (error) => {
-    console.error("AS2C Apple Sign-In Error:", error);
+    console.error("AS2C Apple Sign-In Error 2:", error);
     Alert.alert("Error", `Apple Sign-In failed: ${error}`);
   };
 

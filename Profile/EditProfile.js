@@ -1122,7 +1122,7 @@ export default function EditProfile() {
         uploadData.append("user_delete_photo", JSON.stringify(deletedPhotos));
       }
 
-      // Add new local photos as img_0, img_1, etc.
+      // Add new local photos as img_0, img_1, etc. with sequential indices
       newLocalPhotos.forEach((uri, index) => {
         console.log(`Adding new local photo ${index}:`, uri);
         uploadData.append(`img_${index}`, {
@@ -1255,8 +1255,23 @@ export default function EditProfile() {
 
       // Add favorite photo to upload data if one is selected
       if (favoritePhotoIndex !== null && photos[favoritePhotoIndex]) {
-        const isNewPhoto = !photos[favoritePhotoIndex].startsWith("https://s3");
-        uploadData.append("user_favorite_photo", isNewPhoto ? `img_${newLocalPhotos.indexOf(photos[favoritePhotoIndex])}` : photos[favoritePhotoIndex]);
+        const photoUri = photos[favoritePhotoIndex];
+        const isNewPhoto = !photoUri.startsWith("https://s3");
+
+        if (isNewPhoto) {
+          // For new local photos, we need to find its sequential index in the newLocalPhotos array
+          const sequentialIndex = newLocalPhotos.indexOf(photoUri);
+          if (sequentialIndex !== -1) {
+            uploadData.append("user_favorite_photo", `img_${sequentialIndex}`);
+            console.log(`Setting favorite photo to img_${sequentialIndex} (original index: ${favoritePhotoIndex})`);
+          } else {
+            console.log(`Warning: Could not find favorite photo in newLocalPhotos array`);
+          }
+        } else {
+          // For S3 photos, use the URL directly
+          uploadData.append("user_favorite_photo", photoUri);
+          console.log(`Setting favorite photo to S3 URL: ${photoUri}`);
+        }
       }
 
       // Ensure age is calculated from birthdate before saving

@@ -386,11 +386,11 @@ export default function Login() {
         // Navigate to next screen
         navigation.navigate("MyProfile");
       } else {
-        Alert.alert("Error", "Failed to login with Apple. Server response invalid.");
+        Alert.alert("Error", "Failed to login with Apple. Please check your email and password or Sign Up.");
       }
     } catch (error) {
-      console.error("LP Apple sign-in error:", error);
-      Alert.alert("Error", "Something went wrong with Apple sign-in. Please try again.");
+      console.error("LP Apple sign-in error 4:", error);
+      Alert.alert("Error", "Something went wrong with Apple sign-in Login. Please try again.");
     } finally {
       setShowSpinner(false);
     }
@@ -399,7 +399,7 @@ export default function Login() {
   // Handle Apple Sign In Error
   const handleAppleSignInError = (error) => {
     console.log("LP handleAppleSignInError callback triggered in Login.js");
-    console.error("LP Apple Sign-In Error:", error);
+    console.error("LP Apple Sign-In Error 5:", error);
     Alert.alert("Error", `Apple Sign-In failed: ${error}`);
   };
 

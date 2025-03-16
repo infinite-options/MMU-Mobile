@@ -13,8 +13,31 @@ const heightImg = require("../src/Assets/Images/height.png");
 const genderImg = require("../src/Assets/Images/gender.png");
 const redlikeEmpty = require("../src/Assets/Images/redlike.png");
 const likeImg = require("../src/Assets/Images/like.png");
-const BottomNav = () => {
+
+// Helper function to get user's favorite or first photo
+const getUserPhoto = (photoUrlData) => {
+  try {
+    // Parse photo URLs if they're in string format
+    const photoUrls = typeof photoUrlData === "string" ? JSON.parse(photoUrlData.replace(/\\"/g, '"')) : photoUrlData || [];
+
+    // Return the first photo URL if available
+    return photoUrls.length > 0 ? photoUrls[0] : null;
+  } catch (e) {
+    console.error("Error parsing photo URLs:", e);
+    return null;
+  }
+};
+
+const BottomNav = ({ matchedUserId, userPhotoUrl }) => {
   const navigation = useNavigation();
+
+  const handleChatPress = () => {
+    // Navigate to Chat with the matched user's ID
+    navigation.navigate("Chat", {
+      matchedUserId: matchedUserId,
+    });
+  };
+
   return (
     <View style={styles.bottomNavContainer}>
       <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Preferences")}>
@@ -23,7 +46,7 @@ const BottomNav = () => {
       <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("MatchResultsPage")}>
         <Image source={require("../assets/icons/twoheartsdark.png")} />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Chat")}>
+      <TouchableOpacity style={styles.navButton} onPress={handleChatPress}>
         <Image source={require("../assets/icons/chatdark.png")} />
       </TouchableOpacity>
       <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("MyProfile")}>
@@ -780,7 +803,7 @@ export default function UserProfile() {
       </Animated.View>
 
       {/* BOTTOM NAV BAR */}
-      <BottomNav />
+      <BottomNav matchedUserId={matchedUserId} userPhotoUrl={getUserPhoto(userInfo?.user_photo_url)} />
     </View>
   );
 }

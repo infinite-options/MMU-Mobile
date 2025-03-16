@@ -1,31 +1,24 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-  Pressable,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
-import { useRoute } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import MaskedView from '@react-native-masked-view/masked-view';
+import React from "react";
+import { View, Text, TouchableOpacity, StyleSheet, Image, Pressable } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useNavigation } from "@react-navigation/native";
+import { useRoute } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import MaskedView from "@react-native-masked-view/masked-view";
 // If you have your images locally, you can import/require them:
-const DefaultMale = require('../src/Assets/Images/account.png');
-const DefaultFeMale = require('../src/Assets/Images/account.png');
+const DefaultMale = require("../src/Assets/Images/account.png");
+const DefaultFeMale = require("../src/Assets/Images/account.png");
 
 const MatchPageNew = () => {
   const route = useRoute();
-  const meet_date_user_id  = route.params.meet_date_user_id;
+  const meet_date_user_id = route.params.meet_date_user_id;
   console.log("--- meet_date_user_id ---", meet_date_user_id);
   const [userId, setUserId] = useState(null);
   const [userPhoto, setUserPhoto] = useState(null);
   const [matchedUserPhoto, setMatchedUserPhoto] = useState(null);
-  const [matchedUserName, setMatchedUserName] = useState('');
+  const [matchedUserName, setMatchedUserName] = useState("");
 
   useEffect(() => {
     const loadUserId = async () => {
@@ -45,27 +38,96 @@ const MatchPageNew = () => {
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
+        console.log("Fetching photos for users:", userId, meet_date_user_id);
+
         // Fetch current user's photo
         const userResponse = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${userId}`);
         const userData = userResponse.data.result[0]; // Access first result item
-        const userPhotoUrls = JSON.parse(userData.user_photo_url.replace(/\\"/g, '"')) || [];
-        setUserPhoto(userPhotoUrls[0] || null);
+
+        // Parse photo URLs and check for favorite photo
+        let userPhotoUrls = [];
+        try {
+          userPhotoUrls = JSON.parse(userData.user_photo_url.replace(/\\"/g, '"')) || [];
+          console.log("Current user photo URLs:", userPhotoUrls.length);
+        } catch (e) {
+          console.warn("Error parsing user photo URLs:", e);
+          userPhotoUrls = [];
+        }
+
+        // Get favorite photo index, ensuring it's a valid index
+        let userFavoritePhotoIndex = null;
+        try {
+          if (userData.user_favorite_photo_index) {
+            const index = parseInt(userData.user_favorite_photo_index);
+            console.log("Current user favorite photo index:", index);
+            // Check if index is valid (not NaN and within array bounds)
+            if (!isNaN(index) && index >= 0 && index < userPhotoUrls.length) {
+              userFavoritePhotoIndex = index;
+              console.log("Using current user favorite photo at index:", userFavoritePhotoIndex);
+            } else {
+              console.log("Current user favorite photo index is invalid, using first photo instead");
+            }
+          } else {
+            console.log("Current user has no favorite photo set, using first photo");
+          }
+        } catch (e) {
+          console.warn("Error parsing user favorite photo index:", e);
+        }
+
+        // Use favorite photo if available, otherwise use first photo
+        const selectedUserPhoto = userFavoritePhotoIndex !== null && userPhotoUrls[userFavoritePhotoIndex] ? userPhotoUrls[userFavoritePhotoIndex] : userPhotoUrls[0] || null;
+
+        console.log("Selected current user photo:", selectedUserPhoto ? "Valid URL" : "No photo available");
+        setUserPhoto(selectedUserPhoto);
 
         // Fetch matched user's photo
         const matchedUserResponse = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${meet_date_user_id}`);
         const matchedUserData = matchedUserResponse.data.result[0];
-        const matchedPhotoUrls = JSON.parse(matchedUserData.user_photo_url.replace(/\\"/g, '"')) || [];
-        setMatchedUserPhoto(matchedPhotoUrls[0] || null);
-        
+
+        // Parse photo URLs and check for favorite photo
+        let matchedPhotoUrls = [];
+        try {
+          matchedPhotoUrls = JSON.parse(matchedUserData.user_photo_url.replace(/\\"/g, '"')) || [];
+          console.log("Matched user photo URLs:", matchedPhotoUrls.length);
+        } catch (e) {
+          console.warn("Error parsing matched user photo URLs:", e);
+          matchedPhotoUrls = [];
+        }
+
+        // Get favorite photo index, ensuring it's a valid index
+        let matchedFavoritePhotoIndex = null;
+        try {
+          if (matchedUserData.user_favorite_photo_index) {
+            const index = parseInt(matchedUserData.user_favorite_photo_index);
+            console.log("Matched user favorite photo index:", index);
+            // Check if index is valid (not NaN and within array bounds)
+            if (!isNaN(index) && index >= 0 && index < matchedPhotoUrls.length) {
+              matchedFavoritePhotoIndex = index;
+              console.log("Using matched user favorite photo at index:", matchedFavoritePhotoIndex);
+            } else {
+              console.log("Matched user favorite photo index is invalid, using first photo instead");
+            }
+          } else {
+            console.log("Matched user has no favorite photo set, using first photo");
+          }
+        } catch (e) {
+          console.warn("Error parsing matched user favorite photo index:", e);
+        }
+
+        // Use favorite photo if available, otherwise use first photo
+        const selectedMatchedPhoto = matchedFavoritePhotoIndex !== null && matchedPhotoUrls[matchedFavoritePhotoIndex] ? matchedPhotoUrls[matchedFavoritePhotoIndex] : matchedPhotoUrls[0] || null;
+
+        console.log("Selected matched user photo:", selectedMatchedPhoto ? "Valid URL" : "No photo available");
+        setMatchedUserPhoto(selectedMatchedPhoto);
+
         // Get matched user's name
-        setMatchedUserName(matchedUserData.user_first_name + ' ' + matchedUserData.user_last_name || 'your match');
-        
+        setMatchedUserName(matchedUserData.user_first_name + " " + matchedUserData.user_last_name || "your match");
       } catch (error) {
         console.error("Error fetching user photos:", error);
         // Fallback to default images
         setUserPhoto(null);
         setMatchedUserPhoto(null);
-        setMatchedUserName('your match');
+        setMatchedUserName("your match");
       }
     };
 
@@ -75,15 +137,15 @@ const MatchPageNew = () => {
   }, [userId, meet_date_user_id]);
 
   console.log("--- userId ---", userId);
-    const navigation = useNavigation();
-    const handleKeepExploring = () => {
-        navigation.navigate('MatchResultsPage');
-    }
-    const handleSetUpDate = () => {
-        navigation.navigate('DateType', { matchedUserId: meet_date_user_id });
-    }
+  const navigation = useNavigation();
+  const handleKeepExploring = () => {
+    navigation.navigate("MatchResultsPage");
+  };
+  const handleSetUpDate = () => {
+    navigation.navigate("DateType", { matchedUserId: meet_date_user_id });
+  };
   return (
-    <LinearGradient colors={['#a09076', '#c67d6d']} style={styles.container}>
+    <LinearGradient colors={["#a09076", "#c67d6d"]} style={styles.container}>
       {/* Title */}
       <Text style={styles.title}>It's a Match!</Text>
       <Text style={styles.subtitle}>You and {matchedUserName} have liked each other.</Text>
@@ -92,52 +154,24 @@ const MatchPageNew = () => {
       <View style={styles.heartsContainer}>
         {/* Current user's image */}
         <View style={[styles.heartWrapper, { zIndex: 2, marginRight: -25 }]}>
-          <MaskedView
-            style={styles.maskedView}
-            maskElement={
-              <Image
-                source={require('../assets/icons/Primaryheart.png')}
-                style={styles.maskImage}
-                resizeMode="contain"
-              />
-            }
-          >
-            <Image
-              source={userPhoto ? { uri: userPhoto } : DefaultMale}
-              style={styles.fullImage}
-              defaultSource={DefaultMale}
-            />
+          <MaskedView style={styles.maskedView} maskElement={<Image source={require("../assets/icons/Primaryheart.png")} style={styles.maskImage} resizeMode='contain' />}>
+            {/* Use object-fit: cover equivalent for React Native */}
+            <View style={styles.imageContainer}>
+              <Image source={userPhoto ? { uri: userPhoto } : DefaultMale} style={styles.fullImage} defaultSource={DefaultMale} />
+            </View>
           </MaskedView>
-          <Image
-            source={require('../assets/icons/primaryheartoutlinewhite.png')}
-            style={styles.heartOutline}
-            resizeMode="contain"
-          />
+          <Image source={require("../assets/icons/primaryheartoutlinewhite.png")} style={styles.heartOutline} resizeMode='contain' />
         </View>
-        
+
         {/* Matched user's image */}
         <View style={[styles.heartWrapper, styles.secondHeartWrapper]}>
-          <MaskedView
-            style={styles.maskedView}
-            maskElement={
-              <Image
-                source={require('../assets/icons/Secondaryheart.png')}
-                style={styles.maskImage}
-                resizeMode="contain"
-              />
-            }
-          >
-            <Image
-              source={matchedUserPhoto ? { uri: matchedUserPhoto } : DefaultFeMale}
-              style={styles.fullImage}
-              defaultSource={DefaultFeMale}
-            />
+          <MaskedView style={styles.maskedView} maskElement={<Image source={require("../assets/icons/Secondaryheart.png")} style={styles.maskImage} resizeMode='contain' />}>
+            {/* Use object-fit: cover equivalent for React Native */}
+            <View style={styles.imageContainer}>
+              <Image source={matchedUserPhoto ? { uri: matchedUserPhoto } : DefaultFeMale} style={styles.fullImage} defaultSource={DefaultFeMale} />
+            </View>
           </MaskedView>
-          <Image
-            source={require('../assets/icons/secondaryheartoutlinewhite.png')}
-            style={styles.heartOutline}
-            resizeMode="contain"
-          />
+          <Image source={require("../assets/icons/secondaryheartoutlinewhite.png")} style={styles.heartOutline} resizeMode='contain' />
         </View>
       </View>
 
@@ -147,9 +181,7 @@ const MatchPageNew = () => {
       </TouchableOpacity>
 
       {/* Link: Keep exploring */}
-      <TouchableOpacity
-        onPress={handleKeepExploring}
-      >
+      <TouchableOpacity onPress={handleKeepExploring}>
         <Text style={styles.link}>Keep exploring</Text>
       </TouchableOpacity>
     </LinearGradient>
@@ -160,30 +192,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#fff',
+    color: "#fff",
     marginBottom: 24,
   },
   heartsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 24,
   },
   heartWrapper: {
     width: 130,
     height: 130,
-    position: 'relative',
+    position: "relative",
   },
   secondHeartWrapper: {
     marginLeft: -25,
@@ -192,40 +224,48 @@ const styles = StyleSheet.create({
   maskedView: {
     width: 130,
     height: 130,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
   },
   maskImage: {
     width: 130,
     height: 130,
   },
+  imageContainer: {
+    width: "100%",
+    height: "100%",
+    overflow: "hidden",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   fullImage: {
-    width: 130,
-    height: 130,
-    resizeMode: 'cover',
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
   },
   heartOutline: {
-    position: 'absolute',
+    position: "absolute",
     width: 130,
     height: 130,
     top: 0,
     left: 0,
   },
   button: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 30,
     paddingHorizontal: 20,
     paddingVertical: 10,
     marginBottom: 16,
   },
   buttonText: {
-    color: '#000',
-    fontWeight: 'bold',
+    color: "#000",
+    fontWeight: "bold",
   },
   link: {
-    color: '#fff',
-    fontWeight: 'bold',
-    textDecorationLine: 'underline',
+    color: "#fff",
+    fontWeight: "bold",
+    textDecorationLine: "underline",
   },
 });
 

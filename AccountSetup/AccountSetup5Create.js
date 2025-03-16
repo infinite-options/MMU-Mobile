@@ -128,12 +128,13 @@ export default function AccountSetup5Create() {
     });
 
     if (formData.video) {
-      uploadData.append("user_video", {
-        uri: formData.video,
-        type: "video/mp4",
-        name: "video_filename.mp4",
-      });
-      console.log("Appending user_video:", formData.video);
+      uploadData.append("user_video", "preload");
+      // uploadData.append("user_video", {
+      //   uri: formData.video,
+      //   type: "video/mp4",
+      //   name: "video_filename.mp4",
+      // });
+      // console.log("Appending user_video:", formData.video);
     }
 
     try {
@@ -148,6 +149,8 @@ export default function AccountSetup5Create() {
           "Content-Type": "multipart/form-data",
         },
       });
+
+      console.log("Backend response:", response);
 
       if (response.status === 200) {
         Alert.alert("Success", "Media uploaded successfully!");

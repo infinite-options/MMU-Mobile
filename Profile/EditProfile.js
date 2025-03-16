@@ -18,6 +18,7 @@ import {
   Linking,
   Dimensions,
   KeyboardAvoidingView,
+  ActionSheetIOS,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { TextInput, Text } from "react-native-paper";
@@ -38,6 +39,7 @@ import { allInterests } from "../src/config/interests";
 import * as Camera from "expo-camera";
 import Constants from "expo-constants";
 import { MaterialIcons } from "@expo/vector-icons";
+import { Asset } from "expo-asset";
 
 // Fallback to a placeholder to prevent crashes - replace with your actual key when testing
 const GOOGLE_API_KEY = Constants.expoConfig?.extra?.googleApiKey || process.env.EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY || "YOUR_GOOGLE_API_KEY_HERE";
@@ -204,6 +206,42 @@ export default function EditProfile() {
     EDUCATION: "education",
     BODY_TYPE: "bodyType",
   };
+
+  // Define test videos for development and testing
+  const mikeVideo = require("../assets/mike768kb.mp4");
+  const johnVideo = require("../assets/john1400kb.mp4");
+  const bobVideo = require("../assets/bob7100kb.mp4");
+
+  const [testVideos, setTestVideos] = useState([
+    { name: "Mike (768KB)", uri: null, size: 0.768 },
+    { name: "John (1.4MB)", uri: null, size: 1.4 },
+    { name: "Bob (7.1MB)", uri: null, size: 7.1 },
+  ]);
+
+  // Preload test video assets
+  useEffect(() => {
+    const loadAssets = async () => {
+      try {
+        const mikeAsset = Asset.fromModule(mikeVideo);
+        const johnAsset = Asset.fromModule(johnVideo);
+        const bobAsset = Asset.fromModule(bobVideo);
+
+        await Promise.all([mikeAsset.downloadAsync(), johnAsset.downloadAsync(), bobAsset.downloadAsync()]);
+
+        setTestVideos([
+          { name: "Mike (768KB)", uri: mikeAsset.localUri || mikeAsset.uri, size: 0.768 },
+          { name: "John (1.4MB)", uri: johnAsset.localUri || johnAsset.uri, size: 1.4 },
+          { name: "Bob (7.1MB)", uri: bobAsset.localUri || bobAsset.uri, size: 7.1 },
+        ]);
+
+        console.log("Test videos loaded successfully");
+      } catch (error) {
+        console.error("Error loading test videos:", error);
+      }
+    };
+
+    loadAssets();
+  }, []);
 
   // Replace these text-based fields with pickers for Gender, Body Type, etc.
   // Body Type
@@ -607,26 +645,44 @@ export default function EditProfile() {
   // Function to get file size in MB
   const getFileSizeInMB = useCallback(async (fileUri) => {
     try {
+      // Check if it's a test video first
+      const testVideoSize = getTestVideoFileSize(fileUri);
+      if (testVideoSize) {
+        console.log(`Test video detected, size: ${testVideoSize}MB`);
+        return testVideoSize;
+      }
+
       if (!fileUri || typeof fileUri !== "string") return null;
 
       // Handle remote URLs (S3 URLs)
-      if (fileUri.startsWith("http")) {
+      if (fileUri.startsWith("http") && !isTestVideo(fileUri)) {
         // For remote files, we can't get the size directly
         // Return null or a placeholder
         return null;
       }
 
       // For local files, get the file info
-      const fileInfo = await FileSystem.getInfoAsync(fileUri);
-      if (fileInfo.exists) {
-        // Convert bytes to MB and round to 2 decimal places
-        const fileSizeInMB = (fileInfo.size / (1024 * 1024)).toFixed(2);
+      if (Platform.OS === "ios") {
+        const fileInfo = await FileSystem.getInfoAsync(fileUri);
+        const fileSizeInBytes = fileInfo.size;
+        const fileSizeInMB = (fileSizeInBytes / (1024 * 1024)).toFixed(2);
+        console.log(`File size: ${fileSizeInMB}MB`);
         return fileSizeInMB;
+      } else {
+        // For Android, we need to use the content resolver
+        const fileInfo = await FileSystem.getInfoAsync(fileUri);
+        if (fileInfo.exists && fileInfo.size) {
+          const fileSizeInMB = (fileInfo.size / (1024 * 1024)).toFixed(2);
+          console.log(`File size: ${fileSizeInMB}MB`);
+          return fileSizeInMB;
+        } else {
+          console.log("File info not available, using estimated size");
+          return "1.5"; // Default estimated size
+        }
       }
-      return null;
     } catch (error) {
       console.error("Error getting file size:", error);
-      return null;
+      return "1.0"; // Default fallback size
     }
   }, []);
 
@@ -711,7 +767,10 @@ export default function EditProfile() {
     setPhotoFileSizes(newPhotoFileSizes);
   };
 
-  // Replace the current handleVideoUpload function with these two functions
+  // Add a state variable to track upload status
+  const [uploadStatus, setUploadStatus] = useState("");
+
+  // Update the handleVideoUpload function to set the upload status
   const handleVideoUpload = async () => {
     try {
       // Platform-specific permission handling
@@ -721,10 +780,12 @@ export default function EditProfile() {
         Alert.alert("Permission Required", "Storage access is required to select video. Please enable it in your device settings.", [
           { text: "Cancel", style: "cancel" },
           { text: "Settings", onPress: () => Linking.openSettings() },
+          { text: "Use Test Videos", onPress: showTestVideoOptions },
         ]);
         return;
       }
 
+      setUploadStatus("Selecting video...");
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
         allowsEditing: Platform.OS === "ios", // Video editing only works well on iOS
@@ -740,20 +801,42 @@ export default function EditProfile() {
         setIsVideoPlaying(false);
 
         // Get and set the file size
+        setUploadStatus("Calculating file size...");
         const fileSize = await getFileSizeInMB(uri);
         setVideoFileSize(fileSize);
+        setUploadStatus(`Video selected: ${fileSize} MB`);
 
         // Check if the file size is too large
-        if (fileSize && parseFloat(fileSize) > 5) {
-          Alert.alert("Large Video File", `The selected video is ${fileSize}MB, which exceeds the recommended 5MB limit. This may cause slow uploads and performance issues.`, [{ text: "OK" }]);
+        if (fileSize && parseFloat(fileSize) > 1) {
+          setUploadStatus(`Large video (${fileSize} MB) - will use direct S3 upload when saving`);
+          Alert.alert("Large Video File", `The selected video is ${fileSize}MB, which exceeds the 1MB limit for regular uploads. It will be uploaded directly to S3 when you save your profile.`, [
+            { text: "OK" },
+          ]);
+        } else {
+          setUploadStatus(`Small video (${fileSize} MB) - will use regular upload when saving`);
         }
+      } else {
+        setUploadStatus("Video selection cancelled");
+
+        // Show test video options when selection is cancelled
+        Alert.alert("Video Selection Cancelled", "Would you like to use a test video instead?", [
+          { text: "No", style: "cancel" },
+          { text: "Yes", onPress: showTestVideoOptions },
+        ]);
       }
     } catch (error) {
       console.error("Error picking video:", error);
-      Alert.alert("Error", "There was an issue selecting the video. Please try again.");
+      setUploadStatus("Error selecting video");
+
+      // Show test video options when there's an error
+      Alert.alert("Error Selecting Video", "There was an issue selecting the video. Would you like to use a test video instead?", [
+        { text: "No", style: "cancel" },
+        { text: "Yes", onPress: showTestVideoOptions },
+      ]);
     }
   };
 
+  // Update the handleRecordVideo function to set the upload status
   const handleRecordVideo = async () => {
     try {
       // Platform-specific permission handling
@@ -767,6 +850,7 @@ export default function EditProfile() {
         return;
       }
 
+      setUploadStatus("Recording video...");
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
         allowsEditing: false, // Set to false for more reliable results
@@ -783,16 +867,26 @@ export default function EditProfile() {
         setIsVideoPlaying(false);
 
         // Get and set the file size
+        setUploadStatus("Calculating file size...");
         const fileSize = await getFileSizeInMB(uri);
         setVideoFileSize(fileSize);
+        setUploadStatus(`Video recorded: ${fileSize} MB`);
 
         // Check if the file size is too large
-        if (fileSize && parseFloat(fileSize) > 5) {
-          Alert.alert("Large Video File", `The recorded video is ${fileSize}MB, which exceeds the recommended 5MB limit. This may cause slow uploads and performance issues.`, [{ text: "OK" }]);
+        if (fileSize && parseFloat(fileSize) > 1) {
+          setUploadStatus(`Large video (${fileSize} MB) - will use direct S3 upload when saving`);
+          Alert.alert("Large Video File", `The recorded video is ${fileSize}MB, which exceeds the 1MB limit for regular uploads. It will be uploaded directly to S3 when you save your profile.`, [
+            { text: "OK" },
+          ]);
+        } else {
+          setUploadStatus(`Small video (${fileSize} MB) - will use regular upload when saving`);
         }
+      } else {
+        setUploadStatus("Video recording cancelled");
       }
     } catch (error) {
       console.error("Error recording video:", error);
+      setUploadStatus("Error recording video");
       Alert.alert("Error", "There was an issue recording the video. Please check your permissions and try again.");
     }
   };
@@ -1217,14 +1311,114 @@ export default function EditProfile() {
         if (originalVideoUrl && !videoUri) {
           // Video was deleted
         } else if (videoUri && videoUri !== originalVideoUrl) {
-          // New video to upload (not from S3)
-          if (!videoUri.startsWith("https://s3")) {
-            console.log("Adding new local video for upload");
-            uploadData.append("user_video", {
-              uri: videoUri,
-              type: "video/mp4",
-              name: "user_video.mp4",
-            });
+          // Check if it's a test video
+          if (isTestVideo(videoUri)) {
+            console.log("Using test video for upload:", videoUri);
+            setUploadStatus("Using test video for upload");
+
+            // For test videos, we'll use the regular upload process
+            if (videoFileSize && parseFloat(videoFileSize) > 1) {
+              console.log(`Test video size (${videoFileSize}MB) exceeds 1MB, getting presigned URL`);
+              setUploadStatus(`Getting presigned URL for ${videoFileSize}MB test video...`);
+
+              // Get presigned URL for S3 upload
+              const presignedData = await getPresignedUrl(uid);
+
+              if (presignedData && presignedData.url) {
+                console.log("Got presigned URL for direct S3 upload:", presignedData.url);
+                console.log("S3 video URL will be:", presignedData.videoUrl);
+
+                // Upload video directly to S3
+                setUploadStatus(`Uploading ${videoFileSize}MB test video directly to S3...`);
+                const uploadSuccess = await uploadVideoToS3(videoUri, presignedData.url);
+
+                if (uploadSuccess && presignedData.videoUrl) {
+                  console.log("Direct S3 upload successful, using S3 URL in form data");
+                  setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
+                  uploadData.append("user_video_url", presignedData.videoUrl);
+                } else {
+                  console.error("Direct S3 upload failed, falling back to regular upload");
+                  setUploadStatus("S3 upload failed, falling back to regular upload");
+                  // Fall back to regular upload
+                  uploadData.append("user_video", {
+                    uri: videoUri,
+                    type: "video/mp4",
+                    name: "user_video.mp4",
+                  });
+                }
+              } else {
+                console.error("Failed to get presigned URL, falling back to regular upload");
+                setUploadStatus("Failed to get presigned URL, falling back to regular upload");
+                // Fall back to regular upload
+                uploadData.append("user_video", {
+                  uri: videoUri,
+                  type: "video/mp4",
+                  name: "user_video.mp4",
+                });
+              }
+            } else {
+              // Video is small enough for regular upload
+              console.log("Test video size is under 1MB, using regular upload");
+              setUploadStatus(`Using regular upload for ${videoFileSize}MB test video`);
+              uploadData.append("user_video", {
+                uri: videoUri,
+                type: "video/mp4",
+                name: "user_video.mp4",
+              });
+            }
+          }
+          // New video to upload (not from S3 or test video)
+          else if (!videoUri.startsWith("https://s3")) {
+            // Check if video is larger than 1MB
+            if (videoFileSize && parseFloat(videoFileSize) > 1) {
+              console.log(`Video size (${videoFileSize}MB) exceeds 1MB, getting presigned URL`);
+              setUploadStatus(`Getting presigned URL for ${videoFileSize}MB video...`);
+
+              // Get presigned URL for S3 upload
+              const presignedData = await getPresignedUrl(uid);
+
+              if (presignedData && presignedData.url) {
+                console.log("Got presigned URL for direct S3 upload:", presignedData.url);
+                console.log("S3 video URL will be:", presignedData.videoUrl);
+
+                // Upload video directly to S3
+                setUploadStatus(`Uploading ${videoFileSize}MB video directly to S3...`);
+                const uploadSuccess = await uploadVideoToS3(videoUri, presignedData.url);
+
+                if (uploadSuccess && presignedData.videoUrl) {
+                  console.log("Direct S3 upload successful, using S3 URL in form data");
+                  setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
+                  uploadData.append("user_video_url", presignedData.videoUrl);
+                } else {
+                  console.error("Direct S3 upload failed, falling back to regular upload");
+                  setUploadStatus("S3 upload failed, falling back to regular upload");
+                  // Fall back to regular upload
+                  uploadData.append("user_video", {
+                    uri: videoUri,
+                    type: "video/mp4",
+                    name: "user_video.mp4",
+                  });
+                }
+              } else {
+                console.error("Failed to get presigned URL, falling back to regular upload");
+                setUploadStatus("Failed to get presigned URL, falling back to regular upload");
+                // Fall back to regular upload
+                uploadData.append("user_video", {
+                  uri: videoUri,
+                  type: "video/mp4",
+                  name: "user_video.mp4",
+                });
+              }
+            } else {
+              // Video is small enough for regular upload
+              console.log("Video size is under 1MB, using regular upload");
+              setUploadStatus(`Using regular upload for ${videoFileSize}MB video`);
+              uploadData.append("user_video", {
+                uri: videoUri,
+                type: "video/mp4",
+                name: "user_video.mp4",
+              });
+            }
           } else {
             // Existing S3 video - no need to re-upload
             console.log("Keeping existing S3 video");
@@ -1397,6 +1591,68 @@ export default function EditProfile() {
     return getFileSizeInMB(uri);
   }, []);
 
+  // Function to upload video directly to S3 using a presigned URL
+  const uploadVideoToS3 = async (fileUri, presignedUrl) => {
+    try {
+      console.log("Starting direct S3 upload for large video file");
+      console.log("File URI:", fileUri);
+      console.log("Presigned URL:", presignedUrl);
+
+      const file = await fetch(fileUri);
+      const blob = await file.blob();
+      console.log("Blob size:", blob.size, "bytes");
+
+      console.log("Sending PUT request to S3...");
+      const response = await fetch(presignedUrl, {
+        method: "PUT",
+        body: blob,
+        headers: {
+          "Content-Type": "video/mp4",
+        },
+      });
+
+      console.log("S3 upload response status:", response.status);
+      console.log("S3 upload response headers:", JSON.stringify([...response.headers.entries()]));
+
+      if (response.ok) {
+        console.log("Direct S3 upload successful!");
+        return true;
+      } else {
+        console.log("Direct S3 upload failed", response);
+        const responseText = await response.text();
+        console.log("S3 error response:", responseText);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error uploading to S3:", error);
+      return false;
+    }
+  };
+
+  // Function to get presigned URL for S3 upload
+  const getPresignedUrl = async (uid) => {
+    try {
+      console.log("Requesting presigned URL for user:", uid);
+      const response = await axios.post("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/s3Link", {
+        user_uid: uid,
+        user_video_filetype: "video/mp4",
+      });
+
+      console.log("Presigned URL API response:", JSON.stringify(response.data));
+
+      if (response.data && response.data.url) {
+        console.log("Got presigned URL:", response.data.url);
+        return response.data;
+      } else {
+        console.error("Invalid response format for presigned URL:", JSON.stringify(response.data));
+        return null;
+      }
+    } catch (error) {
+      console.error("Error getting presigned URL:", error.response ? error.response.data : error.message);
+      return null;
+    }
+  };
+
   // Add this effect to properly initialize the map location
   useEffect(() => {
     if (formValues.latitude && formValues.longitude && !mapReady) {
@@ -1483,6 +1739,140 @@ export default function EditProfile() {
     }
   }, [videoFileSize, photoFileSizes, checkTotalFileSize]);
 
+  // Add a function to test S3 upload
+  const testS3Upload = async () => {
+    if (!videoUri || !videoFileSize) {
+      Alert.alert("No Video", "Please select a video first");
+      return;
+    }
+
+    // Check if it's a test video
+    if (isTestVideo(videoUri)) {
+      Alert.alert("Test Video", `This is a test video (${videoFileSize}MB) with a direct URL. No need to upload to S3.`, [{ text: "OK" }]);
+      setUploadStatus(`Test video detected (${videoFileSize}MB). Using URL directly: ${videoUri}`);
+      return;
+    }
+
+    if (parseFloat(videoFileSize) <= 1) {
+      Alert.alert("Video Too Small", "This video is smaller than 1MB. For testing, please select a larger video.");
+      return;
+    }
+
+    setUploadStatus("Testing S3 upload...");
+
+    try {
+      // Get user_uid from AsyncStorage
+      const uid = await AsyncStorage.getItem("user_uid");
+      if (!uid) {
+        setUploadStatus("Error: User ID not found");
+        return;
+      }
+
+      // Get presigned URL
+      setUploadStatus("Getting presigned URL...");
+      const presignedData = await getPresignedUrl(uid);
+
+      if (!presignedData || !presignedData.url) {
+        setUploadStatus("Error: Failed to get presigned URL");
+        return;
+      }
+
+      setUploadStatus(`Got presigned URL. Uploading ${videoFileSize}MB video to S3...`);
+
+      // Upload to S3
+      const uploadSuccess = await uploadVideoToS3(videoUri, presignedData.url);
+
+      if (uploadSuccess) {
+        setUploadStatus(`S3 upload successful! Video URL: ${presignedData.videoUrl}`);
+        Alert.alert("Success", "Video uploaded to S3 successfully!");
+      } else {
+        setUploadStatus("S3 upload failed");
+        Alert.alert("Error", "Failed to upload video to S3");
+      }
+    } catch (error) {
+      console.error("Error testing S3 upload:", error);
+      setUploadStatus(`Error: ${error.message}`);
+      Alert.alert("Error", `Failed to test S3 upload: ${error.message}`);
+    }
+  };
+
+  // Function to show fallback options for test videos
+  const showTestVideoOptions = () => {
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ["Cancel", ...testVideos.map((video) => video.name)],
+          cancelButtonIndex: 0,
+          title: "Select a Test Video",
+          message: "Choose a test video to use for upload testing",
+        },
+        (buttonIndex) => {
+          if (buttonIndex > 0) {
+            handleTestVideoSelection(buttonIndex - 1);
+          }
+        }
+      );
+    } else {
+      // For Android, use Alert with buttons
+      Alert.alert("Select a Test Video", "Choose a test video to use for upload testing", [
+        { text: "Cancel", style: "cancel" },
+        ...testVideos.map((video, index) => ({
+          text: video.name,
+          onPress: () => handleTestVideoSelection(index),
+        })),
+      ]);
+    }
+  };
+
+  // Function to handle test video selection
+  const handleTestVideoSelection = (index) => {
+    if (index < 0 || index >= testVideos.length) {
+      setUploadStatus("Invalid test video selection");
+      return;
+    }
+
+    const selectedVideo = testVideos[index];
+
+    if (!selectedVideo.uri) {
+      setUploadStatus("Test video not loaded yet. Please try again in a moment.");
+      return;
+    }
+
+    setVideoUri(selectedVideo.uri);
+    setVideoFileSize(selectedVideo.size);
+    setIsVideoPlaying(false);
+    setUploadStatus(`Test video selected: ${selectedVideo.size} MB - will use regular upload when saving`);
+
+    const fileSize = selectedVideo.size;
+    if (parseFloat(fileSize) > 1) {
+      Alert.alert("Large Test Video", `The selected test video is ${fileSize}MB, which exceeds the 1MB limit for regular uploads. It will be uploaded directly to S3 when you save your profile.`, [
+        { text: "OK" },
+      ]);
+    } else {
+      setUploadStatus(`Test video selected: ${fileSize} MB - will use regular upload when saving`);
+    }
+  };
+
+  // Function to get file size for test videos
+  const getTestVideoFileSize = (uri) => {
+    if (!uri) return null;
+
+    // Find the test video by checking if the URI contains the filename
+    const testVideo = testVideos.find((video) => uri.includes(video.uri.split("/").pop()));
+
+    if (testVideo) {
+      return testVideo.size;
+    }
+    return null;
+  };
+
+  // Function to check if a URI is a test video
+  const isTestVideo = (uri) => {
+    if (!uri) return false;
+    // Check if the URI contains any of the test video filenames
+    return testVideos.some((video) => uri.includes(video.uri.split("/").pop()));
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {isLoading ? (
@@ -1535,6 +1925,12 @@ export default function EditProfile() {
                     <Text style={styles.fileSizeText}>{videoFileSize} MB</Text>
                   </View>
                 )}
+                {/* Upload status indicator */}
+                {uploadStatus && (
+                  <View style={styles.uploadStatusContainer}>
+                    <Text style={styles.uploadStatusText}>{uploadStatus}</Text>
+                  </View>
+                )}
               </View>
             ) : (
               <View style={styles.videoUploadOptions}>
@@ -1547,6 +1943,21 @@ export default function EditProfile() {
                   <Ionicons name='cloud-upload-outline' size={20} color='#E4423F' />
                   <Text style={styles.uploadVideoText}>Select Video</Text>
                 </TouchableOpacity>
+
+                {/* Test S3 Upload Button */}
+                {videoUri && videoFileSize && parseFloat(videoFileSize) > 1 && (
+                  <TouchableOpacity onPress={testS3Upload} style={[styles.uploadVideoButton, { marginTop: 10, backgroundColor: "#E4423F" }]}>
+                    <Ionicons name='cloud-upload' size={20} color='#FFF' />
+                    <Text style={[styles.uploadVideoText, { color: "#FFF" }]}>Test S3 Upload</Text>
+                  </TouchableOpacity>
+                )}
+
+                {/* Upload status indicator when no video */}
+                {uploadStatus && (
+                  <View style={[styles.uploadStatusContainer, { marginTop: 10, backgroundColor: "rgba(0,0,0,0.1)" }]}>
+                    <Text style={[styles.uploadStatusText, { color: "#333" }]}>{uploadStatus}</Text>
+                  </View>
+                )}
               </View>
             )}
           </View>
@@ -2856,5 +3267,17 @@ const styles = StyleSheet.create({
     color: "#E4423F",
     fontSize: 16,
     marginLeft: 5,
+  },
+  uploadStatusContainer: {
+    position: "absolute",
+    bottom: 5,
+    right: 5,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: 5,
+    padding: 2,
+  },
+  uploadStatusText: {
+    color: "#FFF",
+    fontSize: 12,
   },
 });

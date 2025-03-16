@@ -17,6 +17,7 @@ import {
   Modal,
   Linking,
   Dimensions,
+  KeyboardAvoidingView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { TextInput, Text } from "react-native-paper";
@@ -25,6 +26,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { useFocusEffect } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
 import { Video } from "expo-av";
 import { Picker } from "@react-native-picker/picker";
 import MapView, { Marker } from "react-native-maps";
@@ -128,6 +130,10 @@ export default function EditProfile() {
   const [location, setLocation] = useState(null);
   const [address, setAddress] = useState(null);
   const [deletedVideo, setDeletedVideo] = useState(false);
+
+  // File size states
+  const [videoFileSize, setVideoFileSize] = useState(null);
+  const [photoFileSizes, setPhotoFileSizes] = useState([null, null, null]);
 
   // Default map region
   const [region, setRegion] = useState(DEFAULT_REGION);
@@ -421,167 +427,168 @@ export default function EditProfile() {
     })();
   }, []);
 
+  // Define fetchUserInfo outside of useEffect so it can be accessed by multiple hooks
+  const fetchUserInfo = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const uid = await AsyncStorage.getItem("user_uid");
+      if (!uid) {
+        console.log("No user_uid in AsyncStorage");
+        return;
+      }
+
+      // Create axios instance with specific config
+      const api = axios.create({
+        baseURL: "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev",
+        timeout: 10000,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const response = await api.get(`/userinfo/${uid}`);
+      const fetched = response.data.result[0];
+
+      // Safely parse open_to field
+      let parsedOpenTo = [];
+      try {
+        if (fetched.user_open_to) {
+          if (typeof fetched.user_open_to === "string") {
+            parsedOpenTo = JSON.parse(fetched.user_open_to);
+          } else if (Array.isArray(fetched.user_open_to)) {
+            parsedOpenTo = fetched.user_open_to;
+          }
+        }
+      } catch (error) {
+        console.log("Error parsing open_to:", error);
+        parsedOpenTo = [];
+      }
+
+      // Safely parse interests
+      let parsedInterests = [];
+      try {
+        if (fetched.user_general_interests) {
+          parsedInterests = JSON.parse(fetched.user_general_interests);
+        }
+      } catch (error) {
+        console.log("Error parsing interests:", error);
+        parsedInterests = [];
+      }
+
+      // Safely parse date interests
+      let parsedDateInterests = [];
+      try {
+        if (fetched.user_date_interests) {
+          parsedDateInterests = JSON.parse(fetched.user_date_interests);
+        }
+      } catch (error) {
+        console.log("Error parsing date interests:", error);
+        parsedDateInterests = [];
+      }
+
+      setUserData(fetched || {});
+      const newFormValues = {
+        firstName: fetched.user_first_name || "",
+        lastName: fetched.user_last_name || "",
+        phoneNumber: fetched.user_phone_number || "",
+        bio: fetched.user_profile_bio || "",
+        availableTimes: fetched.user_available_time || "",
+        birthdate: fetched.user_birthdate || "",
+        children: fetched.user_kids || "",
+        gender: fetched.user_gender || "",
+        identity: fetched.user_identity || "",
+        // orientation: fetched.user_sexuality || "",
+        openTo: parsedOpenTo,
+        address: fetched.user_address || "",
+        nationality: fetched.user_nationality || "",
+        bodyType: fetched.user_body_composition || "",
+        education: fetched.user_education || "",
+        job: fetched.user_job || "",
+        smoking: fetched.user_smoking || "",
+        drinking: fetched.user_drinking || "",
+        religion: fetched.user_religion || "",
+        starSign: fetched.user_star_sign || "",
+        latitude: fetched.user_latitude || null,
+        longitude: fetched.user_longitude || null,
+        phoneNumberValid: true, // Added phone number validation state
+      };
+
+      setFormValues(newFormValues);
+      setOriginalValues({ ...newFormValues });
+
+      setInterests(parsedInterests);
+      setDateTypes(parsedDateInterests);
+
+      // Set initial values for dropdowns
+      setGenderValue(fetched.user_gender || null);
+      setIdentityValue(fetched.user_identity || null);
+      // setOrientationValue(fetched.user_sexuality || null);
+      setOpenToValue(parsedOpenTo);
+      setBodyTypeValue(fetched.user_body_composition || null);
+      setSmokingValue(fetched.user_smoking || null);
+      setDrinkingValue(fetched.user_drinking || null);
+      setReligionValue(fetched.user_religion || null);
+      setStarSignValue(fetched.user_star_sign || null);
+      setEducationValue(fetched.user_education || null);
+
+      // Handle photos
+      if (fetched.user_photo_url) {
+        try {
+          const photoArray = JSON.parse(fetched.user_photo_url);
+          const newPhotos = [null, null, null];
+          photoArray.forEach((uri, idx) => {
+            if (idx < 3) newPhotos[idx] = uri;
+          });
+          setPhotos(newPhotos);
+        } catch (error) {
+          console.log("Error parsing photo URLs:", error);
+          setPhotos([null, null, null]);
+        }
+      }
+
+      // Handle video URL with better parsing
+      if (fetched.user_video_url) {
+        let videoUrl = null;
+        try {
+          // Try parsing as JSON first
+          videoUrl = JSON.parse(fetched.user_video_url);
+        } catch (e) {
+          // If parsing fails, use the raw string
+          videoUrl = fetched.user_video_url;
+        }
+
+        // Clean up any extra quotes that might be present
+        if (typeof videoUrl === "string") {
+          videoUrl = videoUrl.replace(/^"|"$/g, "");
+        }
+
+        console.log("Cleaned video url:", videoUrl);
+        setVideoUri(videoUrl);
+      }
+
+      // Convert stored cm back to feet/inches
+      if (fetched.user_height) {
+        const cm = parseInt(fetched.user_height);
+        const totalInches = cm / 2.54;
+        const feet = Math.floor(totalInches / 12);
+        const inches = Math.round(totalInches % 12);
+
+        setHeightFt(feet.toString());
+        setHeightIn(inches.toString());
+        setHeightCm(cm.toString());
+      }
+
+      setGenderValue(fetched.user_gender || null);
+    } catch (error) {
+      console.log("Error fetching user info:", error.response || error);
+      Alert.alert("Error", "Failed to load profile data. Please check your internet connection and try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Fetch user data from the server when this screen is opened
   useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        setIsLoading(true);
-        const uid = await AsyncStorage.getItem("user_uid");
-        if (!uid) {
-          console.log("No user_uid in AsyncStorage");
-          return;
-        }
-
-        // Create axios instance with specific config
-        const api = axios.create({
-          baseURL: "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev",
-          timeout: 10000,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        const response = await api.get(`/userinfo/${uid}`);
-        const fetched = response.data.result[0];
-
-        // Safely parse open_to field
-        let parsedOpenTo = [];
-        try {
-          if (fetched.user_open_to) {
-            if (typeof fetched.user_open_to === "string") {
-              parsedOpenTo = JSON.parse(fetched.user_open_to);
-            } else if (Array.isArray(fetched.user_open_to)) {
-              parsedOpenTo = fetched.user_open_to;
-            }
-          }
-        } catch (error) {
-          console.log("Error parsing open_to:", error);
-          parsedOpenTo = [];
-        }
-
-        // Safely parse interests
-        let parsedInterests = [];
-        try {
-          if (fetched.user_general_interests) {
-            parsedInterests = JSON.parse(fetched.user_general_interests);
-          }
-        } catch (error) {
-          console.log("Error parsing interests:", error);
-          parsedInterests = [];
-        }
-
-        // Safely parse date interests
-        let parsedDateInterests = [];
-        try {
-          if (fetched.user_date_interests) {
-            parsedDateInterests = JSON.parse(fetched.user_date_interests);
-          }
-        } catch (error) {
-          console.log("Error parsing date interests:", error);
-          parsedDateInterests = [];
-        }
-
-        setUserData(fetched || {});
-        const newFormValues = {
-          firstName: fetched.user_first_name || "",
-          lastName: fetched.user_last_name || "",
-          phoneNumber: fetched.user_phone_number || "",
-          bio: fetched.user_profile_bio || "",
-          availableTimes: fetched.user_available_time || "",
-          birthdate: fetched.user_birthdate || "",
-          children: fetched.user_kids || "",
-          gender: fetched.user_gender || "",
-          identity: fetched.user_identity || "",
-          // orientation: fetched.user_sexuality || "",
-          openTo: parsedOpenTo,
-          address: fetched.user_address || "",
-          nationality: fetched.user_nationality || "",
-          bodyType: fetched.user_body_composition || "",
-          education: fetched.user_education || "",
-          job: fetched.user_job || "",
-          smoking: fetched.user_smoking || "",
-          drinking: fetched.user_drinking || "",
-          religion: fetched.user_religion || "",
-          starSign: fetched.user_star_sign || "",
-          latitude: fetched.user_latitude || null,
-          longitude: fetched.user_longitude || null,
-          phoneNumberValid: true, // Added phone number validation state
-        };
-
-        setFormValues(newFormValues);
-        setOriginalValues({ ...newFormValues });
-
-        setInterests(parsedInterests);
-        setDateTypes(parsedDateInterests);
-
-        // Set initial values for dropdowns
-        setGenderValue(fetched.user_gender || null);
-        setIdentityValue(fetched.user_identity || null);
-        // setOrientationValue(fetched.user_sexuality || null);
-        setOpenToValue(parsedOpenTo);
-        setBodyTypeValue(fetched.user_body_composition || null);
-        setSmokingValue(fetched.user_smoking || null);
-        setDrinkingValue(fetched.user_drinking || null);
-        setReligionValue(fetched.user_religion || null);
-        setStarSignValue(fetched.user_star_sign || null);
-        setEducationValue(fetched.user_education || null);
-
-        // Handle photos
-        if (fetched.user_photo_url) {
-          try {
-            const photoArray = JSON.parse(fetched.user_photo_url);
-            const newPhotos = [null, null, null];
-            photoArray.forEach((uri, idx) => {
-              if (idx < 3) newPhotos[idx] = uri;
-            });
-            setPhotos(newPhotos);
-          } catch (error) {
-            console.log("Error parsing photo URLs:", error);
-            setPhotos([null, null, null]);
-          }
-        }
-
-        // Handle video URL with better parsing
-        if (fetched.user_video_url) {
-          let videoUrl = null;
-          try {
-            // Try parsing as JSON first
-            videoUrl = JSON.parse(fetched.user_video_url);
-          } catch (e) {
-            // If parsing fails, use the raw string
-            videoUrl = fetched.user_video_url;
-          }
-
-          // Clean up any extra quotes that might be present
-          if (typeof videoUrl === "string") {
-            videoUrl = videoUrl.replace(/^"|"$/g, "");
-          }
-
-          console.log("Cleaned video url:", videoUrl);
-          setVideoUri(videoUrl);
-        }
-
-        // Convert stored cm back to feet/inches
-        if (fetched.user_height) {
-          const cm = parseInt(fetched.user_height);
-          const totalInches = cm / 2.54;
-          const feet = Math.floor(totalInches / 12);
-          const inches = Math.round(totalInches % 12);
-
-          setHeightFt(feet.toString());
-          setHeightIn(inches.toString());
-          setHeightCm(cm.toString());
-        }
-
-        setGenderValue(fetched.user_gender || null);
-      } catch (error) {
-        console.log("Error fetching user info:", error.response || error);
-        Alert.alert("Error", "Failed to load profile data. Please check your internet connection and try again.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     if (isFocused) {
       fetchUserInfo();
     }
@@ -594,62 +601,73 @@ export default function EditProfile() {
 
   // Platform-specific video quality
   const getVideoQuality = () => {
-    if (Platform.OS === "ios") {
-      return ImagePicker.UIImagePickerControllerQualityType.Medium;
-    }
-    return "720p";
+    return Platform.OS === "ios" ? ImagePicker.UIImagePickerControllerQualityType.Medium : 0.5;
   };
+
+  // Function to get file size in MB
+  const getFileSizeInMB = useCallback(async (fileUri) => {
+    try {
+      if (!fileUri || typeof fileUri !== "string") return null;
+
+      // Handle remote URLs (S3 URLs)
+      if (fileUri.startsWith("http")) {
+        // For remote files, we can't get the size directly
+        // Return null or a placeholder
+        return null;
+      }
+
+      // For local files, get the file info
+      const fileInfo = await FileSystem.getInfoAsync(fileUri);
+      if (fileInfo.exists) {
+        // Convert bytes to MB and round to 2 decimal places
+        const fileSizeInMB = (fileInfo.size / (1024 * 1024)).toFixed(2);
+        return fileSizeInMB;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error getting file size:", error);
+      return null;
+    }
+  }, []);
 
   // Updated image picker function with better permission handling
   const handlePickImage = async (slotIndex) => {
     try {
-      const { status: existingStatus } = await ImagePicker.getMediaLibraryPermissionsAsync();
-
-      if (existingStatus !== "granted") {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== "granted") {
-          Alert.alert("Permission Required", "Photo library access is required to select images. Would you like to open settings to grant permission?", [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Open Settings",
-              onPress: () => {
-                Platform.OS === "ios" ? Linking.openURL("app-settings:") : Linking.openSettings();
-              },
-            },
-          ]);
-          return;
-        }
+      // Request permission
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission Required", "Please allow access to your photo library to upload images.");
+        return;
       }
 
+      // Launch image picker
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsMultipleSelection: true,
-        selectionLimit: 3,
-        quality: Platform.OS === "ios" ? 0.8 : 1,
-        allowsEditing: false,
-        base64: false,
-        exif: false,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
       });
 
-      if (!result.canceled && result.assets?.length > 0) {
+      console.log("\n=== Image Selection Debug ===");
+      console.log("Image picker result:", result);
+
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        const uri = result.assets[0].uri;
+        console.log(`Selected image for slot ${slotIndex}:`, uri);
+
+        // Create a new array with the selected image at the specified slot
         const newPhotos = [...photos];
-        console.log("\n=== Image Selection Debug ===");
-        console.log("Selected assets:", result.assets);
-        for (const asset of result.assets) {
-          const targetIndex = slotIndex + result.assets.indexOf(asset);
-          if (targetIndex < 3) {
-            newPhotos[targetIndex] = asset.uri;
-            // Log image details when selected
-            const size = await getFileSize(asset.uri);
-            console.log(`\nImage ${targetIndex + 1} details:`);
-            console.log(`- URI: ${asset.uri}`);
-            console.log(`- File name: ${asset.uri.split("/").pop()}`);
-            console.log(`- Size: ${(size / 1024 / 1024).toFixed(2)} MB`);
-          }
-        }
+        newPhotos[slotIndex] = uri;
+
         console.log("\nFinal photos array:", newPhotos);
         console.log("=== End Image Selection Debug ===\n");
         setPhotos(newPhotos);
+
+        // Get and set the file size
+        const fileSize = await getFileSizeInMB(uri);
+        const newPhotoFileSizes = [...photoFileSizes];
+        newPhotoFileSizes[slotIndex] = fileSize;
+        setPhotoFileSizes(newPhotoFileSizes);
       }
     } catch (error) {
       console.error("Error picking images:", error);
@@ -664,6 +682,7 @@ export default function EditProfile() {
       ]);
     }
   };
+
   const handleRemovePhoto = (slotIndex) => {
     const photoToRemove = photos[slotIndex];
     console.log("\n=== Removing Photo ===");
@@ -680,6 +699,11 @@ export default function EditProfile() {
     console.log("Updated photos array:", newPhotos);
     console.log("=== End Remove Photo ===\n");
     setPhotos(newPhotos);
+
+    // Reset the file size for this slot
+    const newPhotoFileSizes = [...photoFileSizes];
+    newPhotoFileSizes[slotIndex] = null;
+    setPhotoFileSizes(newPhotoFileSizes);
   };
 
   // Replace the current handleVideoUpload function with these two functions
@@ -706,8 +730,13 @@ export default function EditProfile() {
 
       if (!result.canceled && result.assets?.[0]?.uri) {
         console.log("Video selection success:", result.assets[0]);
-        setVideoUri(result.assets[0].uri);
+        const uri = result.assets[0].uri;
+        setVideoUri(uri);
         setIsVideoPlaying(false);
+
+        // Get and set the file size
+        const fileSize = await getFileSizeInMB(uri);
+        setVideoFileSize(fileSize);
       }
     } catch (error) {
       console.error("Error picking video:", error);
@@ -739,8 +768,13 @@ export default function EditProfile() {
 
       if (!result.canceled && result.assets?.[0]?.uri) {
         console.log("Video recording success:", result.assets[0]);
-        setVideoUri(result.assets[0].uri);
+        const uri = result.assets[0].uri;
+        setVideoUri(uri);
         setIsVideoPlaying(false);
+
+        // Get and set the file size
+        const fileSize = await getFileSizeInMB(uri);
+        setVideoFileSize(fileSize);
       }
     } catch (error) {
       console.error("Error recording video:", error);
@@ -753,6 +787,7 @@ export default function EditProfile() {
     // but don't allow saving unless a new video is uploaded
     setVideoUri(null);
     setDeletedVideo(true);
+    setVideoFileSize(null);
   };
   const handlePlayPause = async () => {
     if (!videoRef.current) return;
@@ -1313,16 +1348,9 @@ export default function EditProfile() {
   };
 
   // Remove the compression utility functions
-  const getFileSize = async (uri) => {
-    try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      return blob.size;
-    } catch (error) {
-      console.error("Error getting file size:", error);
-      return 0;
-    }
-  };
+  const getFileSize = useCallback(async (uri) => {
+    return getFileSizeInMB(uri);
+  }, []);
 
   // Add this effect to properly initialize the map location
   useEffect(() => {
@@ -1348,6 +1376,31 @@ export default function EditProfile() {
     }
   }, [formValues.latitude, formValues.longitude, mapReady]);
 
+  // Effect to get file sizes when videoUri or photos change
+  useEffect(() => {
+    const getFileSizes = async () => {
+      // Get video file size
+      if (videoUri) {
+        const size = await getFileSizeInMB(videoUri);
+        setVideoFileSize(size);
+      }
+
+      // Get photo file sizes
+      const newPhotoFileSizes = [...photoFileSizes];
+      for (let i = 0; i < photos.length; i++) {
+        if (photos[i]) {
+          const size = await getFileSizeInMB(photos[i]);
+          newPhotoFileSizes[i] = size;
+        } else {
+          newPhotoFileSizes[i] = null;
+        }
+      }
+      setPhotoFileSizes(newPhotoFileSizes);
+    };
+
+    getFileSizes();
+  }, [videoUri, photos]);
+
   return (
     <SafeAreaView style={styles.container}>
       {isLoading ? (
@@ -1368,8 +1421,8 @@ export default function EditProfile() {
             <Text style={styles.headerTitle}>Editing My Profile</Text>
           </View>
 
-          {/* Profile Video */}
-          <View style={styles.mediaContainer}>
+          {/* Video Section */}
+          <View style={styles.videoContainer}>
             {videoUri ? (
               <View style={styles.videoWrapper}>
                 <Video
@@ -1395,6 +1448,11 @@ export default function EditProfile() {
                     <Ionicons name='close' size={20} color='#FFF' />
                   </View>
                 </TouchableOpacity>
+                {videoFileSize && (
+                  <View style={styles.fileSizeContainer}>
+                    <Text style={styles.fileSizeText}>{videoFileSize} MB</Text>
+                  </View>
+                )}
               </View>
             ) : (
               <View style={styles.videoUploadOptions}>
@@ -1429,6 +1487,11 @@ export default function EditProfile() {
                           <Ionicons name={favoritePhotoIndex === idx ? "heart" : "heart-outline"} size={20} color={favoritePhotoIndex === idx ? "#E4423F" : "#FFF"} />
                         </View>
                       </TouchableOpacity>
+                    )}
+                    {photoFileSizes[idx] && (
+                      <View style={styles.fileSizeContainer}>
+                        <Text style={styles.fileSizeText}>{photoFileSizes[idx]} MB</Text>
+                      </View>
                     )}
                   </>
                 ) : (
@@ -2670,5 +2733,20 @@ const styles = StyleSheet.create({
     marginTop: -10,
     marginBottom: 10,
     marginLeft: 5,
+  },
+  videoContainer: {
+    marginBottom: 20,
+  },
+  fileSizeContainer: {
+    position: "absolute",
+    bottom: 5,
+    left: 5,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: 5,
+    padding: 2,
+  },
+  fileSizeText: {
+    color: "#FFF",
+    fontSize: 12,
   },
 });

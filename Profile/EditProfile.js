@@ -668,6 +668,11 @@ export default function EditProfile() {
         const newPhotoFileSizes = [...photoFileSizes];
         newPhotoFileSizes[slotIndex] = fileSize;
         setPhotoFileSizes(newPhotoFileSizes);
+
+        // Check if the file size is too large
+        if (fileSize && parseFloat(fileSize) > 2) {
+          Alert.alert("Large Image File", `The selected image is ${fileSize}MB, which is larger than recommended. This may cause slow uploads and performance issues.`, [{ text: "OK" }]);
+        }
       }
     } catch (error) {
       console.error("Error picking images:", error);
@@ -737,6 +742,11 @@ export default function EditProfile() {
         // Get and set the file size
         const fileSize = await getFileSizeInMB(uri);
         setVideoFileSize(fileSize);
+
+        // Check if the file size is too large
+        if (fileSize && parseFloat(fileSize) > 5) {
+          Alert.alert("Large Video File", `The selected video is ${fileSize}MB, which exceeds the recommended 5MB limit. This may cause slow uploads and performance issues.`, [{ text: "OK" }]);
+        }
       }
     } catch (error) {
       console.error("Error picking video:", error);
@@ -775,6 +785,11 @@ export default function EditProfile() {
         // Get and set the file size
         const fileSize = await getFileSizeInMB(uri);
         setVideoFileSize(fileSize);
+
+        // Check if the file size is too large
+        if (fileSize && parseFloat(fileSize) > 5) {
+          Alert.alert("Large Video File", `The recorded video is ${fileSize}MB, which exceeds the recommended 5MB limit. This may cause slow uploads and performance issues.`, [{ text: "OK" }]);
+        }
       }
     } catch (error) {
       console.error("Error recording video:", error);
@@ -1082,267 +1097,297 @@ export default function EditProfile() {
 
   // Updated handleSaveChanges function
   const handleSaveChanges = async () => {
-    console.log("\n=== Starting Profile Update ===");
-    console.log("Creating new FormData object");
-
-    // Check for validation errors
-    const firstNameError = validateName(formValues.firstName, "First name");
-    const lastNameError = validateName(formValues.lastName, "Last name");
-
-    setNameErrors({
-      firstName: firstNameError,
-      lastName: lastNameError,
-    });
-
-    if (firstNameError || lastNameError) {
-      Alert.alert("Validation Error", "Please correct the errors in the form before saving.");
-      return;
-    }
-
     try {
       setIsLoading(true);
-      const uid = await AsyncStorage.getItem("user_uid");
-      if (!uid) {
-        Alert.alert("Error", "User ID not found");
+
+      // Check total file size before uploading
+      const totalSize = checkTotalFileSize();
+      if (totalSize > 5) {
+        // Ask for confirmation before proceeding with large files
+        const shouldProceed = await new Promise((resolve) => {
+          Alert.alert(
+            "Large File Size Warning",
+            `The total size of your media is ${totalSize}MB, which exceeds the recommended 5MB limit. This may cause slow uploads and performance issues. Do you want to continue?`,
+            [
+              { text: "Cancel", onPress: () => resolve(false), style: "cancel" },
+              { text: "Continue Anyway", onPress: () => resolve(true) },
+            ]
+          );
+        });
+
+        if (!shouldProceed) {
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // Validate form fields
+      const firstNameError = validateName(formValues.firstName, "First name");
+      const lastNameError = validateName(formValues.lastName, "Last name");
+
+      setNameErrors({
+        firstName: firstNameError,
+        lastName: lastNameError,
+      });
+
+      if (firstNameError || lastNameError) {
+        Alert.alert("Validation Error", "Please correct the errors in the form before saving.");
+        setIsLoading(false);
         return;
       }
 
-      // Filter out null photos and only include actual photo URIs
-      const originalPhotos = userData.user_photo_url ? JSON.parse(userData.user_photo_url) : [];
-      const photoUrls = photos.filter((uri) => uri !== null && uri !== undefined);
-
-      console.log("\n=== Debug Photo Arrays ===");
-      console.log("Original photos array:", originalPhotos);
-      console.log("Current photos array:", photoUrls);
-      console.log("Deleted photos array:", deletedPhotos);
-      console.log("=== End Debug ===\n");
-
-      // Create FormData object
-      const uploadData = new FormData();
-      uploadData.append("user_uid", userData.user_uid);
-      uploadData.append("user_email_id", userData.user_email_id);
-
-      // Add age calculation from birthdate
-      if (formValues.birthdate && isValidDate(formValues.birthdate)) {
-        const calculatedAge = calculateAge(formValues.birthdate);
-        uploadData.append("user_age", calculatedAge.toString());
-      }
-
-      // Separate S3 photos from new local photos
-      const s3Photos = [];
-      const newLocalPhotos = [];
-
-      photos.forEach((uri) => {
-        if (uri) {
-          if (uri.startsWith("https://s3")) {
-            s3Photos.push(uri);
-          } else {
-            newLocalPhotos.push(uri);
-          }
+      try {
+        setIsLoading(true);
+        const uid = await AsyncStorage.getItem("user_uid");
+        if (!uid) {
+          Alert.alert("Error", "User ID not found");
+          setIsLoading(false);
+          return;
         }
-      });
 
-      console.log("\n=== Photo Upload Debug ===");
-      console.log("S3 Photos to keep:", s3Photos);
-      console.log("New Local Photos to upload:", newLocalPhotos);
-      console.log("S3 Photos to delete:", deletedPhotos);
+        // Filter out null photos and only include actual photo URIs
+        const originalPhotos = userData.user_photo_url ? JSON.parse(userData.user_photo_url) : [];
+        const photoUrls = photos.filter((uri) => uri !== null && uri !== undefined);
 
-      // Add existing S3 photos as user_photo_url array
-      if (s3Photos.length > 0) {
-        uploadData.append("user_photo_url", JSON.stringify(s3Photos));
-      }
+        console.log("\n=== Debug Photo Arrays ===");
+        console.log("Original photos array:", originalPhotos);
+        console.log("Current photos array:", photoUrls);
+        console.log("Deleted photos array:", deletedPhotos);
+        console.log("=== End Debug ===\n");
 
-      // Add deleted photos array if any photos were deleted
-      if (deletedPhotos.length > 0) {
-        uploadData.append("user_delete_photo", JSON.stringify(deletedPhotos));
-      }
+        // Create FormData object
+        const uploadData = new FormData();
+        uploadData.append("user_uid", userData.user_uid);
+        uploadData.append("user_email_id", userData.user_email_id);
 
-      // Add new local photos as img_0, img_1, etc. with sequential indices
-      newLocalPhotos.forEach((uri, index) => {
-        console.log(`Adding new local photo ${index}:`, uri);
-        uploadData.append(`img_${index}`, {
-          uri,
-          type: "image/jpeg",
-          name: `img_${index}.jpg`,
+        // Add age calculation from birthdate
+        if (formValues.birthdate && isValidDate(formValues.birthdate)) {
+          const calculatedAge = calculateAge(formValues.birthdate);
+          uploadData.append("user_age", calculatedAge.toString());
+        }
+
+        // Separate S3 photos from new local photos
+        const s3Photos = [];
+        const newLocalPhotos = [];
+
+        photos.forEach((uri) => {
+          if (uri) {
+            if (uri.startsWith("https://s3")) {
+              s3Photos.push(uri);
+            } else {
+              newLocalPhotos.push(uri);
+            }
+          }
         });
-      });
 
-      console.log("=== End Photo Upload Debug ===\n");
+        console.log("\n=== Photo Upload Debug ===");
+        console.log("S3 Photos to keep:", s3Photos);
+        console.log("New Local Photos to upload:", newLocalPhotos);
+        console.log("S3 Photos to delete:", deletedPhotos);
 
-      // Handle video upload
-      console.log("\n=== Video Upload Debug ===");
-      const originalVideoUrl = userData.user_video_url ? (typeof userData.user_video_url === "string" ? userData.user_video_url.replace(/^"|"$/g, "") : userData.user_video_url) : null;
-      console.log("Original video URL:", originalVideoUrl);
-      console.log("Current video URL:", videoUri);
+        // Add existing S3 photos as user_photo_url array
+        if (s3Photos.length > 0) {
+          uploadData.append("user_photo_url", JSON.stringify(s3Photos));
+        }
 
-      // Check if video was deleted or changed
-      if (originalVideoUrl && !videoUri) {
-        // Video was deleted
-      } else if (videoUri && videoUri !== originalVideoUrl) {
-        // New video to upload (not from S3)
-        if (!videoUri.startsWith("https://s3")) {
-          console.log("Adding new local video for upload");
-          uploadData.append("user_video", {
-            uri: videoUri,
-            type: "video/mp4",
-            name: "user_video.mp4",
+        // Add deleted photos array if any photos were deleted
+        if (deletedPhotos.length > 0) {
+          uploadData.append("user_delete_photo", JSON.stringify(deletedPhotos));
+        }
+
+        // Add new local photos as img_0, img_1, etc. with sequential indices
+        newLocalPhotos.forEach((uri, index) => {
+          console.log(`Adding new local photo ${index}:`, uri);
+          uploadData.append(`img_${index}`, {
+            uri,
+            type: "image/jpeg",
+            name: `img_${index}.jpg`,
           });
-        } else {
-          // Existing S3 video - no need to re-upload
-          console.log("Keeping existing S3 video");
-          uploadData.append("user_video_url", videoUri);
-        }
-      }
-      console.log("=== End Video Upload Debug ===\n");
+        });
 
-      // Create an object of the original values from userData
-      const originalValues = {
-        user_first_name: userData.user_first_name || "",
-        user_last_name: userData.user_last_name || "",
-        user_phone_number: userData.user_phone_number || "",
-        user_profile_bio: userData.user_profile_bio || "",
-        user_general_interests: userData.user_general_interests ? JSON.parse(userData.user_general_interests) : [],
-        user_date_interests: userData.user_date_interests ? JSON.parse(userData.user_date_interests) : [],
-        user_available_time: userData.user_available_time || "",
-        user_birthdate: userData.user_birthdate || "",
-        user_height: userData.user_height || "",
-        user_kids: userData.user_kids || "",
-        user_gender: userData.user_gender || "",
-        user_identity: userData.user_identity || "",
-        // user_sexuality: userData.user_sexuality || "",
-        user_open_to: userData.user_open_to ? JSON.parse(userData.user_open_to) : [],
-        user_address: userData.user_address || "",
-        user_nationality: userData.user_nationality || "",
-        user_body_composition: userData.user_body_composition || "",
-        user_education: userData.user_education || "",
-        user_job: userData.user_job || "",
-        user_smoking: userData.user_smoking || "",
-        user_drinking: userData.user_drinking || "",
-        user_religion: userData.user_religion || "",
-        user_star_sign: userData.user_star_sign || "",
-        user_latitude: userData.user_latitude?.toString() || "",
-        user_longitude: userData.user_longitude?.toString() || "",
-      };
+        console.log("=== End Photo Upload Debug ===\n");
 
-      // Create an object of the new values
-      const newValues = {
-        user_first_name: formValues.firstName,
-        user_last_name: formValues.lastName,
-        user_phone_number: formValues.phoneNumber,
-        user_profile_bio: formValues.bio,
-        user_general_interests: interests,
-        user_date_interests: dateTypes,
-        user_available_time: formValues.availableTimes,
-        user_birthdate: formValues.birthdate,
-        user_height: heightCm,
-        user_kids: formValues.children,
-        user_gender: genderValue,
-        user_identity: identityValue,
-        // user_sexuality: orientationValue,
-        user_open_to: openToValue,
-        user_address: formValues.address,
-        user_nationality: formValues.nationality,
-        user_body_composition: bodyTypeValue,
-        user_education: educationValue,
-        user_job: formValues.job,
-        user_smoking: smokingValue,
-        user_drinking: drinkingValue,
-        user_religion: religionValue,
-        user_star_sign: starSignValue,
-        user_latitude: formValues.latitude?.toString(),
-        user_longitude: formValues.longitude?.toString(),
-      };
+        // Handle video upload
+        console.log("\n=== Video Upload Debug ===");
+        const originalVideoUrl = userData.user_video_url ? (typeof userData.user_video_url === "string" ? userData.user_video_url.replace(/^"|"$/g, "") : userData.user_video_url) : null;
+        console.log("Original video URL:", originalVideoUrl);
+        console.log("Current video URL:", videoUri);
 
-      // Debug log for values before sending
-      console.log("\n=== Original Values ===");
-      console.log(JSON.stringify(originalValues, null, 2));
-      console.log("\n=== New Values ===");
-      console.log(JSON.stringify(newValues, null, 2));
-
-      // Only add fields that have changed to the FormData
-      console.log("\n=== Changed Fields ===");
-      Object.entries(newValues).forEach(([key, value]) => {
-        const originalValue = originalValues[key];
-
-        // Special handling for comparing empty strings and null values
-        const isOriginalEmpty = originalValue === "" || originalValue === null || originalValue === undefined;
-        const isNewEmpty = value === "" || value === null || value === undefined;
-
-        // Only consider it a change if they're not both empty in some form
-        if (!(isOriginalEmpty && isNewEmpty)) {
-          const newValueStr = typeof value === "object" ? JSON.stringify(value) : value;
-          const originalValueStr = typeof originalValue === "object" ? JSON.stringify(originalValue) : originalValue;
-
-          if (newValueStr !== originalValueStr) {
-            console.log(`${key}: ${originalValueStr} -> ${newValueStr}`);
-            uploadData.append(key, newValueStr);
-          }
-        } else {
-          console.log(`Skipping equivalent empty values for ${key}`);
-        }
-      });
-
-      // Log the final FormData contents
-      console.log("\n=== Final FormData Contents ===");
-      for (let [key, value] of uploadData._parts) {
-        console.log(`${key}: ${value}`);
-      }
-
-      // Add favorite photo to upload data if one is selected
-      if (favoritePhotoIndex !== null && photos[favoritePhotoIndex]) {
-        const photoUri = photos[favoritePhotoIndex];
-        const isNewPhoto = !photoUri.startsWith("https://s3");
-
-        if (isNewPhoto) {
-          // For new local photos, we need to find its sequential index in the newLocalPhotos array
-          const sequentialIndex = newLocalPhotos.indexOf(photoUri);
-          if (sequentialIndex !== -1) {
-            uploadData.append("user_favorite_photo", `img_${sequentialIndex}`);
-            console.log(`Setting favorite photo to img_${sequentialIndex} (original index: ${favoritePhotoIndex})`);
+        // Check if video was deleted or changed
+        if (originalVideoUrl && !videoUri) {
+          // Video was deleted
+        } else if (videoUri && videoUri !== originalVideoUrl) {
+          // New video to upload (not from S3)
+          if (!videoUri.startsWith("https://s3")) {
+            console.log("Adding new local video for upload");
+            uploadData.append("user_video", {
+              uri: videoUri,
+              type: "video/mp4",
+              name: "user_video.mp4",
+            });
           } else {
-            console.log(`Warning: Could not find favorite photo in newLocalPhotos array`);
+            // Existing S3 video - no need to re-upload
+            console.log("Keeping existing S3 video");
+            uploadData.append("user_video_url", videoUri);
           }
-        } else {
-          // For S3 photos, use the URL directly
-          uploadData.append("user_favorite_photo", photoUri);
-          console.log(`Setting favorite photo to S3 URL: ${photoUri}`);
         }
-      }
+        console.log("=== End Video Upload Debug ===\n");
 
-      // Ensure age is calculated from birthdate before saving
-      if (formValues.birthdate && isValidDate(formValues.birthdate)) {
-        const calculatedAge = calculateAge(formValues.birthdate);
-        // Make sure age is included in the data sent to the endpoint
-        newValues.age = calculatedAge;
-      }
+        // Create an object of the original values from userData
+        const originalValues = {
+          user_first_name: userData.user_first_name || "",
+          user_last_name: userData.user_last_name || "",
+          user_phone_number: userData.user_phone_number || "",
+          user_profile_bio: userData.user_profile_bio || "",
+          user_general_interests: userData.user_general_interests ? JSON.parse(userData.user_general_interests) : [],
+          user_date_interests: userData.user_date_interests ? JSON.parse(userData.user_date_interests) : [],
+          user_available_time: userData.user_available_time || "",
+          user_birthdate: userData.user_birthdate || "",
+          user_height: userData.user_height || "",
+          user_kids: userData.user_kids || "",
+          user_gender: userData.user_gender || "",
+          user_identity: userData.user_identity || "",
+          // user_sexuality: userData.user_sexuality || "",
+          user_open_to: userData.user_open_to ? JSON.parse(userData.user_open_to) : [],
+          user_address: userData.user_address || "",
+          user_nationality: userData.user_nationality || "",
+          user_body_composition: userData.user_body_composition || "",
+          user_education: userData.user_education || "",
+          user_job: userData.user_job || "",
+          user_smoking: userData.user_smoking || "",
+          user_drinking: userData.user_drinking || "",
+          user_religion: userData.user_religion || "",
+          user_star_sign: userData.user_star_sign || "",
+          user_latitude: userData.user_latitude?.toString() || "",
+          user_longitude: userData.user_longitude?.toString() || "",
+        };
 
-      // Add validation to prevent saving without a video
-      if (deletedVideo && !videoUri) {
-        Alert.alert("Video Required", "Please upload a new video before saving changes.", [{ text: "OK" }]);
-        return; // Stop the save process
-      }
+        // Create an object of the new values
+        const newValues = {
+          user_first_name: formValues.firstName,
+          user_last_name: formValues.lastName,
+          user_phone_number: formValues.phoneNumber,
+          user_profile_bio: formValues.bio,
+          user_general_interests: interests,
+          user_date_interests: dateTypes,
+          user_available_time: formValues.availableTimes,
+          user_birthdate: formValues.birthdate,
+          user_height: heightCm,
+          user_kids: formValues.children,
+          user_gender: genderValue,
+          user_identity: identityValue,
+          // user_sexuality: orientationValue,
+          user_open_to: openToValue,
+          user_address: formValues.address,
+          user_nationality: formValues.nationality,
+          user_body_composition: bodyTypeValue,
+          user_education: educationValue,
+          user_job: formValues.job,
+          user_smoking: smokingValue,
+          user_drinking: drinkingValue,
+          user_religion: religionValue,
+          user_star_sign: starSignValue,
+          user_latitude: formValues.latitude?.toString(),
+          user_longitude: formValues.longitude?.toString(),
+        };
 
-      // Make the upload request
-      const response = await axios.put("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo", uploadData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Accept: "application/json",
-        },
-        timeout: 60000,
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity,
-      });
+        // Debug log for values before sending
+        console.log("\n=== Original Values ===");
+        console.log(JSON.stringify(originalValues, null, 2));
+        console.log("\n=== New Values ===");
+        console.log(JSON.stringify(newValues, null, 2));
 
-      if (response.status === 200) {
-        setIsEditMode(false); // Exit edit mode after successful save
-        console.log("Upload successful!");
-        Alert.alert("Success", "Your profile has been updated!");
-        navigation.goBack();
+        // Only add fields that have changed to the FormData
+        console.log("\n=== Changed Fields ===");
+        Object.entries(newValues).forEach(([key, value]) => {
+          const originalValue = originalValues[key];
+
+          // Special handling for comparing empty strings and null values
+          const isOriginalEmpty = originalValue === "" || originalValue === null || originalValue === undefined;
+          const isNewEmpty = value === "" || value === null || value === undefined;
+
+          // Only consider it a change if they're not both empty in some form
+          if (!(isOriginalEmpty && isNewEmpty)) {
+            const newValueStr = typeof value === "object" ? JSON.stringify(value) : value;
+            const originalValueStr = typeof originalValue === "object" ? JSON.stringify(originalValue) : originalValue;
+
+            if (newValueStr !== originalValueStr) {
+              console.log(`${key}: ${originalValueStr} -> ${newValueStr}`);
+              uploadData.append(key, newValueStr);
+            }
+          } else {
+            console.log(`Skipping equivalent empty values for ${key}`);
+          }
+        });
+
+        // Log the final FormData contents
+        console.log("\n=== Final FormData Contents ===");
+        for (let [key, value] of uploadData._parts) {
+          console.log(`${key}: ${value}`);
+        }
+
+        // Add favorite photo to upload data if one is selected
+        if (favoritePhotoIndex !== null && photos[favoritePhotoIndex]) {
+          const photoUri = photos[favoritePhotoIndex];
+          const isNewPhoto = !photoUri.startsWith("https://s3");
+
+          if (isNewPhoto) {
+            // For new local photos, we need to find its sequential index in the newLocalPhotos array
+            const sequentialIndex = newLocalPhotos.indexOf(photoUri);
+            if (sequentialIndex !== -1) {
+              uploadData.append("user_favorite_photo", `img_${sequentialIndex}`);
+              console.log(`Setting favorite photo to img_${sequentialIndex} (original index: ${favoritePhotoIndex})`);
+            } else {
+              console.log(`Warning: Could not find favorite photo in newLocalPhotos array`);
+            }
+          } else {
+            // For S3 photos, use the URL directly
+            uploadData.append("user_favorite_photo", photoUri);
+            console.log(`Setting favorite photo to S3 URL: ${photoUri}`);
+          }
+        }
+
+        // Ensure age is calculated from birthdate before saving
+        if (formValues.birthdate && isValidDate(formValues.birthdate)) {
+          const calculatedAge = calculateAge(formValues.birthdate);
+          // Make sure age is included in the data sent to the endpoint
+          newValues.age = calculatedAge;
+        }
+
+        // Add validation to prevent saving without a video
+        if (deletedVideo && !videoUri) {
+          Alert.alert("Video Required", "Please upload a new video before saving changes.", [{ text: "OK" }]);
+          setIsLoading(false);
+          return; // Stop the save process
+        }
+
+        // Make the upload request
+        const response = await axios.put("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo", uploadData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Accept: "application/json",
+          },
+          timeout: 60000,
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
+        });
+
+        if (response.status === 200) {
+          setIsEditMode(false); // Exit edit mode after successful save
+          console.log("Upload successful!");
+          Alert.alert("Success", "Your profile has been updated!");
+          navigation.goBack();
+        }
+      } catch (error) {
+        console.log("Error uploading profile:", error.response?.data || error);
+        Alert.alert("Error", "Failed to update profile. Please check your internet connection and try again.");
+        setIsLoading(false);
+      } finally {
+        setIsLoading(false);
       }
     } catch (error) {
-      console.log("Error uploading profile:", error.response?.data || error);
-      Alert.alert("Error", "Failed to update profile. Please check your internet connection and try again.");
-    } finally {
+      console.error("Error handling save:", error);
+      Alert.alert("Error", "An unexpected error occurred while saving. Please try again.");
       setIsLoading(false);
     }
   };
@@ -1400,6 +1445,43 @@ export default function EditProfile() {
 
     getFileSizes();
   }, [videoUri, photos]);
+
+  // Function to check total file size and show alert if it exceeds 5MB
+  const checkTotalFileSize = useCallback(() => {
+    let totalSize = 0;
+
+    // Add video file size if available
+    if (videoFileSize) {
+      totalSize += parseFloat(videoFileSize);
+    }
+
+    // Add photo file sizes if available
+    photoFileSizes.forEach((size) => {
+      if (size) {
+        totalSize += parseFloat(size);
+      }
+    });
+
+    // Round to 2 decimal places for display
+    totalSize = parseFloat(totalSize.toFixed(2));
+
+    // Check if total size exceeds 5MB
+    if (totalSize > 5) {
+      Alert.alert("Large File Size", `The total size of your media is ${totalSize}MB, which exceeds the recommended 5MB limit. This may cause slow uploads and performance issues.`, [
+        { text: "OK", onPress: () => console.log("User acknowledged large file size") },
+      ]);
+    }
+
+    return totalSize;
+  }, [videoFileSize, photoFileSizes]);
+
+  // Check total file size whenever file sizes change
+  useEffect(() => {
+    // Only check if we have at least one file with a size
+    if (videoFileSize || photoFileSizes.some((size) => size !== null)) {
+      checkTotalFileSize();
+    }
+  }, [videoFileSize, photoFileSizes, checkTotalFileSize]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -1502,6 +1584,18 @@ export default function EditProfile() {
               </View>
             ))}
           </View>
+
+          {/* Total File Size Button */}
+          <TouchableOpacity
+            style={styles.fileSizeButton}
+            onPress={() => {
+              const totalSize = checkTotalFileSize();
+              Alert.alert("Total Media Size", `The total size of your media files is ${totalSize}MB.`, [{ text: "OK" }]);
+            }}
+          >
+            <Ionicons name='information-circle-outline' size={20} color='#E4423F' />
+            <Text style={styles.fileSizeButtonText}>Check Total File Size</Text>
+          </TouchableOpacity>
 
           {/* Driver's License */}
           <TouchableOpacity style={styles.uploadButton} onPress={handleLicenseUpload}>
@@ -2748,5 +2842,19 @@ const styles = StyleSheet.create({
   fileSizeText: {
     color: "#FFF",
     fontSize: 12,
+  },
+  fileSizeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E4423F",
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+  },
+  fileSizeButtonText: {
+    color: "#E4423F",
+    fontSize: 16,
+    marginLeft: 5,
   },
 });

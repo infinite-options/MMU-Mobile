@@ -9,6 +9,8 @@ import Slider from "@react-native-community/slider";
 
 import { fetchUserInfo } from "../Api.js";
 
+console.log("--- MatchProfileDisplay ---");
+
 const heightImg = require("../src/Assets/Images/height.png");
 const genderImg = require("../src/Assets/Images/gender.png");
 const redlikeEmpty = require("../src/Assets/Images/redlike.png");
@@ -382,7 +384,7 @@ export default function MatchProfileDisplay() {
   if (userInfo?.user_general_interests) {
     try {
       // Log the raw data
-      console.log("Raw user_general_interests:", userInfo.user_general_interests);
+      // console.log("Raw user_general_interests:", userInfo.user_general_interests);
 
       // Attempt to parse as JSON
       if (typeof userInfo.user_general_interests === "string" && userInfo.user_general_interests.trim().startsWith("[")) {

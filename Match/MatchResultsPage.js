@@ -1,56 +1,47 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  Alert,
-  StyleSheet,
-  ScrollView,
-  SafeAreaView,
-  Platform,
-  StatusBar,
-  
-} from "react-native";
+import { View, Text, Image, TouchableOpacity, Alert, StyleSheet, ScrollView, SafeAreaView, Platform, StatusBar } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import { Ionicons } from '@expo/vector-icons'; // Import Ionicons
-import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from "@expo/vector-icons"; // Import Ionicons
+import { useNavigation } from "@react-navigation/native";
+
+console.log("--- MatchResultsPage ---");
+
 // Example placeholders for bottom navigation icons
 
 const BottomNav = () => {
   const navigation = useNavigation();
   return (
     <View style={styles.bottomNavContainer}>
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Preferences')}>
-        <Image source={require('../assets/icons/search.png')} />
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Preferences")}>
+        <Image source={require("../assets/icons/search.png")} />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('MatchResultsPage')}>
-        <Image source={require('../assets/icons/twoheartsfilled.png')} />
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("MatchResultsPage")}>
+        <Image source={require("../assets/icons/twoheartsfilled.png")} />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Chat')}>
-        <Image source={require('../assets/icons/chat.png')}  />
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Chat")}>
+        <Image source={require("../assets/icons/chat.png")} />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('MyProfile')}>
-        <Image source={require('../assets/icons/profileoutline.png')} />
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("MyProfile")}>
+        <Image source={require("../assets/icons/profileoutline.png")} />
       </TouchableOpacity>
     </View>
   );
 };
 // Utility to parse JSON safely
 function safeJsonParse(value, fallback = []) {
-    // If value is null or not a string, just return fallback
-    if (typeof value !== "string") {
-      return fallback;
-    }
-    // Otherwise parse
-    try {
-      return JSON.parse(value);
-    } catch (err) {
-      console.warn("Failed to parse JSON:", value, err);
-      return fallback;
-    }
+  // If value is null or not a string, just return fallback
+  if (typeof value !== "string") {
+    return fallback;
   }
+  // Otherwise parse
+  try {
+    return JSON.parse(value);
+  } catch (err) {
+    console.warn("Failed to parse JSON:", value, err);
+    return fallback;
+  }
+}
 
 const MatchResultsPage = () => {
   const [userId, setUserId] = useState("");
@@ -59,7 +50,7 @@ const MatchResultsPage = () => {
   const [matchedResults, setMatchedResults] = useState([]);
   const [interestedInMe, setInterestedInMe] = useState([]);
   const [interestedIn, setInterestedIn] = useState([]);
-  
+
   // This stores whether each matched user has an existing meet
   // Example structure: { '100-000111': true, '100-000112': false }
   const [meetStatus, setMeetStatus] = useState({});
@@ -112,43 +103,43 @@ const MatchResultsPage = () => {
     const loadUserData = async () => {
       try {
         const storedUserId = await AsyncStorage.getItem("user_uid");
-        
+
         if (storedUserId) {
           setUserId(storedUserId);
-          
+
           // Fetch user info from API
           try {
             const userInfoUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${storedUserId}`;
             const response = await axios.get(userInfoUrl);
             console.log("--- User Info Response ---", response.data);
-            
+
             // Extract general interests from response - access the first item in the result array
             if (response.data && response.data.result && response.data.result.length > 0) {
               const userData = response.data.result[0];
-              
+
               if (userData.user_general_interests) {
                 const interestsData = userData.user_general_interests;
-                
+
                 // Handle different formats of interests data
-                if (typeof interestsData === 'string') {
+                if (typeof interestsData === "string") {
                   try {
                     // Try parsing as JSON
                     const interests = JSON.parse(interestsData);
                     setUserInterests(Array.isArray(interests) ? interests : []);
                   } catch (e) {
                     // If parsing fails, try treating as comma-separated string
-                    setUserInterests(interestsData.split(',').map(i => i.trim()));
+                    setUserInterests(interestsData.split(",").map((i) => i.trim()));
                   }
                 } else if (Array.isArray(interestsData)) {
                   setUserInterests(interestsData);
                 }
-                
+
                 console.log("--- Parsed User Interests ---", userInterests);
               }
             }
           } catch (apiError) {
             console.error("Error fetching user info from API:", apiError);
-            
+
             // Fallback to AsyncStorage if API call fails
             const userInterestsString = await AsyncStorage.getItem("user_general_interests");
             if (userInterestsString) {
@@ -156,7 +147,7 @@ const MatchResultsPage = () => {
                 const interests = JSON.parse(userInterestsString);
                 setUserInterests(Array.isArray(interests) ? interests : []);
               } catch (e) {
-                setUserInterests(userInterestsString.split(',').map(i => i.trim()));
+                setUserInterests(userInterestsString.split(",").map((i) => i.trim()));
               }
             }
           }
@@ -165,14 +156,14 @@ const MatchResultsPage = () => {
         console.error("Error loading user data:", error);
       }
     };
-    
+
     loadUserData();
   }, []);
 
   // Add focus listener to refresh when returning to the screen
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      setRefreshTrigger(prev => prev + 1);
+    const unsubscribe = navigation.addListener("focus", () => {
+      setRefreshTrigger((prev) => prev + 1);
     });
     return unsubscribe;
   }, [navigation]);
@@ -204,22 +195,20 @@ const MatchResultsPage = () => {
       const matchedResultsData = data.matched_results || [];
       const interestedInMeData = data.people_who_selected_you || [];
       const interestedInData = data.people_whom_you_selected || [];
-      
+
       // Fetch user details including interests for each matched user
       const enrichedMatchedResults = await Promise.all(
         matchedResultsData.map(async (match) => {
           try {
             const userInfoUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${match.user_uid}`;
             const userInfoResponse = await axios.get(userInfoUrl);
-            
-            if (userInfoResponse.data && 
-                userInfoResponse.data.result && 
-                userInfoResponse.data.result.length > 0) {
+
+            if (userInfoResponse.data && userInfoResponse.data.result && userInfoResponse.data.result.length > 0) {
               const userDetails = userInfoResponse.data.result[0];
               // Merge the user details into the match data
               return {
                 ...match,
-                user_general_interests: userDetails.user_general_interests
+                user_general_interests: userDetails.user_general_interests,
               };
             }
             return match;
@@ -229,21 +218,19 @@ const MatchResultsPage = () => {
           }
         })
       );
-      
+
       // Similarly fetch details for interested in me users
       const enrichedInterestedInMe = await Promise.all(
         interestedInMeData.map(async (match) => {
           try {
             const userInfoUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${match.user_uid}`;
             const userInfoResponse = await axios.get(userInfoUrl);
-            
-            if (userInfoResponse.data && 
-                userInfoResponse.data.result && 
-                userInfoResponse.data.result.length > 0) {
+
+            if (userInfoResponse.data && userInfoResponse.data.result && userInfoResponse.data.result.length > 0) {
               const userDetails = userInfoResponse.data.result[0];
               return {
                 ...match,
-                user_general_interests: userDetails.user_general_interests
+                user_general_interests: userDetails.user_general_interests,
               };
             }
             return match;
@@ -253,21 +240,19 @@ const MatchResultsPage = () => {
           }
         })
       );
-      
+
       // And for interested in users
       const enrichedInterestedIn = await Promise.all(
         interestedInData.map(async (match) => {
           try {
             const userInfoUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${match.user_uid}`;
             const userInfoResponse = await axios.get(userInfoUrl);
-            
-            if (userInfoResponse.data && 
-                userInfoResponse.data.result && 
-                userInfoResponse.data.result.length > 0) {
+
+            if (userInfoResponse.data && userInfoResponse.data.result && userInfoResponse.data.result.length > 0) {
               const userDetails = userInfoResponse.data.result[0];
               return {
                 ...match,
-                user_general_interests: userDetails.user_general_interests
+                user_general_interests: userDetails.user_general_interests,
               };
             }
             return match;
@@ -304,7 +289,6 @@ const MatchResultsPage = () => {
     }
     const fetchMeetSelfStatus = async () => {
       try {
-
         const meetSelfUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet/${userId}`;
         const res = await axios.get(meetSelfUrl);
         const selfmeets = Array.isArray(res.data?.result) ? res.data.result : [];
@@ -319,22 +303,22 @@ const MatchResultsPage = () => {
     const fetchMeetStatus = async () => {
       try {
         const newMeetStatus = {};
-        
+
         // For each user in matchedResults, call the meet endpoint for THAT user's ID
         // NOT your own userId.
         for (const matchedUser of matchedResults) {
           const theirUserId = matchedUser.user_uid;
           console.log("--- theirUserId ---", theirUserId);
           const meetUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet/${theirUserId}`;
-          
+
           try {
             const res = await axios.get(meetUrl);
-            
+
             // Handle case where data is missing or malformed
             const resultData = res.data?.result || [];
             console.log("--- resultData ---", resultData);
             const meets = Array.isArray(resultData) ? resultData : [];
-            
+
             newMeetStatus[theirUserId] = meets.length > 0;
           } catch (err) {
             // Only log error if it's not a 404
@@ -359,18 +343,18 @@ const MatchResultsPage = () => {
     console.log("--- CALCULATING COMMON INTERESTS ---");
     console.log("User interests:", userInterests);
     console.log("Match interests raw:", matchInterests);
-    
+
     // Ensure both are arrays and not null/undefined
     const userInterestsArray = Array.isArray(userInterests) ? userInterests : [];
     let matchInterestsArray = [];
-    
+
     // Handle case when matchInterests is undefined or null
     if (!matchInterests) {
       console.log("No match interests found, returning 0");
       return 0; // No common interests if match has no interests
     }
-    
-    if (typeof matchInterests === 'string') {
+
+    if (typeof matchInterests === "string") {
       try {
         // Try parsing as JSON
         matchInterestsArray = JSON.parse(matchInterests);
@@ -382,7 +366,7 @@ const MatchResultsPage = () => {
       } catch (e) {
         // If parsing fails, try treating as comma-separated string
         console.log("Failed to parse as JSON, treating as comma-separated string");
-        matchInterestsArray = matchInterests.split(',').map(i => i.trim());
+        matchInterestsArray = matchInterests.split(",").map((i) => i.trim());
         console.log("Split result:", matchInterestsArray);
       }
     } else if (Array.isArray(matchInterests)) {
@@ -391,23 +375,19 @@ const MatchResultsPage = () => {
     } else {
       console.log("Match interests is neither string nor array:", typeof matchInterests);
     }
-    
+
     // Extra safety check to ensure matchInterestsArray is an array
     if (!Array.isArray(matchInterestsArray)) {
       console.log("matchInterestsArray is still not an array after processing");
       return 0;
     }
-    
+
     // Count common interests with case-insensitive comparison
-    const common = userInterestsArray.filter(userInterest => 
-      matchInterestsArray.some(matchInterest => 
-        String(userInterest).toLowerCase() === String(matchInterest).toLowerCase()
-      )
-    );
-    
+    const common = userInterestsArray.filter((userInterest) => matchInterestsArray.some((matchInterest) => String(userInterest).toLowerCase() === String(matchInterest).toLowerCase()));
+
     console.log("Common interests found:", common);
     console.log("Common count:", common.length);
-    
+
     return common.length;
   };
 
@@ -431,28 +411,21 @@ const MatchResultsPage = () => {
     try {
       await axios.delete("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/likes", {
         data: formData.toString(),
-        headers: { "Content-Type": "application/x-www-form-urlencoded" }
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
       console.log("Disliked user:", matchId);
-      setMatchedResults(prevResults => prevResults.filter(match => match.user_uid !== matchId));
-      setRefreshTrigger(prev => prev + 1);
+      setMatchedResults((prevResults) => prevResults.filter((match) => match.user_uid !== matchId));
+      setRefreshTrigger((prev) => prev + 1);
       await findMatchesResult();
     } catch (error) {
       console.error("Error disliking user:", error.message);
     }
   };
 
-  const renderMatchRow = (
-    firstname,
-    lastname,
-    interests,
-    imgSrc,
-    buttonLabel = null,
-    matchId = null
-  ) => {
+  const renderMatchRow = (firstname, lastname, interests, imgSrc, buttonLabel = null, matchId = null) => {
     // Calculate common interests
     const commonInterestsCount = calculateCommonInterests(interests);
-    
+
     // Decide which label to show (we ignore the passed buttonLabel here intentionally,
     // because we override with either "See invitation" or "Set up date" below).
     const hasMeet = meetStatus[matchId] || false;
@@ -463,46 +436,23 @@ const MatchResultsPage = () => {
     console.log("--- dynamicButtonLabel ---", dynamicButtonLabel);
 
     return (
-      <View
-        style={styles.matchRow}
-        key={`${firstname}-${matchId}-${Math.random()}`}
-      >
+      <View style={styles.matchRow} key={`${firstname}-${matchId}-${Math.random()}`}>
         <View style={styles.matchRowLeft}>
-          <TouchableOpacity onPress={() => navigation.navigate('UserProfile', { meet_date_user_id: matchId })}>
-            <Image 
-              source={imgSrc ? { uri: imgSrc } : require('../assets/account.png')} 
-              style={styles.avatar} 
-            />
+          <TouchableOpacity onPress={() => navigation.navigate("UserProfile", { meet_date_user_id: matchId })}>
+            <Image source={imgSrc ? { uri: imgSrc } : require("../assets/account.png")} style={styles.avatar} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('Chat', { matchedUserId: matchId })}>
+          <TouchableOpacity onPress={() => navigation.navigate("Chat", { matchedUserId: matchId })}>
             <View>
-              <Text style={styles.matchName}>{firstname} {lastname}</Text>
-              <Text style={styles.matchSubText}>
-                {commonInterestsCount} interests in common
+              <Text style={styles.matchName}>
+                {firstname} {lastname}
               </Text>
+              <Text style={styles.matchSubText}>{commonInterestsCount} interests in common</Text>
             </View>
           </TouchableOpacity>
         </View>
         <View style={styles.matchRowRight}>
-          <TouchableOpacity
-            style={[
-              styles.matchButton,
-              dynamicButtonLabel === "Set up date"
-                ? styles.setUpDateButton
-                : styles.defaultButtonBorder,
-            ]}
-            onPress={() => handleButtonPress(matchId)}
-          >
-            <Text
-              style={[
-                styles.matchButtonText,
-                dynamicButtonLabel === "Set up date"
-                  ? { color: "#fff" }
-                  : { color: "#E4423F" },
-              ]}
-            >
-              {dynamicButtonLabel}
-            </Text>
+          <TouchableOpacity style={[styles.matchButton, dynamicButtonLabel === "Set up date" ? styles.setUpDateButton : styles.defaultButtonBorder]} onPress={() => handleButtonPress(matchId)}>
+            <Text style={[styles.matchButtonText, dynamicButtonLabel === "Set up date" ? { color: "#fff" } : { color: "#E4423F" }]}>{dynamicButtonLabel}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.closeButton} onPress={() => handleDislike(matchId)}>
             <Text style={styles.closeButtonIcon}>×</Text>
@@ -513,36 +463,25 @@ const MatchResultsPage = () => {
   };
   const renderInterestedInMeRow = (fname, lname, interests, imgSrc, buttonLabel = "Match", matchId = null) => {
     return (
-      <View
-        style={styles.matchRow}
-        key={`${fname}-${matchId}`}
-      >
+      <View style={styles.matchRow} key={`${fname}-${matchId}`}>
         <View style={styles.matchRowLeft}>
-          <TouchableOpacity onPress={() => navigation.navigate('UserProfile', { meet_date_user_id: matchId })}>
-            <Image 
-              source={imgSrc ? { uri: imgSrc } : require('../assets/account.png')} 
-              style={styles.avatar} 
-            />
+          <TouchableOpacity onPress={() => navigation.navigate("UserProfile", { meet_date_user_id: matchId })}>
+            <Image source={imgSrc ? { uri: imgSrc } : require("../assets/account.png")} style={styles.avatar} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('UserProfile', { meet_date_user_id: matchId })}>
+          <TouchableOpacity onPress={() => navigation.navigate("UserProfile", { meet_date_user_id: matchId })}>
             <View>
-              <Text style={styles.matchName}>{fname} {lname}</Text>
-              <Text style={styles.matchSubText}>
-                {calculateCommonInterests(interests)} interests in common
+              <Text style={styles.matchName}>
+                {fname} {lname}
               </Text>
+              <Text style={styles.matchSubText}>{calculateCommonInterests(interests)} interests in common</Text>
             </View>
           </TouchableOpacity>
         </View>
         <View style={styles.matchRowRight}>
-          <TouchableOpacity
-            style={[styles.matchButton, styles.setUpDateButton]}
-            onPress={() => navigation.navigate('UserProfile', { meet_date_user_id: matchId })}
-          >
-            <Text style={[styles.matchButtonText, { color: "#fff" }]}>
-              {buttonLabel}
-            </Text>
+          <TouchableOpacity style={[styles.matchButton, styles.setUpDateButton]} onPress={() => navigation.navigate("UserProfile", { meet_date_user_id: matchId })}>
+            <Text style={[styles.matchButtonText, { color: "#fff" }]}>{buttonLabel}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.closeButton} onPress={() => setInterestedInMe(prevResults => prevResults.filter(match => match.user_uid !== matchId))}>
+          <TouchableOpacity style={styles.closeButton} onPress={() => setInterestedInMe((prevResults) => prevResults.filter((match) => match.user_uid !== matchId))}>
             <Text style={styles.closeButtonIcon}>×</Text>
           </TouchableOpacity>
         </View>
@@ -551,23 +490,17 @@ const MatchResultsPage = () => {
   };
   const renderInterestedInRow = (fname, lname, interests, imgSrc, buttonLabel = null, matchId = null) => {
     return (
-      <View
-        style={styles.matchRow}
-        key={`${fname}-${matchId}`}
-      >
+      <View style={styles.matchRow} key={`${fname}-${matchId}`}>
         <View style={styles.matchRowLeft}>
-          <TouchableOpacity onPress={() => navigation.navigate('UserProfile', { meet_date_user_id: matchId })}>
-            <Image 
-              source={imgSrc ? { uri: imgSrc } : require('../assets/account.png')} 
-              style={styles.avatar} 
-            />
+          <TouchableOpacity onPress={() => navigation.navigate("UserProfile", { meet_date_user_id: matchId })}>
+            <Image source={imgSrc ? { uri: imgSrc } : require("../assets/account.png")} style={styles.avatar} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('UserProfile', { meet_date_user_id: matchId })}>
+          <TouchableOpacity onPress={() => navigation.navigate("UserProfile", { meet_date_user_id: matchId })}>
             <View>
-              <Text style={styles.matchName}>{fname} {lname}</Text>
-              <Text style={styles.matchSubText}>
-                {calculateCommonInterests(interests)} interests in common
+              <Text style={styles.matchName}>
+                {fname} {lname}
               </Text>
+              <Text style={styles.matchSubText}>{calculateCommonInterests(interests)} interests in common</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -582,115 +515,90 @@ const MatchResultsPage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-        {/* HEADER */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>My Matching Results</Text>
-          <View style={styles.headerIcons}>
-            <TouchableOpacity onPress={() => Alert.alert("Notifications!")}>
-              <Ionicons name="notifications-outline" size={24} color="#888" />
+      {/* HEADER */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>My Matching Results</Text>
+        <View style={styles.headerIcons}>
+          <TouchableOpacity onPress={() => Alert.alert("Notifications!")}>
+            <Ionicons name='notifications-outline' size={24} color='#888' />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleMenuOpen}>
+            <Ionicons name='ellipsis-vertical' size={24} color='#888' />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* MENU */}
+      {menuVisible && (
+        <>
+          <TouchableOpacity style={styles.menuOverlay} activeOpacity={0} onPress={handleMenuClose} />
+          <View style={styles.menuContainer}>
+            <TouchableOpacity onPress={() => handleMenuItemPress("Edit Profile")} style={styles.menuItem}>
+              <Text>Edit Profile</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleMenuOpen}>
-              <Ionicons name="ellipsis-vertical" size={24} color="#888" />
+            <TouchableOpacity onPress={() => handleMenuItemPress("Settings")} style={styles.menuItem}>
+              <Text>Settings</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleMenuItemPress("Manage Membership")} style={styles.menuItem}>
+              <Text>Manage Membership</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleMenuItemPress("Hide Profile")} style={styles.menuItem}>
+              <Text>Hide Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleMenuItemPress("Delete Account")} style={styles.menuItem}>
+              <Text>Delete Account</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleMenuItemPress("Logout")} style={styles.menuItem}>
+              <Text>Logout</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </>
+      )}
 
-        {/* MENU */}
-        {menuVisible && (
-          <>
-            <TouchableOpacity 
-              style={styles.menuOverlay} 
-              activeOpacity={0} 
-              onPress={handleMenuClose}
-            />
-            <View style={styles.menuContainer}>
-              <TouchableOpacity onPress={() => handleMenuItemPress("Edit Profile") } style={styles.menuItem}>
-                <Text>Edit Profile</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleMenuItemPress("Settings") } style={styles.menuItem}>
-                <Text>Settings</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleMenuItemPress("Manage Membership") } style={styles.menuItem}>
-                <Text>Manage Membership</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleMenuItemPress("Hide Profile") } style={styles.menuItem}>
-                <Text>Hide Profile</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleMenuItemPress("Delete Account") } style={styles.menuItem}>
-                <Text>Delete Account</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleMenuItemPress("Logout") } style={styles.menuItem}>
-                <Text>Logout</Text>
-              </TouchableOpacity>
-            </View>
-          </>
+      <ScrollView style={styles.scrollArea}>
+        {/* My Matches */}
+        <Text style={styles.sectionTitle}>My matches</Text>
+        {matchedResults.length > 0 ? (
+          matchedResults.map((match) => {
+            const photoUrls = safeJsonParse(match.user_photo_url, []);
+            const firstPhoto = photoUrls[0] || null;
+            return renderMatchRow(match.user_first_name, match.user_last_name, match.user_general_interests, firstPhoto, "Set up date or see invitation", match.user_uid);
+          })
+        ) : (
+          <Text style={styles.noMatchesText}>No matches found</Text>
         )}
 
-        <ScrollView style={styles.scrollArea}>
-          {/* My Matches */}
-          <Text style={styles.sectionTitle}>My matches</Text>
-          {matchedResults.length > 0 ? (
-            matchedResults.map((match) => {
-              const photoUrls = safeJsonParse(match.user_photo_url, []);
-              const firstPhoto = photoUrls[0] || null;
-              return renderMatchRow(
-                match.user_first_name,
-                match.user_last_name,
-                match.user_general_interests,
-                firstPhoto,
-                "Set up date or see invitation",
-                match.user_uid
-              );
-            })
-          ) : (
-            <Text style={styles.noMatchesText}>No matches found</Text>
-          )}
+        <View style={styles.divider} />
 
-          <View style={styles.divider} />
+        {/* People Interested in Me */}
+        <Text style={styles.sectionTitle}>People interested in me</Text>
+        {interestedInMe.length > 0 ? (
+          interestedInMe.map((match) => {
+            const photoUrls = safeJsonParse(match.user_photo_url, []);
+            const firstPhoto = photoUrls[0] || null;
+            return renderInterestedInMeRow(match.user_first_name, match.user_last_name, match.user_general_interests, firstPhoto, "Match", match.user_uid);
+          })
+        ) : (
+          <Text style={styles.noMatchesText}>No matches found</Text>
+        )}
 
-          {/* People Interested in Me */}
-          <Text style={styles.sectionTitle}>People interested in me</Text>
-          {interestedInMe.length > 0 ? (
-            interestedInMe.map((match) => {
-              const photoUrls = safeJsonParse(match.user_photo_url, []);
-              const firstPhoto = photoUrls[0] || null;
-              return renderInterestedInMeRow(
-                match.user_first_name,
-                match.user_last_name,
-                match.user_general_interests,
-                firstPhoto,
-                "Match",
-                match.user_uid
-              );
-            })
-          ) : (
-            <Text style={styles.noMatchesText}>No matches found</Text>
-          )}
+        <View style={styles.divider} />
 
-          <View style={styles.divider} />
+        {/* People I'm Interested In */}
+        <Text style={styles.sectionTitle}>People I'm interested in</Text>
+        {interestedIn.length > 0 ? (
+          interestedIn.map((match) => {
+            const photoUrls = safeJsonParse(match.user_photo_url, []);
+            const firstPhoto = photoUrls[0] || null;
+            return renderInterestedInRow(match.user_first_name, match.user_last_name, match.user_general_interests, firstPhoto, "See Profile", match.user_uid);
+          })
+        ) : (
+          <Text style={styles.noMatchesText}>No matches found</Text>
+        )}
+      </ScrollView>
 
-          {/* People I'm Interested In */}
-          <Text style={styles.sectionTitle}>People I'm interested in</Text>
-          {interestedIn.length > 0 ? (
-            interestedIn.map((match) => {
-              const photoUrls = safeJsonParse(match.user_photo_url, []);
-              const firstPhoto = photoUrls[0] || null;
-              return renderInterestedInRow(
-                match.user_first_name,
-                match.user_last_name,
-                match.user_general_interests,
-                firstPhoto,
-                "See Profile",
-                match.user_uid
-              );
-            })
-          ) : (
-            <Text style={styles.noMatchesText}>No matches found</Text>
-          )}
-        </ScrollView>
-
-        {/* BOTTOM NAV */}
-        <BottomNav />
+      {/* BOTTOM NAV */}
+      <BottomNav />
     </SafeAreaView>
   );
 };
@@ -710,17 +618,17 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   bottomNavContainer: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
     height: 60,
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
     borderTopWidth: 2,
-    borderTopColor: '#EEE',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    borderTopColor: "#EEE",
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
   },
   navButton: {},
   header: {
@@ -759,12 +667,12 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   menuOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     zIndex: 999,
   },
   menuItem: {

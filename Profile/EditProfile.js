@@ -1313,116 +1313,149 @@ export default function EditProfile() {
         } else if (videoUri && videoUri !== originalVideoUrl) {
           // Check if it's a test video
           if (isTestVideo(videoUri)) {
+            console.log("\n=== Test Video Upload Process ===");
             console.log("Using test video for upload:", videoUri);
             setUploadStatus("Using test video for upload");
 
+            console.log("\n------------- PM: Video File Size -------------:", videoUri);
             // For test videos, we'll use the regular upload process
-            if (videoFileSize && parseFloat(videoFileSize) > 1) {
-              console.log(`Test video size (${videoFileSize}MB) exceeds 1MB, getting presigned URL`);
-              setUploadStatus(`Getting presigned URL for ${videoFileSize}MB test video...`);
-
-              // Get presigned URL for S3 upload
-              const presignedData = await getPresignedUrl(uid);
-
-              if (presignedData && presignedData.url) {
-                console.log("Got presigned URL for direct S3 upload:", presignedData.url);
-                console.log("S3 video URL will be:", presignedData.videoUrl);
-
-                // Upload video directly to S3
-                setUploadStatus(`Uploading ${videoFileSize}MB test video directly to S3...`);
-                const uploadSuccess = await uploadVideoToS3(videoUri, presignedData.url);
-
-                if (uploadSuccess && presignedData.videoUrl) {
-                  console.log("Direct S3 upload successful, using S3 URL in form data");
-                  setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
-                  uploadData.append("user_video_url", presignedData.videoUrl);
-                } else {
-                  console.error("Direct S3 upload failed, falling back to regular upload");
-                  setUploadStatus("S3 upload failed, falling back to regular upload");
-                  // Fall back to regular upload
-                  uploadData.append("user_video", {
-                    uri: videoUri,
-                    type: "video/mp4",
-                    name: "user_video.mp4",
-                  });
-                }
-              } else {
-                console.error("Failed to get presigned URL, falling back to regular upload");
-                setUploadStatus("Failed to get presigned URL, falling back to regular upload");
-                // Fall back to regular upload
-                uploadData.append("user_video", {
-                  uri: videoUri,
-                  type: "video/mp4",
-                  name: "user_video.mp4",
-                });
-              }
-            } else {
+            if (videoFileSize && parseFloat(videoFileSize) < 1) {
               // Video is small enough for regular upload
               console.log("Test video size is under 1MB, using regular upload");
               setUploadStatus(`Using regular upload for ${videoFileSize}MB test video`);
+              console.log("Adding video as multipart form data (small file)...");
               uploadData.append("user_video", {
                 uri: videoUri,
                 type: "video/mp4",
                 name: "user_video.mp4",
               });
+              console.log("Added user_video to form data as multipart");
+            } else {
+              console.log(`Test video size (${videoFileSize}MB) exceeds 1MB, getting presigned URL`);
+              setUploadStatus(`Getting presigned URL for ${videoFileSize}MB test video...`);
+
+              // Get presigned URL for S3 upload
+              console.log("-------PM--------- Calling getPresignedUrl function 1");
+              const presignedData = await getPresignedUrl(uid);
+              console.log("-------PM--------- Presigned data:", presignedData);
+
+              if (presignedData && presignedData.url) {
+                console.log("Got presigned URL for direct S3 upload:", presignedData.url);
+                console.log("S3 video URL will be:", presignedData.videoUrl);
+                console.log("Full presigned data:", JSON.stringify(presignedData, null, 2));
+
+                // Upload video directly to S3
+                setUploadStatus(`Uploading ${videoFileSize}MB test video directly to S3...`);
+                console.log("Starting S3 upload with presigned URL...");
+                console.log("PRESIGNED URL BEING USED FOR UPLOAD:", presignedData.url);
+                const uploadSuccess = await uploadVideoToS3(videoUri, presignedData.url);
+                console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
+
+                if (uploadSuccess && presignedData.videoUrl) {
+                  console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
+                  setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
+                  uploadData.append("user_video_url", presignedData.videoUrl);
+                  console.log("Added user_video_url to form data:", presignedData.videoUrl);
+                } else {
+                  console.error("Direct S3 upload failed, falling back to regular upload");
+                  setUploadStatus("S3 upload failed, falling back to regular upload");
+                  // Fall back to regular upload
+                  console.log("Adding video as multipart form data...");
+                  uploadData.append("user_video", {
+                    uri: videoUri,
+                    type: "video/mp4",
+                    name: "user_video.mp4",
+                  });
+                  console.log("Added user_video to form data as multipart");
+                }
+              } else {
+                console.error("Failed to get presigned URL, falling back to regular upload 1");
+                setUploadStatus("Failed to get presigned URL, falling back to regular upload");
+                // Fall back to regular upload
+                console.log("Adding video as multipart form data (presigned URL failed)...");
+                uploadData.append("user_video", {
+                  uri: videoUri,
+                  type: "video/mp4",
+                  name: "user_video.mp4",
+                });
+                console.log("Added user_video to form data as multipart");
+              }
             }
+            console.log("=== End Test Video Upload Process ===\n");
           }
           // New video to upload (not from S3 or test video)
           else if (!videoUri.startsWith("https://s3")) {
+            console.log("\n=== Regular Video Upload Process ===");
             // Check if video is larger than 1MB
             if (videoFileSize && parseFloat(videoFileSize) > 1) {
               console.log(`Video size (${videoFileSize}MB) exceeds 1MB, getting presigned URL`);
               setUploadStatus(`Getting presigned URL for ${videoFileSize}MB video...`);
 
               // Get presigned URL for S3 upload
+              console.log("-------PM--------- Calling getPresignedUrl function 2");
               const presignedData = await getPresignedUrl(uid);
 
               if (presignedData && presignedData.url) {
                 console.log("Got presigned URL for direct S3 upload:", presignedData.url);
                 console.log("S3 video URL will be:", presignedData.videoUrl);
+                console.log("Full presigned data:", JSON.stringify(presignedData, null, 2));
 
                 // Upload video directly to S3
                 setUploadStatus(`Uploading ${videoFileSize}MB video directly to S3...`);
+                console.log("Starting S3 upload with presigned URL...");
+                console.log("PRESIGNED URL BEING USED FOR UPLOAD:", presignedData.url);
                 const uploadSuccess = await uploadVideoToS3(videoUri, presignedData.url);
+                console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
 
                 if (uploadSuccess && presignedData.videoUrl) {
-                  console.log("Direct S3 upload successful, using S3 URL in form data");
+                  console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
                   setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
                   uploadData.append("user_video_url", presignedData.videoUrl);
+                  console.log("Added user_video_url to form data:", presignedData.videoUrl);
                 } else {
                   console.error("Direct S3 upload failed, falling back to regular upload");
                   setUploadStatus("S3 upload failed, falling back to regular upload");
                   // Fall back to regular upload
+                  console.log("Adding video as multipart form data...");
                   uploadData.append("user_video", {
                     uri: videoUri,
                     type: "video/mp4",
                     name: "user_video.mp4",
                   });
+                  console.log("Added user_video to form data as multipart");
                 }
               } else {
-                console.error("Failed to get presigned URL, falling back to regular upload");
+                console.error("Failed to get presigned URL, falling back to regular upload 2");
                 setUploadStatus("Failed to get presigned URL, falling back to regular upload");
                 // Fall back to regular upload
+                console.log("Adding video as multipart form data (presigned URL failed)...");
                 uploadData.append("user_video", {
                   uri: videoUri,
                   type: "video/mp4",
                   name: "user_video.mp4",
                 });
+                console.log("Added user_video to form data as multipart");
               }
             } else {
               // Video is small enough for regular upload
               console.log("Video size is under 1MB, using regular upload");
               setUploadStatus(`Using regular upload for ${videoFileSize}MB video`);
+              console.log("Adding video as multipart form data (small file)...");
               uploadData.append("user_video", {
                 uri: videoUri,
                 type: "video/mp4",
                 name: "user_video.mp4",
               });
+              console.log("Added user_video to form data as multipart");
             }
+            console.log("=== End Regular Video Upload Process ===\n");
           } else {
             // Existing S3 video - no need to re-upload
-            console.log("Keeping existing S3 video");
+            console.log("\n=== Existing S3 Video ===");
+            console.log("Keeping existing S3 video:", videoUri);
             uploadData.append("user_video_url", videoUri);
+            console.log("Added user_video_url to form data:", videoUri);
+            console.log("=== End Existing S3 Video ===\n");
           }
         }
         console.log("=== End Video Upload Debug ===\n");
@@ -1556,15 +1589,42 @@ export default function EditProfile() {
         }
 
         // Make the upload request
+        console.log("\n=== Profile Update API Request ===");
+        console.log("Making API request to update profile with timeout of 120 seconds...");
+        console.log("API endpoint: https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo");
+
+        // Log the FormData contents (but not the actual file data)
+        console.log("FormData contents:");
+        for (let [key, value] of uploadData._parts) {
+          if (key === "user_video" || key.startsWith("img_")) {
+            console.log(`${key}: [File data omitted]`);
+          } else {
+            console.log(`${key}: ${value}`);
+          }
+        }
+
+        const startTime = Date.now();
+        console.log("Request started at:", new Date(startTime).toISOString());
+
         const response = await axios.put("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo", uploadData, {
           headers: {
             "Content-Type": "multipart/form-data",
             Accept: "application/json",
           },
-          timeout: 60000,
+          timeout: 120000, // Increase timeout to 2 minutes for large files
           maxContentLength: Infinity,
           maxBodyLength: Infinity,
         });
+
+        const endTime = Date.now();
+        const requestDuration = (endTime - startTime) / 1000; // in seconds
+        console.log("Request completed at:", new Date(endTime).toISOString());
+        console.log("Request duration:", requestDuration.toFixed(2) + " seconds");
+
+        console.log("Response status:", response.status);
+        console.log("Response headers:", JSON.stringify(response.headers, null, 2));
+        console.log("Response data:", JSON.stringify(response.data, null, 2));
+        console.log("=== End Profile Update API Request ===\n");
 
         if (response.status === 200) {
           setIsEditMode(false); // Exit edit mode after successful save
@@ -1573,8 +1633,27 @@ export default function EditProfile() {
           navigation.goBack();
         }
       } catch (error) {
-        console.log("Error uploading profile:", error.response?.data || error);
-        Alert.alert("Error", "Failed to update profile. Please check your internet connection and try again.");
+        console.error("Error uploading profile:");
+        if (error.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          console.error("Response data:", error.response.data);
+          console.error("Response status:", error.response.status);
+          console.error("Response headers:", error.response.headers);
+          Alert.alert("Server Error", `Failed to update profile. Server responded with status: ${error.response.status}`);
+        } else if (error.request) {
+          // The request was made but no response was received
+          console.error("No response received:", error.request);
+          if (error.code === "ECONNABORTED") {
+            Alert.alert("Timeout Error", "The request took too long to complete. This might be due to a large file upload or slow connection. Please try again or use a smaller video file.");
+          } else {
+            Alert.alert("Network Error", "Failed to update profile. No response received from server. Please check your internet connection and try again.");
+          }
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          console.error("Error message:", error.message);
+          Alert.alert("Error", `An error occurred: ${error.message}`);
+        }
         setIsLoading(false);
       } finally {
         setIsLoading(false);
@@ -1594,37 +1673,133 @@ export default function EditProfile() {
   // Function to upload video directly to S3 using a presigned URL
   const uploadVideoToS3 = async (fileUri, presignedUrl) => {
     try {
+      console.log("\n=== S3 Direct Upload Process ===");
       console.log("Starting direct S3 upload for large video file");
       console.log("File URI:", fileUri);
       console.log("Presigned URL:", presignedUrl);
 
+      // Parse the presigned URL to get query parameters
+      const urlObj = new URL(presignedUrl);
+      console.log("S3 bucket:", urlObj.hostname);
+      console.log("S3 key path:", urlObj.pathname);
+      console.log("S3 query parameters:", urlObj.search);
+
+      // Add more detailed analysis of the presigned URL
+      console.log("Presigned URL analysis:");
+      console.log("- Protocol:", urlObj.protocol);
+      console.log("- Full hostname:", urlObj.host);
+      console.log("- Path:", urlObj.pathname);
+
+      // Parse and log query parameters individually
+      const queryParams = {};
+      urlObj.searchParams.forEach((value, key) => {
+        queryParams[key] = value;
+      });
+      console.log("- Query parameters:", JSON.stringify(queryParams, null, 2));
+
+      // Get file info to confirm size before upload
+      const fileInfo = await FileSystem.getInfoAsync(fileUri);
+      console.log("File info before upload:", JSON.stringify(fileInfo, null, 2));
+
+      if (!fileInfo.exists) {
+        console.error("File does not exist at path:", fileUri);
+        console.log("=== End S3 Direct Upload Process (File Not Found) ===\n");
+        return false;
+      }
+
+      const fileSizeMB = (fileInfo.size / (1024 * 1024)).toFixed(2);
+      console.log("File size before upload:", fileSizeMB + " MB");
+
+      // Fetch the file and create a blob
+      console.log("Fetching file and creating blob...");
       const file = await fetch(fileUri);
       const blob = await file.blob();
-      console.log("Blob size:", blob.size, "bytes");
+      const blobSizeMB = (blob.size / (1024 * 1024)).toFixed(2);
+      console.log("Blob created successfully");
+      console.log("Blob size:", blobSizeMB + " MB");
+      console.log("Blob type:", blob.type);
 
-      console.log("Sending PUT request to S3...");
-      const response = await fetch(presignedUrl, {
-        method: "PUT",
-        body: blob,
-        headers: {
-          "Content-Type": "video/mp4",
-        },
-      });
+      // Determine content type based on file extension
+      let contentType = "video/mp4";
+      if (fileUri.toLowerCase().endsWith(".mov")) {
+        contentType = "video/quicktime";
+      } else if (fileUri.toLowerCase().endsWith(".avi")) {
+        contentType = "video/x-msvideo";
+      }
 
-      console.log("S3 upload response status:", response.status);
-      console.log("S3 upload response headers:", JSON.stringify([...response.headers.entries()]));
+      console.log("Using content type for upload:", contentType);
 
-      if (response.ok) {
-        console.log("Direct S3 upload successful!");
-        return true;
-      } else {
-        console.log("Direct S3 upload failed", response);
-        const responseText = await response.text();
-        console.log("S3 error response:", responseText);
+      // Log request headers
+      const requestHeaders = {
+        "Content-Type": contentType,
+      };
+      console.log("Request headers:", JSON.stringify(requestHeaders, null, 2));
+      console.log("Sending PUT request to S3 with timeout of 120 seconds...");
+
+      // Use a longer timeout for large files
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.log("Upload timeout reached (120 seconds), aborting...");
+        controller.abort();
+      }, 120000); // 2 minute timeout
+
+      try {
+        const startTime = Date.now();
+        console.log("Upload started at:", new Date(startTime).toISOString());
+
+        const response = await fetch(presignedUrl, {
+          method: "PUT",
+          body: blob,
+          headers: requestHeaders,
+          signal: controller.signal,
+        });
+
+        const endTime = Date.now();
+        const uploadDuration = (endTime - startTime) / 1000; // in seconds
+        console.log("Upload completed at:", new Date(endTime).toISOString());
+        console.log("Upload duration:", uploadDuration.toFixed(2) + " seconds");
+        console.log("Upload speed:", (blobSizeMB / uploadDuration).toFixed(2) + " MB/s");
+
+        clearTimeout(timeoutId); // Clear the timeout if request completes
+
+        console.log("S3 upload response status:", response.status);
+        console.log("S3 upload response status text:", response.statusText);
+        console.log("S3 upload response headers:", JSON.stringify([...response.headers.entries()], null, 2));
+
+        if (response.ok) {
+          console.log("Direct S3 upload successful!");
+          console.log("=== End S3 Direct Upload Process (Success) ===\n");
+          return true;
+        } else {
+          const responseText = await response.text();
+          console.error("S3 upload failed with status:", response.status);
+          console.error("S3 error response:", responseText);
+          console.log("=== End S3 Direct Upload Process (Failed) ===\n");
+          return false;
+        }
+      } catch (fetchError) {
+        clearTimeout(timeoutId); // Clear the timeout on error
+        if (fetchError.name === "AbortError") {
+          console.error("S3 upload timed out after 120 seconds");
+        } else {
+          console.error("Fetch error during S3 upload:", fetchError);
+          console.error("Error name:", fetchError.name);
+          console.error("Error message:", fetchError.message);
+          if (fetchError.stack) {
+            console.error("Error stack:", fetchError.stack);
+          }
+        }
+        console.log("=== End S3 Direct Upload Process (Error) ===\n");
         return false;
       }
     } catch (error) {
-      console.error("Error uploading to S3:", error);
+      console.error("Error preparing file for S3 upload:", error);
+      console.error("Error name:", error.name);
+      console.error("Error message:", error.message);
+      if (error.stack) {
+        console.error("Error stack:", error.stack);
+      }
+      console.log("=== End S3 Direct Upload Process (Preparation Error) ===\n");
       return false;
     }
   };
@@ -1632,23 +1807,51 @@ export default function EditProfile() {
   // Function to get presigned URL for S3 upload
   const getPresignedUrl = async (uid) => {
     try {
+      console.log("\n=== Presigned URL Request ===");
       console.log("Requesting presigned URL for user:", uid);
-      const response = await axios.post("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/s3Link", {
+
+      const requestData = {
         user_uid: uid,
         user_video_filetype: "video/mp4",
-      });
+      };
 
-      console.log("Presigned URL API response:", JSON.stringify(response.data));
+      console.log("Request payload:", JSON.stringify(requestData, null, 2));
+
+      const response = await axios.post("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/s3Link", requestData);
+
+      console.log("Presigned URL API RAW response status:", response);
+      console.log("Presigned URL API response data:", response.data);
+      // console.log("Presigned URL API response status:", response.responseUR);
+      console.log("Presigned URL API response status:", response.status);
+      console.log("Presigned URL API response headers:", JSON.stringify(response.headers, null, 2));
+      console.log("Presigned URL API response data:", JSON.stringify(response.data, null, 2));
 
       if (response.data && response.data.url) {
         console.log("Got presigned URL:", response.data.url);
+        console.log("S3 video URL will be:", response.data.video_url);
+
+        // Add detailed analysis of the response structure
+        console.log("Presigned URL response structure: ", response.data.key);
+        // for (const key in response.data) {
+        //   console.log(`- ${key}: ${typeof response.data[file_key] === "object" ? JSON.stringify(response.data[file_key]) : response.data[file_key]}`);
+        // }
+
+        console.log("=== End Presigned URL Request ===\n");
         return response.data;
       } else {
         console.error("Invalid response format for presigned URL:", JSON.stringify(response.data));
+        console.log("=== End Presigned URL Request (Failed) ===\n");
         return null;
       }
     } catch (error) {
-      console.error("Error getting presigned URL:", error.response ? error.response.data : error.message);
+      console.error("Error getting presigned URL:");
+      if (error.response) {
+        console.error("Response status:", error.response.status);
+        console.error("Response data:", error.response.data);
+      } else {
+        console.error("Error message:", error.message);
+      }
+      console.log("=== End Presigned URL Request (Error) ===\n");
       return null;
     }
   };
@@ -1770,6 +1973,7 @@ export default function EditProfile() {
 
       // Get presigned URL
       setUploadStatus("Getting presigned URL...");
+      console.log("-------PM--------- Calling getPresignedUrl function 3");
       const presignedData = await getPresignedUrl(uid);
 
       if (!presignedData || !presignedData.url) {
@@ -1841,10 +2045,12 @@ export default function EditProfile() {
     setVideoUri(selectedVideo.uri);
     setVideoFileSize(selectedVideo.size);
     setIsVideoPlaying(false);
-    setUploadStatus(`Test video selected: ${selectedVideo.size} MB - will use regular upload when saving`);
 
     const fileSize = selectedVideo.size;
+
+    // Set the appropriate message based on file size
     if (parseFloat(fileSize) > 1) {
+      setUploadStatus(`Test video selected: ${fileSize} MB - will use S3 direct upload when saving`);
       Alert.alert("Large Test Video", `The selected test video is ${fileSize}MB, which exceeds the 1MB limit for regular uploads. It will be uploaded directly to S3 when you save your profile.`, [
         { text: "OK" },
       ]);

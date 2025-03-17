@@ -11,7 +11,8 @@ import { getProfileSteps, getProfileCompletion } from "./profileStepsState";
 import { EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY } from "@env";
 
 const GOOGLE_API_KEY = EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY;
-console.log("In My Profile:", GOOGLE_API_KEY);
+// console.log("In My Profile:", GOOGLE_API_KEY);
+console.log("--- In MyProfile.js ---");
 
 // Example placeholders for bottom navigation icons
 const BottomNav = () => {
@@ -77,6 +78,7 @@ export default function MyProfile() {
   // Fetch user data on mount/focus
   useEffect(() => {
     const fetchUserInfo = async () => {
+      console.log("In MyProfile.js, fetchUserInfo function called");
       try {
         const uid = await AsyncStorage.getItem("user_uid");
         if (!uid) {
@@ -86,7 +88,7 @@ export default function MyProfile() {
         // GET user info
         const response = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${uid}`);
         const fetched = response.data.result[0];
-        console.log("Fetched user info:", fetched);
+        // console.log("Fetched user info:", fetched);
 
         setUserData(fetched || {});
         if (fetched.user_photo_url) {
@@ -119,7 +121,7 @@ export default function MyProfile() {
             rawVideoUrl = rawVideoUrl.slice(1, -1);
           }
 
-          console.log("Cleaned video url:", rawVideoUrl);
+          // console.log("Cleaned video url:", rawVideoUrl);
           setVideoUri(rawVideoUrl);
         }
 

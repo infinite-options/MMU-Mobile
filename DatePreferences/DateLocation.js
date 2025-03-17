@@ -12,8 +12,9 @@ import MaskedView from "@react-native-masked-view/masked-view";
 // Use conditional check to ensure API key is properly loaded
 const GOOGLE_API_KEY = EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY || "";
 
+console.log("--- In DateLocation.js ---");
 // Add console log to debug API key (remove in production)
-console.log("API Key defined:", !!GOOGLE_API_KEY);
+// console.log("API Key defined:", !!GOOGLE_API_KEY);
 
 export default function DateLocation({ navigation }) {
   const route = useRoute();

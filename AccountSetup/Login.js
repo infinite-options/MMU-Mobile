@@ -12,6 +12,8 @@ import { GoogleSignin, statusCodes, GoogleSigninButton } from "@react-native-goo
 import config from "../config"; // Import config
 import AppleSignIn from "./AppleSignIn"; // Import AppleSignIn component
 
+console.log("--- In Login.js Starting Login---");
+
 // Helper function to get last two digits of a string (for debugging)
 const getLastTwoDigits = (str) => {
   if (!str) return "Not set";
@@ -47,7 +49,7 @@ export default function Login() {
   useEffect(() => {
     let configAttempts = 0;
 
-    console.log("==============>      LP Starting Google Sign-In configuration process...");
+    // console.log("==============>      LP Starting Google Sign-In configuration process...");
 
     const configureGoogleSignIn = async () => {
       configAttempts++;
@@ -58,13 +60,13 @@ export default function Login() {
 
       try {
         setIsGoogleConfiguring(true); // Set configuring state to true
-        console.log("LP from login configure useeffect .env:", process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID_DEBUG);
-        console.log("LP Configuring Google Sign-In with config:", {
-          iosClientId: config.googleClientIds.ios,
-          androidClientId: config.googleClientIds.android,
-          webClientId: config.googleClientIds.web,
-          googleURLScheme: config.googleClientIds.googleURLScheme,
-        });
+        // console.log("LP from login configure useeffect .env:", process.env.EXPO_PUBLIC_MMU_ANDROID_CLIENT_ID_DEBUG);
+        // console.log("LP Configuring Google Sign-In with config:", {
+        //   iosClientId: config.googleClientIds.ios,
+        //   androidClientId: config.googleClientIds.android,
+        //   webClientId: config.googleClientIds.web,
+        //   googleURLScheme: config.googleClientIds.googleURLScheme,
+        // });
 
         // Create Google Sign-In configuration object
         const googleSignInConfig = {
@@ -77,17 +79,18 @@ export default function Login() {
         // Add URL scheme for iOS if available
         if (Platform.OS === "ios" && config.googleClientIds.googleURLScheme) {
           googleSignInConfig.googleURLScheme = config.googleClientIds.googleURLScheme;
-          console.log(`LP Added googleURLScheme for iOS: ${config.googleClientIds.googleURLScheme}`);
+          // console.log(`LP Added googleURLScheme for iOS: ${config.googleClientIds.googleURLScheme}`);
+          console.log("Configured for iOS");
         }
 
-        console.log("LP googleSignInConfig:", googleSignInConfig);
+        // console.log("LP googleSignInConfig:", googleSignInConfig);
 
         // Configure Google Sign-In
-        console.log("LP Calling GoogleSignin.configure()...");
+        // console.log("LP Calling GoogleSignin.configure()...");
         await GoogleSignin.configure(googleSignInConfig);
-        console.log("LP GoogleSignin.configure() completed successfully");
+        // console.log("LP GoogleSignin.configure() completed successfully");
 
-        console.log("LP About to update states: Setting isGoogleConfigured=true, isGoogleConfiguring=false");
+        // console.log("LP About to update states: Setting isGoogleConfigured=true, isGoogleConfiguring=false");
         setIsGoogleConfigured(true);
         setIsGoogleConfiguring(false); // Configuration complete
 
@@ -96,7 +99,7 @@ export default function Login() {
         setTimeout(checkGoogleStates, 500);
         setTimeout(checkGoogleStates, 1000);
 
-        console.log("LP Google Sign-In configured successfully - isGoogleConfigured set to TRUE");
+        // console.log("LP Google Sign-In configured successfully - isGoogleConfigured set to TRUE");
       } catch (error) {
         console.error(`LP Google Sign-In configuration error (attempt ${configAttempts}/${maxAttempts}):`, error);
 
@@ -136,10 +139,10 @@ export default function Login() {
   const handleGoogleSignIn = async () => {
     console.log("LP Google button clicked - handleGoogleSignIn called");
 
-    console.log("LP handleGoogleSignIn called - Current states:", {
-      isGoogleConfiguring,
-      isGoogleConfigured,
-    });
+    // console.log("LP handleGoogleSignIn called - Current states:", {
+    //   isGoogleConfiguring,
+    //   isGoogleConfigured,
+    // });
 
     // Check current states
     checkGoogleStates();
@@ -172,12 +175,12 @@ export default function Login() {
       return;
     }
 
-    console.log("LP Google Sign-In configuration check passed, proceeding with sign-in");
-    console.log("==============>  LP Starting Google sign in process...");
-    console.log("==============>  LP Google Sign-In States:", {
-      isGoogleConfigured,
-      isGoogleConfiguring,
-    });
+    // console.log("LP Google Sign-In configuration check passed, proceeding with sign-in");
+    // console.log("==============>  LP Starting Google sign in process...");
+    // console.log("==============>  LP Google Sign-In States:", {
+    //   isGoogleConfigured,
+    //   isGoogleConfiguring,
+    // });
 
     try {
       setShowSpinner(true);
@@ -197,7 +200,7 @@ export default function Login() {
         }
       }
 
-      console.log("==============>   LP Starting Google sign in process...");
+      // console.log("==============>   LP Starting Google sign in process...");
 
       // First try to sign out to ensure a clean state
       try {
@@ -211,10 +214,11 @@ export default function Login() {
       // Sign in - this is the part that was failing before
       let userInfo;
       try {
-        console.log("==============> LP Starting Google sign in process in try block...");
+        // console.log("==============> LP Starting Google sign in process in try block...");
         userInfo = await GoogleSignin.signIn();
         // console.log("Sign-in successful:", userInfo);
-        console.log("LP Google Sign-In successful", JSON.stringify(userInfo, null, 2));
+        // console.log("LP Google Sign-In successful", JSON.stringify(userInfo, null, 2));
+        console.log("Login.js,LP Google Sign-In successful");
       } catch (signInError) {
         console.error("LP Sign in specific error:", signInError);
 
@@ -259,13 +263,14 @@ export default function Login() {
       // Process Google login with backend
       const { idToken, user } = userInfo;
 
-      console.log("LP Sending data to backend:", {
-        tokenLength: idToken?.length,
-        email: user.email,
-        givenName: user.givenName,
-        familyName: user.familyName,
-        hasPhoto: !!user.photo,
-      });
+      // console.log("LP Sending data to backend:", {
+      //   tokenLength: idToken?.length,
+      //   email: user.email,
+      //   givenName: user.givenName,
+      //   familyName: user.familyName,
+      //   hasPhoto: !!user.photo,
+      // });
+      console.log("Login.js, Requesting userinfo given successful Google Login");
 
       // Call your backend endpoint for Google login - updated to match GoogleLogin.js
       const url = `https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialLogin/MMU/${user.email}`;
@@ -279,7 +284,8 @@ export default function Login() {
         },
       });
 
-      console.log("LP Backend response:", response.data);
+      // console.log("LP Backend response:", response.data);
+      // console.log("In Login.js, Login Successful");
 
       // Handle response - updated to match actual response format
       if (response.data && response.data.message === "Correct Email" && Array.isArray(response.data.result) && response.data.result.length >= 1) {

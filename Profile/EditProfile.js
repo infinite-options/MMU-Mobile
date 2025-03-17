@@ -44,8 +44,9 @@ import { Asset } from "expo-asset";
 // Fallback to a placeholder to prevent crashes - replace with your actual key when testing
 const GOOGLE_API_KEY = Constants.expoConfig?.extra?.googleApiKey || process.env.EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY || "YOUR_GOOGLE_API_KEY_HERE";
 
+console.log("--- In EditProfile.js ---");
 // Add this debug line below to see if key is loaded
-console.log("Google API Key status:", GOOGLE_API_KEY ? "Key found (length: " + GOOGLE_API_KEY.length + ")" : "No key found");
+// console.log("Google API Key status:", GOOGLE_API_KEY ? "Key found (length: " + GOOGLE_API_KEY.length + ")" : "No key found");
 
 // Add axios default configuration
 axios.defaults.timeout = 10000; // 10 seconds timeout

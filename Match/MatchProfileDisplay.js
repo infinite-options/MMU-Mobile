@@ -9,7 +9,7 @@ import Slider from "@react-native-community/slider";
 
 import { fetchUserInfo } from "../Api.js";
 
-console.log("--- MatchProfileDisplay ---");
+console.log("--- In MatchProfileDisplay.js ---");
 
 const heightImg = require("../src/Assets/Images/height.png");
 const genderImg = require("../src/Assets/Images/gender.png");

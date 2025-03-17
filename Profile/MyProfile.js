@@ -273,7 +273,6 @@ export default function MyProfile() {
     switch (item) {
       case "Edit Profile":
         navigation.navigate("EditProfile");
-        console.log("-------PM--------- Navigating back from Edit Profile to My Profile");
         break;
       case "Settings":
         navigation.navigate("SettingsScreen");
@@ -489,7 +488,7 @@ export default function MyProfile() {
                   )}
                 </>
               ) : (
-                <Pressable style={styles.emptyPhotoBox}>
+                <Pressable style={styles.emptyPhotoBox} onPress={() => navigation.navigate("EditProfile")}>
                   <Ionicons name='add' size={24} color='red' />
                 </Pressable>
               )}

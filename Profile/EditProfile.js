@@ -117,6 +117,7 @@ const isValidDate = (date) => {
 };
 
 export default function EditProfile() {
+  console.log("---- In EditProfile.js Function----");
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const route = useNavigation().getState().routes[useNavigation().getState().index];
@@ -476,7 +477,7 @@ export default function EditProfile() {
         return;
       }
 
-      // Create axios instance with specific config
+      // Gets profile data
       const api = axios.create({
         baseURL: "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev",
         timeout: 10000,
@@ -525,6 +526,7 @@ export default function EditProfile() {
         parsedDateInterests = [];
       }
 
+      // Sets user data
       setUserData(fetched || {});
       const newFormValues = {
         firstName: fetched.user_first_name || "",
@@ -747,7 +749,7 @@ export default function EditProfile() {
 
   const handleRemovePhoto = (slotIndex) => {
     const photoToRemove = photos[slotIndex];
-    console.log("\n=== Removing Photo ===");
+    console.log("=== Removing Photo ===");
     console.log("Removing photo at index:", slotIndex);
     console.log("Photo being removed:", photoToRemove);
 
@@ -804,6 +806,7 @@ export default function EditProfile() {
         // Get and set the file size
         setUploadStatus("Calculating file size...");
         const fileSize = await getFileSizeInMB(uri);
+        console.log("Video file size:", fileSize);
         setVideoFileSize(fileSize);
         setUploadStatus(`Video selected: ${fileSize} MB`);
 
@@ -1035,10 +1038,13 @@ export default function EditProfile() {
 
   // Simplify the checkForChanges function and add more logging
   const checkForChanges = useCallback(() => {
-    console.log("Running checkForChanges");
+    // Only log in development mode and when explicitly enabled
+    const shouldLog = false; // Set to true only when debugging is needed
+
+    if (shouldLog) console.log("Running checkForChanges");
 
     if (!originalValues || !formValues) {
-      console.log("Missing originalValues or formValues");
+      if (shouldLog) console.log("Missing originalValues or formValues");
       return false;
     }
 
@@ -1065,7 +1071,7 @@ export default function EditProfile() {
     const originalVideoUrl = userData?.user_video_url ? (typeof userData.user_video_url === "string" ? userData.user_video_url.replace(/^"|"$/g, "") : userData.user_video_url) : null;
     const videoChanged = videoUri !== originalVideoUrl;
 
-    console.log("Media changed?", { photosChanged, hasDeletedPhotos, videoChanged });
+    if (shouldLog) console.log("Media changed?", { hasDeletedPhotos, photosChanged, videoChanged });
 
     // Check form values with explicit debug logs
     let formValuesChanged = false;
@@ -1090,10 +1096,10 @@ export default function EditProfile() {
       }
     });
 
-    console.log("Form values changed?", formValuesChanged, changedFields);
+    if (shouldLog) console.log("Form values changed?", formValuesChanged, changedFields);
 
     const result = formValuesChanged || photosChanged || hasDeletedPhotos || videoChanged;
-    console.log("Final hasChanges result:", result);
+    if (shouldLog) console.log("Final hasChanges result:", result);
     return result;
   }, [formValues, originalValues, photos, deletedPhotos, videoUri, userData]);
 
@@ -1110,23 +1116,27 @@ export default function EditProfile() {
     }
   }, [userData]);
 
-  // Only check for changes when all data is properly loaded
+  // Consolidated useEffect to check for changes - only runs when necessary
   useEffect(() => {
+    // Only check for changes when data is loaded and we're not in the initial render
     if (userDataLoaded && originalValues) {
-      console.log("Checking for changes after data loaded");
-      const hasChangesResult = checkForChanges();
-      console.log("Setting hasChanges to:", hasChangesResult);
-      setHasChanges(hasChangesResult);
-    }
-  }, [userDataLoaded, originalValues, checkForChanges]);
+      // Use a debounced version to avoid excessive checks
+      const timer = setTimeout(() => {
+        const hasChangesResult = checkForChanges();
+        // Only update state if the result has changed to avoid rerenders
+        setHasChanges((prevHasChanges) => {
+          if (prevHasChanges !== hasChangesResult) {
+            const shouldLog = false; // Set to true only when debugging is needed
+            if (shouldLog) console.log("Setting hasChanges to:", hasChangesResult);
+            return hasChangesResult;
+          }
+          return prevHasChanges;
+        });
+      }, 300); // 300ms debounce
 
-  // Add another useEffect to check whenever form values change
-  useEffect(() => {
-    if (userDataLoaded && originalValues) {
-      console.log("Form values changed, checking for changes");
-      setHasChanges(checkForChanges());
+      return () => clearTimeout(timer);
     }
-  }, [userDataLoaded, originalValues, formValues, photos, videoUri, interests, dateTypes]);
+  }, [userDataLoaded, originalValues, formValues, photos, videoUri, interests, dateTypes, checkForChanges]);
 
   // Toggle a single interest
   const toggleInterest = (interest) => {
@@ -1202,7 +1212,7 @@ export default function EditProfile() {
         const shouldProceed = await new Promise((resolve) => {
           Alert.alert(
             "Large File Size Warning",
-            `The total size of your media is ${totalSize}MB, which exceeds the recommended 5MB limit. This may cause slow uploads and performance issues. Do you want to continue?`,
+            `The total size of your media is ${totalSize}MB, which exceeds the recommended 5MB limit. 1 This may cause slow uploads and performance issues. Do you want to continue?`,
             [
               { text: "Cancel", onPress: () => resolve(false), style: "cancel" },
               { text: "Continue Anyway", onPress: () => resolve(true) },
@@ -1244,11 +1254,11 @@ export default function EditProfile() {
         const originalPhotos = userData.user_photo_url ? JSON.parse(userData.user_photo_url) : [];
         const photoUrls = photos.filter((uri) => uri !== null && uri !== undefined);
 
-        console.log("\n=== Debug Photo Arrays ===");
+        console.log("=== Debug Photo Arrays ===");
         console.log("Original photos array:", originalPhotos);
         console.log("Current photos array:", photoUrls);
         console.log("Deleted photos array:", deletedPhotos);
-        console.log("=== End Debug ===\n");
+        console.log("=== End Debug ===");
 
         // Create FormData object
         const uploadData = new FormData();
@@ -1275,7 +1285,7 @@ export default function EditProfile() {
           }
         });
 
-        console.log("\n=== Photo Upload Debug ===");
+        console.log("=== Photo Upload Debug ===");
         console.log("S3 Photos to keep:", s3Photos);
         console.log("New Local Photos to upload:", newLocalPhotos);
         console.log("S3 Photos to delete:", deletedPhotos);
@@ -1300,19 +1310,19 @@ export default function EditProfile() {
           });
         });
 
-        console.log("=== End Photo Upload Debug ===\n");
+        console.log("=== End Photo Upload Debug ===");
 
         // Handle video upload
-        console.log("\n=== Video Upload Debug ===");
+        console.log("=== Video Upload Debug ===");
         const originalVideoUrl = userData.user_video_url ? (typeof userData.user_video_url === "string" ? userData.user_video_url.replace(/^"|"$/g, "") : userData.user_video_url) : null;
         console.log("Original video URL:", originalVideoUrl);
         console.log("Current video URL:", videoUri);
 
         // Check if video was deleted or changed
         if (originalVideoUrl && !videoUri) {
-          // Video was deleted
+          // New Video was deleted
         } else if (videoUri && videoUri !== originalVideoUrl) {
-          // Check if it's a test video
+          // New Video. Check if it's a test video
           if (isTestVideo(videoUri)) {
             console.log("\n=== Test Video Upload Process ===");
             console.log("Using test video for upload:", videoUri);
@@ -1459,7 +1469,7 @@ export default function EditProfile() {
             console.log("=== End Existing S3 Video ===\n");
           }
         }
-        console.log("=== End Video Upload Debug ===\n");
+        console.log("=== End Video Upload Debug ===");
 
         // Create an object of the original values from userData
         const originalValues = {
@@ -1520,13 +1530,13 @@ export default function EditProfile() {
         };
 
         // Debug log for values before sending
-        console.log("\n=== Original Values ===");
-        console.log(JSON.stringify(originalValues, null, 2));
-        console.log("\n=== New Values ===");
-        console.log(JSON.stringify(newValues, null, 2));
+        // console.log("=== Original Values ===");
+        // console.log(JSON.stringify(originalValues, null, 2));
+        // console.log("=== New Values ===");
+        // console.log(JSON.stringify(newValues, null, 2));
 
         // Only add fields that have changed to the FormData
-        console.log("\n=== Changed Fields ===");
+        console.log("=== Changed Fields ===");
         Object.entries(newValues).forEach(([key, value]) => {
           const originalValue = originalValues[key];
 
@@ -1549,7 +1559,7 @@ export default function EditProfile() {
         });
 
         // Log the final FormData contents
-        console.log("\n=== Final FormData Contents ===");
+        console.log("=== Final FormData Contents ===");
         for (let [key, value] of uploadData._parts) {
           console.log(`${key}: ${value}`);
         }
@@ -1590,7 +1600,7 @@ export default function EditProfile() {
         }
 
         // Make the upload request
-        console.log("\n=== Profile Update API Request ===");
+        console.log("=== Profile Update API Request ===");
         console.log("Making API request to update profile with timeout of 120 seconds...");
         console.log("API endpoint: https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo");
 
@@ -1625,7 +1635,7 @@ export default function EditProfile() {
         console.log("Response status:", response.status);
         console.log("Response headers:", JSON.stringify(response.headers, null, 2));
         console.log("Response data:", JSON.stringify(response.data, null, 2));
-        console.log("=== End Profile Update API Request ===\n");
+        console.log("=== End Profile Update API Request ===");
 
         if (response.status === 200) {
           setIsEditMode(false); // Exit edit mode after successful save
@@ -1674,7 +1684,7 @@ export default function EditProfile() {
   // Function to upload video directly to S3 using a presigned URL
   const uploadVideoToS3 = async (fileUri, presignedUrl) => {
     try {
-      console.log("\n=== S3 Direct Upload Process ===");
+      console.log("=== S3 Direct Upload Process ===");
       console.log("Starting direct S3 upload for large video file");
       console.log("File URI:", fileUri);
       console.log("Presigned URL:", presignedUrl);
@@ -1704,7 +1714,7 @@ export default function EditProfile() {
 
       if (!fileInfo.exists) {
         console.error("File does not exist at path:", fileUri);
-        console.log("=== End S3 Direct Upload Process (File Not Found) ===\n");
+        console.log("=== End S3 Direct Upload Process (File Not Found) ===");
         return false;
       }
 
@@ -1829,7 +1839,7 @@ export default function EditProfile() {
 
       if (response.data && response.data.url) {
         console.log("Got presigned URL:", response.data.url);
-        console.log("S3 video URL will be:", response.data.video_url);
+        console.log("S3 video URL will be:", response.data.videoUrl);
 
         // Add detailed analysis of the response structure
         console.log("Presigned URL response structure: ", response.data.key);
@@ -1837,7 +1847,7 @@ export default function EditProfile() {
         //   console.log(`- ${key}: ${typeof response.data[file_key] === "object" ? JSON.stringify(response.data[file_key]) : response.data[file_key]}`);
         // }
 
-        console.log("=== End Presigned URL Request ===\n");
+        console.log("=== End Presigned URL Request ===");
         return response.data;
       } else {
         console.error("Invalid response format for presigned URL:", JSON.stringify(response.data));
@@ -1927,7 +1937,7 @@ export default function EditProfile() {
 
     // Check if total size exceeds 5MB
     if (totalSize > 5) {
-      Alert.alert("Large File Size", `The total size of your media is ${totalSize}MB, which exceeds the recommended 5MB limit. This may cause slow uploads and performance issues.`, [
+      Alert.alert("Large File Size", `The total size of your media is ${totalSize}MB, which exceeds the recommended 5MB limit. 2 This may cause slow uploads and performance issues.`, [
         { text: "OK", onPress: () => console.log("User acknowledged large file size") },
       ]);
     }
@@ -2065,7 +2075,11 @@ export default function EditProfile() {
     if (!uri) return null;
 
     // Find the test video by checking if the URI contains the filename
-    const testVideo = testVideos.find((video) => uri.includes(video.uri.split("/").pop()));
+    const testVideo = testVideos.find((video) => {
+      // Add null check for video.uri
+      if (!video.uri) return false;
+      return uri.includes(video.uri.split("/").pop());
+    });
 
     if (testVideo) {
       return testVideo.size;
@@ -2077,7 +2091,11 @@ export default function EditProfile() {
   const isTestVideo = (uri) => {
     if (!uri) return false;
     // Check if the URI contains any of the test video filenames
-    return testVideos.some((video) => uri.includes(video.uri.split("/").pop()));
+    return testVideos.some((video) => {
+      // Add null check for video.uri
+      if (!video.uri) return false;
+      return uri.includes(video.uri.split("/").pop());
+    });
   };
 
   return (

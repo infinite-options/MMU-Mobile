@@ -6,6 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import config from "../config"; // Fix the import path
 
 const AppleSignIn = ({ onSignIn, onError }) => {
+  console.log("--- In AppleSignIn.js ---");
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
 
   // Check if Apple Authentication is available
@@ -25,8 +26,8 @@ const AppleSignIn = ({ onSignIn, onError }) => {
   }, []);
 
   const handleAppleSignIn = async () => {
-    console.log("Apple button clicked - handleAppleSignIn called");
-    console.log("Platform:", Platform.OS, "isAppleAuthAvailable:", isAppleAuthAvailable);
+    console.log("--- In AppleSignIn.js, Apple button clicked - handleAppleSignIn called");
+    // console.log("Platform:", Platform.OS, "isAppleAuthAvailable:", isAppleAuthAvailable);
 
     try {
       if (Platform.OS === "ios" && isAppleAuthAvailable) {
@@ -66,6 +67,7 @@ const AppleSignIn = ({ onSignIn, onError }) => {
           idToken: credential.identityToken,
         };
 
+        console.log("--- In AppleSignIn.js, Apple Sign-In successful");
         onSignIn(userInfo);
       } else {
         // For Android or iOS without Apple Authentication, open web-based Sign in with Apple
@@ -90,6 +92,7 @@ const AppleSignIn = ({ onSignIn, onError }) => {
             },
             idToken: "token_from_response",
           };
+          console.log("--- In AppleSignIn.js, Apple Sign-In successful (web)");
           onSignIn(userInfo);
         } else {
           console.log("Web authentication cancelled or failed");
@@ -127,7 +130,7 @@ const AppleSignIn = ({ onSignIn, onError }) => {
       <TouchableOpacity
         style={styles.androidAppleButton}
         onPress={() => {
-          console.log("Apple icon TouchableOpacity pressed directly");
+          // console.log("Apple icon TouchableOpacity pressed directly");
           handleAppleSignIn();
         }}
       >

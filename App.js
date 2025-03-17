@@ -98,9 +98,18 @@ export default function App() {
 
   // Once fonts are loaded, hide the splash screen
   useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync();
+    async function hideSplash() {
+      if (fontsLoaded) {
+        try {
+          await SplashScreen.hideAsync();
+        } catch (e) {
+          // Ignore the error about no native splash screen
+          console.log("SplashScreen.hideAsync() error:", e);
+        }
+      }
     }
+
+    hideSplash();
   }, [fontsLoaded]);
 
   // If fonts aren't loaded yet, return null or a temporary loading component

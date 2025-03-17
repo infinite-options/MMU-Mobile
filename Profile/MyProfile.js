@@ -12,7 +12,7 @@ import { EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY } from "@env";
 
 const GOOGLE_API_KEY = EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY;
 // console.log("In My Profile:", GOOGLE_API_KEY);
-console.log("--- In MyProfile.js ---");
+console.log("-- In MyProfile.js ---");
 
 // Example placeholders for bottom navigation icons
 const BottomNav = () => {
@@ -78,7 +78,7 @@ export default function MyProfile() {
   // Fetch user data on mount/focus
   useEffect(() => {
     const fetchUserInfo = async () => {
-      console.log("In MyProfile.js, fetchUserInfo function called");
+      console.log("-- In MyProfile.js, Requesting userinfo given successful Login");
       try {
         const uid = await AsyncStorage.getItem("user_uid");
         if (!uid) {

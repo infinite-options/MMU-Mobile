@@ -12,7 +12,7 @@ import { GoogleSignin, statusCodes, GoogleSigninButton } from "@react-native-goo
 import config from "../config"; // Import config
 import AppleSignIn from "./AppleSignIn"; // Import AppleSignIn component
 
-console.log("--- In Login.js Starting Login---");
+console.log("- In Login.js Starting Login---");
 
 // Helper function to get last two digits of a string (for debugging)
 const getLastTwoDigits = (str) => {
@@ -80,7 +80,7 @@ export default function Login() {
         if (Platform.OS === "ios" && config.googleClientIds.googleURLScheme) {
           googleSignInConfig.googleURLScheme = config.googleClientIds.googleURLScheme;
           // console.log(`LP Added googleURLScheme for iOS: ${config.googleClientIds.googleURLScheme}`);
-          console.log("Configured for iOS");
+          console.log("- In Login.js Configured for iOS---");
         }
 
         // console.log("LP googleSignInConfig:", googleSignInConfig);
@@ -94,7 +94,7 @@ export default function Login() {
         setIsGoogleConfigured(true);
         setIsGoogleConfiguring(false); // Configuration complete
 
-        // Check states after a delay
+        // Check states after a delay to verify that Google Sign-In was set up correctly
         setTimeout(checkGoogleStates, 100);
         setTimeout(checkGoogleStates, 500);
         setTimeout(checkGoogleStates, 1000);
@@ -218,7 +218,7 @@ export default function Login() {
         userInfo = await GoogleSignin.signIn();
         // console.log("Sign-in successful:", userInfo);
         // console.log("LP Google Sign-In successful", JSON.stringify(userInfo, null, 2));
-        console.log("Login.js,LP Google Sign-In successful");
+        console.log("- In Login.js, LP Google Sign-In successful");
       } catch (signInError) {
         console.error("LP Sign in specific error:", signInError);
 
@@ -270,10 +270,11 @@ export default function Login() {
       //   familyName: user.familyName,
       //   hasPhoto: !!user.photo,
       // });
-      console.log("Login.js, Requesting userinfo given successful Google Login");
+      console.log("- In Login.js, Requesting user uid given successful Google Login");
 
       // Call your backend endpoint for Google login - updated to match GoogleLogin.js
       const url = `https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialLogin/MMU/${user.email}`;
+      // console.log("- In Login.js, Calling backend endpoint:", url);
       const response = await axios.get(url, {
         params: {
           id_token: idToken,
@@ -326,8 +327,8 @@ export default function Login() {
 
   // Handle Apple Sign In
   const handleAppleSignIn = async (userInfo) => {
-    console.log("LP handleAppleSignIn callback triggered in Login.js");
-    console.log("LP handleAppleSignIn called with userInfo:", JSON.stringify(userInfo, null, 2));
+    console.log("- In Login.js, LP handleAppleSignIn callback triggered");
+    // console.log("LP handleAppleSignIn called with userInfo:", JSON.stringify(userInfo, null, 2));
 
     try {
       setShowSpinner(true);
@@ -335,38 +336,14 @@ export default function Login() {
       // Extract user data from Apple Sign In response
       const { user, idToken } = userInfo;
 
-      console.log("LP Apple User ID:", user.id);
-      console.log("LP Apple User Email:", user.email);
-      console.log("LP Apple User Name:", user.name);
-      console.log("LP Apple ID Token Length:", idToken ? idToken.length : 0);
+      // console.log("LP Apple User ID:", user.id);
+      // console.log("LP Apple User Email:", user.email);
+      // console.log("LP Apple User Name:", user.name);
+      // console.log("LP Apple ID Token Length:", idToken ? idToken.length : 0);
 
-      // Call the appleLogin endpoint with the user ID
-      // const appleLoginEndpoint = "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/appleLogin";
-      // console.log("LP Calling appleLogin endpoint with ID:", user.id);
-
-      // const response = await axios.get(url, {
-      //   params: {
-      //     id_token: idToken,
-      //   },
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //     "Access-Control-Allow-Origin": "*",
-      //   },
-      // });
-
-      // console.log("LP Backend response for Apple Sign In:", response.data);
-
-      // // Handle response
-      // if (response.data && response.data.message === "Correct Email" && Array.isArray(response.data.result) && response.data.result.length >= 1) {
-      //   // Store user data in AsyncStorage
-      //   const user_uid = response.data.result[0];
-      //   const user_email_id = user.email;
-
-      //   await AsyncStorage.setItem("user_uid", user_uid);
-      //   await AsyncStorage.setItem("user_email_id", user_email_id);
       // Call the appleLogin endpoint with the user ID
       const appleLoginEndpoint = "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/appleLogin";
-      console.log("LP Calling appleLogin endpoint with ID:", user.id);
+      // console.log("LP Calling appleLogin endpoint with ID:", user.id);
 
       const response = await axios.post(
         appleLoginEndpoint,
@@ -379,7 +356,7 @@ export default function Login() {
         }
       );
 
-      console.log("LP Apple Login endpoint response:", response.data);
+      // console.log("LP Apple Login endpoint response:", response.data);
 
       // Check if the response contains valid user data
       if (response.data?.result?.[0]?.user_uid) {

@@ -91,12 +91,15 @@ export default function AddMediaScreen({ navigation }) {
       if (fetchedData.user_video_url) {
         let rawVideoUrl = fetchedData.user_video_url;
 
-        // Attempt to parse if it looks like a JSON string
-        try {
-          rawVideoUrl = JSON.parse(rawVideoUrl);
-          // e.g. "\"https://s3.us-west-1.amazonaws.com/...\"" -> "https://s3.us-west-1.amazonaws.com/..."
-        } catch (err) {
-          console.warn("Could not JSON-parse user_video_url. Using as-is:", err);
+        // Check if the URL needs parsing (only try to parse if it looks like a JSON string)
+        if (typeof rawVideoUrl === "string" && (rawVideoUrl.startsWith('"') || rawVideoUrl.startsWith("["))) {
+          try {
+            rawVideoUrl = JSON.parse(rawVideoUrl);
+            // e.g. "\"https://s3.us-west-1.amazonaws.com/...\"" -> "https://s3.us-west-1.amazonaws.com/..."
+          } catch (err) {
+            console.warn("Could not JSON-parse user_video_url. Using as-is:", err);
+            // Continue with the raw string
+          }
         }
 
         // If there's still extra quotes, you can remove them manually:

@@ -496,12 +496,15 @@ export default function UserProfile() {
   // Parse userInfo.user_video_url if it's stored as a JSON string
   let videoUrl = userInfo?.user_video_url;
   if (videoUrl) {
-    try {
-      // Some APIs return it with quotes or as a raw string. Adjust as needed:
-      videoUrl = JSON.parse(videoUrl); // remove if your string is already plain
-    } catch (e) {
-      console.error("Invalid video URL format:", e);
-      videoUrl = userInfo.user_video_url.replace(/^"|"$/g, "");
+    // Check if the URL needs parsing (only try to parse if it looks like a JSON string)
+    if (typeof videoUrl === "string" && (videoUrl.startsWith('"') || videoUrl.startsWith("["))) {
+      try {
+        // Some APIs return it with quotes or as a raw string. Adjust as needed:
+        videoUrl = JSON.parse(videoUrl);
+      } catch (e) {
+        console.error("Invalid video URL format:", e);
+        videoUrl = userInfo.user_video_url.replace(/^"|"$/g, "");
+      }
     }
   }
 

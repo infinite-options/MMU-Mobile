@@ -1,29 +1,29 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useState } from "react";
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fetchUserInfo } from "../Api.js";
-import { Video } from 'expo-av';
+import { Video } from "expo-av";
 // Import images
-const profile = require('../src/Assets/Images/profile.png');
-const setting = require('../src/Assets/Images/setting.png');
-const card = require('../src/Assets/Images/card.png');
-const search = require('../src/Assets/Images/search.png');
-const group = require('../src/Assets/Images/group.png');
-const upload = require('../src/Assets/Images/upload.png');
-const heightImg = require('../src/Assets/Images/height.png');
-const genderImg = require('../src/Assets/Images/gender.png');
-const faith = require('../src/Assets/Images/faith.png');
-const star = require('../src/Assets/Images/star.png');
-const multi = require('../src/Assets/Images/multi.png');
-const hat = require('../src/Assets/Images/hat.png');
-const heartImg = require('../src/Assets/Images/heart.png');
-const jobImg = require('../src/Assets/Images/job.png');
-const drinkImg = require('../src/Assets/Images/drink.png');
-const smokeImg = require('../src/Assets/Images/smoke.png');
-const flagImg = require('../src/Assets/Images/flag.png');
-const diamond = require('../src/Assets/Images/diamond.png');
-const time = require('../src/Assets/Images/time.png');
+const profile = require("../src/Assets/Images/profile.png");
+const setting = require("../src/Assets/Images/setting.png");
+const card = require("../src/Assets/Images/card.png");
+const search = require("../src/Assets/Images/search.png");
+const group = require("../src/Assets/Images/group.png");
+const upload = require("../src/Assets/Images/upload.png");
+const heightImg = require("../src/Assets/Images/height.png");
+const genderImg = require("../src/Assets/Images/gender.png");
+const faith = require("../src/Assets/Images/faith.png");
+const star = require("../src/Assets/Images/star.png");
+const multi = require("../src/Assets/Images/multi.png");
+const hat = require("../src/Assets/Images/hat.png");
+const heartImg = require("../src/Assets/Images/heart.png");
+const jobImg = require("../src/Assets/Images/job.png");
+const drinkImg = require("../src/Assets/Images/drink.png");
+const smokeImg = require("../src/Assets/Images/smoke.png");
+const flagImg = require("../src/Assets/Images/flag.png");
+const diamond = require("../src/Assets/Images/diamond.png");
+const time = require("../src/Assets/Images/time.png");
 
 const AccountInfo = ({ img, info }) => (
   <View style={styles.accountInfoContainer}>
@@ -42,7 +42,7 @@ const Profile = () => {
     let isMounted = true;
     const fetchData = async () => {
       try {
-        const uid = await AsyncStorage.getItem('user_uid');
+        const uid = await AsyncStorage.getItem("user_uid");
         const data = await fetchUserInfo(uid);
         if (isMounted) {
           setUserInfo(data);
@@ -50,7 +50,7 @@ const Profile = () => {
       } catch (error) {
         if (isMounted) {
           setError(error.message);
-          console.error('Error fetching userInfo:', error);
+          console.error("Error fetching userInfo:", error);
         }
       } finally {
         if (isMounted) {
@@ -69,31 +69,39 @@ const Profile = () => {
     return <Text>Loading...</Text>;
   }
 
-  const handleSetting = () =>{
-    navigation .navigate ("AccountDetails")
-  }
+  const handleSetting = () => {
+    navigation.navigate("AccountDetails");
+  };
   const handleUpdate = () => {
-    navigation.navigate('AccountSetup3Create');
+    navigation.navigate("AccountSetup3Create");
   };
 
   const handlePreferences = () => {
-    navigation.navigate('MatchPreferences');
+    navigation.navigate("MatchPreferences");
   };
 
   const handleSelections = () => {
-    navigation.navigate('AccountSetup3Create');
+    navigation.navigate("AccountSetup3Create");
   };
 
   const handleUpl = () => {
     navigation.navigate("AccountSetup5Create");
   };
 
-  const interestArray = userInfo?.user_general_interests?.split(',').map(item => item.trim()) || [];
+  const interestArray = userInfo?.user_general_interests?.split(",").map((item) => item.trim()) || [];
   const openTo = userInfo?.user_open_to ? JSON.parse(userInfo.user_open_to) : [];
   const images = userInfo?.user_photo_url ? JSON.parse(userInfo.user_photo_url) : [];
   let videoUrl = userInfo?.user_video_url;
   if (videoUrl) {
-    videoUrl = JSON.parse(videoUrl); // Remove escaped quotes from the URL string
+    // Check if the URL needs parsing (only try to parse if it looks like a JSON string)
+    if (typeof videoUrl === "string" && (videoUrl.startsWith('"') || videoUrl.startsWith("["))) {
+      try {
+        videoUrl = JSON.parse(videoUrl);
+      } catch (e) {
+        console.error("Invalid video URL format:", e);
+        // Continue with the raw string
+      }
+    }
   }
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -115,25 +123,19 @@ const Profile = () => {
         {images.slice(0, 3).map((imgUrl, index) => (
           <Image key={index} source={{ uri: imgUrl }} style={styles.image} />
         ))}
-        
       </View>
-      {videoUrl ? (
-        <Video
-          source={{ uri: videoUrl }}
-          style={styles.video}
-          useNativeControls
-          resizeMode="contain"
-        />
-      ) : (
-        <Text style={styles.noVideoText}>No video available</Text>
-      )}
+      {videoUrl ? <Video source={{ uri: videoUrl }} style={styles.video} useNativeControls resizeMode='contain' /> : <Text style={styles.noVideoText}>No video available</Text>}
       <TouchableOpacity onPress={handleUpl} style={styles.uploadButton}>
         <Text style={styles.uploadButtonText}>Upload</Text>
         <Image source={upload} style={styles.uploadButtonImage} />
       </TouchableOpacity>
 
-      <Text style={styles.name}>{userInfo.user_first_name} {userInfo.user_last_name}</Text>
-      <Text style={styles.subtitle}>{userInfo.user_age} - {userInfo.user_gender} - {userInfo.user_suburb}</Text>
+      <Text style={styles.name}>
+        {userInfo.user_first_name} {userInfo.user_last_name}
+      </Text>
+      <Text style={styles.subtitle}>
+        {userInfo.user_age} - {userInfo.user_gender} - {userInfo.user_suburb}
+      </Text>
 
       <Text style={styles.subtitle}>Interests</Text>
       <View style={styles.interestsContainer}>
@@ -152,7 +154,7 @@ const Profile = () => {
       <AccountInfo img={faith} info={userInfo.user_religion} />
       <AccountInfo img={star} info={userInfo.user_star_sign} />
       <AccountInfo img={multi} info={userInfo.user_sexuality} />
-      <AccountInfo img={multi} info={openTo.join(', ')} />
+      <AccountInfo img={multi} info={openTo.join(", ")} />
       <AccountInfo img={hat} info={userInfo.user_education} />
       <AccountInfo img={heartImg} info={userInfo.user_body_composition} />
       <AccountInfo img={jobImg} info={userInfo.user_job} />
@@ -165,7 +167,7 @@ const Profile = () => {
           <Text style={styles.updateButtonText}>Update Profile</Text>
         </TouchableOpacity>
         <View style={styles.footerIcons}>
-          <TouchableOpacity  onPress = {handleSetting} style={styles.footerIconButton}>
+          <TouchableOpacity onPress={handleSetting} style={styles.footerIconButton}>
             <Image source={setting} style={styles.footerIcon} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.footerIconButton}>
@@ -189,12 +191,12 @@ const Profile = () => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     padding: 16,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 16,
   },
   iconButton: {
@@ -206,30 +208,30 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 30,
-    textAlign: 'center',
+    textAlign: "center",
     marginVertical: 16,
   },
   imageContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 16,
   },
   image: {
-    width: '48%',
+    width: "48%",
     height: 100,
-    resizeMode: 'cover',
+    resizeMode: "cover",
   },
   uploadButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'black',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "black",
     borderRadius: 25,
     height: 45,
     marginBottom: 16,
   },
   uploadButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 18,
     paddingHorizontal: 10,
   },
@@ -239,22 +241,22 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 30,
-    textAlign: 'center',
+    textAlign: "center",
     marginVertical: 8,
   },
   subtitle: {
     fontSize: 20,
-    textAlign: 'center',
+    textAlign: "center",
     marginVertical: 8,
   },
   interestsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "flex-start",
     marginVertical: 16,
   },
   interestItem: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 25,
     paddingVertical: 10,
     paddingHorizontal: 20,
@@ -267,15 +269,15 @@ const styles = StyleSheet.create({
   },
   interestText: {
     fontSize: 16,
-    color: '#000',
+    color: "#000",
   },
   description: {
     fontSize: 14,
     marginVertical: 16,
   },
   accountInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: 8,
   },
   accountInfoImage: {
@@ -284,60 +286,60 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   video: {
-    width: '100%',
+    width: "100%",
     height: 300,
   },
   accountInfoText: {
     fontSize: 16,
   },
   videoPlayer: {
-    width: '100%',
+    width: "100%",
     height: 200,
     marginVertical: 16,
   },
   footer: {
     marginTop: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   updateButton: {
-    backgroundColor: 'black',
+    backgroundColor: "black",
     borderRadius: 25,
     height: 45,
     width: 160,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 16,
   },
   updateButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 18,
   },
   footerIcons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 16,
   },
   footerIconButton: {
-    backgroundColor: '#CECECE',
+    backgroundColor: "#CECECE",
     borderRadius: 25,
     marginHorizontal: 5,
     padding: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   footerIcon: {
     width: 24,
     height: 24,
   },
   nextButton: {
-    backgroundColor: 'red',
+    backgroundColor: "red",
     borderRadius: 25,
     height: 45,
     width: 160,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   nextButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 18,
   },
 });

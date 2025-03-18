@@ -272,6 +272,7 @@ export default function MyProfile() {
     setMenuVisible(false);
     switch (item) {
       case "Edit Profile":
+        console.log("-- In MyProfile.js, Edit Profile pressed -");
         navigation.navigate("EditProfile");
         break;
       case "Settings":

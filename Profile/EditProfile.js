@@ -117,7 +117,7 @@ const isValidDate = (date) => {
 };
 
 export default function EditProfile() {
-  console.log("---- In EditProfile.js Function----");
+  console.log("--- In EditProfile.js Function ---");
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const route = useNavigation().getState().routes[useNavigation().getState().index];
@@ -823,6 +823,7 @@ export default function EditProfile() {
         setUploadStatus("Video selection cancelled");
 
         // Show test video options when selection is cancelled
+        console.log("---- In EditProfile.js Video Selection Cancelled----");
         Alert.alert("Video Selection Cancelled", "Would you like to use a test video instead?", [
           { text: "No", style: "cancel" },
           { text: "Yes", onPress: showTestVideoOptions },
@@ -1038,8 +1039,9 @@ export default function EditProfile() {
 
   // Simplify the checkForChanges function and add more logging
   const checkForChanges = useCallback(() => {
+    console.log("--- In EditProfile.js, checkForChanges function ---");
     // Only log in development mode and when explicitly enabled
-    const shouldLog = false; // Set to true only when debugging is needed
+    const shouldLog = true; // Set to true only when debugging is needed
 
     if (shouldLog) console.log("Running checkForChanges");
 
@@ -1062,8 +1064,14 @@ export default function EditProfile() {
     };
 
     // Add debugging for media changes
+    // console.log("--- In EditProfile.js, checkForChanges function, photosChanged ---");
+    // console.log("photos:", photos);
+    const filteredPhotos = photos.filter((photo) => photo !== null);
+    // console.log("filteredPhotos:", filteredPhotos);
+    // console.log("userData?.user_photo_url:", userData?.user_photo_url);
+    // console.log("typeof userData.user_photo_url:", typeof userData.user_photo_url);
     const photosChanged =
-      JSON.stringify(photos) !== JSON.stringify(userData?.user_photo_url ? (typeof userData.user_photo_url === "string" ? JSON.parse(userData.user_photo_url) : userData.user_photo_url) : []);
+      JSON.stringify(filteredPhotos) !== JSON.stringify(userData?.user_photo_url ? (typeof userData.user_photo_url === "string" ? JSON.parse(userData.user_photo_url) : userData.user_photo_url) : []);
 
     const hasDeletedPhotos = deletedPhotos.length > 0;
 
@@ -1126,7 +1134,7 @@ export default function EditProfile() {
         // Only update state if the result has changed to avoid rerenders
         setHasChanges((prevHasChanges) => {
           if (prevHasChanges !== hasChangesResult) {
-            const shouldLog = false; // Set to true only when debugging is needed
+            const shouldLog = true; // Set to true only when debugging is needed
             if (shouldLog) console.log("Setting hasChanges to:", hasChangesResult);
             return hasChangesResult;
           }
@@ -1323,7 +1331,31 @@ export default function EditProfile() {
           // New Video was deleted
         } else if (videoUri && videoUri !== originalVideoUrl) {
           // New Video. Check if it's a test video
-          if (isTestVideo(videoUri)) {
+          const combinedCode = true;
+          if (combinedCode) {
+            console.log("--- In EditProfile.js, combinedCode is true");
+            const presignedData = await getPresignedUrl(uid);
+            setUploadStatus(`Uploading ${videoFileSize}MB video directly to S3...`);
+            const uploadSuccess = await uploadVideoToS3(videoUri, presignedData.url);
+            console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
+            if (uploadSuccess && presignedData.videoUrl) {
+              console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
+              setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
+              uploadData.append("user_video_url", presignedData.videoUrl);
+              console.log("Added user_video_url to form data:", presignedData.videoUrl);
+            } else {
+              console.error("Direct S3 upload failed, falling back to regular upload");
+              setUploadStatus("S3 upload failed, falling back to regular upload");
+              // Fall back to regular upload
+              console.log("Adding video as multipart form data...");
+              uploadData.append("user_video", {
+                uri: videoUri,
+                type: "video/mp4",
+                name: "user_video.mp4",
+              });
+              console.log("Added user_video to form data as multipart");
+            }
+          } else if (isTestVideo(videoUri)) {
             console.log("\n=== Test Video Upload Process ===");
             console.log("Using test video for upload:", videoUri);
             setUploadStatus("Using test video for upload");
@@ -2936,7 +2968,7 @@ export default function EditProfile() {
           </View>
 
           {/* Save Changes Button */}
-          <TouchableOpacity style={[styles.saveButton, !hasChanges && styles.saveButtonDisabled]} onPress={handleSaveChanges} disabled={!hasChanges}>
+          <TouchableOpacity style={[styles.saveButton, !hasChanges && styles.saveButtonDisabled]} onPress={hasChanges ? handleSaveChanges : () => navigation.navigate("MyProfile")} disabled={false}>
             <Text style={styles.saveButtonText}>{hasChanges ? "Save Changes" : "Return to Profile"}</Text>
           </TouchableOpacity>
 

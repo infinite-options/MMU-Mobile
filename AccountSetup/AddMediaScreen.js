@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, Pressable, Image, Platform, StatusBar, Alert, ActivityIndicator, ScrollView, Linking, ActionSheetIOS } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -7,7 +7,8 @@ import { useFocusEffect } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { Video } from "expo-av";
 import { Asset } from "expo-asset";
-import { getPresignedUrl, uploadVideoToS3, getFileSizeInMB, loadTestVideos, isTestVideo as s3IsTestVideo, getTestVideoFileSize as s3GetTestVideoFileSize } from "../utils/S3Helper";
+import { getPresignedUrl, uploadVideoToS3, getFileSizeInMB, loadTestVideos } from "../utils/S3Helper";
+import * as MediaHelper from "../utils/MediaHelper";
 import ProgressBar from "../src/Assets/Components/ProgressBar";
 
 export default function AddMediaScreen({ navigation }) {
@@ -71,10 +72,8 @@ export default function AddMediaScreen({ navigation }) {
   useEffect(() => {
     const requestPermissionsAndFetchUserData = async () => {
       // 1) Ask for photo library permissions
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission Required", "This app needs permission to access your photo library.");
-      }
+      const hasPermission = await MediaHelper.requestMediaLibraryPermissions();
+      if (!hasPermission) return;
 
       // 2) Get user info from AsyncStorage
       try {
@@ -175,30 +174,19 @@ export default function AddMediaScreen({ navigation }) {
     calculateFileSizes();
   }, [videoUri, photos, testVideos]);
 
-  // Update handlePickImage to set file size immediately
+  // Update handlePickImage to use MediaHelper
   const handlePickImage = async (slotIndex) => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.5,
-      });
+    const result = await MediaHelper.pickImage({}, testVideos);
+    if (result) {
+      const { uri, fileSize } = result;
+      const newPhotos = [...photos];
+      newPhotos[slotIndex] = uri;
+      setPhotos(newPhotos);
 
-      if (!result.canceled && result.assets?.[0]?.uri) {
-        const uri = result.assets[0].uri;
-        const newPhotos = [...photos];
-        newPhotos[slotIndex] = uri;
-        setPhotos(newPhotos);
-
-        // Calculate and set file size immediately
-        const fileSize = await getFileSizeInMB(uri, testVideos);
-        const newPhotoFileSizes = [...photoFileSizes];
-        newPhotoFileSizes[slotIndex] = fileSize;
-        setPhotoFileSizes(newPhotoFileSizes);
-      }
-    } catch (error) {
-      console.error("Error picking image:", error);
-      Alert.alert("Error", "There was an issue processing the image.");
+      // Set file size
+      const newPhotoFileSizes = [...photoFileSizes];
+      newPhotoFileSizes[slotIndex] = fileSize;
+      setPhotoFileSizes(newPhotoFileSizes);
     }
   };
 
@@ -214,101 +202,39 @@ export default function AddMediaScreen({ navigation }) {
     setPhotoFileSizes(newPhotoFileSizes);
   };
 
-  // Handle picking a video
+  // Handle picking a video using MediaHelper
   const handleVideoUpload = async () => {
-    try {
-      const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+    const result = await MediaHelper.pickVideo(testVideos);
 
-      if (cameraPermission.status !== "granted") {
-        Alert.alert("Permission Required", "Camera access is required to select video. Please enable it in your device settings.", [
-          { text: "Cancel", style: "cancel" },
-          { text: "Settings", onPress: () => Linking.openSettings() },
-        ]);
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-        allowsEditing: true,
-        quality: 1.0,
-        videoQuality: getVideoQuality(),
-      });
-
-      if (!result.canceled && result.assets?.[0]?.uri) {
-        console.log("Video selection success:", result.assets[0]);
-        const uri = result.assets[0].uri;
-        setVideoUri(uri);
-        setIsVideoPlaying(false);
-
-        // Get and set the file size
-        const fileSize = await getFileSizeInMB(uri, testVideos);
-        setVideoFileSize(fileSize);
-
-        // Set the appropriate message based on file size
-        Alert.alert("Video Added", `Your ${fileSize}MB video has been added to your profile. It will be uploaded to our secure server when you continue.`, [{ text: "OK" }]);
-      } else {
-        // Show test video options when selection is cancelled
-        console.log("---- Video Selection Cancelled----");
-        Alert.alert("Video Selection Cancelled", "Would you like to use a test video instead?", [
-          { text: "No", style: "cancel" },
-          { text: "Yes", onPress: showTestVideoOptions },
-        ]);
-      }
-    } catch (error) {
-      console.error("Error picking video:", error);
+    if (result === false) {
+      // Selection was cancelled, show test video options
+      Alert.alert("Video Selection Cancelled", "Would you like to use a test video instead?", [
+        { text: "No", style: "cancel" },
+        { text: "Yes", onPress: showTestVideoOptions },
+      ]);
+    } else if (result) {
+      const { uri, fileSize } = result;
+      setVideoUri(uri);
+      setVideoFileSize(fileSize);
+      setIsVideoPlaying(false);
     }
   };
 
-  // Platform-specific video quality
-  const getVideoQuality = () => {
-    return Platform.OS === "ios" ? ImagePicker.UIImagePickerControllerQualityType.Medium : 0.5;
-  };
-
-  // Update the handleRecordVideo function to use the getVideoQuality function
+  // Record video using MediaHelper
   const handleRecordVideo = async () => {
-    try {
-      // Platform-specific permission handling
-      const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+    const result = await MediaHelper.recordVideo(testVideos);
 
-      if (cameraPermission.status !== "granted") {
-        Alert.alert("Permission Required", "Camera access is required to record video. Please enable it in your device settings.", [
-          { text: "Cancel", style: "cancel" },
-          { text: "Settings", onPress: () => Linking.openSettings() },
-        ]);
-        return;
-      }
-
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-        allowsEditing: false, // Set to false for more reliable results
-        quality: 1,
-        videoQuality: getVideoQuality(),
-        maxDuration: 60,
-        saveToPhotos: true, // Save to device camera roll
-      });
-
-      if (!result.canceled && result.assets?.[0]?.uri) {
-        console.log("Video recording success:", result.assets[0]);
-        const uri = result.assets[0].uri;
-        setVideoUri(uri);
-        setIsVideoPlaying(false);
-
-        // Get and set the file size
-        const fileSize = await getFileSizeInMB(uri, testVideos);
-        setVideoFileSize(fileSize);
-
-        // Set the appropriate message based on file size
-        Alert.alert("Video Recorded", `Your ${fileSize}MB video has been recorded. It will be uploaded to our secure server when you continue.`, [{ text: "OK" }]);
-      } else {
-        // Show test video options when selection is cancelled
-        console.log("---- Video Recording Cancelled----");
-        Alert.alert("Video Recording Cancelled", "Would you like to use a test video instead?", [
-          { text: "No", style: "cancel" },
-          { text: "Yes", onPress: showTestVideoOptions },
-        ]);
-      }
-    } catch (error) {
-      console.error("Error recording video:", error);
+    if (result === false) {
+      // Recording was cancelled, show test video options
+      Alert.alert("Video Recording Cancelled", "Would you like to use a test video instead?", [
+        { text: "No", style: "cancel" },
+        { text: "Yes", onPress: showTestVideoOptions },
+      ]);
+    } else if (result) {
+      const { uri, fileSize } = result;
+      setVideoUri(uri);
+      setVideoFileSize(fileSize);
+      setIsVideoPlaying(false);
     }
   };
 
@@ -333,85 +259,32 @@ export default function AddMediaScreen({ navigation }) {
 
   // Function to show fallback options for test videos
   const showTestVideoOptions = () => {
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ["Cancel", ...testVideos.map((video) => video.name)],
-          cancelButtonIndex: 0,
-          title: "Select a Test Video",
-          message: "Choose a test video to use for upload testing",
-        },
-        (buttonIndex) => {
-          if (buttonIndex > 0) {
-            handleTestVideoSelection(buttonIndex - 1);
-          }
-        }
-      );
-    } else {
-      // For Android, use Alert with buttons
-      Alert.alert("Select a Test Video", "Choose a test video to use for upload testing", [
-        { text: "Cancel", style: "cancel" },
-        ...testVideos.map((video, index) => ({
-          text: video.name,
-          onPress: () => handleTestVideoSelection(index),
-        })),
-      ]);
-    }
+    MediaHelper.showTestVideoOptions(testVideos, handleTestVideoSelection);
   };
 
   // Function to handle test video selection
   const handleTestVideoSelection = (index) => {
-    if (index < 0 || index >= testVideos.length) {
-      return;
+    const selectedVideo = MediaHelper.selectTestVideo(index, testVideos, "continue");
+    if (selectedVideo) {
+      setVideoUri(selectedVideo.uri);
+      setVideoFileSize(selectedVideo.size);
+      setIsVideoPlaying(false);
     }
-
-    const selectedVideo = testVideos[index];
-
-    if (!selectedVideo.uri) {
-      return;
-    }
-
-    setVideoUri(selectedVideo.uri);
-    setVideoFileSize(selectedVideo.size);
-    setIsVideoPlaying(false);
-
-    const fileSize = selectedVideo.size;
-
-    // Set the appropriate message based on file size
-    Alert.alert("Test Video Selected", `The selected test video is ${fileSize}MB. It will be uploaded directly to S3 when you continue.`, [{ text: "OK" }]);
   };
 
-  // Function to get file size for test videos - exactly match EditProfile.js
+  // Function to get file size for test videos - using MediaHelper
   const getTestVideoFileSize = (uri) => {
-    return s3GetTestVideoFileSize(uri, testVideos);
+    return MediaHelper.getTestVideoFileSize(uri, testVideos);
   };
 
-  // Function to check if a URI is a test video - exactly match EditProfile.js
+  // Function to check if a URI is a test video - using MediaHelper
   const isTestVideo = (uri) => {
-    return s3IsTestVideo(uri, testVideos);
+    return MediaHelper.isTestVideo(uri, testVideos);
   };
 
-  // Update checkTotalFileSize to match the implementation in EditProfile.js
-  const checkTotalFileSize = React.useCallback(() => {
-    let totalSize = 0;
-
-    // Add video file size if available
-    if (videoFileSize) {
-      totalSize += parseFloat(videoFileSize);
-    }
-
-    // Add photo file sizes if available
-    photoFileSizes.forEach((size) => {
-      if (size) {
-        totalSize += parseFloat(size);
-      }
-    });
-
-    // Round to 2 decimal places for display
-    totalSize = parseFloat(totalSize.toFixed(2));
-
-    console.log(`Total calculated file size: ${totalSize}MB`);
-    return totalSize;
+  // Update checkTotalFileSize to use MediaHelper
+  const checkTotalFileSize = useCallback(() => {
+    return MediaHelper.checkTotalFileSize(videoFileSize, photoFileSizes);
   }, [videoFileSize, photoFileSizes]);
 
   // Update the uploadMediaToBackend function to check total file size
@@ -423,25 +296,13 @@ export default function AddMediaScreen({ navigation }) {
 
     setIsLoading(true);
 
-    // Check total file size before uploading
+    // Check total file size before uploading using MediaHelper
     const totalSize = checkTotalFileSize();
-    if (totalSize > 5) {
-      // Ask for confirmation before proceeding with large files
-      const shouldProceed = await new Promise((resolve) => {
-        Alert.alert(
-          "Large File Size Warning",
-          `The total size of your media is ${totalSize.toFixed(2)}MB, which exceeds the recommended 5MB limit. This may cause slow uploads and performance issues. Do you want to continue?`,
-          [
-            { text: "Cancel", onPress: () => resolve(false), style: "cancel" },
-            { text: "Continue Anyway", onPress: () => resolve(true) },
-          ]
-        );
-      });
+    const shouldProceed = await MediaHelper.promptLargeFileSize(totalSize, 5);
 
-      if (!shouldProceed) {
-        setIsLoading(false);
-        return; // Stop the save process
-      }
+    if (!shouldProceed) {
+      setIsLoading(false);
+      return; // Stop the save process
     }
 
     try {

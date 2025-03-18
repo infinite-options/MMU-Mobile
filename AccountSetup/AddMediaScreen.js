@@ -7,6 +7,8 @@ import { Video } from "expo-av";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { useFocusEffect } from "@react-navigation/native";
+// Import S3Helper utilities
+import { getPresignedUrl, uploadVideoToS3, getFileSizeInMB } from "../utils/S3Helper";
 
 export default function AddMediaScreen({ navigation }) {
   // Basic user info from AsyncStorage

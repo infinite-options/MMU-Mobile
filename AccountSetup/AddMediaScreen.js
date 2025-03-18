@@ -9,6 +9,8 @@ import axios from "axios";
 import { useFocusEffect } from "@react-navigation/native";
 // Import S3Helper utilities
 import { getPresignedUrl, uploadVideoToS3, getFileSizeInMB } from "../utils/S3Helper";
+import { Asset } from "expo-asset";
+import { ActionSheetIOS } from "react-native";
 
 export default function AddMediaScreen({ navigation }) {
   // Basic user info from AsyncStorage
@@ -25,9 +27,47 @@ export default function AddMediaScreen({ navigation }) {
   const [delvideoUri, setdelvideoUri] = useState(null);
   const videoRef = useRef(null);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [videoFileSize, setVideoFileSize] = useState(null);
+
+  // Define test videos for development and testing
+  const mikeVideo = require("../assets/mike768kb.mp4");
+  const johnVideo = require("../assets/john1400kb.mp4");
+  const bobVideo = require("../assets/bob7100kb.mp4");
+
+  const [testVideos, setTestVideos] = useState([
+    { name: "Mike (768KB)", uri: null, size: 0.768 },
+    { name: "John (1.4MB)", uri: null, size: 1.4 },
+    { name: "Bob (7.1MB)", uri: null, size: 7.1 },
+  ]);
 
   // For showing a loading overlay while uploading
   const [isLoading, setIsLoading] = useState(false);
+
+  // Preload test video assets
+  useEffect(() => {
+    const loadAssets = async () => {
+      try {
+        const mikeAsset = Asset.fromModule(mikeVideo);
+        const johnAsset = Asset.fromModule(johnVideo);
+        const bobAsset = Asset.fromModule(bobVideo);
+
+        await Promise.all([mikeAsset.downloadAsync(), johnAsset.downloadAsync(), bobAsset.downloadAsync()]);
+
+        setTestVideos([
+          { name: "Mike (768KB)", uri: mikeAsset.localUri || mikeAsset.uri, size: 0.768 },
+          { name: "John (1.4MB)", uri: johnAsset.localUri || johnAsset.uri, size: 1.4 },
+          { name: "Bob (7.1MB)", uri: bobAsset.localUri || bobAsset.uri, size: 7.1 },
+        ]);
+
+        console.log("Test videos loaded successfully");
+      } catch (error) {
+        console.error("Error loading test videos:", error);
+      }
+    };
+
+    loadAssets();
+  }, []);
+
   useFocusEffect(
     React.useCallback(() => {
       // Runs on every focus
@@ -153,7 +193,10 @@ export default function AddMediaScreen({ navigation }) {
       const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
 
       if (cameraPermission.status !== "granted") {
-        Alert.alert("Permissions Required", "Please enable camera permissions to record video.");
+        Alert.alert("Permissions Required", "Please enable camera permissions to record video.", [
+          { text: "Cancel", style: "cancel" },
+          { text: "Use Test Videos", onPress: showTestVideoOptions },
+        ]);
         return;
       }
 
@@ -170,11 +213,25 @@ export default function AddMediaScreen({ navigation }) {
 
       if (!result.canceled && result.assets?.[0]?.uri) {
         console.log("Video selection success:", result.assets[0]);
-        setVideoUri(result.assets[0].uri);
+        const uri = result.assets[0].uri;
+        setVideoUri(uri);
         setIsVideoPlaying(false);
+
+        // Get and set the file size
+        const fileSize = await getFileSizeInMB(uri, getTestVideoFileSize, isTestVideo);
+        setVideoFileSize(fileSize);
+
+        // Set the appropriate message based on file size
+        if (fileSize && parseFloat(fileSize) > 1) {
+          Alert.alert("Large Video", `The selected video is ${fileSize}MB, which exceeds the 1MB limit for regular uploads. It will be uploaded directly to S3 when you continue.`, [{ text: "OK" }]);
+        }
       } else {
         console.log("Video selection cancelled or no URI returned");
-        Alert.alert("No Video Selected", "Please try again or choose a different video.");
+        // Show test video options when selection is cancelled
+        Alert.alert("Video Selection Cancelled", "Would you like to use a test video instead?", [
+          { text: "No", style: "cancel" },
+          { text: "Yes", onPress: showTestVideoOptions },
+        ]);
       }
     } catch (error) {
       console.error("Error details:", error);
@@ -189,7 +246,10 @@ export default function AddMediaScreen({ navigation }) {
       const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
 
       if (cameraPermission.status !== "granted") {
-        Alert.alert("Permissions Required", "Please enable camera permissions to record video.");
+        Alert.alert("Permissions Required", "Please enable camera permissions to record video.", [
+          { text: "Cancel", style: "cancel" },
+          { text: "Use Test Videos", onPress: showTestVideoOptions },
+        ]);
         return;
       }
 
@@ -203,10 +263,25 @@ export default function AddMediaScreen({ navigation }) {
 
       if (!result.canceled && result.assets?.[0]?.uri) {
         console.log("Video recording success:", result.assets[0]);
-        setVideoUri(result.assets[0].uri);
+        const uri = result.assets[0].uri;
+        setVideoUri(uri);
         setIsVideoPlaying(false);
+
+        // Get and set the file size
+        const fileSize = await getFileSizeInMB(uri, getTestVideoFileSize, isTestVideo);
+        setVideoFileSize(fileSize);
+
+        // Set the appropriate message based on file size
+        if (fileSize && parseFloat(fileSize) > 1) {
+          Alert.alert("Large Video", `The recorded video is ${fileSize}MB, which exceeds the 1MB limit for regular uploads. It will be uploaded directly to S3 when you continue.`, [{ text: "OK" }]);
+        }
       } else {
         console.log("Video recording cancelled or no URI returned");
+        // Show test video options when recording is cancelled
+        Alert.alert("Video Recording Cancelled", "Would you like to use a test video instead?", [
+          { text: "No", style: "cancel" },
+          { text: "Yes", onPress: showTestVideoOptions },
+        ]);
       }
     } catch (error) {
       console.error("Error details:", error);
@@ -221,6 +296,7 @@ export default function AddMediaScreen({ navigation }) {
             }
           },
         },
+        { text: "Use Test Videos", onPress: showTestVideoOptions },
         { text: "OK" },
       ]);
     }
@@ -242,6 +318,88 @@ export default function AddMediaScreen({ navigation }) {
       await videoRef.current.playAsync();
       setIsVideoPlaying(true);
     }
+  };
+
+  // Function to show fallback options for test videos
+  const showTestVideoOptions = () => {
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ["Cancel", ...testVideos.map((video) => video.name)],
+          cancelButtonIndex: 0,
+          title: "Select a Test Video",
+          message: "Choose a test video to use for upload testing",
+        },
+        (buttonIndex) => {
+          if (buttonIndex > 0) {
+            handleTestVideoSelection(buttonIndex - 1);
+          }
+        }
+      );
+    } else {
+      // For Android, use Alert with buttons
+      Alert.alert("Select a Test Video", "Choose a test video to use for upload testing", [
+        { text: "Cancel", style: "cancel" },
+        ...testVideos.map((video, index) => ({
+          text: video.name,
+          onPress: () => handleTestVideoSelection(index),
+        })),
+      ]);
+    }
+  };
+
+  // Function to handle test video selection
+  const handleTestVideoSelection = (index) => {
+    if (index < 0 || index >= testVideos.length) {
+      return;
+    }
+
+    const selectedVideo = testVideos[index];
+
+    if (!selectedVideo.uri) {
+      return;
+    }
+
+    setVideoUri(selectedVideo.uri);
+    setVideoFileSize(selectedVideo.size);
+    setIsVideoPlaying(false);
+
+    const fileSize = selectedVideo.size;
+
+    // Set the appropriate message based on file size
+    if (parseFloat(fileSize) > 1) {
+      Alert.alert("Large Test Video", `The selected test video is ${fileSize}MB, which exceeds the 1MB limit for regular uploads. It will be uploaded directly to S3 when you continue.`, [
+        { text: "OK" },
+      ]);
+    }
+  };
+
+  // Function to get file size for test videos
+  const getTestVideoFileSize = (uri) => {
+    if (!uri) return null;
+
+    // Find the test video by checking if the URI contains the filename
+    const testVideo = testVideos.find((video) => {
+      // Add null check for video.uri
+      if (!video.uri) return false;
+      return uri.includes(video.uri.split("/").pop());
+    });
+
+    if (testVideo) {
+      return testVideo.size;
+    }
+    return null;
+  };
+
+  // Function to check if a URI is a test video
+  const isTestVideo = (uri) => {
+    if (!uri) return false;
+    // Check if the URI contains any of the test video filenames
+    return testVideos.some((video) => {
+      // Add null check for video.uri
+      if (!video.uri) return false;
+      return uri.includes(video.uri.split("/").pop());
+    });
   };
 
   // Upload images and video to backend
@@ -272,14 +430,73 @@ export default function AddMediaScreen({ navigation }) {
       console.log(`Appending photo img_${index}:`, uri);
     });
 
-    // Append video if it exists
+    // Handle video upload based on size and type
     if (videoUri) {
-      uploadData.append("user_video", {
-        uri: videoUri,
-        type: "video/mp4",
-        name: "video_filename.mp4",
-      });
-      console.log("Appending user_video:", videoUri);
+      console.log("Handling video upload for URI:", videoUri);
+
+      // Check if it's a test video or a large video (over 1MB)
+      const isTestVid = isTestVideo(videoUri);
+      const fileSize = videoFileSize || (await getFileSizeInMB(videoUri, getTestVideoFileSize, isTestVideo));
+
+      if (fileSize && parseFloat(fileSize) > 1) {
+        console.log(`Video size (${fileSize}MB) exceeds 1MB, using S3 direct upload`);
+
+        try {
+          // Get presigned URL for S3 upload
+          console.log("Requesting presigned URL for user:", userId);
+          const presignedData = await getPresignedUrl(userId);
+
+          if (presignedData && presignedData.url) {
+            console.log("Got presigned URL for direct S3 upload:", presignedData.url);
+            console.log("S3 video URL will be:", presignedData.videoUrl);
+
+            // Upload video directly to S3
+            console.log(`Uploading ${fileSize}MB video directly to S3...`);
+            const uploadResult = await uploadVideoToS3(videoUri, presignedData.url);
+
+            if (uploadResult.success && presignedData.videoUrl) {
+              console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
+              uploadData.append("user_video_url", presignedData.videoUrl);
+              console.log("Added user_video_url to form data:", presignedData.videoUrl);
+            } else {
+              console.error("Direct S3 upload failed, falling back to regular upload");
+              // Fall back to regular upload
+              console.log("Adding video as multipart form data...");
+              uploadData.append("user_video", {
+                uri: videoUri,
+                type: "video/mp4",
+                name: "video_filename.mp4",
+              });
+            }
+          } else {
+            console.error("Failed to get presigned URL, falling back to regular upload");
+            // Fall back to regular upload
+            uploadData.append("user_video", {
+              uri: videoUri,
+              type: "video/mp4",
+              name: "video_filename.mp4",
+            });
+          }
+        } catch (error) {
+          console.error("Error in S3 upload process:", error);
+          // Fall back to regular upload
+          uploadData.append("user_video", {
+            uri: videoUri,
+            type: "video/mp4",
+            name: "video_filename.mp4",
+          });
+        }
+      } else {
+        // Video is small enough for regular upload
+        console.log("Video size is under 1MB or unknown, using regular upload");
+        uploadData.append("user_video", {
+          uri: videoUri,
+          type: "video/mp4",
+          name: "video_filename.mp4",
+        });
+      }
+
+      console.log("Video handling complete");
     }
 
     try {

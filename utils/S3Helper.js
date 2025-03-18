@@ -1,6 +1,52 @@
 import axios from "axios";
 import * as FileSystem from "expo-file-system";
 import { Platform } from "react-native";
+import { Asset } from "expo-asset";
+
+// Define test video paths
+const TEST_VIDEOS = {
+  mike: require("../assets/mike768kb.mp4"),
+  john: require("../assets/john1400kb.mp4"),
+  bob: require("../assets/bob7100kb.mp4"),
+};
+
+/**
+ * Load test videos for development and testing purposes
+ * @returns {Promise<Array>} Array of test video objects with uri and size information
+ */
+export const loadTestVideos = async () => {
+  try {
+    console.log("===== In S3Helper.js - Loading Test Videos =====");
+
+    // Create assets from the test video modules
+    const mikeAsset = Asset.fromModule(TEST_VIDEOS.mike);
+    const johnAsset = Asset.fromModule(TEST_VIDEOS.john);
+    const bobAsset = Asset.fromModule(TEST_VIDEOS.bob);
+
+    // Download all assets in parallel
+    await Promise.all([mikeAsset.downloadAsync(), johnAsset.downloadAsync(), bobAsset.downloadAsync()]);
+
+    // Create the test videos array with local URIs
+    const testVideos = [
+      { name: "Mike (768KB)", uri: mikeAsset.localUri || mikeAsset.uri, size: 0.768 },
+      { name: "John (1.4MB)", uri: johnAsset.localUri || johnAsset.uri, size: 1.4 },
+      { name: "Bob (7.1MB)", uri: bobAsset.localUri || bobAsset.uri, size: 7.1 },
+    ];
+
+    console.log("Test videos loaded successfully");
+    console.log("===== End Loading Test Videos =====");
+
+    return testVideos;
+  } catch (error) {
+    console.error("Error loading test videos:", error);
+    // Return empty test videos as a fallback
+    return [
+      { name: "Mike (768KB)", uri: null, size: 0.768 },
+      { name: "John (1.4MB)", uri: null, size: 1.4 },
+      { name: "Bob (7.1MB)", uri: null, size: 7.1 },
+    ];
+  }
+};
 
 /**
  * Get a presigned URL from the server for direct S3 upload
@@ -196,26 +242,26 @@ export const uploadVideoToS3 = async (fileUri, presignedUrl) => {
 /**
  * Get the file size in MB for a given file URI
  * @param {string} fileUri - The file URI
- * @param {function} getTestVideoFileSize - Optional function to get test video file size
- * @param {function} isTestVideo - Optional function to check if a URI is a test video
+ * @param {Array} testVideos - Optional array of test videos for checking test video size
  * @returns {Promise<string|null>} - The file size in MB or null
  */
-export const getFileSizeInMB = async (fileUri, getTestVideoFileSize, isTestVideo) => {
+export const getFileSizeInMB = async (fileUri, testVideos = []) => {
   try {
     console.log("===== In S3Helper.js - getFileSizeInMB =====");
-    // Check if it's a test video first (only if the functions are provided)
-    if (getTestVideoFileSize && isTestVideo) {
-      const testVideoSize = getTestVideoFileSize(fileUri);
+
+    // Check if it's a test video first (only if testVideos is provided)
+    if (testVideos && testVideos.length > 0) {
+      const testVideoSize = getTestVideoFileSize(fileUri, testVideos);
       if (testVideoSize) {
         console.log(`Test video detected, size: ${testVideoSize}MB`);
-        return testVideoSize;
+        return testVideoSize.toString();
       }
     }
 
     if (!fileUri || typeof fileUri !== "string") return null;
 
     // Handle remote URLs (S3 URLs)
-    if (fileUri.startsWith("http") && (!isTestVideo || !isTestVideo(fileUri))) {
+    if (fileUri.startsWith("http") && (!testVideos || !isTestVideo(fileUri, testVideos))) {
       // For remote files, we can't get the size directly
       // Return null or a placeholder
       return null;
@@ -244,4 +290,41 @@ export const getFileSizeInMB = async (fileUri, getTestVideoFileSize, isTestVideo
     console.error("Error getting file size:", error);
     return "1.0"; // Default fallback size
   }
+};
+
+/**
+ * Check if a URI is a test video
+ * @param {string} uri - The URI to check
+ * @param {Array} testVideos - Array of test video objects
+ * @returns {boolean} - True if the URI corresponds to a test video
+ */
+export const isTestVideo = (uri, testVideos) => {
+  if (!uri || !testVideos || !Array.isArray(testVideos)) return false;
+
+  // Check if the URI contains any test video filenames
+  return testVideos.some((video) => {
+    if (!video.uri) return false;
+    return uri.includes(video.uri.split("/").pop());
+  });
+};
+
+/**
+ * Get the file size of a test video
+ * @param {string} uri - The URI to check
+ * @param {Array} testVideos - Array of test video objects
+ * @returns {number|null} - The size of the test video or null if not found
+ */
+export const getTestVideoFileSize = (uri, testVideos) => {
+  if (!uri || !testVideos || !Array.isArray(testVideos)) return null;
+
+  // Find the test video by URI
+  const testVideo = testVideos.find((video) => {
+    if (!video.uri) return false;
+    return uri.includes(video.uri.split("/").pop());
+  });
+
+  if (testVideo) {
+    return testVideo.size;
+  }
+  return null;
 };

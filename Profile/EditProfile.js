@@ -42,7 +42,14 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Asset } from "expo-asset";
 import { useBackHandler } from "@react-native-community/hooks";
 import { LinearGradient } from "expo-linear-gradient";
-import { getPresignedUrl, uploadVideoToS3, getFileSizeInMB as s3GetFileSizeInMB } from "../utils/S3Helper";
+import {
+  getPresignedUrl,
+  uploadVideoToS3,
+  getFileSizeInMB as s3GetFileSizeInMB,
+  loadTestVideos,
+  isTestVideo as s3IsTestVideo,
+  getTestVideoFileSize as s3GetTestVideoFileSize,
+} from "../utils/S3Helper";
 
 // Fallback to a placeholder to prevent crashes - replace with your actual key when testing
 const GOOGLE_API_KEY = Constants.expoConfig?.extra?.googleApiKey || process.env.EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY || "YOUR_GOOGLE_API_KEY_HERE";
@@ -212,40 +219,24 @@ export default function EditProfile() {
     BODY_TYPE: "bodyType",
   };
 
-  // Define test videos for development and testing
-  const mikeVideo = require("../assets/mike768kb.mp4");
-  const johnVideo = require("../assets/john1400kb.mp4");
-  const bobVideo = require("../assets/bob7100kb.mp4");
+  // Use an empty array as initial state for test videos
+  const [testVideos, setTestVideos] = useState([]);
 
-  const [testVideos, setTestVideos] = useState([
-    { name: "Mike (768KB)", uri: null, size: 0.768 },
-    { name: "John (1.4MB)", uri: null, size: 1.4 },
-    { name: "Bob (7.1MB)", uri: null, size: 7.1 },
-  ]);
-
-  // Preload test video assets
+  // Load test videos using the centralized function
   useEffect(() => {
-    const loadAssets = async () => {
+    const initTestVideos = async () => {
       try {
-        const mikeAsset = Asset.fromModule(mikeVideo);
-        const johnAsset = Asset.fromModule(johnVideo);
-        const bobAsset = Asset.fromModule(bobVideo);
-
-        await Promise.all([mikeAsset.downloadAsync(), johnAsset.downloadAsync(), bobAsset.downloadAsync()]);
-
-        setTestVideos([
-          { name: "Mike (768KB)", uri: mikeAsset.localUri || mikeAsset.uri, size: 0.768 },
-          { name: "John (1.4MB)", uri: johnAsset.localUri || johnAsset.uri, size: 1.4 },
-          { name: "Bob (7.1MB)", uri: bobAsset.localUri || bobAsset.uri, size: 7.1 },
-        ]);
-
-        console.log("Test videos loaded successfully");
+        const videos = await loadTestVideos();
+        console.log("Test videos loaded in EditProfile:", videos);
+        setTestVideos(videos);
       } catch (error) {
-        console.error("Error loading test videos:", error);
+        console.error("Error loading test videos in EditProfile:", error);
+        // Set default empty test videos as fallback
+        setTestVideos([]);
       }
     };
 
-    loadAssets();
+    initTestVideos();
   }, []);
 
   // Replace these text-based fields with pickers for Gender, Body Type, etc.
@@ -792,24 +783,21 @@ export default function EditProfile() {
   // Update the handleVideoUpload function to set the upload status
   const handleVideoUpload = async () => {
     try {
-      // Platform-specific permission handling
-      const mediaLibraryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
 
-      if (mediaLibraryPermission.status !== "granted") {
-        Alert.alert("Permission Required", "Storage access is required to select video. Please enable it in your device settings.", [
+      if (cameraPermission.status !== "granted") {
+        Alert.alert("Permission Required", "Camera access is required to select video. Please enable it in your device settings.", [
           { text: "Cancel", style: "cancel" },
           { text: "Settings", onPress: () => Linking.openSettings() },
-          { text: "Use Test Videos", onPress: showTestVideoOptions },
         ]);
         return;
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-        allowsEditing: Platform.OS === "ios", // Video editing only works well on iOS
-        quality: 1,
+        allowsEditing: true,
+        quality: 1.0,
         videoQuality: getVideoQuality(),
-        maxDuration: 60,
       });
 
       if (!result.canceled && result.assets?.[0]?.uri) {
@@ -819,15 +807,11 @@ export default function EditProfile() {
         setIsVideoPlaying(false);
 
         // Get and set the file size
-        const fileSize = await getFileSizeInMB(uri);
+        const fileSize = await getFileSizeInMB(uri, testVideos);
         setVideoFileSize(fileSize);
 
         // Set the appropriate message based on file size
-        if (parseFloat(fileSize) > 1) {
-          Alert.alert("Large Video", `The selected video is ${fileSize}MB, which exceeds the 1MB limit for regular uploads. It will be uploaded directly to S3 when you save your profile.`, [
-            { text: "OK" },
-          ]);
-        }
+        Alert.alert("Video Added", `Your ${fileSize}MB video has been added to your profile. It will be uploaded to our secure server when you save changes.`, [{ text: "OK" }]);
       } else {
         // Show test video options when selection is cancelled
         console.log("---- In EditProfile.js Video Selection Cancelled----");
@@ -841,7 +825,7 @@ export default function EditProfile() {
     }
   };
 
-  // Update the handleRecordVideo function to set the upload status
+  // Update the handleRecordVideo function to use the getVideoQuality function
   const handleRecordVideo = async () => {
     try {
       // Platform-specific permission handling
@@ -871,15 +855,11 @@ export default function EditProfile() {
         setIsVideoPlaying(false);
 
         // Get and set the file size
-        const fileSize = await getFileSizeInMB(uri);
+        const fileSize = await getFileSizeInMB(uri, testVideos);
         setVideoFileSize(fileSize);
 
         // Set the appropriate message based on file size
-        if (parseFloat(fileSize) > 1) {
-          Alert.alert("Large Video", `The recorded video is ${fileSize}MB, which exceeds the 1MB limit for regular uploads. It will be uploaded directly to S3 when you save your profile.`, [
-            { text: "OK" },
-          ]);
-        }
+        Alert.alert("Video Recorded", `Your ${fileSize}MB video has been recorded. It will be uploaded to our secure server when you save changes.`, [{ text: "OK" }]);
       } else {
         // Show test video options when selection is cancelled
         console.log("---- In EditProfile.js Video Recording Cancelled----");

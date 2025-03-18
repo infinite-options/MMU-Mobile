@@ -9,30 +9,30 @@ import { Platform } from "react-native";
  */
 export const getPresignedUrl = async (uid) => {
   try {
-    console.log("\n=== Presigned URL Request ===");
-    console.log("Requesting presigned URL for user:", uid);
+    console.log("===== In S3Helper.js - Presigned URL Request =====");
+    // console.log("Requesting presigned URL for user:", uid);
 
     const requestData = {
       user_uid: uid,
       user_video_filetype: "video/mp4",
     };
 
-    console.log("Request payload:", JSON.stringify(requestData, null, 2));
+    // console.log("Request payload:", JSON.stringify(requestData, null, 2));
 
     const response = await axios.post("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/s3Link", requestData);
 
-    console.log("Presigned URL API RAW response status:", response);
+    // console.log("Presigned URL API RAW response status:", response);
     console.log("Presigned URL API response data:", response.data);
-    console.log("Presigned URL API response status:", response.status);
-    console.log("Presigned URL API response headers:", JSON.stringify(response.headers, null, 2));
-    console.log("Presigned URL API response data:", JSON.stringify(response.data, null, 2));
+    // console.log("Presigned URL API response status:", response.status);
+    // console.log("Presigned URL API response headers:", JSON.stringify(response.headers, null, 2));
+    // console.log("Presigned URL API response data:", JSON.stringify(response.data, null, 2));
 
     if (response.data && response.data.url) {
-      console.log("Got presigned URL:", response.data.url);
+      //   console.log("Got presigned URL:", response.data.url);
       console.log("S3 video URL will be:", response.data.videoUrl);
 
       // Add detailed analysis of the response structure
-      console.log("Presigned URL response structure: ", response.data.key);
+      //   console.log("Presigned URL response structure: ", response.data.key);
 
       console.log("=== End Presigned URL Request ===");
       return response.data;
@@ -62,33 +62,33 @@ export const getPresignedUrl = async (uid) => {
  */
 export const uploadVideoToS3 = async (fileUri, presignedUrl) => {
   try {
-    console.log("=== S3 Direct Upload Process ===");
-    console.log("Starting direct S3 upload for large video file");
-    console.log("File URI:", fileUri);
-    console.log("Presigned URL:", presignedUrl);
+    console.log("===== In S3Helper.js -  S3 Direct Upload Process =====");
+    // console.log("Starting direct S3 upload for large video file");
+    // console.log("File URI:", fileUri);
+    // console.log("Presigned URL:", presignedUrl);
 
     // Parse the presigned URL to get query parameters
     const urlObj = new URL(presignedUrl);
-    console.log("S3 bucket:", urlObj.hostname);
-    console.log("S3 key path:", urlObj.pathname);
-    console.log("S3 query parameters:", urlObj.search);
+    // console.log("S3 bucket:", urlObj.hostname);
+    // console.log("S3 key path:", urlObj.pathname);
+    // console.log("S3 query parameters:", urlObj.search);
 
     // Add more detailed analysis of the presigned URL
-    console.log("Presigned URL analysis:");
-    console.log("- Protocol:", urlObj.protocol);
-    console.log("- Full hostname:", urlObj.host);
-    console.log("- Path:", urlObj.pathname);
+    // console.log("Presigned URL analysis:");
+    // console.log("- Protocol:", urlObj.protocol);
+    // console.log("- Full hostname:", urlObj.host);
+    // console.log("- Path:", urlObj.pathname);
 
     // Parse and log query parameters individually
     const queryParams = {};
     urlObj.searchParams.forEach((value, key) => {
       queryParams[key] = value;
     });
-    console.log("- Query parameters:", JSON.stringify(queryParams, null, 2));
+    // console.log("- Query parameters:", JSON.stringify(queryParams, null, 2));
 
     // Get file info to confirm size before upload
     const fileInfo = await FileSystem.getInfoAsync(fileUri);
-    console.log("File info before upload:", JSON.stringify(fileInfo, null, 2));
+    // console.log("File info before upload:", JSON.stringify(fileInfo, null, 2));
 
     if (!fileInfo.exists) {
       console.error("File does not exist at path:", fileUri);
@@ -100,13 +100,13 @@ export const uploadVideoToS3 = async (fileUri, presignedUrl) => {
     console.log("File size before upload:", fileSizeMB + " MB");
 
     // Fetch the file and create a blob
-    console.log("Fetching file and creating blob...");
+    // console.log("Fetching file and creating blob...");
     const file = await fetch(fileUri);
     const blob = await file.blob();
     const blobSizeMB = (blob.size / (1024 * 1024)).toFixed(2);
-    console.log("Blob created successfully");
-    console.log("Blob size:", blobSizeMB + " MB");
-    console.log("Blob type:", blob.type);
+    // console.log("Blob created successfully");
+    // console.log("Blob size:", blobSizeMB + " MB");
+    // console.log("Blob type:", blob.type);
 
     // Determine content type based on file extension
     let contentType = "video/mp4";
@@ -116,14 +116,14 @@ export const uploadVideoToS3 = async (fileUri, presignedUrl) => {
       contentType = "video/x-msvideo";
     }
 
-    console.log("Using content type for upload:", contentType);
+    // console.log("Using content type for upload:", contentType);
 
     // Log request headers
     const requestHeaders = {
       "Content-Type": contentType,
     };
-    console.log("Request headers:", JSON.stringify(requestHeaders, null, 2));
-    console.log("Sending PUT request to S3 with timeout of 120 seconds...");
+    // console.log("Request headers:", JSON.stringify(requestHeaders, null, 2));
+    // console.log("Sending PUT request to S3 with timeout of 120 seconds...");
 
     // Use a longer timeout for large files
     const controller = new AbortController();
@@ -146,17 +146,17 @@ export const uploadVideoToS3 = async (fileUri, presignedUrl) => {
       const endTime = Date.now();
       const uploadDuration = (endTime - startTime) / 1000; // in seconds
       console.log("Upload completed at:", new Date(endTime).toISOString());
-      console.log("Upload duration:", uploadDuration.toFixed(2) + " seconds");
-      console.log("Upload speed:", (blobSizeMB / uploadDuration).toFixed(2) + " MB/s");
+      //   console.log("Upload duration:", uploadDuration.toFixed(2) + " seconds");
+      //   console.log("Upload speed:", (blobSizeMB / uploadDuration).toFixed(2) + " MB/s");
 
       clearTimeout(timeoutId); // Clear the timeout if request completes
 
-      console.log("S3 upload response status:", response.status);
-      console.log("S3 upload response status text:", response.statusText);
-      console.log("S3 upload response headers:", JSON.stringify([...response.headers.entries()], null, 2));
+      //   console.log("S3 upload response status:", response.status);
+      //   console.log("S3 upload response status text:", response.statusText);
+      //   console.log("S3 upload response headers:", JSON.stringify([...response.headers.entries()], null, 2));
 
       if (response.ok) {
-        console.log("Direct S3 upload successful!");
+        // console.log("Direct S3 upload successful!");
         console.log("=== End S3 Direct Upload Process (Success) ===\n");
         return { success: true };
       } else {
@@ -202,6 +202,7 @@ export const uploadVideoToS3 = async (fileUri, presignedUrl) => {
  */
 export const getFileSizeInMB = async (fileUri, getTestVideoFileSize, isTestVideo) => {
   try {
+    console.log("===== In S3Helper.js - getFileSizeInMB =====");
     // Check if it's a test video first (only if the functions are provided)
     if (getTestVideoFileSize && isTestVideo) {
       const testVideoSize = getTestVideoFileSize(fileUri);

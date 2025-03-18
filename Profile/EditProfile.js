@@ -682,6 +682,7 @@ export default function EditProfile() {
   // Function to get file size in MB
   const getFileSizeInMB = useCallback(async (fileUri) => {
     // Use the utility function from S3Helper, passing in the test video functions
+    console.log("==== In EditProfile.js - getFileSizeInMB function ====");
     return s3GetFileSizeInMB(fileUri, getTestVideoFileSize, isTestVideo);
   }, []);
 
@@ -1215,7 +1216,7 @@ export default function EditProfile() {
     // Include all possible changes in the final result
     const result = formValuesChanged || photosChanged || hasDeletedPhotos || videoChanged || openToChanged || interestsChanged || dateTypesChanged || heightChanged;
 
-    if (shouldLog) console.log("Final hasChanges result:", result);
+    if (shouldLog) console.log("Final hasChanges result:", result, "--------------------------------------------------");
     return result;
   }, [
     formValues,
@@ -1413,7 +1414,7 @@ export default function EditProfile() {
         console.log("Original photos array:", originalPhotos);
         console.log("Current photos array:", photoUrls);
         console.log("Deleted photos array:", deletedPhotos);
-        console.log("=== End Debug ===");
+        console.log("=== End Debug Photo Arrays ===");
 
         // Create FormData object
         const uploadData = new FormData();
@@ -1801,7 +1802,7 @@ export default function EditProfile() {
         }
 
         const startTime = Date.now();
-        console.log("Request started at:", new Date(startTime).toISOString());
+        // console.log("Request started at:", new Date(startTime).toISOString());
 
         const response = await axios.put("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo", uploadData, {
           headers: {
@@ -1815,13 +1816,13 @@ export default function EditProfile() {
 
         const endTime = Date.now();
         const requestDuration = (endTime - startTime) / 1000; // in seconds
-        console.log("Request completed at:", new Date(endTime).toISOString());
+        // console.log("Request completed at:", new Date(endTime).toISOString());
         console.log("Request duration:", requestDuration.toFixed(2) + " seconds");
 
-        console.log("Response status:", response.status);
-        console.log("Response headers:", JSON.stringify(response.headers, null, 2));
-        console.log("Response data:", JSON.stringify(response.data, null, 2));
-        console.log("=== End Profile Update API Request ===");
+        // console.log("Response status:", response.status);
+        // console.log("Response headers:", JSON.stringify(response.headers, null, 2));
+        // console.log("Response data:", JSON.stringify(response.data, null, 2));
+        // console.log("=== End Profile Update API Request ===");
 
         if (response.status === 200) {
           setIsEditMode(false); // Exit edit mode after successful save
@@ -1864,6 +1865,7 @@ export default function EditProfile() {
 
   // Remove the compression utility functions
   const getFileSize = useCallback(async (uri) => {
+    console.log("==== In EditProfile.js - getFileSize function ====");
     return getFileSizeInMB(uri);
   }, []);
 
@@ -2082,6 +2084,7 @@ export default function EditProfile() {
     const getFileSizes = async () => {
       // Get video file size
       if (videoUri) {
+        console.log("==== In EditProfile.js - getFileSizes video ====");
         const size = await getFileSizeInMB(videoUri);
         setVideoFileSize(size);
       }
@@ -2090,6 +2093,7 @@ export default function EditProfile() {
       const newPhotoFileSizes = [...photoFileSizes];
       for (let i = 0; i < photos.length; i++) {
         if (photos[i]) {
+          console.log("==== In EditProfile.js - getFileSizes photo ====");
           const size = await getFileSizeInMB(photos[i]);
           newPhotoFileSizes[i] = size;
         } else {

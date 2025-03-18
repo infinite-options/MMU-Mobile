@@ -324,7 +324,7 @@ export default function AddMediaScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={{ flex: 1 }}>
+      <ScrollView style={{ flex: 1, paddingBottom: 20 }}>
         {isLoading && (
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size='large' color='#E4423F' />
@@ -427,12 +427,13 @@ export default function AddMediaScreen({ navigation }) {
             ))}
           </View>
         </View>
-      </ScrollView>
+        {/* </ScrollView> */}
 
-      {/* Continue Button */}
-      <Pressable style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5" }]} onPress={handleContinue} disabled={!isFormComplete || isLoading}>
-        <Text style={[styles.continueButtonText, { color: isFormComplete ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
-      </Pressable>
+        {/* Continue Button */}
+        <Pressable style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5" }]} onPress={handleContinue} disabled={!isFormComplete || isLoading}>
+          <Text style={[styles.continueButtonText, { color: isFormComplete ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
+        </Pressable>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -570,7 +571,7 @@ const styles = StyleSheet.create({
   photoBoxesRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: 40,
   },
   photoBox: {
     width: "30%",

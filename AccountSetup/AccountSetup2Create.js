@@ -34,6 +34,8 @@ export const resetGoogleSignIn = async () => {
   }
 };
 
+// NOTE: Not sure why but the Continue button and the eye icons require a double click to work the first time.
+
 export default function AccountSetup2Create() {
   const [formData, setFormData] = useState({
     email: "",
@@ -57,6 +59,9 @@ export default function AccountSetup2Create() {
 
   // Google Sign In endpoint
   const GOOGLE_SIGNUP_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/MMU";
+
+  // Add a state to track if submit is in progress
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Helper function to check state values
   const checkGoogleStates = () => {
@@ -620,6 +625,7 @@ export default function AccountSetup2Create() {
     return emailRegex.test(email);
   };
   const handleInputChange = (name, value) => {
+    console.log("---In AS2C handleInputChange:", name, value);
     setFormData({ ...formData, [name]: value });
 
     if (name === "password") {
@@ -662,27 +668,66 @@ export default function AccountSetup2Create() {
     }
   };
 
+  // const handleContinue = async () => {
+  //   console.log("---In AS2C handleContinue Continue Button Pressed---");
+
+  //   const url = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/CreateAccount/MMU";
+
+  //   if (!formData.email || !formData.password || !formData.confirmPassword) {
+  //     Alert.alert("Error", "Please fill in all fields.");
+  //     setIsSubmitting(false);
+  //     return;
+  //   }
+
+  //   if (!passwordsMatch) {
+  //     Alert.alert("Error", "Passwords do not match.");
+  //     setIsSubmitting(false);
+  //     return;
+  //   }
+
+  //   let data = new FormData();
+  //   data.append("email", formData["email"]);
+  //   data.append("password", formData["password"]);
+  //   console.log("---In AS2C handleContinue Data:", data);
+
+  //   navigation.navigate("NameInput");
+  // };
+
   const handleContinue = async () => {
+    console.log("---In AS2C handleContinue Continue Button Pressed---");
+
+    // Prevent multiple clicks/submissions
+    if (isSubmitting) {
+      console.log("Already submitting - preventing duplicate submission");
+      return;
+    }
+
+    setIsSubmitting(true);
+
     const url = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/CreateAccount/MMU";
+
     if (!formData.email || !formData.password || !formData.confirmPassword) {
       Alert.alert("Error", "Please fill in all fields.");
+      setIsSubmitting(false);
       return;
     }
+
     if (!passwordsMatch) {
       Alert.alert("Error", "Passwords do not match.");
+      setIsSubmitting(false);
       return;
     }
+
     let data = new FormData();
     data.append("email", formData["email"]);
     data.append("password", formData["password"]);
-    // data.append("phone_number", formData['phone_number']);
+
     try {
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: formData.email,
-          // phone_number: formData.phone_number,
           password: formData.password,
         }),
       });
@@ -690,8 +735,10 @@ export default function AccountSetup2Create() {
       const result = await response.json();
 
       if (result.message === "User already exists") {
+        console.log("---In AS2C handleContinue User already exists---", result);
         setExisting(true);
         Alert.alert("User Already Exists");
+        setIsSubmitting(false);
         return;
       }
 
@@ -706,6 +753,8 @@ export default function AccountSetup2Create() {
     } catch (error) {
       console.error("Error occurred:", error);
       Alert.alert("Error", "There was an issue creating your account. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -739,12 +788,10 @@ export default function AccountSetup2Create() {
     }
   };
 
-  const isFormComplete = () =>
-    isValidEmail(formData.email) &&
-    // formData.phone_number !== '' &&
-    formData.password !== "" &&
-    formData.confirmPassword !== "" &&
-    passwordsMatch;
+  // const formIsComplete = isValidEmail(formData.email) && formData.password !== "" && formData.confirmPassword !== "" && passwordsMatch;
+  // const isFormComplete = formData.firstName.trim() !== "" && formData.lastName.trim() !== "" && !nameErrors.firstName && !nameErrors.lastName;
+  const isFormComplete = isValidEmail(formData.email) && formData.password !== "" && formData.confirmPassword !== "" && passwordsMatch;
+  console.log("---In AS2C isFormComplete:", isFormComplete);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -759,7 +806,7 @@ export default function AccountSetup2Create() {
         <Text style={styles.subtitle}>Please choose a signup option to continue.</Text>
 
         {/* Spinner (optional) */}
-        {showSpinner && <ActivityIndicator size='large' color='#E4423F' style={{ marginBottom: 10 }} />}
+        {/* {showSpinner && <ActivityIndicator size='large' color='#E4423F' style={{ marginBottom: 10 }} />} */}
 
         {/* Input Fields */}
         <View style={styles.inputContainer}>
@@ -819,20 +866,26 @@ export default function AccountSetup2Create() {
             ))}
           </View>
           <Text style={[styles.strengthLabel, { color: getBarColor() }]}>{getStrengthLabel()}</Text>
-        </View>
+          {/* </View> */}
 
-        {/* Continue Button */}
-        <Pressable
-          style={[styles.continueButton, { backgroundColor: isFormComplete() ? "#E4423F" : "#F5F5F5" }]}
-          onPress={() => {
-            if (isFormComplete()) {
-              handleContinue();
-            }
-          }}
-          disabled={!isFormComplete()}
+          {/* Continue Button */}
+          {/* <Pressable
+          style={[styles.continueButton, { backgroundColor: formIsComplete && !isSubmitting ? "#E4423F" : "#F5F5F5" }]}
+          onPress={handleContinue}
+          disabled={!formIsComplete || isSubmitting}
+          android_ripple={{ color: "rgba(255, 255, 255, 0.3)" }}
+          delayLongPress={0}
+          pressRetentionOffset={{ top: 20, left: 20, bottom: 20, right: 20 }}
+          hitSlop={{ top: 10, left: 10, bottom: 10, right: 10 }}
         >
-          <Text style={[styles.continueButtonText, { color: isFormComplete() ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
-        </Pressable>
+          <Text style={[styles.continueButtonText, { color: formIsComplete && !isSubmitting ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>{isSubmitting ? "Processing..." : "Continue"}</Text>
+        </Pressable> */}
+
+          {/* Continue Button */}
+          <Pressable style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5" }]} onPress={handleContinue} disabled={!isFormComplete}>
+            <Text style={[styles.continueButtonText, { color: isFormComplete ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
+          </Pressable>
+        </View>
 
         {/* OR Separator */}
         <View style={styles.orSeparator}>

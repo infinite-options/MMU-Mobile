@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     marginBottom: 50,
   },
   input: {
-    marginBottom: 15,
+    marginBottom: 20,
   },
   continueButton: {
     height: 50,
@@ -249,8 +249,8 @@ const styles = StyleSheet.create({
   errorText: {
     color: "#E4423F",
     fontSize: 12,
-    marginTop: -10,
-    marginBottom: 10,
+    marginTop: -5,
+    marginBottom: 15,
     marginLeft: 5,
   },
 });

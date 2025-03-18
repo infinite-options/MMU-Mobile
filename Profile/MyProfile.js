@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { SafeAreaView, ScrollView, View, Text, StyleSheet, Platform, StatusBar, TouchableOpacity, Image, Pressable } from "react-native";
+import { SafeAreaView, ScrollView, View, Text, StyleSheet, Platform, StatusBar, TouchableOpacity, Image, Pressable, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useIsFocused } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -89,106 +89,135 @@ export default function MyProfile() {
         }
         // GET user info
         const response = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${uid}`);
+
+        // Check if the response is valid
+        if (!response.data || !response.data.result || !response.data.result.length) {
+          console.log("Empty or invalid response from userinfo API:", response.data);
+          Alert.alert("Error", "Could not retrieve user data. Please try again later.");
+          return;
+        }
+
         const fetched = response.data.result[0];
         // console.log("Fetched user info:", fetched);
 
         setUserData(fetched || {});
+
+        // Handle photo parsing with error protection
         if (fetched.user_photo_url) {
-          const photoArray = JSON.parse(fetched.user_photo_url);
-          // We only have 3 slots, fill them from the array
-          const newPhotos = [null, null, null];
+          try {
+            const photoArray = JSON.parse(fetched.user_photo_url);
+            // We only have 3 slots, fill them from the array
+            const newPhotos = [null, null, null];
 
-          // Check for favorite photo
-          const favoritePhoto = fetched.user_favorite_photo;
-          let favoriteIndex = -1;
+            // Check for favorite photo
+            const favoritePhoto = fetched.user_favorite_photo;
+            let favoriteIndex = -1;
 
-          if (favoritePhoto) {
-            favoriteIndex = photoArray.findIndex((uri) => uri === favoritePhoto);
+            if (favoritePhoto) {
+              favoriteIndex = photoArray.findIndex((uri) => uri === favoritePhoto);
+            }
+
+            // If we have a favorite photo, put it first
+            if (favoriteIndex !== -1) {
+              // Put favorite photo first
+              newPhotos[0] = photoArray[favoriteIndex];
+
+              // Add other photos to remaining slots
+              let nonFavoriteIndex = 1;
+              photoArray.forEach((uri, idx) => {
+                if (idx !== favoriteIndex && nonFavoriteIndex < 3) {
+                  newPhotos[nonFavoriteIndex] = uri;
+                  nonFavoriteIndex++;
+                }
+              });
+
+              // Set favorite index to 0
+              setFavoritePhotoIndex(0);
+            } else {
+              // No favorite, use original order
+              photoArray.forEach((uri, idx) => {
+                if (idx < 3) newPhotos[idx] = uri;
+              });
+            }
+
+            setPhotos(newPhotos);
+          } catch (photoError) {
+            console.log("Error parsing user_photo_url:", photoError);
+            // Continue without setting photos
           }
-
-          // If we have a favorite photo, put it first
-          if (favoriteIndex !== -1) {
-            // Put favorite photo first
-            newPhotos[0] = photoArray[favoriteIndex];
-
-            // Add other photos to remaining slots
-            let nonFavoriteIndex = 1;
-            photoArray.forEach((uri, idx) => {
-              if (idx !== favoriteIndex && nonFavoriteIndex < 3) {
-                newPhotos[nonFavoriteIndex] = uri;
-                nonFavoriteIndex++;
-              }
-            });
-
-            // Set favorite index to 0
-            setFavoritePhotoIndex(0);
-          } else {
-            // No favorite, use original order
-            photoArray.forEach((uri, idx) => {
-              if (idx < 3) newPhotos[idx] = uri;
-            });
-          }
-
-          setPhotos(newPhotos);
         }
 
         // ========== Video handling (Option B) ==========
         if (fetched.user_video_url) {
-          let rawVideoUrl = fetched.user_video_url;
+          try {
+            let rawVideoUrl = fetched.user_video_url;
 
-          // Check if the URL needs parsing (only try to parse if it looks like a JSON string)
-          if (typeof rawVideoUrl === "string" && (rawVideoUrl.startsWith('"') || rawVideoUrl.startsWith("["))) {
-            try {
-              rawVideoUrl = JSON.parse(rawVideoUrl);
-              // e.g. "\"https://s3.us-west-1.amazonaws.com/...\"" -> "https://s3.us-west-1.amazonaws.com/..."
-            } catch (err) {
-              console.warn("Could not JSON-parse user_video_url. Using as-is:", err);
-              // Continue with the raw string
+            // Check if the URL needs parsing (only try to parse if it looks like a JSON string)
+            if (typeof rawVideoUrl === "string" && (rawVideoUrl.startsWith('"') || rawVideoUrl.startsWith("["))) {
+              try {
+                rawVideoUrl = JSON.parse(rawVideoUrl);
+                // e.g. "\"https://s3.us-west-1.amazonaws.com/...\"" -> "https://s3.us-west-1.amazonaws.com/..."
+              } catch (err) {
+                console.warn("Could not JSON-parse user_video_url. Using as-is:", err);
+                // Continue with the raw string
+              }
             }
-          }
 
-          // If there's still extra quotes, you can remove them manually:
-          if (typeof rawVideoUrl === "string" && rawVideoUrl.startsWith('"') && rawVideoUrl.endsWith('"')) {
-            rawVideoUrl = rawVideoUrl.slice(1, -1);
-          }
+            // If there's still extra quotes, you can remove them manually:
+            if (typeof rawVideoUrl === "string" && rawVideoUrl.startsWith('"') && rawVideoUrl.endsWith('"')) {
+              rawVideoUrl = rawVideoUrl.slice(1, -1);
+            }
 
-          // console.log("Cleaned video url:", rawVideoUrl);
-          setVideoUri(rawVideoUrl);
+            // console.log("Cleaned video url:", rawVideoUrl);
+            setVideoUri(rawVideoUrl);
+          } catch (videoError) {
+            console.log("Error processing video URL:", videoError);
+            // Continue without setting video URI
+          }
         }
 
         // Adjust profile steps based on available user data
-        const hasDateInterests = !!fetched?.user_date_interests;
-        const hasAvailableTime = !!fetched?.user_available_time;
+        try {
+          const hasDateInterests = !!fetched?.user_date_interests;
+          const hasAvailableTime = !!fetched?.user_available_time;
 
-        // Get profile steps and modify them based on available data
-        const steps = getProfileSteps();
+          // Get profile steps and modify them based on available data
+          const steps = getProfileSteps();
 
-        if (hasDateInterests && hasAvailableTime) {
-          // Remove date preferences step entirely if both are complete
-          const filteredSteps = steps.filter((step) => step.title !== "your date preferences");
-          setProfileSteps(filteredSteps);
-        } else {
-          // Update date preferences step count based on available data
-          const updatedSteps = steps.map((step) => {
-            if (step.title === "your date preferences") {
-              if (hasDateInterests) {
-                // Only need DateAvailability
-                return { ...step, count: 1 };
-              } else if (hasAvailableTime) {
-                // Only need TypeOfDate
-                return { ...step, count: 1 };
-              } else {
-                // Reset to 2 if both are missing
-                return { ...step, count: 2 };
+          if (hasDateInterests && hasAvailableTime) {
+            // Remove date preferences step entirely if both are complete
+            const filteredSteps = steps.filter((step) => step.title !== "your date preferences");
+            setProfileSteps(filteredSteps);
+          } else {
+            // Update date preferences step count based on available data
+            const updatedSteps = steps.map((step) => {
+              if (step.title === "your date preferences") {
+                if (hasDateInterests) {
+                  // Only need DateAvailability
+                  return { ...step, count: 1 };
+                } else if (hasAvailableTime) {
+                  // Only need TypeOfDate
+                  return { ...step, count: 1 };
+                } else {
+                  // Reset to 2 if both are missing
+                  return { ...step, count: 2 };
+                }
               }
-            }
-            return step;
-          });
-          setProfileSteps(updatedSteps);
+              return step;
+            });
+            setProfileSteps(updatedSteps);
+          }
+          setProfileCompletion(getProfileCompletion());
+        } catch (stepsError) {
+          console.log("Error processing profile steps:", stepsError);
+          // Set default steps
+          setProfileSteps(getProfileSteps());
+          setProfileCompletion(80); // Default value
         }
-        setProfileCompletion(getProfileCompletion());
       } catch (error) {
         console.log("Error fetching user info:", error);
+        // Show an error message to the user
+        Alert.alert("Profile Load Error", "There was a problem loading your profile. Please try again later.", [{ text: "OK" }]);
       }
     };
 

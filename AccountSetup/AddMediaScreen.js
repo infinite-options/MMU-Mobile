@@ -37,6 +37,9 @@ export default function AddMediaScreen({ navigation }) {
   // Add a status message state near other state variables
   const [uploadStatus, setUploadStatus] = useState("");
 
+  // Near other state variables
+  const [photoFileSizes, setPhotoFileSizes] = useState([null, null, null]);
+
   // Load test videos using the centralized function
   useEffect(() => {
     const initTestVideos = async () => {
@@ -78,6 +81,7 @@ export default function AddMediaScreen({ navigation }) {
         const storedUserId = await AsyncStorage.getItem("user_uid");
         const storedUserEmail = await AsyncStorage.getItem("user_email_id");
         console.log("Stored user data:", storedUserId, storedUserEmail);
+
         if (storedUserId && storedUserEmail) {
           setUserId(storedUserId);
           setUserEmail(storedUserEmail);
@@ -103,10 +107,10 @@ export default function AddMediaScreen({ navigation }) {
 
       // ========== Photo handling (unchanged) ==========
       if (fetchedData.user_photo_url) {
-        const imageArray = JSON.parse(fetchedData.user_photo_url);
+        const photoArray = JSON.parse(fetchedData.user_photo_url);
         // We only have 3 slots, fill them from the array
         const newPhotos = [null, null, null];
-        imageArray.forEach((uri, idx) => {
+        photoArray.forEach((uri, idx) => {
           if (idx < 3) newPhotos[idx] = uri;
         });
         console.log("fetched photos:", newPhotos);
@@ -142,7 +146,36 @@ export default function AddMediaScreen({ navigation }) {
     }
   };
 
-  // Handle picking an image for a given slot (0..2)
+  // Add a comprehensive getFileSizes function similar to EditProfile.js
+  useEffect(() => {
+    const calculateFileSizes = async () => {
+      try {
+        // Calculate video file size
+        if (videoUri) {
+          const size = await getFileSizeInMB(videoUri, testVideos);
+          setVideoFileSize(size);
+        }
+
+        // Calculate photo file sizes
+        const newPhotoFileSizes = [...photoFileSizes];
+        for (let i = 0; i < photos.length; i++) {
+          if (photos[i]) {
+            const size = await getFileSizeInMB(photos[i], testVideos);
+            newPhotoFileSizes[i] = size;
+          } else {
+            newPhotoFileSizes[i] = null;
+          }
+        }
+        setPhotoFileSizes(newPhotoFileSizes);
+      } catch (error) {
+        console.error("Error calculating file sizes:", error);
+      }
+    };
+
+    calculateFileSizes();
+  }, [videoUri, photos, testVideos]);
+
+  // Update handlePickImage to set file size immediately
   const handlePickImage = async (slotIndex) => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -152,9 +185,16 @@ export default function AddMediaScreen({ navigation }) {
       });
 
       if (!result.canceled && result.assets?.[0]?.uri) {
+        const uri = result.assets[0].uri;
         const newPhotos = [...photos];
-        newPhotos[slotIndex] = result.assets[0].uri;
+        newPhotos[slotIndex] = uri;
         setPhotos(newPhotos);
+
+        // Calculate and set file size immediately
+        const fileSize = await getFileSizeInMB(uri, testVideos);
+        const newPhotoFileSizes = [...photoFileSizes];
+        newPhotoFileSizes[slotIndex] = fileSize;
+        setPhotoFileSizes(newPhotoFileSizes);
       }
     } catch (error) {
       console.error("Error picking image:", error);
@@ -162,12 +202,16 @@ export default function AddMediaScreen({ navigation }) {
     }
   };
 
-  // Remove a photo from a given slot
+  // Update handleRemovePhoto to clear file size
   const handleRemovePhoto = (slotIndex) => {
     const newPhotos = [...photos];
-
     newPhotos[slotIndex] = null;
     setPhotos(newPhotos);
+
+    // Clear file size for removed photo
+    const newPhotoFileSizes = [...photoFileSizes];
+    newPhotoFileSizes[slotIndex] = null;
+    setPhotoFileSizes(newPhotoFileSizes);
   };
 
   // Handle picking a video
@@ -204,7 +248,7 @@ export default function AddMediaScreen({ navigation }) {
         Alert.alert("Video Added", `Your ${fileSize}MB video has been added to your profile. It will be uploaded to our secure server when you continue.`, [{ text: "OK" }]);
       } else {
         // Show test video options when selection is cancelled
-        console.log("---- In AddMediaScreen.js Video Selection Cancelled----");
+        console.log("---- Video Selection Cancelled----");
         Alert.alert("Video Selection Cancelled", "Would you like to use a test video instead?", [
           { text: "No", style: "cancel" },
           { text: "Yes", onPress: showTestVideoOptions },
@@ -215,14 +259,9 @@ export default function AddMediaScreen({ navigation }) {
     }
   };
 
-  // Determine appropriate video quality based on device
+  // Platform-specific video quality
   const getVideoQuality = () => {
-    // On iOS, use the ImagePicker preset constants
-    if (Platform.OS === "ios") {
-      return ImagePicker.UIImagePickerControllerQualityType.Medium;
-    }
-    // On Android, just use a string
-    return "medium";
+    return Platform.OS === "ios" ? ImagePicker.UIImagePickerControllerQualityType.Medium : 0.5;
   };
 
   // Update the handleRecordVideo function to use the getVideoQuality function
@@ -262,7 +301,7 @@ export default function AddMediaScreen({ navigation }) {
         Alert.alert("Video Recorded", `Your ${fileSize}MB video has been recorded. It will be uploaded to our secure server when you continue.`, [{ text: "OK" }]);
       } else {
         // Show test video options when selection is cancelled
-        console.log("---- In AddMediaScreen.js Video Recording Cancelled----");
+        console.log("---- Video Recording Cancelled----");
         Alert.alert("Video Recording Cancelled", "Would you like to use a test video instead?", [
           { text: "No", style: "cancel" },
           { text: "Yes", onPress: showTestVideoOptions },
@@ -277,6 +316,7 @@ export default function AddMediaScreen({ navigation }) {
   const handleRemoveVideo = () => {
     setVideoUri(null);
     setIsVideoPlaying(false);
+    setVideoFileSize(null);
   };
 
   // Toggle video play/pause
@@ -351,23 +391,28 @@ export default function AddMediaScreen({ navigation }) {
     return s3IsTestVideo(uri, testVideos);
   };
 
-  // Add this function near other utility functions
-  const checkTotalFileSize = () => {
+  // Update checkTotalFileSize to match the implementation in EditProfile.js
+  const checkTotalFileSize = React.useCallback(() => {
     let totalSize = 0;
 
-    // Add photo sizes (estimate 0.5MB per photo)
-    photos.forEach((uri) => {
-      if (uri) totalSize += 0.5;
-    });
-
-    // Add video size if available
+    // Add video file size if available
     if (videoFileSize) {
       totalSize += parseFloat(videoFileSize);
     }
 
-    console.log(`Total estimated file size: ${totalSize.toFixed(2)}MB`);
+    // Add photo file sizes if available
+    photoFileSizes.forEach((size) => {
+      if (size) {
+        totalSize += parseFloat(size);
+      }
+    });
+
+    // Round to 2 decimal places for display
+    totalSize = parseFloat(totalSize.toFixed(2));
+
+    console.log(`Total calculated file size: ${totalSize}MB`);
     return totalSize;
-  };
+  }, [videoFileSize, photoFileSizes]);
 
   // Update the uploadMediaToBackend function to check total file size
   const uploadMediaToBackend = async () => {
@@ -427,24 +472,44 @@ export default function AddMediaScreen({ navigation }) {
       if (videoUri) {
         setUploadStatus("Preparing video upload...");
 
-        // Always use S3 direct upload
-        console.log("--- In AddMediaScreen.js, using S3 direct upload");
-        const presignedData = await getPresignedUrl(userId);
-        setUploadStatus(`Uploading ${videoFileSize}MB video directly to S3...`);
-        const uploadResult = await uploadVideoToS3(videoUri, presignedData.url);
-        const uploadSuccess = uploadResult.success;
-        console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
+        // Enhanced S3 direct upload - align with EditProfile.js approach
+        console.log("--- In AddMediaScreen.js, using S3 direct upload ---");
 
-        if (uploadSuccess && presignedData.videoUrl) {
-          console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
-          setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
-          uploadData.append("user_video_url", presignedData.videoUrl);
-          console.log("Added user_video_url to form data:", presignedData.videoUrl);
+        // First get the presigned URL (same as EditProfile.js)
+        const presignedData = await getPresignedUrl(userId);
+
+        if (presignedData && presignedData.url) {
+          setUploadStatus(`Uploading ${videoFileSize}MB video directly to S3...`);
+          console.log("Got presigned URL, starting upload to S3...");
+
+          // Perform the actual upload
+          const uploadResult = await uploadVideoToS3(videoUri, presignedData.url);
+          const uploadSuccess = uploadResult.success;
+          console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
+
+          if (uploadSuccess && presignedData.videoUrl) {
+            console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
+            setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
+            uploadData.append("user_video_url", presignedData.videoUrl);
+            console.log("Added user_video_url to form data:", presignedData.videoUrl);
+          } else {
+            console.error("Direct S3 upload failed, falling back to regular upload");
+            setUploadStatus("S3 upload failed, falling back to regular upload");
+            // Fall back to regular upload
+            console.log("Adding video as multipart form data...");
+            uploadData.append("user_video", {
+              uri: videoUri,
+              type: "video/mp4",
+              name: "user_video.mp4",
+            });
+            console.log("Added user_video to form data as multipart");
+          }
         } else {
-          console.error("Direct S3 upload failed, falling back to regular upload");
-          setUploadStatus("S3 upload failed, falling back to regular upload");
+          console.error("Failed to get presigned URL, falling back to regular upload");
+          setUploadStatus("Failed to get presigned URL, falling back to regular upload");
+
           // Fall back to regular upload
-          console.log("Adding video as multipart form data...");
+          console.log("Adding video as multipart form data (presigned URL failed)...");
           uploadData.append("user_video", {
             uri: videoUri,
             type: "video/mp4",
@@ -464,8 +529,13 @@ export default function AddMediaScreen({ navigation }) {
       // Log the FormData contents (but not the actual file data)
       console.log("FormData contents:");
       for (let [key, value] of uploadData._parts) {
-        if (key === "user_video" || key.startsWith("img_")) {
-          console.log(`${key}: [File data omitted]`);
+        if (key === "user_video") {
+          console.log(`${key}: [File data omitted, size: ${videoFileSize}MB]`);
+        } else if (key.startsWith("img_")) {
+          // Extract the index from img_0, img_1, etc.
+          const imgIndex = parseInt(key.substring(4), 10);
+          const fileSize = photoFileSizes[imgIndex] || "unknown";
+          console.log(`${key}: [File data omitted, size: ${fileSize}MB]`);
         } else {
           console.log(`${key}: ${value}`);
         }
@@ -607,15 +677,12 @@ export default function AddMediaScreen({ navigation }) {
                   source={{ uri: videoUri }}
                   style={styles.video}
                   resizeMode='cover'
-                  // Let the video have built-in controls:
                   useNativeControls
-                  // Attempt to auto-play
                   shouldPlay={false}
                   onPlaybackStatusUpdate={(status) => {
                     if (!status.isLoaded) return;
                     setIsVideoPlaying(status.isPlaying);
                   }}
-                  // Print errors to console
                   onError={(err) => console.log("VIDEO ERROR:", err)}
                 />
                 {/* Center play overlay if paused */}
@@ -623,6 +690,12 @@ export default function AddMediaScreen({ navigation }) {
                   <TouchableOpacity style={styles.playOverlay} onPress={handlePlayPause}>
                     <Ionicons name='play' size={48} color='#FFF' />
                   </TouchableOpacity>
+                )}
+                {/* Show file size in corner */}
+                {videoFileSize && (
+                  <View style={styles.videoFileSizeBadge}>
+                    <Text style={styles.fileSizeText}>{videoFileSize}MB</Text>
+                  </View>
                 )}
                 {/* "X" in top-right */}
                 <TouchableOpacity onPress={handleRemoveVideo} style={styles.removeIconTopRight}>
@@ -653,6 +726,12 @@ export default function AddMediaScreen({ navigation }) {
                 {photoUri ? (
                   <>
                     <Image source={{ uri: photoUri }} style={styles.photoImage} />
+                    {/* Show file size */}
+                    {photoFileSizes[idx] && (
+                      <View style={styles.fileSizeBadge}>
+                        <Text style={styles.fileSizeText}>{photoFileSizes[idx]}MB</Text>
+                      </View>
+                    )}
                     {/* "X" in top-right */}
                     <TouchableOpacity onPress={() => handleRemovePhoto(idx)} style={styles.removeIconTopRight}>
                       <View style={styles.removeIconBackground}>
@@ -853,5 +932,28 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  fileSizeBadge: {
+    position: "absolute",
+    bottom: 5,
+    left: 5,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  fileSizeText: {
+    color: "#FFF",
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+  videoFileSizeBadge: {
+    position: "absolute",
+    bottom: 10,
+    left: 10,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
 });

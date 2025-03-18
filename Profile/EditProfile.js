@@ -42,14 +42,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Asset } from "expo-asset";
 import { useBackHandler } from "@react-native-community/hooks";
 import { LinearGradient } from "expo-linear-gradient";
-import {
-  getPresignedUrl,
-  uploadVideoToS3,
-  getFileSizeInMB as s3GetFileSizeInMB,
-  loadTestVideos,
-  isTestVideo as s3IsTestVideo,
-  getTestVideoFileSize as s3GetTestVideoFileSize,
-} from "../utils/S3Helper";
+import { getPresignedUrl, uploadVideoToS3, getFileSizeInMB, loadTestVideos, isTestVideo as s3IsTestVideo, getTestVideoFileSize as s3GetTestVideoFileSize } from "../utils/S3Helper";
 
 // Fallback to a placeholder to prevent crashes - replace with your actual key when testing
 const GOOGLE_API_KEY = Constants.expoConfig?.extra?.googleApiKey || process.env.EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY || "YOUR_GOOGLE_API_KEY_HERE";
@@ -148,6 +141,10 @@ export default function EditProfile() {
   // File size states
   const [videoFileSize, setVideoFileSize] = useState(null);
   const [photoFileSizes, setPhotoFileSizes] = useState([null, null, null]);
+
+  // User identification states
+  const [userId, setUserId] = useState(null);
+  const [userEmail, setUserEmail] = useState(null);
 
   // Default map region
   const [region, setRegion] = useState(DEFAULT_REGION);
@@ -446,42 +443,74 @@ export default function EditProfile() {
 
   // Permission check on component mount
   useEffect(() => {
-    (async () => {
-      const { status: existingStatus } = await ImagePicker.getMediaLibraryPermissionsAsync();
-      let finalStatus = existingStatus;
+    const requestPermissionsAndLoadUserData = async () => {
+      try {
+        // Check existing permissions first to avoid showing the dialog unnecessarily
+        const { status: existingStatus } = await ImagePicker.getMediaLibraryPermissionsAsync();
+        let finalStatus = existingStatus;
 
-      if (existingStatus !== "granted") {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        finalStatus = status;
-      }
+        if (existingStatus !== "granted") {
+          const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          finalStatus = status;
+        }
 
-      if (finalStatus !== "granted") {
-        console.log("Media library permission not granted");
+        if (finalStatus !== "granted") {
+          console.log("Media library permission not granted");
+          Alert.alert("Permission Required", "This app needs permission to access your photo library for uploading images and videos.");
+        }
+
+        // Get user info from AsyncStorage
+        try {
+          const storedUserId = await AsyncStorage.getItem("user_uid");
+          const storedUserEmail = await AsyncStorage.getItem("user_email_id");
+          console.log("Stored user data:", storedUserId, storedUserEmail);
+
+          if (storedUserId && storedUserEmail) {
+            setUserId(storedUserId);
+            setUserEmail(storedUserEmail);
+            await fetchUserData(storedUserId);
+            // Note: We're not navigating away here since fetchUserData already handles the data loading
+          } else {
+            Alert.alert("User data not found", "Please log in again.");
+            // Uncomment the line below when ready to implement navigation
+            // navigation.navigate("Login");
+          }
+        } catch (e) {
+          console.error("Error fetching user data from AsyncStorage:", e);
+        }
+      } catch (error) {
+        console.error("Error requesting media library permissions:", error);
       }
-    })();
+    };
+
+    requestPermissionsAndLoadUserData();
   }, []);
 
-  // Define fetchUserInfo outside of useEffect so it can be accessed by multiple hooks
-  const fetchUserInfo = useCallback(async () => {
+  // Define fetchUserData outside of useEffect so it can be accessed by multiple hooks
+  const fetchUserData = useCallback(async (uid) => {
     try {
-      setIsLoading(true);
-      const uid = await AsyncStorage.getItem("user_uid");
-      if (!uid) {
-        console.log("No user_uid in AsyncStorage");
-        return;
-      }
+      const response = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${uid}`);
+      const fetched = response.data.result[0] || {};
+      console.log("Fetched user data:", fetched);
 
-      // Gets profile data
-      const api = axios.create({
-        baseURL: "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev",
-        timeout: 10000,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      // setIsLoading(true);
+      // // const uid = await AsyncStorage.getItem("user_uid");
+      // if (!uid) {
+      //   console.log("No user_uid in AsyncStorage");
+      //   return;
+      // }
 
-      const response = await api.get(`/userinfo/${uid}`);
-      const fetched = response.data.result[0];
+      // // Gets profile data
+      // const api = axios.create({
+      //   baseURL: "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev",
+      //   timeout: 10000,
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      // });
+
+      // const response = await api.get(`/userinfo/${uid}`);
+      // const fetched = response.data.result[0];
 
       // Safely parse open_to field
       let parsedOpenTo = [];
@@ -566,10 +595,11 @@ export default function EditProfile() {
       setStarSignValue(fetched.user_star_sign || null);
       setEducationValue(fetched.user_education || null);
 
-      // Handle photos
+      // ========== Photo handling (unchanged) ==========
       if (fetched.user_photo_url) {
         try {
           const photoArray = JSON.parse(fetched.user_photo_url);
+          // We only have 3 slots, fill them from the array
           const newPhotos = [null, null, null];
 
           // Check for favorite photo
@@ -654,28 +684,16 @@ export default function EditProfile() {
   }, []);
 
   // Fetch user data from the server when this screen is opened
-  useEffect(() => {
-    if (isFocused) {
-      fetchUserInfo();
-    }
-  }, [isFocused]);
+  // useEffect(() => {
+  //   if (isFocused) {
+  //     fetchUserDat();
+  //   }
+  // }, [isFocused]);
 
   // Sync search text with form values
   useEffect(() => {
     setSearchText(formValues.address);
   }, [formValues.address]);
-
-  // Platform-specific video quality
-  const getVideoQuality = () => {
-    return Platform.OS === "ios" ? ImagePicker.UIImagePickerControllerQualityType.Medium : 0.5;
-  };
-
-  // Function to get file size in MB
-  const getFileSizeInMB = useCallback(async (fileUri) => {
-    // Use the utility function from S3Helper, passing in the test video functions
-    console.log("==== In EditProfile.js - getFileSizeInMB function ====");
-    return s3GetFileSizeInMB(fileUri, getTestVideoFileSize, isTestVideo);
-  }, []);
 
   // Updated image picker function with better permission handling
   const handlePickImage = async (slotIndex) => {
@@ -733,7 +751,7 @@ export default function EditProfile() {
         setPhotos(newPhotos);
 
         // Get and set the file size
-        const fileSize = await getFileSizeInMB(uri);
+        const fileSize = await getFileSizeInMB(uri, testVideos);
         const newPhotoFileSizes = [...photoFileSizes];
         newPhotoFileSizes[slotIndex] = fileSize;
         setPhotoFileSizes(newPhotoFileSizes);
@@ -778,9 +796,9 @@ export default function EditProfile() {
   };
 
   // Add a state variable to track upload status
-  // const [uploadStatus, setUploadStatus] = useState("");
+  const [uploadStatus, setUploadStatus] = useState("");
 
-  // Update the handleVideoUpload function to set the upload status
+  // Handle picking a video
   const handleVideoUpload = async () => {
     try {
       const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
@@ -811,10 +829,10 @@ export default function EditProfile() {
         setVideoFileSize(fileSize);
 
         // Set the appropriate message based on file size
-        Alert.alert("Video Added", `Your ${fileSize}MB video has been added to your profile. It will be uploaded to our secure server when you save changes.`, [{ text: "OK" }]);
+        Alert.alert("Video Added", `Your ${fileSize}MB video has been added to your profile. It will be uploaded to our secure server when you continue.`, [{ text: "OK" }]);
       } else {
         // Show test video options when selection is cancelled
-        console.log("---- In EditProfile.js Video Selection Cancelled----");
+        console.log("---- Video Selection Cancelled----");
         Alert.alert("Video Selection Cancelled", "Would you like to use a test video instead?", [
           { text: "No", style: "cancel" },
           { text: "Yes", onPress: showTestVideoOptions },
@@ -823,6 +841,11 @@ export default function EditProfile() {
     } catch (error) {
       console.error("Error picking video:", error);
     }
+  };
+
+  // Platform-specific video quality
+  const getVideoQuality = () => {
+    return Platform.OS === "ios" ? ImagePicker.UIImagePickerControllerQualityType.Medium : 0.5;
   };
 
   // Update the handleRecordVideo function to use the getVideoQuality function
@@ -859,10 +882,10 @@ export default function EditProfile() {
         setVideoFileSize(fileSize);
 
         // Set the appropriate message based on file size
-        Alert.alert("Video Recorded", `Your ${fileSize}MB video has been recorded. It will be uploaded to our secure server when you save changes.`, [{ text: "OK" }]);
+        Alert.alert("Video Recorded", `Your ${fileSize}MB video has been recorded. It will be uploaded to our secure server when you continue.`, [{ text: "OK" }]);
       } else {
         // Show test video options when selection is cancelled
-        console.log("---- In EditProfile.js Video Recording Cancelled----");
+        console.log("---- Video Recording Cancelled----");
         Alert.alert("Video Recording Cancelled", "Would you like to use a test video instead?", [
           { text: "No", style: "cancel" },
           { text: "Yes", onPress: showTestVideoOptions },
@@ -874,12 +897,13 @@ export default function EditProfile() {
   };
 
   const handleRemoveVideo = () => {
-    // Modify this function to just mark the video as deleted
-    // but don't allow saving unless a new video is uploaded
+    // Modify this function to just mark the video as deleted but don't allow saving unless a new video is uploaded
     setVideoUri(null);
-    setDeletedVideo(true);
+    setIsVideoPlaying(false);
     setVideoFileSize(null);
+    setDeletedVideo(true);
   };
+
   const handlePlayPause = async () => {
     if (!videoRef.current) return;
     if (isVideoPlaying) {
@@ -889,6 +913,66 @@ export default function EditProfile() {
       await videoRef.current.playAsync();
       setIsVideoPlaying(true);
     }
+  };
+
+  // Function to show fallback options for test videos
+  const showTestVideoOptions = () => {
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ["Cancel", ...testVideos.map((video) => video.name)],
+          cancelButtonIndex: 0,
+          title: "Select a Test Video",
+          message: "Choose a test video to use for upload testing",
+        },
+        (buttonIndex) => {
+          if (buttonIndex > 0) {
+            handleTestVideoSelection(buttonIndex - 1);
+          }
+        }
+      );
+    } else {
+      // For Android, use Alert with buttons
+      Alert.alert("Select a Test Video", "Choose a test video to use for upload testing", [
+        { text: "Cancel", style: "cancel" },
+        ...testVideos.map((video, index) => ({
+          text: video.name,
+          onPress: () => handleTestVideoSelection(index),
+        })),
+      ]);
+    }
+  };
+
+  // Function to handle test video selection
+  const handleTestVideoSelection = (index) => {
+    if (index < 0 || index >= testVideos.length) {
+      return;
+    }
+
+    const selectedVideo = testVideos[index];
+
+    if (!selectedVideo.uri) {
+      return;
+    }
+
+    setVideoUri(selectedVideo.uri);
+    setVideoFileSize(selectedVideo.size);
+    setIsVideoPlaying(false);
+
+    const fileSize = selectedVideo.size;
+
+    // Set the appropriate message based on file size
+    Alert.alert("Test Video Selected", `The selected test video is ${fileSize}MB. It will be uploaded directly to S3 when you save changes.`, [{ text: "OK" }]);
+  };
+
+  // Function to get file size for test videos
+  const getTestVideoFileSize = (uri) => {
+    return s3GetTestVideoFileSize(uri, testVideos);
+  };
+
+  // Function to check if a URI is a test video
+  const isTestVideo = (uri) => {
+    return s3IsTestVideo(uri, testVideos);
   };
 
   // Driver's license
@@ -1338,30 +1422,35 @@ export default function EditProfile() {
 
   // Updated handleSaveChanges function
   const handleSaveChanges = async () => {
-    try {
-      setIsLoading(true);
+    const uid = await AsyncStorage.getItem("user_uid");
+    if (!uid) {
+      Alert.alert("Error", "User ID not found");
+      return;
+    }
 
-      // Check total file size before uploading
-      const totalSize = checkTotalFileSize();
-      if (totalSize > 5) {
-        // Ask for confirmation before proceeding with large files
-        const shouldProceed = await new Promise((resolve) => {
-          Alert.alert(
-            "Large File Size Warning",
-            `The total size of your media is ${totalSize}MB, which exceeds the recommended 5MB limit. 1 This may cause slow uploads and performance issues. Do you want to continue?`,
-            [
-              { text: "Cancel", onPress: () => resolve(false), style: "cancel" },
-              { text: "Continue Anyway", onPress: () => resolve(true) },
-            ]
-          );
-        });
+    setIsLoading(true);
 
-        if (!shouldProceed) {
-          setIsLoading(false);
-          return;
-        }
+    // Check total file size before uploading
+    const totalSize = checkTotalFileSize();
+    if (totalSize > 5) {
+      // Ask for confirmation before proceeding with large files
+      const shouldProceed = await new Promise((resolve) => {
+        Alert.alert(
+          "Large File Size Warning",
+          `The total size of your media is ${totalSize}MB, which exceeds the recommended 5MB limit. 1 This may cause slow uploads and performance issues. Do you want to continue?`,
+          [
+            { text: "Cancel", onPress: () => resolve(false), style: "cancel" },
+            { text: "Continue Anyway", onPress: () => resolve(true) },
+          ]
+        );
+      });
+
+      if (!shouldProceed) {
+        setIsLoading(false);
+        return;
       }
-
+    }
+    try {
       // Validate form fields
       const firstNameError = validateName(formValues.firstName, "First name");
       const lastNameError = validateName(formValues.lastName, "Last name");
@@ -1379,12 +1468,12 @@ export default function EditProfile() {
 
       try {
         setIsLoading(true);
-        const uid = await AsyncStorage.getItem("user_uid");
-        if (!uid) {
-          Alert.alert("Error", "User ID not found");
-          setIsLoading(false);
-          return;
-        }
+        // const uid = await AsyncStorage.getItem("user_uid");
+        // if (!uid) {
+        //   Alert.alert("Error", "User ID not found");
+        //   setIsLoading(false);
+        //   return;
+        // }
 
         // Filter out null photos and only include actual photo URIs
         const originalPhotos = userData.user_photo_url ? JSON.parse(userData.user_photo_url) : [];
@@ -1725,7 +1814,27 @@ export default function EditProfile() {
         // Log the final FormData contents
         console.log("=== Final FormData Contents ===");
         for (let [key, value] of uploadData._parts) {
-          console.log(`${key}: ${value}`);
+          if (key === "user_video") {
+            console.log(`${key}: [File data omitted, size: ${videoFileSize}MB]`);
+          } else if (key.startsWith("img_")) {
+            // Extract the index from img_0, img_1, etc.
+            const imgIndex = parseInt(key.substring(4), 10);
+            // Try to find the corresponding file size in photoFileSizes
+            // This is more complex in EditProfile as img_0 might not correspond to photos[0]
+            // due to the reorganization of photos (e.g., favorite photo first)
+            let fileSize = "unknown";
+            if (imgIndex < newLocalPhotos.length) {
+              const photoUri = newLocalPhotos[imgIndex];
+              // Find the index in the original photos array
+              const originalIndex = photos.indexOf(photoUri);
+              if (originalIndex !== -1 && photoFileSizes[originalIndex]) {
+                fileSize = photoFileSizes[originalIndex];
+              }
+            }
+            console.log(`${key}: [File data omitted, size: ${fileSize}MB]`);
+          } else {
+            console.log(`${key}: ${value}`);
+          }
         }
 
         // Add favorite photo to upload data if one is selected
@@ -1774,8 +1883,24 @@ export default function EditProfile() {
         // Log the FormData contents (but not the actual file data)
         console.log("FormData contents:");
         for (let [key, value] of uploadData._parts) {
-          if (key === "user_video" || key.startsWith("img_")) {
-            console.log(`${key}: [File data omitted]`);
+          if (key === "user_video") {
+            console.log(`${key}: [File data omitted, size: ${videoFileSize}MB]`);
+          } else if (key.startsWith("img_")) {
+            // Extract the index from img_0, img_1, etc.
+            const imgIndex = parseInt(key.substring(4), 10);
+            // Try to find the corresponding file size in photoFileSizes
+            // This is more complex in EditProfile as img_0 might not correspond to photos[0]
+            // due to the reorganization of photos (e.g., favorite photo first)
+            let fileSize = "unknown";
+            if (imgIndex < newLocalPhotos.length) {
+              const photoUri = newLocalPhotos[imgIndex];
+              // Find the index in the original photos array
+              const originalIndex = photos.indexOf(photoUri);
+              if (originalIndex !== -1 && photoFileSizes[originalIndex]) {
+                fileSize = photoFileSizes[originalIndex];
+              }
+            }
+            console.log(`${key}: [File data omitted, size: ${fileSize}MB]`);
           } else {
             console.log(`${key}: ${value}`);
           }
@@ -1843,198 +1968,6 @@ export default function EditProfile() {
     }
   };
 
-  // Remove the compression utility functions
-  const getFileSize = useCallback(async (uri) => {
-    console.log("==== In EditProfile.js - getFileSize function ====");
-    return getFileSizeInMB(uri);
-  }, []);
-
-  // Function to upload video directly to S3 using a presigned URL
-  // const uploadVideoToS3 = async (fileUri, presignedUrl) => {
-  //   try {
-  //     console.log("=== S3 Direct Upload Process ===");
-  //     console.log("Starting direct S3 upload for large video file");
-  //     console.log("File URI:", fileUri);
-  //     console.log("Presigned URL:", presignedUrl);
-
-  //     // Parse the presigned URL to get query parameters
-  //     const urlObj = new URL(presignedUrl);
-  //     console.log("S3 bucket:", urlObj.hostname);
-  //     console.log("S3 key path:", urlObj.pathname);
-  //     console.log("S3 query parameters:", urlObj.search);
-
-  //     // Add more detailed analysis of the presigned URL
-  //     console.log("Presigned URL analysis:");
-  //     console.log("- Protocol:", urlObj.protocol);
-  //     console.log("- Full hostname:", urlObj.host);
-  //     console.log("- Path:", urlObj.pathname);
-
-  //     // Parse and log query parameters individually
-  //     const queryParams = {};
-  //     urlObj.searchParams.forEach((value, key) => {
-  //       queryParams[key] = value;
-  //     });
-  //     console.log("- Query parameters:", JSON.stringify(queryParams, null, 2));
-
-  //     // Get file info to confirm size before upload
-  //     const fileInfo = await FileSystem.getInfoAsync(fileUri);
-  //     console.log("File info before upload:", JSON.stringify(fileInfo, null, 2));
-
-  //     if (!fileInfo.exists) {
-  //       console.error("File does not exist at path:", fileUri);
-  //       console.log("=== End S3 Direct Upload Process (File Not Found) ===");
-  //       return false;
-  //     }
-
-  //     const fileSizeMB = (fileInfo.size / (1024 * 1024)).toFixed(2);
-  //     console.log("File size before upload:", fileSizeMB + " MB");
-
-  //     // Fetch the file and create a blob
-  //     console.log("Fetching file and creating blob...");
-  //     const file = await fetch(fileUri);
-  //     const blob = await file.blob();
-  //     const blobSizeMB = (blob.size / (1024 * 1024)).toFixed(2);
-  //     console.log("Blob created successfully");
-  //     console.log("Blob size:", blobSizeMB + " MB");
-  //     console.log("Blob type:", blob.type);
-
-  //     // Determine content type based on file extension
-  //     let contentType = "video/mp4";
-  //     if (fileUri.toLowerCase().endsWith(".mov")) {
-  //       contentType = "video/quicktime";
-  //     } else if (fileUri.toLowerCase().endsWith(".avi")) {
-  //       contentType = "video/x-msvideo";
-  //     }
-
-  //     console.log("Using content type for upload:", contentType);
-
-  //     // Log request headers
-  //     const requestHeaders = {
-  //       "Content-Type": contentType,
-  //     };
-  //     console.log("Request headers:", JSON.stringify(requestHeaders, null, 2));
-  //     console.log("Sending PUT request to S3 with timeout of 120 seconds...");
-
-  //     // Use a longer timeout for large files
-  //     const controller = new AbortController();
-  //     const timeoutId = setTimeout(() => {
-  //       console.log("Upload timeout reached (120 seconds), aborting...");
-  //       controller.abort();
-  //     }, 120000); // 2 minute timeout
-
-  //     try {
-  //       const startTime = Date.now();
-  //       console.log("Upload started at:", new Date(startTime).toISOString());
-
-  //       const response = await fetch(presignedUrl, {
-  //         method: "PUT",
-  //         body: blob,
-  //         headers: requestHeaders,
-  //         signal: controller.signal,
-  //       });
-
-  //       const endTime = Date.now();
-  //       const uploadDuration = (endTime - startTime) / 1000; // in seconds
-  //       console.log("Upload completed at:", new Date(endTime).toISOString());
-  //       console.log("Upload duration:", uploadDuration.toFixed(2) + " seconds");
-  //       console.log("Upload speed:", (blobSizeMB / uploadDuration).toFixed(2) + " MB/s");
-
-  //       clearTimeout(timeoutId); // Clear the timeout if request completes
-
-  //       console.log("S3 upload response status:", response.status);
-  //       console.log("S3 upload response status text:", response.statusText);
-  //       console.log("S3 upload response headers:", JSON.stringify([...response.headers.entries()], null, 2));
-
-  //       if (response.ok) {
-  //         console.log("Direct S3 upload successful!");
-  //         console.log("=== End S3 Direct Upload Process (Success) ===\n");
-  //         return true;
-  //       } else {
-  //         const responseText = await response.text();
-  //         console.error("S3 upload failed with status:", response.status);
-  //         console.error("S3 error response:", responseText);
-  //         console.log("=== End S3 Direct Upload Process (Failed) ===\n");
-  //         return false;
-  //       }
-  //     } catch (fetchError) {
-  //       clearTimeout(timeoutId); // Clear the timeout on error
-  //       if (fetchError.name === "AbortError") {
-  //         console.error("S3 upload timed out after 120 seconds");
-  //       } else {
-  //         console.error("Fetch error during S3 upload:", fetchError);
-  //         console.error("Error name:", fetchError.name);
-  //         console.error("Error message:", fetchError.message);
-  //         if (fetchError.stack) {
-  //           console.error("Error stack:", fetchError.stack);
-  //         }
-  //       }
-  //       console.log("=== End S3 Direct Upload Process (Error) ===\n");
-  //       return false;
-  //     }
-  //   } catch (error) {
-  //     console.error("Error preparing file for S3 upload:", error);
-  //     console.error("Error name:", error.name);
-  //     console.error("Error message:", error.message);
-  //     if (error.stack) {
-  //       console.error("Error stack:", error.stack);
-  //     }
-  //     console.log("=== End S3 Direct Upload Process (Preparation Error) ===\n");
-  //     return false;
-  //   }
-  // };
-
-  // Function to get presigned URL for S3 upload
-  // const getPresignedUrl = async (uid) => {
-  //   try {
-  //     console.log("\n=== Presigned URL Request ===");
-  //     console.log("Requesting presigned URL for user:", uid);
-
-  //     const requestData = {
-  //       user_uid: uid,
-  //       user_video_filetype: "video/mp4",
-  //     };
-
-  //     console.log("Request payload:", JSON.stringify(requestData, null, 2));
-
-  //     const response = await axios.post("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/s3Link", requestData);
-
-  //     console.log("Presigned URL API RAW response status:", response);
-  //     console.log("Presigned URL API response data:", response.data);
-  //     // console.log("Presigned URL API response status:", response.responseUR);
-  //     console.log("Presigned URL API response status:", response.status);
-  //     console.log("Presigned URL API response headers:", JSON.stringify(response.headers, null, 2));
-  //     console.log("Presigned URL API response data:", JSON.stringify(response.data, null, 2));
-
-  //     if (response.data && response.data.url) {
-  //       console.log("Got presigned URL:", response.data.url);
-  //       console.log("S3 video URL will be:", response.data.videoUrl);
-
-  //       // Add detailed analysis of the response structure
-  //       console.log("Presigned URL response structure: ", response.data.key);
-  //       // for (const key in response.data) {
-  //       //   console.log(`- ${key}: ${typeof response.data[file_key] === "object" ? JSON.stringify(response.data[file_key]) : response.data[file_key]}`);
-  //       // }
-
-  //       console.log("=== End Presigned URL Request ===");
-  //       return response.data;
-  //     } else {
-  //       console.error("Invalid response format for presigned URL:", JSON.stringify(response.data));
-  //       console.log("=== End Presigned URL Request (Failed) ===\n");
-  //       return null;
-  //     }
-  //   } catch (error) {
-  //     console.error("Error getting presigned URL:");
-  //     if (error.response) {
-  //       console.error("Response status:", error.response.status);
-  //       console.error("Response data:", error.response.data);
-  //     } else {
-  //       console.error("Error message:", error.message);
-  //     }
-  //     console.log("=== End Presigned URL Request (Error) ===\n");
-  //     return null;
-  //   }
-  // };
-
   // Add this effect to properly initialize the map location
   useEffect(() => {
     if (formValues.latitude && formValues.longitude && !mapReady) {
@@ -2062,29 +1995,37 @@ export default function EditProfile() {
   // Effect to get file sizes when videoUri or photos change
   useEffect(() => {
     const getFileSizes = async () => {
-      // Get video file size
-      if (videoUri) {
-        console.log("==== In EditProfile.js - getFileSizes video ====");
-        const size = await getFileSizeInMB(videoUri);
-        setVideoFileSize(size);
-      }
+      try {
+        let totalSize = 0;
 
-      // Get photo file sizes
-      const newPhotoFileSizes = [...photoFileSizes];
-      for (let i = 0; i < photos.length; i++) {
-        if (photos[i]) {
-          console.log("==== In EditProfile.js - getFileSizes photo ====");
-          const size = await getFileSizeInMB(photos[i]);
-          newPhotoFileSizes[i] = size;
-        } else {
-          newPhotoFileSizes[i] = null;
+        // Add video size if available
+        if (videoUri) {
+          const size = await getFileSizeInMB(videoUri, testVideos);
+          if (size) {
+            totalSize += parseFloat(size);
+          }
         }
+
+        // Add photo sizes
+        for (let i = 0; i < photos.length; i++) {
+          if (photos[i]) {
+            // Estimate photo size (can be replaced with actual size later)
+            const size = await getFileSizeInMB(photos[i], testVideos);
+            if (size) {
+              totalSize += parseFloat(size);
+            }
+          }
+        }
+
+        return totalSize.toFixed(2);
+      } catch (error) {
+        console.error("Error calculating file sizes:", error);
+        return "0.00";
       }
-      setPhotoFileSizes(newPhotoFileSizes);
     };
 
     getFileSizes();
-  }, [videoUri, photos]);
+  }, [videoUri, photos, testVideos]);
 
   // Function to check total file size and show alert if it exceeds 5MB
   const checkTotalFileSize = useCallback(() => {
@@ -2105,13 +2046,7 @@ export default function EditProfile() {
     // Round to 2 decimal places for display
     totalSize = parseFloat(totalSize.toFixed(2));
 
-    // Check if total size exceeds 5MB
-    // if (totalSize > 5) {
-    //   Alert.alert("Large File Size", `The total size of your media is ${totalSize}MB, which exceeds the recommended 5MB limit. 2 This may cause slow uploads and performance issues.`, [
-    //     { text: "OK", onPress: () => console.log("User acknowledged large file size") },
-    //   ]);
-    // }
-
+    console.log(`Total calculated file size: ${totalSize}MB`);
     return totalSize;
   }, [videoFileSize, photoFileSizes]);
 
@@ -2163,89 +2098,6 @@ export default function EditProfile() {
     } catch (error) {
       console.error("Error in test S3 upload:", error);
     }
-  };
-
-  // Function to show fallback options for test videos
-  const showTestVideoOptions = () => {
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ["Cancel", ...testVideos.map((video) => video.name)],
-          cancelButtonIndex: 0,
-          title: "Select a Test Video",
-          message: "Choose a test video to use for upload testing",
-        },
-        (buttonIndex) => {
-          if (buttonIndex > 0) {
-            handleTestVideoSelection(buttonIndex - 1);
-          }
-        }
-      );
-    } else {
-      // For Android, use Alert with buttons
-      Alert.alert("Select a Test Video", "Choose a test video to use for upload testing", [
-        { text: "Cancel", style: "cancel" },
-        ...testVideos.map((video, index) => ({
-          text: video.name,
-          onPress: () => handleTestVideoSelection(index),
-        })),
-      ]);
-    }
-  };
-
-  // Function to handle test video selection
-  const handleTestVideoSelection = (index) => {
-    if (index < 0 || index >= testVideos.length) {
-      return;
-    }
-
-    const selectedVideo = testVideos[index];
-
-    if (!selectedVideo.uri) {
-      return;
-    }
-
-    setVideoUri(selectedVideo.uri);
-    setVideoFileSize(selectedVideo.size);
-    setIsVideoPlaying(false);
-
-    const fileSize = selectedVideo.size;
-
-    // Set the appropriate message based on file size
-    if (parseFloat(fileSize) > 1) {
-      Alert.alert("Large Test Video", `The selected test video is ${fileSize}MB, which exceeds the 1MB limit for regular uploads. It will be uploaded directly to S3 when you save your profile.`, [
-        { text: "OK" },
-      ]);
-    } else {
-    }
-  };
-
-  // Function to get file size for test videos
-  const getTestVideoFileSize = (uri) => {
-    if (!uri) return null;
-
-    // Find the test video by checking if the URI contains the filename
-    const testVideo = testVideos.find((video) => {
-      // Add null check for video.uri
-      if (!video.uri) return false;
-      return uri.includes(video.uri.split("/").pop());
-    });
-
-    if (testVideo) {
-      return testVideo.size;
-    }
-    return null;
-  };
-
-  // Function to check if a URI is a test video
-  const isTestVideo = (uri) => {
-    if (!uri) return false;
-    // Check if the URI contains any of the test video filenames
-    return testVideos.some((video) => {
-      // Add null check for video.uri
-      if (!video.uri) return false;
-      return uri.includes(video.uri.split("/").pop());
-    });
   };
 
   return (

@@ -69,11 +69,13 @@ export default function MyProfile() {
 
   // Add effect to set favorite photo from user data
   useEffect(() => {
-    if (userData.user_favorite_photo) {
+    // Only run this if we haven't already set the favorite photo index
+    // during the initial loading of photos
+    if (userData.user_favorite_photo && favoritePhotoIndex === null) {
       const index = photos.findIndex((photo) => photo === userData.user_favorite_photo);
       setFavoritePhotoIndex(index >= 0 ? index : null);
     }
-  }, [userData, photos]);
+  }, [userData, photos, favoritePhotoIndex]);
 
   // Fetch user data on mount/focus
   useEffect(() => {
@@ -95,9 +97,38 @@ export default function MyProfile() {
           const photoArray = JSON.parse(fetched.user_photo_url);
           // We only have 3 slots, fill them from the array
           const newPhotos = [null, null, null];
-          photoArray.forEach((uri, idx) => {
-            if (idx < 3) newPhotos[idx] = uri;
-          });
+
+          // Check for favorite photo
+          const favoritePhoto = fetched.user_favorite_photo;
+          let favoriteIndex = -1;
+
+          if (favoritePhoto) {
+            favoriteIndex = photoArray.findIndex((uri) => uri === favoritePhoto);
+          }
+
+          // If we have a favorite photo, put it first
+          if (favoriteIndex !== -1) {
+            // Put favorite photo first
+            newPhotos[0] = photoArray[favoriteIndex];
+
+            // Add other photos to remaining slots
+            let nonFavoriteIndex = 1;
+            photoArray.forEach((uri, idx) => {
+              if (idx !== favoriteIndex && nonFavoriteIndex < 3) {
+                newPhotos[nonFavoriteIndex] = uri;
+                nonFavoriteIndex++;
+              }
+            });
+
+            // Set favorite index to 0
+            setFavoritePhotoIndex(0);
+          } else {
+            // No favorite, use original order
+            photoArray.forEach((uri, idx) => {
+              if (idx < 3) newPhotos[idx] = uri;
+            });
+          }
+
           setPhotos(newPhotos);
         }
 

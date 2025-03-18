@@ -577,10 +577,41 @@ export default function EditProfile() {
         try {
           const photoArray = JSON.parse(fetched.user_photo_url);
           const newPhotos = [null, null, null];
-          photoArray.forEach((uri, idx) => {
-            if (idx < 3) newPhotos[idx] = uri;
-          });
+
+          // Check for favorite photo
+          const favoritePhoto = fetched.user_favorite_photo;
+          let favoriteIndex = -1;
+
+          if (favoritePhoto) {
+            favoriteIndex = photoArray.findIndex((uri) => uri === favoritePhoto);
+          }
+
+          // If we have a favorite photo, put it first
+          if (favoriteIndex !== -1) {
+            // Put favorite photo first
+            newPhotos[0] = photoArray[favoriteIndex];
+
+            // Add other photos to remaining slots
+            let nonFavoriteIndex = 1;
+            photoArray.forEach((uri, idx) => {
+              if (idx !== favoriteIndex && nonFavoriteIndex < 3) {
+                newPhotos[nonFavoriteIndex] = uri;
+                nonFavoriteIndex++;
+              }
+            });
+          } else {
+            // No favorite, use original order
+            photoArray.forEach((uri, idx) => {
+              if (idx < 3) newPhotos[idx] = uri;
+            });
+          }
+
           setPhotos(newPhotos);
+
+          // Set the favorite index to 0 if favorite exists and was found
+          if (favoriteIndex !== -1) {
+            setFavoritePhotoIndex(0);
+          }
         } catch (error) {
           console.log("Error parsing photo URLs:", error);
           setPhotos([null, null, null]);
@@ -716,7 +747,29 @@ export default function EditProfile() {
 
         // Create a new array with the selected image at the specified slot
         const newPhotos = [...photos];
-        newPhotos[slotIndex] = uri;
+
+        // If we're placing a photo in slot 0 and there's already a favorite photo,
+        // we need to maintain the favorite in position 0
+        if (slotIndex === 0 && favoritePhotoIndex === 0 && newPhotos[0] !== null) {
+          // Move the current photo at index 0 to index 1
+          // and shift other photos if needed
+          if (newPhotos[2] !== null) {
+            // If slot 2 is filled, we can't shift (maximum 3 photos)
+            Alert.alert("Maximum Photos", "You already have 3 photos. Please remove a photo before adding a new one.");
+            return;
+          }
+
+          if (newPhotos[1] !== null) {
+            // Shift photo from position 1 to position 2
+            newPhotos[2] = newPhotos[1];
+          }
+
+          // Put new photo in position 1 (after favorite)
+          newPhotos[1] = uri;
+        } else {
+          // Normal case - just put the photo in the selected slot
+          newPhotos[slotIndex] = uri;
+        }
 
         console.log("\nFinal photos array:", newPhotos);
         console.log("=== End Image Selection Debug ===\n");
@@ -735,15 +788,7 @@ export default function EditProfile() {
       }
     } catch (error) {
       console.error("Error picking images:", error);
-      Alert.alert("Error", "There was an issue accessing your photos. Please check your permissions and try again.", [
-        { text: "OK" },
-        {
-          text: "Open Settings",
-          onPress: () => {
-            Platform.OS === "ios" ? Linking.openURL("app-settings:") : Linking.openSettings();
-          },
-        },
-      ]);
+      Alert.alert("Error", "There was an issue accessing your photos. Please check your permissions and try again.", [{ text: "OK" }]);
     }
   };
 
@@ -752,6 +797,11 @@ export default function EditProfile() {
     console.log("=== Removing Photo ===");
     console.log("Removing photo at index:", slotIndex);
     console.log("Photo being removed:", photoToRemove);
+
+    // Check if we're removing the favorite photo
+    if (slotIndex === favoritePhotoIndex) {
+      setFavoritePhotoIndex(null); // No favorite photo anymore
+    }
 
     // If it's an S3 photo, add it to deletedPhotos array
     if (photoToRemove && photoToRemove.startsWith("https://s3")) {
@@ -1024,16 +1074,42 @@ export default function EditProfile() {
 
   // Add this after the useEffect that fetches user data
   useEffect(() => {
-    if (userData.user_favorite_photo) {
+    // Only run this effect if we haven't already positioned favorite photo first
+    // during the initial loading of photos
+    if (userData.user_favorite_photo && favoritePhotoIndex === null) {
       // Find the index of the favorite photo in the photos array
       const index = photos.findIndex((photo) => photo === userData.user_favorite_photo);
       setFavoritePhotoIndex(index >= 0 ? index : null);
     }
-  }, [userData, photos]);
+  }, [userData, photos, favoritePhotoIndex]);
 
   const handleSetFavoritePhoto = (index) => {
     if (isEditMode) {
-      setFavoritePhotoIndex(favoritePhotoIndex === index ? null : index);
+      if (favoritePhotoIndex === index) {
+        // If clicking on current favorite, un-favorite it
+        setFavoritePhotoIndex(null);
+      } else {
+        // When setting a new favorite photo
+        setFavoritePhotoIndex(index);
+
+        // If we're setting a new favorite that's not already in position 0
+        if (index !== 0) {
+          // Create a new photos array with the favorite first
+          const newPhotos = [...photos];
+
+          // Move the favorite photo to the front
+          const favoritePhoto = newPhotos[index];
+
+          // Shift other photos
+          for (let i = index; i > 0; i--) {
+            newPhotos[i] = newPhotos[i - 1];
+          }
+
+          newPhotos[0] = favoritePhoto;
+          setPhotos(newPhotos);
+          setFavoritePhotoIndex(0); // Update favorite index to match new position
+        }
+      }
     }
   };
 
@@ -1054,14 +1130,98 @@ export default function EditProfile() {
     const original = {
       user_first_name: originalValues.firstName || "",
       user_last_name: originalValues.lastName || "",
-      // ...other fields
+      user_phone_number: originalValues.phoneNumber || "",
+      user_profile_bio: originalValues.bio || "",
+      user_available_time: originalValues.availableTimes || "",
+      user_birthdate: originalValues.birthdate || "",
+      user_kids: originalValues.children || "",
+      user_gender: originalValues.gender || "",
+      user_identity: originalValues.identity || "",
+      user_address: originalValues.address || "",
+      user_nationality: originalValues.nationality || "",
+      user_body_composition: originalValues.bodyType || "",
+      user_education: originalValues.education || "",
+      user_job: originalValues.job || "",
+      user_smoking: originalValues.smoking || "",
+      user_drinking: originalValues.drinking || "",
+      user_religion: originalValues.religion || "",
+      user_star_sign: originalValues.starSign || "",
+      user_latitude: originalValues.latitude ? String(originalValues.latitude) : "",
+      user_longitude: originalValues.longitude ? String(originalValues.longitude) : "",
+      user_height: userData.user_height || "",
     };
 
     const current = {
       user_first_name: formValues.firstName || "",
       user_last_name: formValues.lastName || "",
-      // ...other fields
+      user_phone_number: formValues.phoneNumber || "",
+      user_profile_bio: formValues.bio || "",
+      user_available_time: formValues.availableTimes || "",
+      user_birthdate: formValues.birthdate || "",
+      user_kids: formValues.children || "",
+      user_gender: genderValue || "", // Use the dropdown value
+      user_identity: identityValue || "", // Use the dropdown value
+      user_address: formValues.address || "",
+      user_nationality: formValues.nationality || "",
+      user_body_composition: bodyTypeValue || "", // Use the dropdown value
+      user_education: educationValue || "", // Use the dropdown value
+      user_job: formValues.job || "",
+      user_smoking: smokingValue || "", // Use the dropdown value
+      user_drinking: drinkingValue || "", // Use the dropdown value
+      user_religion: religionValue || "", // Use the dropdown value
+      user_star_sign: starSignValue || "", // Use the dropdown value
+      user_latitude: formValues.latitude ? String(formValues.latitude) : "",
+      user_longitude: formValues.longitude ? String(formValues.longitude) : "",
+      user_height: heightCm || "",
     };
+
+    // Check if height has changed
+    const heightChanged = original.user_height !== current.user_height;
+    if (shouldLog && heightChanged) {
+      console.log("Height changed:", { original: original.user_height, current: current.user_height });
+    }
+
+    // Continue with rest of the comparisons...
+
+    // Compare the openTo array (a multi-select dropdown)
+    const originalOpenTo = JSON.stringify(originalValues.openTo || []);
+    const currentOpenTo = JSON.stringify(openToValue || []);
+    const openToChanged = originalOpenTo !== currentOpenTo;
+
+    // Compare interests and dateTypes arrays
+    let originalInterests = [];
+    let originalDateTypes = [];
+
+    if (userData.user_general_interests) {
+      try {
+        originalInterests = typeof userData.user_general_interests === "string" ? JSON.parse(userData.user_general_interests) : userData.user_general_interests;
+      } catch (error) {
+        console.log("Error parsing original interests:", error);
+      }
+    }
+
+    if (userData.user_date_interests) {
+      try {
+        originalDateTypes = typeof userData.user_date_interests === "string" ? JSON.parse(userData.user_date_interests) : userData.user_date_interests;
+      } catch (error) {
+        console.log("Error parsing original date types:", error);
+      }
+    }
+
+    // Sort arrays to ensure consistent comparison
+    const sortedOriginalInterests = [...originalInterests].sort();
+    const sortedCurrentInterests = [...interests].sort();
+    const sortedOriginalDateTypes = [...originalDateTypes].sort();
+    const sortedCurrentDateTypes = [...dateTypes].sort();
+
+    const interestsChanged = JSON.stringify(sortedOriginalInterests) !== JSON.stringify(sortedCurrentInterests);
+    const dateTypesChanged = JSON.stringify(sortedOriginalDateTypes) !== JSON.stringify(sortedCurrentDateTypes);
+
+    if (shouldLog) {
+      if (interestsChanged) console.log("Interests changed:", { originalInterests, currentInterests: interests });
+      if (dateTypesChanged) console.log("Date types changed:", { originalDateTypes, currentDateTypes: dateTypes });
+      if (openToChanged) console.log("openTo changed:", { originalOpenTo, currentOpenTo });
+    }
 
     // Add debugging for media changes
     // console.log("--- In EditProfile.js, checkForChanges function, photosChanged ---");
@@ -1106,10 +1266,31 @@ export default function EditProfile() {
 
     if (shouldLog) console.log("Form values changed?", formValuesChanged, changedFields);
 
-    const result = formValuesChanged || photosChanged || hasDeletedPhotos || videoChanged;
+    // Include all possible changes in the final result
+    const result = formValuesChanged || photosChanged || hasDeletedPhotos || videoChanged || openToChanged || interestsChanged || dateTypesChanged || heightChanged;
+
     if (shouldLog) console.log("Final hasChanges result:", result);
     return result;
-  }, [formValues, originalValues, photos, deletedPhotos, videoUri, userData]);
+  }, [
+    formValues,
+    originalValues,
+    photos,
+    deletedPhotos,
+    videoUri,
+    userData,
+    genderValue,
+    identityValue,
+    bodyTypeValue,
+    educationValue,
+    smokingValue,
+    drinkingValue,
+    religionValue,
+    starSignValue,
+    openToValue,
+    interests,
+    dateTypes,
+    heightCm,
+  ]);
 
   // Make sure we're tracking if userData is loaded
   const [userDataLoaded, setUserDataLoaded] = useState(false);
@@ -1144,7 +1325,27 @@ export default function EditProfile() {
 
       return () => clearTimeout(timer);
     }
-  }, [userDataLoaded, originalValues, formValues, photos, videoUri, interests, dateTypes, checkForChanges]);
+  }, [
+    userDataLoaded,
+    originalValues,
+    formValues,
+    photos,
+    videoUri,
+    interests,
+    dateTypes,
+    checkForChanges,
+    genderValue,
+    identityValue,
+    bodyTypeValue,
+    educationValue,
+    smokingValue,
+    drinkingValue,
+    religionValue,
+    starSignValue,
+    openToValue,
+    heightCm,
+    deletedPhotos,
+  ]);
 
   // Toggle a single interest
   const toggleInterest = (interest) => {
@@ -1599,6 +1800,9 @@ export default function EditProfile() {
         // Add favorite photo to upload data if one is selected
         if (favoritePhotoIndex !== null && photos[favoritePhotoIndex]) {
           const photoUri = photos[favoritePhotoIndex];
+
+          // With our new ordering, the favorite photo should always be at index 0
+          // This ensures the backend correctly identifies the favorite photo
           const isNewPhoto = !photoUri.startsWith("https://s3");
 
           if (isNewPhoto) {

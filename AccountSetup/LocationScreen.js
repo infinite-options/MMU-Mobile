@@ -173,12 +173,12 @@ export default function LocationScreen({ navigation }) {
       <Text style={styles.subtitle}>Discover matches within your preferred distance.</Text>
 
       {/* Trial Version Notice */}
-      <View style={styles.trialBox}>
+      {/* <View style={styles.trialBox}>
         <Text style={styles.trialHeading}>TRIAL VERSION</Text>
         <Text style={styles.trialBody}>
           For the testing phase, the location function is only available <Text style={styles.link}>here</Text> and the <Text style={styles.link}>map setting</Text> in your profile.
         </Text>
-      </View>
+      </View> */}
 
       {/* Search Row */}
       <View style={styles.searchRow}>

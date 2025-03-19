@@ -95,7 +95,16 @@ export const pickVideo = async (testVideos = []) => {
       const uri = result.assets[0].uri;
       const fileSize = await getFileSizeInMB(uri, testVideos);
 
-      Alert.alert("Video Added", `Your ${fileSize}MB video has been added to your profile. It will be uploaded to our secure server when you continue.`, [{ text: "OK" }]);
+      // Show different alert messages based on video file size
+      if (parseFloat(fileSize) < 2) {
+        Alert.alert("Video Added", `Your ${fileSize}MB video has been added to your profile. It will be uploaded to our secure server when you continue.`, [{ text: "OK" }]);
+      } else {
+        Alert.alert(
+          "Video Added",
+          `Your ${fileSize}MB video has been added to your profile. We'll try to upload it to our secure server. Please consider selecting a shorter video if the upload fails.`,
+          [{ text: "OK" }]
+        );
+      }
 
       return { uri, fileSize };
     } else {
@@ -132,7 +141,14 @@ export const recordVideo = async (testVideos = []) => {
       const uri = result.assets[0].uri;
       const fileSize = await getFileSizeInMB(uri, testVideos);
 
-      Alert.alert("Video Recorded", `Your ${fileSize}MB video has been recorded. It will be uploaded to our secure server when you continue.`, [{ text: "OK" }]);
+      // Show different alert messages based on video file size
+      if (parseFloat(fileSize) < 2) {
+        Alert.alert("Video Recorded", `Your ${fileSize}MB video has been recorded. It will be uploaded to our secure server when you continue.`, [{ text: "OK" }]);
+      } else {
+        Alert.alert("Video Recorded", `Your ${fileSize}MB video has been recorded. We'll try to upload it to our secure server. Please consider recording a shorter video if the upload fails.`, [
+          { text: "OK" },
+        ]);
+      }
 
       return { uri, fileSize };
     } else {
@@ -202,8 +218,14 @@ export const selectTestVideo = (index, testVideos, context = "continue") => {
 
   const fileSize = selectedVideo.size;
 
-  // Set the appropriate message based on file size
-  Alert.alert("Test Video Selected", `The selected test video is ${fileSize}MB. It will be uploaded directly to S3 when you ${context}.`, [{ text: "OK" }]);
+  // Show different alert messages based on video file size
+  if (parseFloat(fileSize) < 2) {
+    Alert.alert("Test Video Selected", `The selected test video is ${fileSize}MB. It will be uploaded to our secure server when you ${context}.`, [{ text: "OK" }]);
+  } else {
+    Alert.alert("Test Video Selected", `The selected test video is ${fileSize}MB. We'll try to upload it to our secure server. Please consider selecting a smaller test video if the upload fails.`, [
+      { text: "OK" },
+    ]);
+  }
 
   return selectedVideo;
 };
@@ -272,7 +294,7 @@ export const promptLargeFileSize = async (totalSize, threshold = 5) => {
   return new Promise((resolve) => {
     Alert.alert(
       "Large File Size Warning",
-      `The total size of your media is ${totalSize.toFixed(2)}MB, which exceeds the recommended ${threshold}MB limit. This may cause slow uploads and performance issues. Do you want to continue?`,
+      `The total size of your media is ${totalSize.toFixed(2)}MB, which exceeds the recommended ${threshold}MB limit. Please consider reducing the size of your media if the upload fails.`,
       [
         { text: "Cancel", onPress: () => resolve(false), style: "cancel" },
         { text: "Continue Anyway", onPress: () => resolve(true) },

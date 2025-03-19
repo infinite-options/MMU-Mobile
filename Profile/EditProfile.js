@@ -42,7 +42,8 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Asset } from "expo-asset";
 import { useBackHandler } from "@react-native-community/hooks";
 import { LinearGradient } from "expo-linear-gradient";
-import { getPresignedUrl, uploadVideoToS3, getFileSizeInMB, loadTestVideos, isTestVideo as s3IsTestVideo, getTestVideoFileSize as s3GetTestVideoFileSize } from "../utils/S3Helper";
+import { getPresignedUrl, uploadVideoToS3, getFileSizeInMB, loadTestVideos } from "../utils/S3Helper";
+import * as MediaHelper from "../utils/MediaHelper";
 
 // Fallback to a placeholder to prevent crashes - replace with your actual key when testing
 const GOOGLE_API_KEY = Constants.expoConfig?.extra?.googleApiKey || process.env.EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY || "YOUR_GOOGLE_API_KEY_HERE";
@@ -199,6 +200,7 @@ export default function EditProfile() {
   const [entryType, setEntryType] = useState("interest"); // 'interest' or 'dateType'
   const [hasChanges, setHasChanges] = useState(false);
   const [originalValues, setOriginalValues] = useState(null);
+  const [originalVideoUrl, setOriginalVideoUrl] = useState(null); // Add this to store the original video URL
 
   // Add these state variables at the top of your component
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -445,19 +447,8 @@ export default function EditProfile() {
   useEffect(() => {
     const requestPermissionsAndLoadUserData = async () => {
       try {
-        // Check existing permissions first to avoid showing the dialog unnecessarily
-        const { status: existingStatus } = await ImagePicker.getMediaLibraryPermissionsAsync();
-        let finalStatus = existingStatus;
-
-        if (existingStatus !== "granted") {
-          const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-          finalStatus = status;
-        }
-
-        if (finalStatus !== "granted") {
-          console.log("Media library permission not granted");
-          Alert.alert("Permission Required", "This app needs permission to access your photo library for uploading images and videos.");
-        }
+        // Request media library permissions using MediaHelper
+        const hasPermission = await MediaHelper.requestMediaLibraryPermissions();
 
         // Get user info from AsyncStorage
         try {
@@ -492,25 +483,6 @@ export default function EditProfile() {
       const response = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${uid}`);
       const fetched = response.data.result[0] || {};
       console.log("Fetched user data:", fetched);
-
-      // setIsLoading(true);
-      // // const uid = await AsyncStorage.getItem("user_uid");
-      // if (!uid) {
-      //   console.log("No user_uid in AsyncStorage");
-      //   return;
-      // }
-
-      // // Gets profile data
-      // const api = axios.create({
-      //   baseURL: "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev",
-      //   timeout: 10000,
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      // });
-
-      // const response = await api.get(`/userinfo/${uid}`);
-      // const fetched = response.data.result[0];
 
       // Safely parse open_to field
       let parsedOpenTo = [];
@@ -549,58 +521,68 @@ export default function EditProfile() {
         parsedDateInterests = [];
       }
 
+      // Helper function to normalize empty values
+      const normalizeValue = (value) => {
+        if (value === "" || value === "None" || value === undefined) {
+          return null;
+        }
+        return value;
+      };
+
       // Sets user data
       setUserData(fetched || {});
       const newFormValues = {
-        firstName: fetched.user_first_name || "",
-        lastName: fetched.user_last_name || "",
-        phoneNumber: fetched.user_phone_number || "",
-        bio: fetched.user_profile_bio || "",
-        availableTimes: fetched.user_available_time || "",
-        birthdate: fetched.user_birthdate || "",
-        children: fetched.user_kids || "",
-        gender: fetched.user_gender || "",
-        identity: fetched.user_identity || "",
-        // orientation: fetched.user_sexuality || "",
+        firstName: normalizeValue(fetched.user_first_name) || "",
+        lastName: normalizeValue(fetched.user_last_name) || "",
+        phoneNumber: normalizeValue(fetched.user_phone_number) || "",
+        bio: normalizeValue(fetched.user_profile_bio) || "",
+        availableTimes: normalizeValue(fetched.user_available_time) || "",
+        birthdate: normalizeValue(fetched.user_birthdate) || "",
+        children: normalizeValue(fetched.user_kids) || "",
+        gender: normalizeValue(fetched.user_gender) || "",
+        identity: normalizeValue(fetched.user_identity) || "",
+        // orientation: normalizeValue(fetched.user_sexuality) || "",
         openTo: parsedOpenTo,
-        address: fetched.user_address || "",
-        nationality: fetched.user_nationality || "",
-        bodyType: fetched.user_body_composition || "",
-        education: fetched.user_education || "",
-        job: fetched.user_job || "",
-        smoking: fetched.user_smoking || "",
-        drinking: fetched.user_drinking || "",
-        religion: fetched.user_religion || "",
-        starSign: fetched.user_star_sign || "",
-        latitude: fetched.user_latitude || null,
-        longitude: fetched.user_longitude || null,
+        address: normalizeValue(fetched.user_address) || "",
+        nationality: normalizeValue(fetched.user_nationality) || "",
+        bodyType: normalizeValue(fetched.user_body_composition) || "",
+        education: normalizeValue(fetched.user_education) || "",
+        job: normalizeValue(fetched.user_job) || "",
+        smoking: normalizeValue(fetched.user_smoking) || "",
+        drinking: normalizeValue(fetched.user_drinking) || "",
+        religion: normalizeValue(fetched.user_religion) || "",
+        starSign: normalizeValue(fetched.user_star_sign) || "",
+        latitude: normalizeValue(fetched.user_latitude) || null,
+        longitude: normalizeValue(fetched.user_longitude) || null,
         phoneNumberValid: true, // Added phone number validation state
+        photos: [null, null, null], // Initialize with nulls
+        interests: parsedInterests,
+        dateTypes: parsedDateInterests,
+        heightCm: normalizeValue(fetched.user_height) || "",
       };
 
       setFormValues(newFormValues);
-      setOriginalValues({ ...newFormValues });
-
       setInterests(parsedInterests);
       setDateTypes(parsedDateInterests);
 
-      // Set initial values for dropdowns
-      setGenderValue(fetched.user_gender || null);
-      setIdentityValue(fetched.user_identity || null);
-      // setOrientationValue(fetched.user_sexuality || null);
+      // Set initial values for dropdowns - use normalized values
+      setGenderValue(normalizeValue(fetched.user_gender));
+      setIdentityValue(normalizeValue(fetched.user_identity));
+      // setOrientationValue(normalizeValue(fetched.user_sexuality));
       setOpenToValue(parsedOpenTo);
-      setBodyTypeValue(fetched.user_body_composition || null);
-      setSmokingValue(fetched.user_smoking || null);
-      setDrinkingValue(fetched.user_drinking || null);
-      setReligionValue(fetched.user_religion || null);
-      setStarSignValue(fetched.user_star_sign || null);
-      setEducationValue(fetched.user_education || null);
+      setBodyTypeValue(normalizeValue(fetched.user_body_composition));
+      setSmokingValue(normalizeValue(fetched.user_smoking));
+      setDrinkingValue(normalizeValue(fetched.user_drinking));
+      setReligionValue(normalizeValue(fetched.user_religion));
+      setStarSignValue(normalizeValue(fetched.user_star_sign));
+      setEducationValue(normalizeValue(fetched.user_education));
 
-      // ========== Photo handling (unchanged) ==========
+      // Process photos for display
+      const newPhotos = [null, null, null];
       if (fetched.user_photo_url) {
         try {
           const photoArray = JSON.parse(fetched.user_photo_url);
           // We only have 3 slots, fill them from the array
-          const newPhotos = [null, null, null];
 
           // Check for favorite photo
           const favoritePhoto = fetched.user_favorite_photo;
@@ -630,21 +612,22 @@ export default function EditProfile() {
             });
           }
 
-          setPhotos(newPhotos);
-
           // Set the favorite index to 0 if favorite exists and was found
           if (favoriteIndex !== -1) {
             setFavoritePhotoIndex(0);
           }
         } catch (error) {
           console.log("Error parsing photo URLs:", error);
-          setPhotos([null, null, null]);
         }
       }
+      setPhotos(newPhotos);
 
-      // Handle video URL with better parsing
+      // Add photos to the originalValues object
+      newFormValues.photos = [...newPhotos];
+
+      // Process video URL
+      let videoUrl = null;
       if (fetched.user_video_url) {
-        let videoUrl = null;
         try {
           // Try parsing as JSON first
           videoUrl = JSON.parse(fetched.user_video_url);
@@ -660,7 +643,17 @@ export default function EditProfile() {
 
         console.log("Cleaned video url:", videoUrl);
         setVideoUri(videoUrl);
+        setOriginalVideoUrl(videoUrl); // Set the original video URL for comparison
       }
+
+      // Now set originalValues after all processing is complete
+      setOriginalValues({ ...newFormValues });
+      console.log("Original values set:", newFormValues);
+
+      // Reset tracking flags for changes
+      setHasChanges(false);
+      setDeletedPhotos([]);
+      setDeletedVideo(false);
 
       // Convert stored cm back to feet/inches
       if (fetched.user_height) {
@@ -673,8 +666,6 @@ export default function EditProfile() {
         setHeightIn(inches.toString());
         setHeightCm(cm.toString());
       }
-
-      setGenderValue(fetched.user_gender || null);
     } catch (error) {
       console.log("Error fetching user info:", error.response || error);
       Alert.alert("Error", "Failed to load profile data. Please check your internet connection and try again.");
@@ -695,75 +686,24 @@ export default function EditProfile() {
     setSearchText(formValues.address);
   }, [formValues.address]);
 
-  // Updated image picker function with better permission handling
+  // Handle image picking for photos section
   const handlePickImage = async (slotIndex) => {
-    try {
-      // Request permission
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission Required", "Please allow access to your photo library to upload images.");
-        return;
-      }
+    const result = await MediaHelper.pickImage({}, testVideos);
+    if (result) {
+      const { uri, fileSize } = result;
+      const newPhotos = [...photos];
+      newPhotos[slotIndex] = uri;
+      setPhotos(newPhotos);
 
-      // Launch image picker
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.5,
-      });
+      // Set file size
+      const newPhotoFileSizes = [...photoFileSizes];
+      newPhotoFileSizes[slotIndex] = fileSize;
+      setPhotoFileSizes(newPhotoFileSizes);
 
-      console.log("\n=== Image Selection Debug ===");
-      console.log("Image picker result:", result);
-
-      if (!result.canceled && result.assets?.[0]?.uri) {
-        const uri = result.assets[0].uri;
-        console.log(`Selected image for slot ${slotIndex}:`, uri);
-
-        // Create a new array with the selected image at the specified slot
-        const newPhotos = [...photos];
-
-        // If we're placing a photo in slot 0 and there's already a favorite photo,
-        // we need to maintain the favorite in position 0
-        if (slotIndex === 0 && favoritePhotoIndex === 0 && newPhotos[0] !== null) {
-          // Move the current photo at index 0 to index 1
-          // and shift other photos if needed
-          if (newPhotos[2] !== null) {
-            // If slot 2 is filled, we can't shift (maximum 3 photos)
-            Alert.alert("Maximum Photos", "You already have 3 photos. Please remove a photo before adding a new one.");
-            return;
-          }
-
-          if (newPhotos[1] !== null) {
-            // Shift photo from position 1 to position 2
-            newPhotos[2] = newPhotos[1];
-          }
-
-          // Put new photo in position 1 (after favorite)
-          newPhotos[1] = uri;
-        } else {
-          // Normal case - just put the photo in the selected slot
-          newPhotos[slotIndex] = uri;
-        }
-
-        console.log("\nFinal photos array:", newPhotos);
-        console.log("=== End Image Selection Debug ===\n");
-        setPhotos(newPhotos);
-
-        // Get and set the file size
-        const fileSize = await getFileSizeInMB(uri, testVideos);
-        const newPhotoFileSizes = [...photoFileSizes];
-        newPhotoFileSizes[slotIndex] = fileSize;
-        setPhotoFileSizes(newPhotoFileSizes);
-
-        // Check if the file size is too large
-        if (fileSize && parseFloat(fileSize) > 2) {
-          Alert.alert("Large Image File", `The selected image is ${fileSize}MB, which is larger than recommended. This may cause slow uploads and performance issues.`, [{ text: "OK" }]);
-        }
-      }
-    } catch (error) {
-      console.error("Error picking images:", error);
-      Alert.alert("Error", "There was an issue accessing your photos. Please check your permissions and try again.", [{ text: "OK" }]);
+      // Mark as changed for save button enabling
+      setHasChanges(true);
+      // If original photo array doesn't have this slot filled, then it's a new photo
+      setHasNewPhotos(true);
     }
   };
 
@@ -798,101 +738,51 @@ export default function EditProfile() {
   // Add a state variable to track upload status
   const [uploadStatus, setUploadStatus] = useState("");
 
-  // Handle picking a video
+  // Handle picking a video using MediaHelper
   const handleVideoUpload = async () => {
-    try {
-      const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+    const result = await MediaHelper.pickVideo(testVideos);
 
-      if (cameraPermission.status !== "granted") {
-        Alert.alert("Permission Required", "Camera access is required to select video. Please enable it in your device settings.", [
-          { text: "Cancel", style: "cancel" },
-          { text: "Settings", onPress: () => Linking.openSettings() },
-        ]);
-        return;
+    if (result === false) {
+      // Selection was cancelled, show test video options
+      Alert.alert("Video Selection Cancelled", "Would you like to use a test video instead?", [
+        { text: "No", style: "cancel" },
+        { text: "Yes", onPress: showTestVideoOptions },
+      ]);
+    } else if (result) {
+      const { uri, fileSize } = result;
+      setVideoUri(uri);
+      setVideoFileSize(fileSize);
+      setIsVideoPlaying(false);
+      setHasChanges(true);
+
+      // If there was a video that's now being replaced, mark it as deleted
+      if (originalVideoUrl && originalVideoUrl !== uri) {
+        setDeletedVideo(true);
       }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-        allowsEditing: true,
-        quality: 1.0,
-        videoQuality: getVideoQuality(),
-      });
-
-      if (!result.canceled && result.assets?.[0]?.uri) {
-        console.log("Video selection success:", result.assets[0]);
-        const uri = result.assets[0].uri;
-        setVideoUri(uri);
-        setIsVideoPlaying(false);
-
-        // Get and set the file size
-        const fileSize = await getFileSizeInMB(uri, testVideos);
-        setVideoFileSize(fileSize);
-
-        // Set the appropriate message based on file size
-        Alert.alert("Video Added", `Your ${fileSize}MB video has been added to your profile. It will be uploaded to our secure server when you continue.`, [{ text: "OK" }]);
-      } else {
-        // Show test video options when selection is cancelled
-        console.log("---- Video Selection Cancelled----");
-        Alert.alert("Video Selection Cancelled", "Would you like to use a test video instead?", [
-          { text: "No", style: "cancel" },
-          { text: "Yes", onPress: showTestVideoOptions },
-        ]);
-      }
-    } catch (error) {
-      console.error("Error picking video:", error);
     }
   };
 
-  // Platform-specific video quality
-  const getVideoQuality = () => {
-    return Platform.OS === "ios" ? ImagePicker.UIImagePickerControllerQualityType.Medium : 0.5;
-  };
-
-  // Update the handleRecordVideo function to use the getVideoQuality function
+  // Record video using MediaHelper
   const handleRecordVideo = async () => {
-    try {
-      // Platform-specific permission handling
-      const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+    const result = await MediaHelper.recordVideo(testVideos);
 
-      if (cameraPermission.status !== "granted") {
-        Alert.alert("Permission Required", "Camera access is required to record video. Please enable it in your device settings.", [
-          { text: "Cancel", style: "cancel" },
-          { text: "Settings", onPress: () => Linking.openSettings() },
-        ]);
-        return;
+    if (result === false) {
+      // Recording was cancelled, show test video options
+      Alert.alert("Video Recording Cancelled", "Would you like to use a test video instead?", [
+        { text: "No", style: "cancel" },
+        { text: "Yes", onPress: showTestVideoOptions },
+      ]);
+    } else if (result) {
+      const { uri, fileSize } = result;
+      setVideoUri(uri);
+      setVideoFileSize(fileSize);
+      setIsVideoPlaying(false);
+      setHasChanges(true);
+
+      // If there was a video that's now being replaced, mark it as deleted
+      if (originalVideoUrl && originalVideoUrl !== uri) {
+        setDeletedVideo(true);
       }
-
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-        allowsEditing: false, // Set to false for more reliable results
-        quality: 1,
-        videoQuality: getVideoQuality(),
-        maxDuration: 60,
-        saveToPhotos: true, // Save to device camera roll
-      });
-
-      if (!result.canceled && result.assets?.[0]?.uri) {
-        console.log("Video recording success:", result.assets[0]);
-        const uri = result.assets[0].uri;
-        setVideoUri(uri);
-        setIsVideoPlaying(false);
-
-        // Get and set the file size
-        const fileSize = await getFileSizeInMB(uri, testVideos);
-        setVideoFileSize(fileSize);
-
-        // Set the appropriate message based on file size
-        Alert.alert("Video Recorded", `Your ${fileSize}MB video has been recorded. It will be uploaded to our secure server when you continue.`, [{ text: "OK" }]);
-      } else {
-        // Show test video options when selection is cancelled
-        console.log("---- Video Recording Cancelled----");
-        Alert.alert("Video Recording Cancelled", "Would you like to use a test video instead?", [
-          { text: "No", style: "cancel" },
-          { text: "Yes", onPress: showTestVideoOptions },
-        ]);
-      }
-    } catch (error) {
-      console.error("Error recording video:", error);
     }
   };
 
@@ -917,62 +807,33 @@ export default function EditProfile() {
 
   // Function to show fallback options for test videos
   const showTestVideoOptions = () => {
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ["Cancel", ...testVideos.map((video) => video.name)],
-          cancelButtonIndex: 0,
-          title: "Select a Test Video",
-          message: "Choose a test video to use for upload testing",
-        },
-        (buttonIndex) => {
-          if (buttonIndex > 0) {
-            handleTestVideoSelection(buttonIndex - 1);
-          }
-        }
-      );
-    } else {
-      // For Android, use Alert with buttons
-      Alert.alert("Select a Test Video", "Choose a test video to use for upload testing", [
-        { text: "Cancel", style: "cancel" },
-        ...testVideos.map((video, index) => ({
-          text: video.name,
-          onPress: () => handleTestVideoSelection(index),
-        })),
-      ]);
-    }
+    MediaHelper.showTestVideoOptions(testVideos, handleTestVideoSelection);
   };
 
   // Function to handle test video selection
   const handleTestVideoSelection = (index) => {
-    if (index < 0 || index >= testVideos.length) {
-      return;
+    const selectedVideo = MediaHelper.selectTestVideo(index, testVideos, "save changes");
+    if (selectedVideo) {
+      setVideoUri(selectedVideo.uri);
+      setVideoFileSize(selectedVideo.size);
+      setIsVideoPlaying(false);
+      setHasChanges(true);
+
+      // If there was a video that's now being replaced, mark it as deleted
+      if (originalVideoUrl && originalVideoUrl !== selectedVideo.uri) {
+        setDeletedVideo(true);
+      }
     }
-
-    const selectedVideo = testVideos[index];
-
-    if (!selectedVideo.uri) {
-      return;
-    }
-
-    setVideoUri(selectedVideo.uri);
-    setVideoFileSize(selectedVideo.size);
-    setIsVideoPlaying(false);
-
-    const fileSize = selectedVideo.size;
-
-    // Set the appropriate message based on file size
-    Alert.alert("Test Video Selected", `The selected test video is ${fileSize}MB. It will be uploaded directly to S3 when you save changes.`, [{ text: "OK" }]);
   };
 
-  // Function to get file size for test videos
+  // Function to get file size for test videos - using MediaHelper
   const getTestVideoFileSize = (uri) => {
-    return s3GetTestVideoFileSize(uri, testVideos);
+    return MediaHelper.getTestVideoFileSize(uri, testVideos);
   };
 
-  // Function to check if a URI is a test video
+  // Function to check if a URI is a test video - using MediaHelper
   const isTestVideo = (uri) => {
-    return s3IsTestVideo(uri, testVideos);
+    return MediaHelper.isTestVideo(uri, testVideos);
   };
 
   // Driver's license
@@ -1124,171 +985,139 @@ export default function EditProfile() {
     }
   };
 
-  // Simplify the checkForChanges function and add more logging
+  // Calculate if anything has changed
   const checkForChanges = useCallback(() => {
-    console.log("--- In EditProfile.js, checkForChanges function ---");
-    // Only log in development mode and when explicitly enabled
-    const shouldLog = true; // Set to true only when debugging is needed
+    if (!userDataLoaded || !originalValues) return false;
 
-    if (shouldLog) console.log("Running checkForChanges");
+    console.log("=== CHECKING FOR CHANGES ===");
+    let hasAnyChanges = false;
 
-    if (!originalValues || !formValues) {
-      if (shouldLog) console.log("Missing originalValues or formValues");
+    // Helper function to check if values are effectively empty
+    const isEffectivelyEmpty = (value) => {
+      return value === null || value === undefined || value === "" || value === "None";
+    };
+
+    // Helper function to compare values, treating empty values as equivalent
+    const valuesAreDifferent = (val1, val2) => {
+      // If both are effectively empty, they're equivalent
+      if (isEffectivelyEmpty(val1) && isEffectivelyEmpty(val2)) {
+        return false;
+      }
+      // Otherwise, strict comparison
+      return val1 !== val2;
+    };
+
+    const logChange = (field, original, current) => {
+      console.log(`Change detected in ${field}:`, { original, current });
+      hasAnyChanges = true;
+    };
+
+    // Name changes
+    if (valuesAreDifferent(formValues.firstName, originalValues.firstName)) {
+      logChange("firstName", originalValues.firstName, formValues.firstName);
+    }
+    if (valuesAreDifferent(formValues.lastName, originalValues.lastName)) {
+      logChange("lastName", originalValues.lastName, formValues.lastName);
+    }
+
+    // Address change
+    if (valuesAreDifferent(formValues.address, originalValues.address)) {
+      logChange("address", originalValues.address, formValues.address);
+    }
+
+    // Bio change
+    if (valuesAreDifferent(formValues.bio, originalValues.bio)) {
+      logChange("bio", originalValues.bio, formValues.bio);
+    }
+
+    // Check for interests changes
+    const originalInterests = Array.isArray(originalValues.interests) ? originalValues.interests : [];
+    if (JSON.stringify(interests.sort()) !== JSON.stringify(originalInterests.sort())) {
+      logChange("interests", originalInterests, interests);
+    }
+
+    // Check for date types changes
+    const originalDateTypes = Array.isArray(originalValues.dateTypes) ? originalValues.dateTypes : [];
+    if (JSON.stringify(dateTypes.sort()) !== JSON.stringify(originalDateTypes.sort())) {
+      logChange("dateTypes", originalDateTypes, dateTypes);
+    }
+
+    // Check for photo changes
+    const hasPhotoChanges = photos.some((photo, index) => {
+      const originalPhoto = originalValues.photos?.[index];
+      if (valuesAreDifferent(photo, originalPhoto)) {
+        logChange(`photo[${index}]`, originalPhoto, photo);
+        return true;
+      }
       return false;
-    }
-
-    // Create value objects in same format used for saving
-    const original = {
-      user_first_name: originalValues.firstName || "",
-      user_last_name: originalValues.lastName || "",
-      user_phone_number: originalValues.phoneNumber || "",
-      user_profile_bio: originalValues.bio || "",
-      user_available_time: originalValues.availableTimes || "",
-      user_birthdate: originalValues.birthdate || "",
-      user_kids: originalValues.children || "",
-      user_gender: originalValues.gender || "",
-      user_identity: originalValues.identity || "",
-      user_address: originalValues.address || "",
-      user_nationality: originalValues.nationality || "",
-      user_body_composition: originalValues.bodyType || "",
-      user_education: originalValues.education || "",
-      user_job: originalValues.job || "",
-      user_smoking: originalValues.smoking || "",
-      user_drinking: originalValues.drinking || "",
-      user_religion: originalValues.religion || "",
-      user_star_sign: originalValues.starSign || "",
-      user_latitude: originalValues.latitude ? String(originalValues.latitude) : "",
-      user_longitude: originalValues.longitude ? String(originalValues.longitude) : "",
-      user_height: userData.user_height || "",
-    };
-
-    const current = {
-      user_first_name: formValues.firstName || "",
-      user_last_name: formValues.lastName || "",
-      user_phone_number: formValues.phoneNumber || "",
-      user_profile_bio: formValues.bio || "",
-      user_available_time: formValues.availableTimes || "",
-      user_birthdate: formValues.birthdate || "",
-      user_kids: formValues.children || "",
-      user_gender: genderValue || "", // Use the dropdown value
-      user_identity: identityValue || "", // Use the dropdown value
-      user_address: formValues.address || "",
-      user_nationality: formValues.nationality || "",
-      user_body_composition: bodyTypeValue || "", // Use the dropdown value
-      user_education: educationValue || "", // Use the dropdown value
-      user_job: formValues.job || "",
-      user_smoking: smokingValue || "", // Use the dropdown value
-      user_drinking: drinkingValue || "", // Use the dropdown value
-      user_religion: religionValue || "", // Use the dropdown value
-      user_star_sign: starSignValue || "", // Use the dropdown value
-      user_latitude: formValues.latitude ? String(formValues.latitude) : "",
-      user_longitude: formValues.longitude ? String(formValues.longitude) : "",
-      user_height: heightCm || "",
-    };
-
-    // Check if height has changed
-    const heightChanged = original.user_height !== current.user_height;
-    if (shouldLog && heightChanged) {
-      console.log("Height changed:", { original: original.user_height, current: current.user_height });
-    }
-
-    // Continue with rest of the comparisons...
-
-    // Compare the openTo array (a multi-select dropdown)
-    const originalOpenTo = JSON.stringify(originalValues.openTo || []);
-    const currentOpenTo = JSON.stringify(openToValue || []);
-    const openToChanged = originalOpenTo !== currentOpenTo;
-
-    // Compare interests and dateTypes arrays
-    let originalInterests = [];
-    let originalDateTypes = [];
-
-    if (userData.user_general_interests) {
-      try {
-        originalInterests = typeof userData.user_general_interests === "string" ? JSON.parse(userData.user_general_interests) : userData.user_general_interests;
-      } catch (error) {
-        console.log("Error parsing original interests:", error);
-      }
-    }
-
-    if (userData.user_date_interests) {
-      try {
-        originalDateTypes = typeof userData.user_date_interests === "string" ? JSON.parse(userData.user_date_interests) : userData.user_date_interests;
-      } catch (error) {
-        console.log("Error parsing original date types:", error);
-      }
-    }
-
-    // Sort arrays to ensure consistent comparison
-    const sortedOriginalInterests = [...originalInterests].sort();
-    const sortedCurrentInterests = [...interests].sort();
-    const sortedOriginalDateTypes = [...originalDateTypes].sort();
-    const sortedCurrentDateTypes = [...dateTypes].sort();
-
-    const interestsChanged = JSON.stringify(sortedOriginalInterests) !== JSON.stringify(sortedCurrentInterests);
-    const dateTypesChanged = JSON.stringify(sortedOriginalDateTypes) !== JSON.stringify(sortedCurrentDateTypes);
-
-    if (shouldLog) {
-      if (interestsChanged) console.log("Interests changed:", { originalInterests, currentInterests: interests });
-      if (dateTypesChanged) console.log("Date types changed:", { originalDateTypes, currentDateTypes: dateTypes });
-      if (openToChanged) console.log("openTo changed:", { originalOpenTo, currentOpenTo });
-    }
-
-    // Add debugging for media changes
-    // console.log("--- In EditProfile.js, checkForChanges function, photosChanged ---");
-    // console.log("photos:", photos);
-    const filteredPhotos = photos.filter((photo) => photo !== null);
-    // console.log("filteredPhotos:", filteredPhotos);
-    // console.log("userData?.user_photo_url:", userData?.user_photo_url);
-    // console.log("typeof userData.user_photo_url:", typeof userData.user_photo_url);
-    const photosChanged =
-      JSON.stringify(filteredPhotos) !== JSON.stringify(userData?.user_photo_url ? (typeof userData.user_photo_url === "string" ? JSON.parse(userData.user_photo_url) : userData.user_photo_url) : []);
-
-    const hasDeletedPhotos = deletedPhotos.length > 0;
-
-    // Get proper video URL format for comparison
-    const originalVideoUrl = userData?.user_video_url ? (typeof userData.user_video_url === "string" ? userData.user_video_url.replace(/^"|"$/g, "") : userData.user_video_url) : null;
-    const videoChanged = videoUri !== originalVideoUrl;
-
-    if (shouldLog) console.log("Media changed?", { hasDeletedPhotos, photosChanged, videoChanged });
-
-    // Check form values with explicit debug logs
-    let formValuesChanged = false;
-    let changedFields = [];
-
-    Object.entries(current).forEach(([key, value]) => {
-      const originalValue = original[key];
-
-      // Special handling for comparing empty strings and null values
-      const isOriginalEmpty = originalValue === "" || originalValue === null || originalValue === undefined;
-      const isNewEmpty = value === "" || value === null || value === undefined;
-
-      // Only consider it a change if they're not both empty in some form
-      if (!(isOriginalEmpty && isNewEmpty)) {
-        const newValueStr = typeof value === "object" ? JSON.stringify(value) : String(value);
-        const originalValueStr = typeof originalValue === "object" ? JSON.stringify(originalValue) : String(originalValue);
-
-        if (newValueStr !== originalValueStr) {
-          formValuesChanged = true;
-          changedFields.push(`${key}: "${originalValueStr}" → "${newValueStr}"`);
-        }
-      }
     });
 
-    if (shouldLog) console.log("Form values changed?", formValuesChanged, changedFields);
+    if (Object.keys(deletedPhotos).length > 0) {
+      logChange("deletedPhotos", "none", deletedPhotos);
+    }
 
-    // Include all possible changes in the final result
-    const result = formValuesChanged || photosChanged || hasDeletedPhotos || videoChanged || openToChanged || interestsChanged || dateTypesChanged || heightChanged;
+    // Check for video changes
+    const videoChanged = valuesAreDifferent(videoUri, originalVideoUrl);
+    if (videoChanged) {
+      logChange("videoUri", originalVideoUrl, videoUri);
+    }
+    if (deletedVideo) {
+      logChange("deletedVideo", false, true);
+    }
 
-    if (shouldLog) console.log("Final hasChanges result:", result, "--------------------------------------------------");
-    return result;
+    // Check for dropdown changes
+    if (valuesAreDifferent(genderValue, originalValues.gender)) {
+      logChange("gender", originalValues.gender, genderValue);
+    }
+    if (valuesAreDifferent(identityValue, originalValues.identity)) {
+      logChange("identity", originalValues.identity, identityValue);
+    }
+    if (valuesAreDifferent(bodyTypeValue, originalValues.bodyType)) {
+      logChange("bodyType", originalValues.bodyType, bodyTypeValue);
+    }
+    if (valuesAreDifferent(educationValue, originalValues.education)) {
+      logChange("education", originalValues.education, educationValue);
+    }
+    if (valuesAreDifferent(smokingValue, originalValues.smoking)) {
+      logChange("smoking", originalValues.smoking, smokingValue);
+    }
+    if (valuesAreDifferent(drinkingValue, originalValues.drinking)) {
+      logChange("drinking", originalValues.drinking, drinkingValue);
+    }
+    if (valuesAreDifferent(religionValue, originalValues.religion)) {
+      logChange("religion", originalValues.religion, religionValue);
+    }
+    if (valuesAreDifferent(starSignValue, originalValues.starSign)) {
+      logChange("starSign", originalValues.starSign, starSignValue);
+    }
+
+    // Check for open to changes
+    const originalOpenTo = originalValues.openTo || [];
+    const currentOpenTo = openToValue || [];
+    if (JSON.stringify(currentOpenTo.sort()) !== JSON.stringify(originalOpenTo.sort())) {
+      logChange("openTo", originalOpenTo, currentOpenTo);
+    }
+
+    // Check for height changes
+    if (valuesAreDifferent(heightCm, originalValues.heightCm)) {
+      logChange("heightCm", originalValues.heightCm, heightCm);
+    }
+
+    if (!hasAnyChanges) {
+      console.log("No changes detected");
+    }
+    console.log("=== END CHECKING FOR CHANGES ===");
+
+    return hasAnyChanges;
   }, [
-    formValues,
+    userDataLoaded,
     originalValues,
+    formValues,
     photos,
-    deletedPhotos,
     videoUri,
-    userData,
+    originalVideoUrl,
+    interests,
+    dateTypes,
     genderValue,
     identityValue,
     bodyTypeValue,
@@ -1298,9 +1127,9 @@ export default function EditProfile() {
     religionValue,
     starSignValue,
     openToValue,
-    interests,
-    dateTypes,
     heightCm,
+    deletedPhotos,
+    deletedVideo,
   ]);
 
   // Make sure we're tracking if userData is loaded
@@ -1430,26 +1259,15 @@ export default function EditProfile() {
 
     setIsLoading(true);
 
-    // Check total file size before uploading
+    // Check total file size before uploading using MediaHelper
     const totalSize = checkTotalFileSize();
-    if (totalSize > 5) {
-      // Ask for confirmation before proceeding with large files
-      const shouldProceed = await new Promise((resolve) => {
-        Alert.alert(
-          "Large File Size Warning",
-          `The total size of your media is ${totalSize}MB, which exceeds the recommended 5MB limit. 1 This may cause slow uploads and performance issues. Do you want to continue?`,
-          [
-            { text: "Cancel", onPress: () => resolve(false), style: "cancel" },
-            { text: "Continue Anyway", onPress: () => resolve(true) },
-          ]
-        );
-      });
+    const shouldProceed = await MediaHelper.promptLargeFileSize(totalSize, 5);
 
-      if (!shouldProceed) {
-        setIsLoading(false);
-        return;
-      }
+    if (!shouldProceed) {
+      setIsLoading(false);
+      return;
     }
+
     try {
       // Validate form fields
       const firstNameError = validateName(formValues.firstName, "First name");
@@ -2029,25 +1847,7 @@ export default function EditProfile() {
 
   // Function to check total file size and show alert if it exceeds 5MB
   const checkTotalFileSize = useCallback(() => {
-    let totalSize = 0;
-
-    // Add video file size if available
-    if (videoFileSize) {
-      totalSize += parseFloat(videoFileSize);
-    }
-
-    // Add photo file sizes if available
-    photoFileSizes.forEach((size) => {
-      if (size) {
-        totalSize += parseFloat(size);
-      }
-    });
-
-    // Round to 2 decimal places for display
-    totalSize = parseFloat(totalSize.toFixed(2));
-
-    console.log(`Total calculated file size: ${totalSize}MB`);
-    return totalSize;
+    return MediaHelper.checkTotalFileSize(videoFileSize, photoFileSizes);
   }, [videoFileSize, photoFileSizes]);
 
   // Check total file size whenever file sizes change
@@ -2938,8 +2738,29 @@ export default function EditProfile() {
           </View>
 
           {/* Save Changes Button */}
-          <TouchableOpacity style={[styles.saveButton, !hasChanges && styles.saveButtonDisabled]} onPress={hasChanges ? handleSaveChanges : () => navigation.navigate("MyProfile")} disabled={false}>
+          <TouchableOpacity style={styles.saveButton} onPress={handleSaveChanges} disabled={isLoading}>
             <Text style={styles.saveButtonText}>{hasChanges ? "Save Changes" : "Return to Profile"}</Text>
+          </TouchableOpacity>
+
+          {/* Debug Button - Remove in production */}
+          <TouchableOpacity
+            style={[styles.saveButton, { marginTop: 10, backgroundColor: "#333" }]}
+            onPress={() => {
+              console.log("Manual check for changes");
+              console.log("hasChanges before:", hasChanges);
+              const result = checkForChanges();
+              console.log("checkForChanges result:", result);
+              console.log("Current state:", {
+                originalVideoUrl,
+                videoUri,
+                deletedVideo,
+                photos,
+                originalValues: originalValues?.photos,
+                hasChanges,
+              });
+            }}
+          >
+            <Text style={styles.saveButtonText}>Debug Check Changes</Text>
           </TouchableOpacity>
 
           <Modal visible={modalVisible} animationType='slide' transparent={true} onRequestClose={() => setModalVisible(false)}>

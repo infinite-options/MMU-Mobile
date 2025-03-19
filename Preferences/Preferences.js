@@ -2,13 +2,12 @@ import React, { useState, useEffect } from "react";
 import { SafeAreaView, Platform, StatusBar, View, Text, TouchableOpacity, Pressable, StyleSheet, ScrollView, TextInput, Alert, Dimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import MultiSlider from "@ptomasroos/react-native-multi-slider";
-import { Slider } from "react-native-elements";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import CustomSingleSlider from "../src/components/CustomSingleSlider";
 
 const Preferences = () => {
-  console.log("------------------- IN PREFERENCES ----------------");
   const [maxDistance, setMaxDistance] = useState(80);
   const [ageRange, setAgeRange] = useState([18, 99]);
   const [heightRange, setHeightRange] = useState([122, 213]);
@@ -27,8 +26,8 @@ const Preferences = () => {
   // Load saved preferences when component mounts
   useEffect(() => {
     const loadSavedPreferences = async () => {
+      console.log("------------------- IN PREFERENCES ----------------");
       try {
-        console.log("In Use Effect");
         const uid = await AsyncStorage.getItem("user_uid");
         if (!uid) return;
 
@@ -190,12 +189,13 @@ const Preferences = () => {
             <Text style={styles.valueText}>{maxDistance} km</Text>
           </View>
           <View style={styles.sliderContainer}>
-            <Slider
+            <CustomSingleSlider
               value={maxDistance}
               onValueChange={setMaxDistance}
               minimumValue={1}
               maximumValue={300}
               step={1}
+              sliderLength={screenWidth * 0.9}
               thumbStyle={styles.sliderThumb}
               minimumTrackTintColor='#E4423F'
               maximumTrackTintColor='#E5E5E5'
@@ -222,26 +222,27 @@ const Preferences = () => {
               markerStyle={styles.sliderThumb}
               unselectedStyle={{ backgroundColor: "#E5E5E5", height: 5 }}
             />
+            {/* <Text style={styles.placeholderText}>Slider temporarily hidden</Text> */}
           </View>
 
-          {/* Height Range */}
+          {/* Height Range - changed to Minimum Height */}
           <View style={styles.rowLabelContainer}>
-            <Text style={styles.label}>Height Range (cm)</Text>
-            <Text style={styles.valueText}>
-              {heightRange[0]} cm - {heightRange[1]} cm
-            </Text>
+            <Text style={styles.label}>Minimum Height (cm)</Text>
+            <Text style={styles.valueText}>{heightRange[0]} cm</Text>
           </View>
           <View style={styles.sliderContainer}>
-            <MultiSlider
-              values={heightRange}
-              onValuesChange={handleHeightValueChange}
-              min={122}
-              max={213}
+            <CustomSingleSlider
+              value={heightRange[0]}
+              onValueChange={(value) => setHeightRange([value, 213])}
+              minimumValue={122}
+              maximumValue={213}
+              step={1}
               sliderLength={screenWidth * 0.9}
-              selectedStyle={{ backgroundColor: "#E4423F" }}
+              thumbStyle={styles.sliderThumb}
+              minimumTrackTintColor='#E4423F'
+              maximumTrackTintColor='#E5E5E5'
               trackStyle={styles.trackStyle}
-              markerStyle={styles.sliderThumb}
-              unselectedStyle={{ backgroundColor: "#E5E5E5" }}
+              inverted={true}
             />
           </View>
 
@@ -251,12 +252,13 @@ const Preferences = () => {
             <Text style={styles.valueText}>{numChildren}</Text>
           </View>
           <View style={styles.sliderContainer}>
-            <Slider
+            <CustomSingleSlider
               value={numChildren}
               onValueChange={setNumChildren}
               minimumValue={0}
               maximumValue={10}
               step={1}
+              sliderLength={screenWidth * 0.9}
               thumbStyle={styles.sliderThumb}
               minimumTrackTintColor='#E4423F'
               maximumTrackTintColor='#E5E5E5'
@@ -550,6 +552,11 @@ const styles = StyleSheet.create({
   inputContainer: {
     position: "relative",
     marginBottom: 25,
+  },
+  placeholderText: {
+    textAlign: "center",
+    color: "#999",
+    paddingVertical: 10,
   },
 });
 

@@ -271,16 +271,24 @@ export default function UserProfile() {
   // Get the like status between current user and matched user
   const getLikeStatus = async (currentUserUid, matchedUserUid) => {
     try {
-      console.log(`Getting like status for current user ${currentUserUid} and matched user ${matchedUserUid}`);
+      console.log(`=== USERPROFILE DEBUG: Getting like status for current user ${currentUserUid} and matched user ${matchedUserUid} ===`);
+      const likeStatusStartTime = Date.now();
 
       // Get likes data for current user using the correct endpoint format
-      const response = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/likes/${currentUserUid}`);
+      const apiUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/likes/${currentUserUid}`;
+      console.log(`USERPROFILE DEBUG: Calling API: ${apiUrl}`);
+      const startTime = Date.now();
+      const response = await axios.get(apiUrl, { timeout: 15000 }); // Increase timeout to 15 seconds
+      const duration = Date.now() - startTime;
+
+      const likeStatusDuration = Date.now() - likeStatusStartTime;
+      console.log(`USERPROFILE DEBUG: Received likes data in ${duration}ms`);
 
       console.log("Likes response received:", JSON.stringify(response.data).substring(0, 300) + "...");
 
       // Check if response has the expected structure
       if (!response.data || response.data.code !== 200) {
-        console.error("Unexpected response from likes endpoint:", response.data);
+        console.error("USERPROFILE DEBUG: Unexpected response from likes endpoint:", response.data);
         return { isLikedByMe: false, isLikedByOther: false };
       }
 
@@ -337,11 +345,23 @@ export default function UserProfile() {
         }
       }
 
-      console.log("Final like status:", { isLikedByMe, isLikedByOther });
+      console.log("USERPROFILE DEBUG: Final like status:", { isLikedByMe, isLikedByOther });
+      console.log(`USERPROFILE DEBUG: Total getLikeStatus processing time: ${Date.now() - likeStatusStartTime}ms`);
       return { isLikedByMe, isLikedByOther };
     } catch (error) {
-      console.error("Error getting like status:", error);
-      console.error("Error details:", error.response ? error.response.data : "No response data");
+      console.error("USERPROFILE DEBUG: ⚠️ ERROR getting like status:", error);
+      console.error("USERPROFILE DEBUG: Error details:", error.message);
+      console.error("USERPROFILE DEBUG: Error code:", error.code);
+
+      if (error.code === "ECONNABORTED") {
+        console.error("USERPROFILE DEBUG: ⚠️ TIMEOUT ERROR in getLikeStatus");
+      }
+
+      if (error.response) {
+        console.error("USERPROFILE DEBUG: Error response data:", error.response.data);
+        console.error("USERPROFILE DEBUG: Error response status:", error.response.status);
+      }
+
       return { isLikedByMe: false, isLikedByOther: false };
     }
   };
@@ -363,6 +383,8 @@ export default function UserProfile() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      console.log("=== USERPROFILE DEBUG: Starting fetchData ===");
+      const fetchDataStartTime = Date.now();
 
       if (!matchedUserId || !userUid) {
         setError("Missing user information");
@@ -371,7 +393,11 @@ export default function UserProfile() {
       }
 
       // 1. Get matched user information directly
+      console.log(`USERPROFILE DEBUG: Fetching matched user data: ${matchedUserId}`);
+      const startTime1 = Date.now();
       const matchedUserData = await fetchUserInfo(matchedUserId);
+      const duration1 = Date.now() - startTime1;
+      console.log(`USERPROFILE DEBUG: Fetched matched user data in ${duration1}ms`);
       console.log("Matched user data:", matchedUserData);
 
       if (!matchedUserData) {
@@ -381,13 +407,21 @@ export default function UserProfile() {
       }
 
       // 2. Get like status between users
+      console.log(`USERPROFILE DEBUG: Getting like status between ${userUid} and ${matchedUserId}`);
+      const startTime2 = Date.now();
       const likeStatusData = await getLikeStatus(userUid, matchedUserId);
+      const duration2 = Date.now() - startTime2;
+      console.log(`USERPROFILE DEBUG: Got like status in ${duration2}ms`);
       setLikeStatus(likeStatusData);
 
       // 3. Calculate distance between users - with enhanced validation
       let distance = 0;
       try {
+        console.log(`USERPROFILE DEBUG: Fetching current user data for distance calculation: ${userUid}`);
+        const startTime3 = Date.now();
         const currentUserData = await fetchUserInfo(userUid);
+        const duration3 = Date.now() - startTime3;
+        console.log(`USERPROFILE DEBUG: Fetched current user data in ${duration3}ms`);
 
         // Log coordinates to help debug
         console.log("Current user coordinates:", {
@@ -445,7 +479,15 @@ export default function UserProfile() {
       console.log("API like status:", likeStatusData.isLikedByMe);
       console.log("Setting complete user info:", completeUserInfo);
       console.log("User updated info:", userInfo);
+      const totalFetchTime = Date.now() - fetchDataStartTime;
+      console.log(`USERPROFILE DEBUG: Total fetchData execution time: ${totalFetchTime}ms`);
+      console.log("=== USERPROFILE DEBUG: Completed fetchData ===");
     } catch (err) {
+      console.error("USERPROFILE DEBUG: ⚠️ ERROR in fetchData:", err);
+      console.error("USERPROFILE DEBUG: Error message:", err.message);
+      if (err.code === "ECONNABORTED") {
+        console.error("USERPROFILE DEBUG: ⚠️ TIMEOUT ERROR in fetchData");
+      }
       setError(err.message || "An error occurred while fetching user information.");
     } finally {
       setLoading(false);

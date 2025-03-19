@@ -172,10 +172,18 @@ const MatchResultsPage = () => {
   const findMatchesResult = async () => {
     if (!userId) return; // If not yet loaded, skip
     try {
+      console.log("=== MATCH DEBUG: Starting API call for user likes ===");
+      const matchesStartTime = Date.now();
+
       const apiUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/likes/${userId}`;
       // First get raw text to debug if needed:
+      console.log(`MATCH DEBUG: Calling API: ${apiUrl}`);
       const response = await fetch(apiUrl);
       const text = await response.text();
+
+      const initialApiDuration = Date.now() - matchesStartTime;
+      console.log(`MATCH DEBUG: Initial API call completed in ${initialApiDuration}ms`);
+
       // Debug:
       console.log("--- Raw server response ---", text);
 
@@ -196,12 +204,21 @@ const MatchResultsPage = () => {
       const interestedInMeData = data.people_who_selected_you || [];
       const interestedInData = data.people_whom_you_selected || [];
 
+      console.log(`MATCH DEBUG: Found ${matchedResultsData.length} matches, ${interestedInMeData.length} people interested in me, ${interestedInData.length} people I'm interested in`);
+
       // Fetch user details including interests for each matched user
+      console.log("MATCH DEBUG: Starting to fetch details for matched users");
+      const matchedDetailsStartTime = Date.now();
+
       const enrichedMatchedResults = await Promise.all(
-        matchedResultsData.map(async (match) => {
+        matchedResultsData.map(async (match, index) => {
           try {
+            console.log(`MATCH DEBUG: Fetching details for matched user ${index + 1}/${matchedResultsData.length}: ${match.user_uid}`);
             const userInfoUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${match.user_uid}`;
-            const userInfoResponse = await axios.get(userInfoUrl);
+            const startTime = Date.now();
+            const userInfoResponse = await axios.get(userInfoUrl, { timeout: 15000 }); // Increase timeout to 15 seconds
+            const duration = Date.now() - startTime;
+            console.log(`MATCH DEBUG: Fetched details for matched user ${match.user_uid} in ${duration}ms`);
 
             if (userInfoResponse.data && userInfoResponse.data.result && userInfoResponse.data.result.length > 0) {
               const userDetails = userInfoResponse.data.result[0];
@@ -213,18 +230,31 @@ const MatchResultsPage = () => {
             }
             return match;
           } catch (error) {
-            console.error(`Error fetching interests for user ${match.user_uid}:`, error);
+            console.error(`MATCH DEBUG: ⚠️ ERROR fetching interests for user ${match.user_uid}:`, error.message);
+            if (error.code === "ECONNABORTED") {
+              console.error(`MATCH DEBUG: ⚠️ TIMEOUT occurred for user ${match.user_uid}`);
+            }
             return match;
           }
         })
       );
+
+      const matchedDetailsDuration = Date.now() - matchedDetailsStartTime;
+      console.log(`MATCH DEBUG: Completed fetching matched user details in ${matchedDetailsDuration}ms`);
 
       // Similarly fetch details for interested in me users
+      console.log("MATCH DEBUG: Starting to fetch details for users interested in me");
+      const interestedInMeStartTime = Date.now();
+
       const enrichedInterestedInMe = await Promise.all(
-        interestedInMeData.map(async (match) => {
+        interestedInMeData.map(async (match, index) => {
           try {
+            console.log(`MATCH DEBUG: Fetching details for interested-in-me user ${index + 1}/${interestedInMeData.length}: ${match.user_uid}`);
             const userInfoUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${match.user_uid}`;
-            const userInfoResponse = await axios.get(userInfoUrl);
+            const startTime = Date.now();
+            const userInfoResponse = await axios.get(userInfoUrl, { timeout: 15000 }); // Increase timeout to 15 seconds
+            const duration = Date.now() - startTime;
+            console.log(`MATCH DEBUG: Fetched details for interested-in-me user ${match.user_uid} in ${duration}ms`);
 
             if (userInfoResponse.data && userInfoResponse.data.result && userInfoResponse.data.result.length > 0) {
               const userDetails = userInfoResponse.data.result[0];
@@ -235,18 +265,31 @@ const MatchResultsPage = () => {
             }
             return match;
           } catch (error) {
-            console.error(`Error fetching interests for user ${match.user_uid}:`, error);
+            console.error(`MATCH DEBUG: ⚠️ ERROR fetching interests for interested-in-me user ${match.user_uid}:`, error.message);
+            if (error.code === "ECONNABORTED") {
+              console.error(`MATCH DEBUG: ⚠️ TIMEOUT occurred for user ${match.user_uid}`);
+            }
             return match;
           }
         })
       );
+
+      const interestedInMeDuration = Date.now() - interestedInMeStartTime;
+      console.log(`MATCH DEBUG: Completed fetching interested-in-me user details in ${interestedInMeDuration}ms`);
 
       // And for interested in users
+      console.log("MATCH DEBUG: Starting to fetch details for users I'm interested in");
+      const interestedInStartTime = Date.now();
+
       const enrichedInterestedIn = await Promise.all(
-        interestedInData.map(async (match) => {
+        interestedInData.map(async (match, index) => {
           try {
+            console.log(`MATCH DEBUG: Fetching details for interested-in user ${index + 1}/${interestedInData.length}: ${match.user_uid}`);
             const userInfoUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${match.user_uid}`;
-            const userInfoResponse = await axios.get(userInfoUrl);
+            const startTime = Date.now();
+            const userInfoResponse = await axios.get(userInfoUrl, { timeout: 15000 }); // Increase timeout to 15 seconds
+            const duration = Date.now() - startTime;
+            console.log(`MATCH DEBUG: Fetched details for interested-in user ${match.user_uid} in ${duration}ms`);
 
             if (userInfoResponse.data && userInfoResponse.data.result && userInfoResponse.data.result.length > 0) {
               const userDetails = userInfoResponse.data.result[0];
@@ -257,18 +300,50 @@ const MatchResultsPage = () => {
             }
             return match;
           } catch (error) {
-            console.error(`Error fetching interests for user ${match.user_uid}:`, error);
+            console.error(`MATCH DEBUG: ⚠️ ERROR fetching interests for interested-in user ${match.user_uid}:`, error.message);
+            if (error.code === "ECONNABORTED") {
+              console.error(`MATCH DEBUG: ⚠️ TIMEOUT occurred for user ${match.user_uid}`);
+            }
             return match;
           }
         })
       );
 
+      const interestedInDuration = Date.now() - interestedInStartTime;
+      console.log(`MATCH DEBUG: Completed fetching interested-in user details in ${interestedInDuration}ms`);
+
+      // Update state with the enriched data
+      console.log("MATCH DEBUG: Updating state with all fetched data");
       setMatchedResults(enrichedMatchedResults);
       setInterestedInMe(enrichedInterestedInMe);
       setInterestedIn(enrichedInterestedIn);
+      console.log("MATCH DEBUG: State updated successfully");
+
+      const totalDuration = Date.now() - matchesStartTime;
+      console.log(`MATCH DEBUG: Total findMatchesResult execution time: ${totalDuration}ms`);
     } catch (error) {
-      console.error("Error fetching matches:", error);
-      Alert.alert("Error", "An error occurred while finding matches.");
+      console.error("MATCH DEBUG: ⚠️ CRITICAL ERROR in findMatchesResult:", error);
+      console.log("MATCH DEBUG: Error details:", error.message);
+      console.log("MATCH DEBUG: Error code:", error.code);
+      console.log("MATCH DEBUG: Error name:", error.name);
+
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        console.log("MATCH DEBUG: Error response data:", error.response.data);
+        console.log("MATCH DEBUG: Error response status:", error.response.status);
+        console.log("MATCH DEBUG: Error response headers:", error.response.headers);
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.log("MATCH DEBUG: No response received. Request details:", error.request);
+      }
+
+      if (error.code === "ECONNABORTED") {
+        console.error("MATCH DEBUG: ⚠️ TIMEOUT ERROR - The request took too long to complete");
+        Alert.alert("Connection Timeout", "The request is taking longer than expected. Please check your internet connection and try again.");
+      } else {
+        Alert.alert("Error", "Failed to fetch matches. Please try again later.");
+      }
     }
   };
 

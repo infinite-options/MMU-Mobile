@@ -1,22 +1,11 @@
-import React, { useState } from 'react';
-import {
-  SafeAreaView,
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  Alert,
-  Pressable,
-  Platform,
-  StatusBar,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import ProgressBar from '../src/Assets/Components/ProgressBar'; 
-import * as ImagePicker from 'expo-image-picker';
-import { decrementStepCount } from '../Profile/profileStepsState'; 
+import React, { useState } from "react";
+import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity, Image, Alert, Pressable, Platform, StatusBar } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import ProgressBar from "../src/Assets/Components/ProgressBar";
+import * as ImagePicker from "expo-image-picker";
+import { decrementStepCount } from "../Profile/profileStepsState";
 export default function AddDriversLicense({ navigation, route }) {
-    const stepIndex = route.params?.stepIndex ?? null;
+  const stepIndex = route.params?.stepIndex ?? null;
   const [image, setImage] = useState(null);
 
   const handleUpload = async () => {
@@ -24,7 +13,7 @@ export default function AddDriversLicense({ navigation, route }) {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permissionResult.granted) {
-      Alert.alert('Permission Denied', 'You need to allow access to your media library to upload a file.');
+      Alert.alert("Permission Denied", "You need to allow access to your media library to upload a file.");
       return;
     }
 
@@ -46,32 +35,25 @@ export default function AddDriversLicense({ navigation, route }) {
 
   const handleSaveAndReturn = () => {
     if (!image) {
-      Alert.alert('No File Uploaded', 'Please upload a picture of your driver’s license before saving.');
+      Alert.alert("No File Uploaded", "Please upload a picture of your driver’s license before saving.");
       return;
     }
     if (stepIndex !== null) {
-          decrementStepCount(stepIndex);
-        }
+      decrementStepCount(stepIndex);
+    }
     // Save or proceed with the uploaded file
-    navigation.navigate('MyProfile', { image });
+    navigation.navigate("MyProfile", { image });
   };
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Back Button */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Ionicons name="arrow-back" size={28} color="red" />
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Ionicons name='arrow-back' size={28} color='red' />
       </TouchableOpacity>
 
       {/* Progress Bar */}
-      <ProgressBar 
-        startProgress={95} 
-        endProgress={100} 
-        style={styles.progressBar} 
-      />
+      <ProgressBar startProgress={95} endProgress={100} style={styles.progressBar} />
 
       {/* Content */}
       <View style={styles.content}>
@@ -80,8 +62,8 @@ export default function AddDriversLicense({ navigation, route }) {
 
         {/* Upload Button */}
         <TouchableOpacity style={styles.uploadButton} onPress={handleUpload}>
-          <Ionicons name="cloud-upload-outline" size={24} color="red" />
-          <Text style={styles.uploadButtonText}>Upload Picture File</Text>
+          <Ionicons name='cloud-upload-outline' size={24} color='red' />
+          <Text style={styles.uploadButtonText}>Upload Drivers License</Text>
         </TouchableOpacity>
 
         {/* Uploaded Image Preview */}
@@ -89,10 +71,10 @@ export default function AddDriversLicense({ navigation, route }) {
           <View style={styles.imageContainer}>
             <Image source={{ uri: image.uri }} style={styles.image} />
             <View style={styles.imageDetails}>
-              <Text style={styles.imageFilename}>{image.uri.split('/').pop()}</Text>
+              <Text style={styles.imageFilename}>{image.uri.split("/").pop()}</Text>
               <Text style={styles.imageSize}>~{(image.fileSize / 1024 / 1024).toFixed(2)} MB</Text>
               <TouchableOpacity onPress={handleRemoveImage}>
-                <Ionicons name="trash-outline" size={24} color="red" />
+                <Ionicons name='trash-outline' size={24} color='red' />
               </TouchableOpacity>
             </View>
           </View>
@@ -100,14 +82,7 @@ export default function AddDriversLicense({ navigation, route }) {
       </View>
 
       {/* Save & Return Button */}
-      <Pressable
-        style={[
-          styles.saveButton,
-          { backgroundColor: image ? 'red' : '#ccc' },
-        ]}
-        onPress={handleSaveAndReturn}
-        disabled={!image}
-      >
+      <Pressable style={[styles.saveButton, { backgroundColor: image ? "red" : "#ccc" }]} onPress={handleSaveAndReturn} disabled={!image}>
         <Text style={styles.saveButtonText}>Save & Return to Profile</Text>
       </Pressable>
     </SafeAreaView>
@@ -117,13 +92,13 @@ export default function AddDriversLicense({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   backButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#F5F5F5',
+    alignSelf: "flex-start",
+    backgroundColor: "#F5F5F5",
     borderRadius: 20,
     padding: 8,
     marginBottom: 20,
@@ -131,41 +106,41 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     fontSize: 26,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 14,
-    color: 'gray',
+    color: "gray",
     marginBottom: 30,
-    textAlign: 'center',
+    textAlign: "center",
   },
   uploadButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: 'red',
+    borderColor: "red",
     borderRadius: 25,
     paddingHorizontal: 20,
     paddingVertical: 10,
     marginBottom: 20,
   },
   uploadButtonText: {
-    color: 'red',
+    color: "red",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginLeft: 10,
   },
   imageContainer: {
     marginTop: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   image: {
     width: 200,
@@ -174,30 +149,30 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   imageDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '80%',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "80%",
   },
   imageFilename: {
     fontSize: 14,
-    color: '#333',
+    color: "#333",
   },
   imageSize: {
     fontSize: 14,
-    color: 'gray',
+    color: "gray",
   },
   saveButton: {
     margin: 20,
     height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderRadius: 25,
   },
   saveButtonText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   progressBar: {
     marginBottom: 20,

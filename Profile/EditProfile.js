@@ -2037,22 +2037,21 @@ export default function EditProfile() {
           </TouchableOpacity>
 
           {/* Driver's License */}
-          <TouchableOpacity style={styles.uploadButton} onPress={handleLicenseUpload}>
+          {/* <TouchableOpacity style={styles.uploadButton} onPress={handleLicenseUpload}>
             <Ionicons name='cloud-upload-outline' size={24} color='red' />
-            <Text style={styles.uploadButtonText}>Upload Picture File</Text>
+            <Text style={styles.uploadButtonText}>Upload Drivers License</Text>
           </TouchableOpacity>
           {imageLicense && (
             <View style={styles.imageContainer}>
               <Image source={{ uri: imageLicense.uri }} style={styles.image} />
               <View style={styles.imageDetails}>
                 <Text style={styles.imageFilename}>{imageLicense.uri.split("/").pop()}</Text>
-                {/* If you have imageLicense.fileSize, you could show that. */}
                 <TouchableOpacity onPress={handleRemoveImage}>
                   <Ionicons name='trash-outline' size={24} color='red' />
                 </TouchableOpacity>
               </View>
             </View>
-          )}
+          )} */}
 
           {/* Form Section */}
           <View style={styles.formContainer}>

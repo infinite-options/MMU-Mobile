@@ -6,11 +6,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import config from "../config"; // Fix the import path
 
 const AppleSignIn = ({ onSignIn, onError }) => {
-  console.log("--- In AppleSignIn.js ---");
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
 
   // Check if Apple Authentication is available
   useEffect(() => {
+    console.log("--- In AppleSignIn.js ---");
     const checkAvailability = async () => {
       try {
         const isAvailable = await AppleAuthentication.isAvailableAsync();

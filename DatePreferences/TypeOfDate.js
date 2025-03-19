@@ -53,21 +53,11 @@ export default function TypeOfDate() {
   };
 
   // Check if the "Save & Return" button should be enabled
-  // We require at least one selected item. If "Other" is selected, must have text.
+  // Since the "Other" text input is now hidden, we only require at least one selected item
   const isSaveEnabled = () => {
-    // Filter out selected items
+    // Filter out selected items - any selection is valid now
     const selectedItems = dateTypes.filter((item) => item.selected);
-    if (selectedItems.length === 0) return false;
-
-    // If "Other" is among selected, ensure otherText is non-empty
-    for (let item of selectedItems) {
-      if (item.isOther) {
-        if (!item.otherText.trim()) {
-          return false;
-        }
-      }
-    }
-    return true;
+    return selectedItems.length > 0; // Return true if at least one option is selected
   };
 
   const saveDateInterestsToAPI = async (chosenTypes) => {
@@ -102,7 +92,8 @@ export default function TypeOfDate() {
   const handleSaveAndReturn = async () => {
     if (!isSaveEnabled()) return;
 
-    const chosenTypes = dateTypes.filter((item) => item.selected).map((item) => (item.isOther && item.otherText ? `Other: ${item.otherText}` : item.label));
+    // Simple map of selected items - no special handling for "Other" since text input is hidden
+    const chosenTypes = dateTypes.filter((item) => item.selected).map((item) => item.label);
 
     try {
       await saveDateInterestsToAPI(chosenTypes);
@@ -143,14 +134,13 @@ export default function TypeOfDate() {
               <View style={styles.radioCircle}>{isSelected && <View style={styles.radioCircleFilled} />}</View>
 
               {/* Modified condition to always show text input for "Other" option */}
-              {item.isOther ? (
+              {/* {item.isOther ? (
                 <View style={styles.otherContainer}>
                   <Text style={[styles.optionLabel, { marginRight: 10 }]}>Other:</Text>
                   <TextInput style={styles.otherInput} placeholder='Please specify' placeholderTextColor='#999' value={item.otherText} onChangeText={(text) => handleOtherTextChange(index, text)} />
                 </View>
-              ) : (
-                <Text style={styles.optionLabel}>{item.label}</Text>
-              )}
+              ) : ( */}
+              {<Text style={styles.optionLabel}>{item.label}</Text>}
             </TouchableOpacity>
           );
         })}
@@ -158,8 +148,8 @@ export default function TypeOfDate() {
 
       {/* Bottom Button */}
       <View style={styles.bottomContainer}>
-        <TouchableOpacity style={[styles.saveButton, !isSaveEnabled() && { backgroundColor: "#eee" }]} onPress={handleSaveAndReturn} disabled={!isSaveEnabled()}>
-          <Text style={[styles.saveButtonText, !isSaveEnabled() && { color: "#aaa" }]}>Save & Return to Profile</Text>
+        <TouchableOpacity style={[styles.saveButton, !isSaveEnabled() && { backgroundColor: "#F5F5F5" }]} onPress={handleSaveAndReturn} disabled={!isSaveEnabled()}>
+          <Text style={[styles.saveButtonText, !isSaveEnabled() && { color: "rgba(26, 26, 26, 0.25)" }]}>Save & Return to Profile</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -248,7 +238,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   saveButton: {
-    backgroundColor: "red",
+    backgroundColor: "#E4423F",
     borderRadius: 25,
     height: 50,
     justifyContent: "center",

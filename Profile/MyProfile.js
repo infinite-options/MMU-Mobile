@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { SafeAreaView, ScrollView, View, Text, StyleSheet, Platform, StatusBar, TouchableOpacity, Image, Pressable } from "react-native";
+import { SafeAreaView, ScrollView, View, Text, StyleSheet, Platform, StatusBar, TouchableOpacity, Image, Pressable, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useIsFocused } from "@react-navigation/native";
+import { useNavigation, useIsFocused, useRoute } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { Video } from "expo-av";
@@ -38,6 +38,19 @@ const BottomNav = () => {
 export default function MyProfile() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
+  const route = useRoute(); // Add route to get parameters
+
+  // Check for success message from navigation params
+  useFocusEffect(
+    React.useCallback(() => {
+      if (route.params?.showSuccessMessage === true) {
+        // Only show success message if explicitly told to
+        Alert.alert("Success", "Your profile has been updated!");
+        // Reset the parameter to prevent showing the alert again on re-render
+        navigation.setParams({ showSuccessMessage: undefined });
+      }
+    }, [route.params?.showSuccessMessage])
+  );
 
   // user data from DB
   const [userData, setUserData] = useState({});

@@ -525,7 +525,6 @@ export default function AddMediaScreen({ navigation }) {
             <Text style={styles.trialHeading}>TRIAL VERSION</Text>
             <Text style={styles.trialBody}>
               For the testing phase, please keep your video <Text style={styles.bold}>short</Text>.{"\n"}Example: "Hi! I'm Hannah and I enjoy outdoor activities."
-              {"\n\n"}We are also unable to crop your photos for the testing phase, so please use <Text style={styles.bold}>centered photos</Text>.
             </Text>
           </View>
 

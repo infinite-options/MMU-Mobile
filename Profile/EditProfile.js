@@ -1750,8 +1750,9 @@ export default function EditProfile() {
         if (response.status === 200) {
           setIsEditMode(false); // Exit edit mode after successful save
           console.log("Upload successful!");
-          Alert.alert("Success", "Your profile has been updated!");
-          navigation.goBack();
+          // Alert moved to MyProfile.js based on navigation params
+          // Navigate to MyProfile with parameter to show success message
+          navigation.navigate("MyProfile", { showSuccessMessage: true });
         }
       } catch (error) {
         console.error("Error uploading profile:");
@@ -2738,7 +2739,7 @@ export default function EditProfile() {
           </View>
 
           {/* Save Changes Button */}
-          <TouchableOpacity style={styles.saveButton} onPress={handleSaveChanges} disabled={isLoading}>
+          <TouchableOpacity style={styles.saveButton} onPress={hasChanges ? handleSaveChanges : () => navigation.navigate("MyProfile", { showSuccessMessage: false })} disabled={isLoading}>
             <Text style={styles.saveButtonText}>{hasChanges ? "Save Changes" : "Return to Profile"}</Text>
           </TouchableOpacity>
 

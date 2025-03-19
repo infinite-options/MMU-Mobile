@@ -49,7 +49,11 @@ export default function MyProfile() {
         // Reset the parameter to prevent showing the alert again on re-render
         navigation.setParams({ showSuccessMessage: undefined });
       }
-    }, [route.params?.showSuccessMessage])
+      if (route.params?.showTimeoutMessage === true) {
+        Alert.alert("Upload Timeout", "Your profile changes were not saved due to a timeout. Please try again with smaller files or check your internet connection.");
+        navigation.setParams({ showTimeoutMessage: undefined });
+      }
+    }, [route.params?.showSuccessMessage, route.params?.showTimeoutMessage])
   );
 
   // user data from DB
@@ -447,9 +451,9 @@ export default function MyProfile() {
         <View style={styles.headerContainer}>
           <Text style={styles.headerTitle}>My Profile</Text>
           <View style={styles.headerIcons}>
-            <TouchableOpacity style={styles.iconButton}>
+            {/* <TouchableOpacity style={styles.iconButton}>
               <Ionicons name='notifications-outline' size={24} color='gray' />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             {/* Menu button */}
             <TouchableOpacity style={styles.iconButton} onPress={toggleMenu}>

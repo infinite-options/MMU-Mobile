@@ -68,7 +68,7 @@ const StartPage = () => {
       <Text style={styles.title}>meet me up</Text>
 
       {/* API Keys Info - For debugging */}
-      <View style={styles.apiKeysContainer}>
+      {/* <View style={styles.apiKeysContainer}>
         <Text style={styles.apiKeysTitle}>API Keys (Last 2 Digits):</Text>
         <Text style={styles.apiKeysText}>iOS: {getLastTwoDigits(config.googleClientIds.ios)}</Text>
         <Text style={styles.apiKeysText}>Android: {getLastTwoDigits(config.googleClientIds.android)}</Text>
@@ -77,7 +77,7 @@ const StartPage = () => {
         <Text style={styles.apiKeysText}>Maps API: {mapsApiKeyDisplay}</Text>
         <Text style={styles.apiKeysText}>Apple Auth: {appleAuthStatus}</Text>
         <Text style={styles.apiKeysText}>Environment: {__DEV__ ? "Development" : "Production"}</Text>
-      </View>
+      </View> */}
 
       {/* Get Started Button */}
       <View style={styles.bottomContainer}>

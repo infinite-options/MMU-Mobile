@@ -519,7 +519,7 @@ export default function Login() {
         </TouchableOpacity>
 
         {/* Google Sign-In Configuration Status - For debugging */}
-        <View style={styles.debugContainer}>
+        {/* <View style={styles.debugContainer}>
           <Text style={styles.debugText}>Google Sign-In Status:</Text>
           <Text style={styles.debugText}>
             isGoogleConfigured: <Text style={{ color: isGoogleConfigured ? "#00AA00" : "#FF0000", fontWeight: "bold", fontSize: 14 }}>{isGoogleConfigured ? "TRUE" : "FALSE"}</Text>
@@ -532,13 +532,13 @@ export default function Login() {
             <Text style={{ fontWeight: "bold", fontSize: 14 }}>
               {configAttemptCount}/{maxAttempts}
             </Text>
-          </Text>
+          </Text> */}
 
-          {/* Debug button to check Google Sign-In status */}
-          <TouchableOpacity style={styles.debugButton} onPress={handleGoogleSignIn}>
+        {/* Debug button to check Google Sign-In status */}
+        {/* <TouchableOpacity style={styles.debugButton} onPress={handleGoogleSignIn}>
             <Text style={styles.debugButtonText}>Check Google Sign-In Status</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
       </ScrollView>
     </SafeAreaView>
   );

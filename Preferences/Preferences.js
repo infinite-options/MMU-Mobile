@@ -177,9 +177,9 @@ const Preferences = () => {
           <Ionicons name='arrow-back' size={28} color='#E4423F' />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Preferences</Text>
-        <TouchableOpacity style={styles.headerButton} onPress={() => console.log("Settings clicked!")}>
+        {/* <TouchableOpacity style={styles.headerButton} onPress={() => console.log("Settings clicked!")}>
           <Ionicons name='settings-outline' size={24} color='#E4423F' />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>

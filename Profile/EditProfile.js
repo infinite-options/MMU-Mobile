@@ -154,6 +154,7 @@ export default function EditProfile() {
   // Autocomplete suggestions
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [uploadStatus, setUploadStatus] = useState("");
 
   // -------------------------------
   // HEIGHT STATES & CONVERSION
@@ -735,40 +736,91 @@ export default function EditProfile() {
     setPhotoFileSizes(newPhotoFileSizes);
   };
 
-  // Add a state variable to track upload status
-  const [uploadStatus, setUploadStatus] = useState("");
-
   // Handle picking a video using MediaHelper
-  const handleVideoUpload = async () => {
-    const result = await MediaHelper.pickVideo(testVideos);
+  // const handleVideoUpload = async () => {
+  //   const result = await MediaHelper.pickVideo(testVideos);
 
-    if (result === false) {
-      // Selection was cancelled, show test video options
-      Alert.alert("Video Selection Cancelled", "Would you like to use a test video instead?", [
-        { text: "No", style: "cancel" },
-        { text: "Yes", onPress: showTestVideoOptions },
-      ]);
-    } else if (result) {
-      const { uri, fileSize } = result;
-      setVideoUri(uri);
-      setVideoFileSize(fileSize);
-      setIsVideoPlaying(false);
-      setHasChanges(true);
+  //   if (result === false) {
+  //     // Selection was cancelled, show test video options
+  //     Alert.alert("Video Selection Cancelled", "Would you like to use a test video instead?", [
+  //       { text: "No", style: "cancel" },
+  //       { text: "Yes", onPress: showTestVideoOptions },
+  //     ]);
+  //   } else if (result) {
+  //     const { uri, fileSize } = result;
+  //     setVideoUri(uri);
+  //     setVideoFileSize(fileSize);
+  //     setIsVideoPlaying(false);
+  //     setHasChanges(true);
 
-      // If there was a video that's now being replaced, mark it as deleted
-      if (originalVideoUrl && originalVideoUrl !== uri) {
-        setDeletedVideo(true);
-      }
-    }
-  };
+  //     // If there was a video that's now being replaced, mark it as deleted
+  //     if (originalVideoUrl && originalVideoUrl !== uri) {
+  //       setDeletedVideo(true);
+  //     }
+  //   }
+  // };
 
   // Record video using MediaHelper
-  const handleRecordVideo = async () => {
-    const result = await MediaHelper.recordVideo(testVideos);
+  // const handleRecordVideo = async () => {
+  //   // Check if running on simulator
+  //   const isSimulator = Platform.select({
+  //     ios: Constants.executionEnvironment === "Simulator",
+  //     android: Constants.isDevice === false,
+  //     default: false,
+  //   });
 
+  //   if (isSimulator) {
+  //     // Show test video options for simulator
+  //     showTestVideoOptions();
+  //     return;
+  //   }
+
+  //   // Show action sheet with options
+  //   if (Platform.OS === "ios") {
+  //     ActionSheetIOS.showActionSheetWithOptions(
+  //       {
+  //         options: ["Cancel", "Record Video", "Select Video"],
+  //         cancelButtonIndex: 0,
+  //       },
+  //       async (buttonIndex) => {
+  //         if (buttonIndex === 1) {
+  //           // Record Video
+  //           const result = await MediaHelper.recordVideo(testVideos);
+  //           handleVideoResult(result);
+  //         } else if (buttonIndex === 2) {
+  //           // Select Video
+  //           const result = await MediaHelper.pickVideo(testVideos);
+  //           handleVideoResult(result);
+  //         }
+  //       }
+  //     );
+  //   } else {
+  //     // For Android, show Alert with options
+  //     Alert.alert("Add Video", "Choose an option", [
+  //       { text: "Cancel", style: "cancel" },
+  //       {
+  //         text: "Record Video",
+  //         onPress: async () => {
+  //           const result = await MediaHelper.recordVideo(testVideos);
+  //           handleVideoResult(result);
+  //         },
+  //       },
+  //       {
+  //         text: "Select Video",
+  //         onPress: async () => {
+  //           const result = await MediaHelper.pickVideo(testVideos);
+  //           handleVideoResult(result);
+  //         },
+  //       },
+  //     ]);
+  //   }
+  // };
+
+  // Helper function to handle video result
+  const handleVideoResult = (result) => {
     if (result === false) {
-      // Recording was cancelled, show test video options
-      Alert.alert("Video Recording Cancelled", "Would you like to use a test video instead?", [
+      // Selection/Recording was cancelled, show test video options
+      Alert.alert("Video Action Cancelled", "Would you like to use a test video instead?", [
         { text: "No", style: "cancel" },
         { text: "Yes", onPress: showTestVideoOptions },
       ]);
@@ -827,9 +879,9 @@ export default function EditProfile() {
   };
 
   // Function to get file size for test videos - using MediaHelper
-  const getTestVideoFileSize = (uri) => {
-    return MediaHelper.getTestVideoFileSize(uri, testVideos);
-  };
+  // const getTestVideoFileSize = (uri) => {
+  //   return MediaHelper.getTestVideoFileSize(uri, testVideos);
+  // };
 
   // Function to check if a URI is a test video - using MediaHelper
   const isTestVideo = (uri) => {
@@ -1259,16 +1311,16 @@ export default function EditProfile() {
 
     setIsLoading(true);
 
-    // Check total file size before uploading using MediaHelper
-    const totalSize = checkTotalFileSize();
-    const shouldProceed = await MediaHelper.promptLargeFileSize(totalSize, 5);
-
-    if (!shouldProceed) {
-      setIsLoading(false);
-      return;
-    }
-
     try {
+      // Check total file size before uploading using MediaHelper
+      const totalSize = checkTotalFileSize();
+      const shouldProceed = await MediaHelper.promptLargeFileSize(totalSize, 5);
+
+      if (!shouldProceed) {
+        setIsLoading(false);
+        return;
+      }
+
       // Validate form fields
       const firstNameError = validateName(formValues.firstName, "First name");
       const lastNameError = validateName(formValues.lastName, "Last name");
@@ -1285,24 +1337,6 @@ export default function EditProfile() {
       }
 
       try {
-        setIsLoading(true);
-        // const uid = await AsyncStorage.getItem("user_uid");
-        // if (!uid) {
-        //   Alert.alert("Error", "User ID not found");
-        //   setIsLoading(false);
-        //   return;
-        // }
-
-        // Filter out null photos and only include actual photo URIs
-        const originalPhotos = userData.user_photo_url ? JSON.parse(userData.user_photo_url) : [];
-        const photoUrls = photos.filter((uri) => uri !== null && uri !== undefined);
-
-        console.log("=== Debug Photo Arrays ===");
-        console.log("Original photos array:", originalPhotos);
-        console.log("Current photos array:", photoUrls);
-        console.log("Deleted photos array:", deletedPhotos);
-        console.log("=== End Debug Photo Arrays ===");
-
         // Create FormData object
         const uploadData = new FormData();
         uploadData.append("user_uid", userData.user_uid);
@@ -1313,6 +1347,10 @@ export default function EditProfile() {
           const calculatedAge = calculateAge(formValues.birthdate);
           uploadData.append("user_age", calculatedAge.toString());
         }
+
+        // Filter out null photos and only include actual photo URIs
+        const originalPhotos = userData.user_photo_url ? JSON.parse(userData.user_photo_url) : [];
+        const photoUrls = photos.filter((uri) => uri !== null && uri !== undefined);
 
         // Separate S3 photos from new local photos
         const s3Photos = [];
@@ -1328,11 +1366,6 @@ export default function EditProfile() {
           }
         });
 
-        console.log("=== Photo Upload Debug ===");
-        console.log("S3 Photos to keep:", s3Photos);
-        console.log("New Local Photos to upload:", newLocalPhotos);
-        console.log("S3 Photos to delete:", deletedPhotos);
-
         // Add existing S3 photos as user_photo_url array
         if (s3Photos.length > 0) {
           uploadData.append("user_photo_url", JSON.stringify(s3Photos));
@@ -1345,7 +1378,6 @@ export default function EditProfile() {
 
         // Add new local photos as img_0, img_1, etc. with sequential indices
         newLocalPhotos.forEach((uri, index) => {
-          console.log(`Adding new local photo ${index}:`, uri);
           uploadData.append(`img_${index}`, {
             uri,
             type: "image/jpeg",
@@ -1353,240 +1385,87 @@ export default function EditProfile() {
           });
         });
 
-        console.log("=== End Photo Upload Debug ===");
-
         // Handle video upload
         console.log("=== Video Upload Debug ===");
-        const originalVideoUrl = userData.user_video_url ? (typeof userData.user_video_url === "string" ? userData.user_video_url.replace(/^"|"$/g, "") : userData.user_video_url) : null;
-        console.log("Original video URL:", originalVideoUrl);
         console.log("Current video URL:", videoUri);
 
-        // Check if video was deleted or changed
-        if (originalVideoUrl && !videoUri) {
-          // New Video was deleted
-        } else if (videoUri && videoUri !== originalVideoUrl) {
-          // New Video. Check if it's a test video
-          const combinedCode = true;
-          if (combinedCode) {
-            console.log("--- In EditProfile.js, combinedCode is true");
-            const presignedData = await getPresignedUrl(uid);
-            // setUploadStatus(`Uploading ${videoFileSize}MB video directly to S3...`);
-            const uploadResult = await uploadVideoToS3(videoUri, presignedData.url);
-            const uploadSuccess = uploadResult.success;
-            console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
-            if (uploadSuccess && presignedData.videoUrl) {
-              console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
-              // setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
-              uploadData.append("user_video_url", presignedData.videoUrl);
-              console.log("Added user_video_url to form data:", presignedData.videoUrl);
+        if (videoUri) {
+          setUploadStatus("Preparing video upload...");
+
+          // If it's not an S3 URL, upload to S3 first
+          if (!videoUri.startsWith("https://s3")) {
+            console.log("--- In EditProfile.js, using S3 direct upload ---");
+
+            // First get the presigned URL
+            const presignedData = await getPresignedUrl(userData.user_uid);
+
+            if (presignedData && presignedData.url) {
+              setUploadStatus(`Uploading ${videoFileSize}MB video directly to S3...`);
+              console.log("Got presigned URL, starting upload to S3...");
+
+              // Perform the actual upload
+              const uploadResult = await uploadVideoToS3(videoUri, presignedData.url);
+              const uploadSuccess = uploadResult.success;
+              console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
+
+              if (uploadSuccess && presignedData.videoUrl) {
+                console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
+                setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
+                uploadData.append("user_video_url", presignedData.videoUrl);
+                console.log("Added user_video_url to form data:", presignedData.videoUrl);
+              } else {
+                console.error("Direct S3 upload failed");
+                setUploadStatus("S3 upload failed");
+                Alert.alert("Upload Failed", "Failed to upload video to our secure server. Please try again or use a shorter video.");
+                setIsLoading(false);
+                return;
+              }
             } else {
-              console.error("Direct S3 upload failed, falling back to regular upload");
-              // setUploadStatus("S3 upload failed, falling back to regular upload");
-              // Fall back to regular upload
-              console.log("Adding video as multipart form data...");
-              uploadData.append("user_video", {
-                uri: videoUri,
-                type: "video/mp4",
-                name: "user_video.mp4",
-              });
-              console.log("Added user_video to form data as multipart");
+              console.error("Failed to get presigned URL");
+              setUploadStatus("Failed to get presigned URL");
+              Alert.alert("Upload Failed", "Could not get secure upload location. Please try again.");
+              setIsLoading(false);
+              return;
             }
-          }
-          // else if (isTestVideo(videoUri)) {
-          //   // Test video to upload
-          //   console.log("\n=== Test Video Upload Process ===");
-          //   console.log("Using test video for upload:", videoUri);
-          //   setUploadStatus("Using test video for upload");
-
-          //   console.log("\n------------- PM: Video File Size -------------:", videoUri);
-          //   // For test videos, we'll use the regular upload process
-          //   if (videoFileSize && parseFloat(videoFileSize) < 1) {
-          //     // Video is small enough for regular upload
-          //     console.log("Test video size is under 1MB, using regular upload");
-          //     setUploadStatus(`Using regular upload for ${videoFileSize}MB test video`);
-          //     console.log("Adding video as multipart form data (small file)...");
-          //     uploadData.append("user_video", {
-          //       uri: videoUri,
-          //       type: "video/mp4",
-          //       name: "user_video.mp4",
-          //     });
-          //     console.log("Added user_video to form data as multipart");
-          //   } else {
-          //     console.log(`Test video size (${videoFileSize}MB) exceeds 1MB, getting presigned URL`);
-          //     setUploadStatus(`Getting presigned URL for ${videoFileSize}MB test video...`);
-
-          //     // Get presigned URL for S3 upload
-          //     console.log("-------PM--------- Calling getPresignedUrl function 1");
-          //     const presignedData = await getPresignedUrl(uid);
-          //     console.log("-------PM--------- Presigned data:", presignedData);
-
-          //     if (presignedData && presignedData.url) {
-          //       console.log("Got presigned URL for direct S3 upload:", presignedData.url);
-          //       console.log("S3 video URL will be:", presignedData.videoUrl);
-          //       console.log("Full presigned data:", JSON.stringify(presignedData, null, 2));
-
-          //       // Upload video directly to S3
-          //       setUploadStatus(`Uploading ${videoFileSize}MB test video directly to S3...`);
-          //       console.log("Starting S3 upload with presigned URL...");
-          //       console.log("PRESIGNED URL BEING USED FOR UPLOAD:", presignedData.url);
-          //       const uploadSuccess = await uploadVideoToS3(videoUri, presignedData.url);
-          //       console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
-
-          //       if (uploadSuccess && presignedData.videoUrl) {
-          //         console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
-          //         setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
-          //         uploadData.append("user_video_url", presignedData.videoUrl);
-          //         console.log("Added user_video_url to form data:", presignedData.videoUrl);
-          //       } else {
-          //         console.error("Direct S3 upload failed, falling back to regular upload");
-          //         setUploadStatus("S3 upload failed, falling back to regular upload");
-          //         // Fall back to regular upload
-          //         console.log("Adding video as multipart form data...");
-          //         uploadData.append("user_video", {
-          //           uri: videoUri,
-          //           type: "video/mp4",
-          //           name: "user_video.mp4",
-          //         });
-          //         console.log("Added user_video to form data as multipart");
-          //       }
-          //     } else {
-          //       console.error("Failed to get presigned URL, falling back to regular upload 1");
-          //       setUploadStatus("Failed to get presigned URL, falling back to regular upload");
-          //       // Fall back to regular upload
-          //       console.log("Adding video as multipart form data (presigned URL failed)...");
-          //       uploadData.append("user_video", {
-          //         uri: videoUri,
-          //         type: "video/mp4",
-          //         name: "user_video.mp4",
-          //       });
-          //       console.log("Added user_video to form data as multipart");
-          //     }
-          //   }
-          //   console.log("=== End Test Video Upload Process ===\n");
-          // }
-          // else if (!videoUri.startsWith("https://s3")) {
-          //   // New video to upload (not from S3 or test video)
-          //   console.log("\n=== Regular Video Upload Process ===");
-          //   // Check if video is larger than 1MB
-          //   if (videoFileSize && parseFloat(videoFileSize) > 1) {
-          //     console.log(`Video size (${videoFileSize}MB) exceeds 1MB, getting presigned URL`);
-          //     setUploadStatus(`Getting presigned URL for ${videoFileSize}MB video...`);
-
-          //     // Get presigned URL for S3 upload
-          //     console.log("-------PM--------- Calling getPresignedUrl function 2");
-          //     const presignedData = await getPresignedUrl(uid);
-
-          //     if (presignedData && presignedData.url) {
-          //       console.log("Got presigned URL for direct S3 upload:", presignedData.url);
-          //       console.log("S3 video URL will be:", presignedData.videoUrl);
-          //       console.log("Full presigned data:", JSON.stringify(presignedData, null, 2));
-
-          //       // Upload video directly to S3
-          //       setUploadStatus(`Uploading ${videoFileSize}MB video directly to S3...`);
-          //       console.log("Starting S3 upload with presigned URL...");
-          //       console.log("PRESIGNED URL BEING USED FOR UPLOAD:", presignedData.url);
-          //       const uploadSuccess = await uploadVideoToS3(videoUri, presignedData.url);
-          //       console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
-
-          //       if (uploadSuccess && presignedData.videoUrl) {
-          //         console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
-          //         setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
-          //         uploadData.append("user_video_url", presignedData.videoUrl);
-          //         console.log("Added user_video_url to form data:", presignedData.videoUrl);
-          //       } else {
-          //         console.error("Direct S3 upload failed, falling back to regular upload");
-          //         setUploadStatus("S3 upload failed, falling back to regular upload");
-          //         // Fall back to regular upload
-          //         console.log("Adding video as multipart form data...");
-          //         uploadData.append("user_video", {
-          //           uri: videoUri,
-          //           type: "video/mp4",
-          //           name: "user_video.mp4",
-          //         });
-          //         console.log("Added user_video to form data as multipart");
-          //       }
-          //     } else {
-          //       console.error("Failed to get presigned URL, falling back to regular upload 2");
-          //       setUploadStatus("Failed to get presigned URL, falling back to regular upload");
-          //       // Fall back to regular upload
-          //       console.log("Adding video as multipart form data (presigned URL failed)...");
-          //       uploadData.append("user_video", {
-          //         uri: videoUri,
-          //         type: "video/mp4",
-          //         name: "user_video.mp4",
-          //       });
-          //       console.log("Added user_video to form data as multipart");
-          //     }
-          //   } else {
-          //     // Video is small enough for regular upload
-          //     console.log("Video size is under 1MB, using regular upload");
-          //     setUploadStatus(`Using regular upload for ${videoFileSize}MB video`);
-          //     console.log("Adding video as multipart form data (small file)...");
-          //     uploadData.append("user_video", {
-          //       uri: videoUri,
-          //       type: "video/mp4",
-          //       name: "user_video.mp4",
-          //     });
-          //     console.log("Added user_video to form data as multipart");
-          //   }
-          //   console.log("=== End Regular Video Upload Process ===\n");
-          // }
-          else {
-            // Existing S3 video - no need to re-upload
-            // console.log("\n=== Existing S3 Video ===");
-            // console.log("Keeping existing S3 video:", videoUri);
+          } else {
+            // Video is already an S3 URL, use it directly
+            console.log("Using existing S3 video URL:", videoUri);
             uploadData.append("user_video_url", videoUri);
-            // console.log("Added user_video_url to form data:", videoUri);
-            // console.log("=== End Existing S3 Video ===\n");
           }
         }
+
         console.log("=== End Video Upload Debug ===");
 
-        // Create an object of the original values from userData
-        const originalValues = {
-          user_first_name: userData.user_first_name || "",
-          user_last_name: userData.user_last_name || "",
-          user_phone_number: userData.user_phone_number || "",
-          user_profile_bio: userData.user_profile_bio || "",
-          user_general_interests: userData.user_general_interests ? JSON.parse(userData.user_general_interests) : [],
-          user_date_interests: userData.user_date_interests ? JSON.parse(userData.user_date_interests) : [],
-          user_available_time: userData.user_available_time || "",
-          user_birthdate: userData.user_birthdate || "",
-          user_height: userData.user_height || "",
-          user_kids: userData.user_kids || "",
-          user_gender: userData.user_gender || "",
-          user_identity: userData.user_identity || "",
-          // user_sexuality: userData.user_sexuality || "",
-          user_open_to: userData.user_open_to ? JSON.parse(userData.user_open_to) : [],
-          user_address: userData.user_address || "",
-          user_nationality: userData.user_nationality || "",
-          user_body_composition: userData.user_body_composition || "",
-          user_education: userData.user_education || "",
-          user_job: userData.user_job || "",
-          user_smoking: userData.user_smoking || "",
-          user_drinking: userData.user_drinking || "",
-          user_religion: userData.user_religion || "",
-          user_star_sign: userData.user_star_sign || "",
-          user_latitude: userData.user_latitude?.toString() || "",
-          user_longitude: userData.user_longitude?.toString() || "",
-        };
+        // Add favorite photo to upload data if one is selected
+        if (favoritePhotoIndex !== null && photos[favoritePhotoIndex]) {
+          const photoUri = photos[favoritePhotoIndex];
+          const isNewPhoto = !photoUri.startsWith("https://s3");
 
-        // Create an object of the new values
-        const newValues = {
+          if (isNewPhoto) {
+            const sequentialIndex = newLocalPhotos.indexOf(photoUri);
+            if (sequentialIndex !== -1) {
+              uploadData.append("user_favorite_photo", `img_${sequentialIndex}`);
+            }
+          } else {
+            uploadData.append("user_favorite_photo", photoUri);
+          }
+        }
+
+        // Add form values
+        const formFields = {
           user_first_name: formValues.firstName,
           user_last_name: formValues.lastName,
           user_phone_number: formValues.phoneNumber,
           user_profile_bio: formValues.bio,
-          user_general_interests: interests,
-          user_date_interests: dateTypes,
+          user_general_interests: JSON.stringify(interests),
+          user_date_interests: JSON.stringify(dateTypes),
           user_available_time: formValues.availableTimes,
           user_birthdate: formValues.birthdate,
           user_height: heightCm,
           user_kids: formValues.children,
           user_gender: genderValue,
           user_identity: identityValue,
-          // user_sexuality: orientationValue,
-          user_open_to: openToValue,
+          user_open_to: JSON.stringify(openToValue),
           user_address: formValues.address,
           user_nationality: formValues.nationality,
           user_body_composition: bodyTypeValue,
@@ -1600,98 +1479,12 @@ export default function EditProfile() {
           user_longitude: formValues.longitude?.toString(),
         };
 
-        // Debug log for values before sending
-        // console.log("=== Original Values ===");
-        // console.log(JSON.stringify(originalValues, null, 2));
-        // console.log("=== New Values ===");
-        // console.log(JSON.stringify(newValues, null, 2));
-
-        // Only add fields that have changed to the FormData
-        console.log("=== Changed Fields ===");
-        Object.entries(newValues).forEach(([key, value]) => {
-          const originalValue = originalValues[key];
-
-          // Special handling for comparing empty strings and null values
-          const isOriginalEmpty = originalValue === "" || originalValue === null || originalValue === undefined;
-          const isNewEmpty = value === "" || value === null || value === undefined;
-
-          // Only consider it a change if they're not both empty in some form
-          if (!(isOriginalEmpty && isNewEmpty)) {
-            const newValueStr = typeof value === "object" ? JSON.stringify(value) : value;
-            const originalValueStr = typeof originalValue === "object" ? JSON.stringify(originalValue) : originalValue;
-
-            if (newValueStr !== originalValueStr) {
-              console.log(`${key}: ${originalValueStr} -> ${newValueStr}`);
-              uploadData.append(key, newValueStr);
-            }
-          } else {
-            console.log(`Skipping equivalent empty values for ${key}`);
+        // Add form fields to uploadData
+        Object.entries(formFields).forEach(([key, value]) => {
+          if (value !== null && value !== undefined) {
+            uploadData.append(key, value);
           }
         });
-
-        // Log the final FormData contents
-        console.log("=== Final FormData Contents ===");
-        for (let [key, value] of uploadData._parts) {
-          if (key === "user_video") {
-            console.log(`${key}: [File data omitted, size: ${videoFileSize}MB]`);
-          } else if (key.startsWith("img_")) {
-            // Extract the index from img_0, img_1, etc.
-            const imgIndex = parseInt(key.substring(4), 10);
-            // Try to find the corresponding file size in photoFileSizes
-            // This is more complex in EditProfile as img_0 might not correspond to photos[0]
-            // due to the reorganization of photos (e.g., favorite photo first)
-            let fileSize = "unknown";
-            if (imgIndex < newLocalPhotos.length) {
-              const photoUri = newLocalPhotos[imgIndex];
-              // Find the index in the original photos array
-              const originalIndex = photos.indexOf(photoUri);
-              if (originalIndex !== -1 && photoFileSizes[originalIndex]) {
-                fileSize = photoFileSizes[originalIndex];
-              }
-            }
-            console.log(`${key}: [File data omitted, size: ${fileSize}MB]`);
-          } else {
-            console.log(`${key}: ${value}`);
-          }
-        }
-
-        // Add favorite photo to upload data if one is selected
-        if (favoritePhotoIndex !== null && photos[favoritePhotoIndex]) {
-          const photoUri = photos[favoritePhotoIndex];
-
-          // With our new ordering, the favorite photo should always be at index 0
-          // This ensures the backend correctly identifies the favorite photo
-          const isNewPhoto = !photoUri.startsWith("https://s3");
-
-          if (isNewPhoto) {
-            // For new local photos, we need to find its sequential index in the newLocalPhotos array
-            const sequentialIndex = newLocalPhotos.indexOf(photoUri);
-            if (sequentialIndex !== -1) {
-              uploadData.append("user_favorite_photo", `img_${sequentialIndex}`);
-              console.log(`Setting favorite photo to img_${sequentialIndex} (original index: ${favoritePhotoIndex})`);
-            } else {
-              console.log(`Warning: Could not find favorite photo in newLocalPhotos array`);
-            }
-          } else {
-            // For S3 photos, use the URL directly
-            uploadData.append("user_favorite_photo", photoUri);
-            console.log(`Setting favorite photo to S3 URL: ${photoUri}`);
-          }
-        }
-
-        // Ensure age is calculated from birthdate before saving
-        if (formValues.birthdate && isValidDate(formValues.birthdate)) {
-          const calculatedAge = calculateAge(formValues.birthdate);
-          // Make sure age is included in the data sent to the endpoint
-          newValues.age = calculatedAge;
-        }
-
-        // Add validation to prevent saving without a video
-        if (deletedVideo && !videoUri) {
-          Alert.alert("Video Required", "Please upload a new video before saving changes.", [{ text: "OK" }]);
-          setIsLoading(false);
-          return; // Stop the save process
-        }
 
         // Make the upload request
         console.log("=== Profile Update API Request ===");
@@ -1706,18 +1499,7 @@ export default function EditProfile() {
           } else if (key.startsWith("img_")) {
             // Extract the index from img_0, img_1, etc.
             const imgIndex = parseInt(key.substring(4), 10);
-            // Try to find the corresponding file size in photoFileSizes
-            // This is more complex in EditProfile as img_0 might not correspond to photos[0]
-            // due to the reorganization of photos (e.g., favorite photo first)
-            let fileSize = "unknown";
-            if (imgIndex < newLocalPhotos.length) {
-              const photoUri = newLocalPhotos[imgIndex];
-              // Find the index in the original photos array
-              const originalIndex = photos.indexOf(photoUri);
-              if (originalIndex !== -1 && photoFileSizes[originalIndex]) {
-                fileSize = photoFileSizes[originalIndex];
-              }
-            }
+            const fileSize = photoFileSizes[imgIndex] || "unknown";
             console.log(`${key}: [File data omitted, size: ${fileSize}MB]`);
           } else {
             console.log(`${key}: ${value}`);
@@ -1725,64 +1507,69 @@ export default function EditProfile() {
         }
 
         const startTime = Date.now();
-        // console.log("Request started at:", new Date(startTime).toISOString());
+        setUploadStatus("Sending data to server...");
 
         const response = await axios.put("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo", uploadData, {
           headers: {
             "Content-Type": "multipart/form-data",
             Accept: "application/json",
           },
-          timeout: 120000, // Increase timeout to 2 minutes for large files
+          timeout: 120000, // 2 minutes timeout
           maxContentLength: Infinity,
           maxBodyLength: Infinity,
         });
 
-        const endTime = Date.now();
-        const requestDuration = (endTime - startTime) / 1000; // in seconds
-        // console.log("Request completed at:", new Date(endTime).toISOString());
-        console.log("Request duration:", requestDuration.toFixed(2) + " seconds");
-
-        // console.log("Response status:", response.status);
-        // console.log("Response headers:", JSON.stringify(response.headers, null, 2));
-        // console.log("Response data:", JSON.stringify(response.data, null, 2));
-        // console.log("=== End Profile Update API Request ===");
-
         if (response.status === 200) {
-          setIsEditMode(false); // Exit edit mode after successful save
+          setIsEditMode(false);
           console.log("Upload successful!");
-          // Alert moved to MyProfile.js based on navigation params
-          // Navigate to MyProfile with parameter to show success message
           navigation.navigate("MyProfile", { showSuccessMessage: true });
         }
       } catch (error) {
-        console.error("Error uploading profile:");
-        if (error.response) {
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
-          console.error("Response data:", error.response.data);
-          console.error("Response status:", error.response.status);
-          console.error("Response headers:", error.response.headers);
-          Alert.alert("Server Error", `Failed to update profile. Server responded with status: ${error.response.status}`);
+        console.error("Error uploading profile:", error);
+
+        // Handle timeout specifically
+        if (error.code === "ECONNABORTED" || error.message.includes("timeout")) {
+          Alert.alert("Upload Timeout", "The upload is taking longer than expected. Would you like to try again or return to your profile?", [
+            {
+              text: "Try Again",
+              onPress: () => handleSaveChanges(), // Retry the upload
+            },
+            {
+              text: "Return to Profile",
+              style: "cancel",
+              onPress: () => {
+                setIsLoading(false);
+                navigation.navigate("MyProfile", {
+                  showTimeoutMessage: true, // Add a flag to show a timeout message
+                });
+              },
+            },
+          ]);
+        } else if (error.response) {
+          Alert.alert("Files Too Large", `Please select and save images individually or consider selecting smaller files. (Status: ${error.response.status})`);
         } else if (error.request) {
-          // The request was made but no response was received
-          console.error("No response received:", error.request);
-          if (error.code === "ECONNABORTED") {
-            Alert.alert("Timeout Error", "The request took too long to complete. This might be due to a large file upload or slow connection. Please try again or use a smaller video file.");
-          } else {
-            Alert.alert("Network Error", "Failed to update profile. No response received from server. Please check your internet connection and try again.");
-          }
+          Alert.alert("Network Error", "Failed to update profile. Please check your internet connection and try again.");
         } else {
-          // Something happened in setting up the request that triggered an Error
-          console.error("Error message:", error.message);
           Alert.alert("Error", `An error occurred: ${error.message}`);
         }
-        setIsLoading(false);
-      } finally {
-        setIsLoading(false);
       }
     } catch (error) {
       console.error("Error handling save:", error);
-      Alert.alert("Error", "An unexpected error occurred while saving. Please try again.");
+      Alert.alert("Error", "An unexpected error occurred. Would you like to return to your profile?", [
+        {
+          text: "Try Again",
+          onPress: () => handleSaveChanges(),
+        },
+        {
+          text: "Return to Profile",
+          style: "cancel",
+          onPress: () => {
+            setIsLoading(false);
+            navigation.navigate("MyProfile");
+          },
+        },
+      ]);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -1887,14 +1674,18 @@ export default function EditProfile() {
       // Get presigned URL
       const presignedData = await getPresignedUrl(uid);
 
-      if (!presignedData || !presignedData.signedRequest) {
+      if (!presignedData || !presignedData.url) {
+        console.error("Failed to get presigned URL");
+        Alert.alert("Error", "Failed to get upload URL");
         return;
       }
 
-      const uploadResult = await uploadVideoToS3(videoUri, presignedData.signedRequest);
+      const uploadResult = await uploadVideoToS3(videoUri, presignedData.url);
 
       if (uploadResult.success) {
+        Alert.alert("Success", "Video uploaded successfully to S3!");
       } else {
+        Alert.alert("Error", "Failed to upload video to S3");
       }
     } catch (error) {
       console.error("Error in test S3 upload:", error);
@@ -1906,6 +1697,10 @@ export default function EditProfile() {
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color='#E4423F' />
+          <Text style={{ color: "#E4423F", marginTop: 10, marginBottom: 5, fontWeight: "bold" }}>{uploadStatus || "Uploading..."}</Text>
+          {uploadStatus.includes("S3") && (
+            <Text style={{ color: "#666", textAlign: "center", paddingHorizontal: 20 }}>Large videos are uploaded directly to our secure server. This may take a moment.</Text>
+          )}
         </View>
       ) : (
         <KeyboardAwareScrollView
@@ -1962,14 +1757,25 @@ export default function EditProfile() {
               </View>
             ) : (
               <View style={styles.videoUploadOptions}>
-                <TouchableOpacity onPress={handleRecordVideo} style={styles.uploadVideoButton}>
+                <TouchableOpacity
+                  onPress={async () => {
+                    const result = await MediaHelper.handleCombinedVideo(testVideos);
+                    if (result?.showTestOptions) {
+                      showTestVideoOptions();
+                    } else if (result) {
+                      handleVideoResult(result);
+                    } else if (result === false) {
+                      // Selection/Recording was cancelled, show test video options
+                      Alert.alert("Video Action Cancelled", "Would you like to use a test video instead?", [
+                        { text: "No", style: "cancel" },
+                        { text: "Yes", onPress: showTestVideoOptions },
+                      ]);
+                    }
+                  }}
+                  style={styles.uploadVideoButton}
+                >
                   <Ionicons name='videocam-outline' size={20} color='#E4423F' />
-                  <Text style={styles.uploadVideoText}>Record Video</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={handleVideoUpload} style={[styles.uploadVideoButton, { marginTop: 10 }]}>
-                  <Ionicons name='cloud-upload-outline' size={20} color='#E4423F' />
-                  <Text style={styles.uploadVideoText}>Select Video</Text>
+                  <Text style={styles.uploadVideoText}>Add Video</Text>
                 </TouchableOpacity>
 
                 {/* Test S3 Upload Button */}
@@ -1979,13 +1785,6 @@ export default function EditProfile() {
                     <Text style={[styles.uploadVideoText, { color: "#FFF" }]}>Test S3 Upload</Text>
                   </TouchableOpacity>
                 )}
-
-                {/* Upload status indicator when no video */}
-                {/* {uploadStatus && (
-                  <View style={[styles.uploadStatusContainer, { marginTop: 10, backgroundColor: "rgba(0,0,0,0.1)" }]}>
-                    <Text style={[styles.uploadStatusText, { color: "#333" }]}>{uploadStatus}</Text>
-                  </View>
-                )} */}
               </View>
             )}
           </View>
@@ -2743,13 +2542,13 @@ export default function EditProfile() {
           </TouchableOpacity>
 
           {/* Debug Button - Remove in production */}
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={[styles.saveButton, { marginTop: 10, backgroundColor: "#333" }]}
             onPress={() => {
               console.log("Manual check for changes");
               console.log("hasChanges before:", hasChanges);
               const result = checkForChanges();
-              console.log("checkForChanges result:", result);
+              console.log("checkForChanges result:", result); 
               console.log("Current state:", {
                 originalVideoUrl,
                 videoUri,
@@ -2761,7 +2560,7 @@ export default function EditProfile() {
             }}
           >
             <Text style={styles.saveButtonText}>Debug Check Changes</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <Modal visible={modalVisible} animationType='slide' transparent={true} onRequestClose={() => setModalVisible(false)}>
             <View style={styles.modalContainer}>
@@ -2825,6 +2624,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingBottom: 30,
   },
   headerTitle: {
     fontSize: 22,

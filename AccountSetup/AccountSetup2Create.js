@@ -625,7 +625,7 @@ export default function AccountSetup2Create() {
     return emailRegex.test(email);
   };
   const handleInputChange = (name, value) => {
-    console.log("---In AS2C handleInputChange:", name, value);
+    // console.log("---In AS2C handleInputChange:", name, value);
     setFormData({ ...formData, [name]: value });
 
     if (name === "password") {
@@ -791,7 +791,7 @@ export default function AccountSetup2Create() {
   // const formIsComplete = isValidEmail(formData.email) && formData.password !== "" && formData.confirmPassword !== "" && passwordsMatch;
   // const isFormComplete = formData.firstName.trim() !== "" && formData.lastName.trim() !== "" && !nameErrors.firstName && !nameErrors.lastName;
   const isFormComplete = isValidEmail(formData.email) && formData.password !== "" && formData.confirmPassword !== "" && passwordsMatch;
-  console.log("---In AS2C isFormComplete:", isFormComplete);
+  // console.log("---In AS2C isFormComplete:", isFormComplete);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -869,19 +869,6 @@ export default function AccountSetup2Create() {
           {/* </View> */}
 
           {/* Continue Button */}
-          {/* <Pressable
-          style={[styles.continueButton, { backgroundColor: formIsComplete && !isSubmitting ? "#E4423F" : "#F5F5F5" }]}
-          onPress={handleContinue}
-          disabled={!formIsComplete || isSubmitting}
-          android_ripple={{ color: "rgba(255, 255, 255, 0.3)" }}
-          delayLongPress={0}
-          pressRetentionOffset={{ top: 20, left: 20, bottom: 20, right: 20 }}
-          hitSlop={{ top: 10, left: 10, bottom: 10, right: 10 }}
-        >
-          <Text style={[styles.continueButtonText, { color: formIsComplete && !isSubmitting ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>{isSubmitting ? "Processing..." : "Continue"}</Text>
-        </Pressable> */}
-
-          {/* Continue Button */}
           <Pressable style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5" }]} onPress={handleContinue} disabled={!isFormComplete}>
             <Text style={[styles.continueButtonText, { color: isFormComplete ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
           </Pressable>
@@ -910,7 +897,7 @@ export default function AccountSetup2Create() {
         </TouchableOpacity>
 
         {/* Google Sign-In Configuration Status - For debugging */}
-        <View style={styles.debugContainer}>
+        {/* <View style={styles.debugContainer}>
           <Text style={styles.debugText}>Google Sign-In Status:</Text>
           <Text style={styles.debugText}>
             isGoogleConfigured: <Text style={{ color: isGoogleConfigured ? "#00AA00" : "#FF0000", fontWeight: "bold", fontSize: 14 }}>{isGoogleConfigured ? "TRUE" : "FALSE"}</Text>
@@ -926,13 +913,13 @@ export default function AccountSetup2Create() {
             <Text style={{ fontWeight: "bold", fontSize: 14 }}>
               {configAttemptCount}/{maxAttempts}
             </Text>
-          </Text>
+          </Text> */}
 
-          {/* Debug button to check Google Sign-In status */}
-          <Pressable style={styles.debugButton} onPress={checkGoogleStates}>
+        {/* Debug button to check Google Sign-In status */}
+        {/* <Pressable style={styles.debugButton} onPress={checkGoogleStates}>
             <Text style={styles.debugButtonText}>Check Google Sign-In Status</Text>
           </Pressable>
-        </View>
+        </View> */}
       </ScrollView>
     </SafeAreaView>
   );

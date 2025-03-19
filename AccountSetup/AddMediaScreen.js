@@ -202,6 +202,8 @@ export default function AddMediaScreen({ navigation }) {
     setPhotoFileSizes(newPhotoFileSizes);
   };
 
+  // UNUSED FUNCTIONS - Kept for reference
+  /*
   // Handle picking a video using MediaHelper
   const handleVideoUpload = async () => {
     const result = await MediaHelper.pickVideo(testVideos);
@@ -238,6 +240,17 @@ export default function AddMediaScreen({ navigation }) {
     }
   };
 
+  // Function to get file size for test videos - using MediaHelper
+  const getTestVideoFileSize = (uri) => {
+    return MediaHelper.getTestVideoFileSize(uri, testVideos);
+  };
+
+  // Function to check if a URI is a test video - using MediaHelper
+  const isTestVideo = (uri) => {
+    return MediaHelper.isTestVideo(uri, testVideos);
+  };
+  */
+
   // Remove the video
   const handleRemoveVideo = () => {
     setVideoUri(null);
@@ -270,16 +283,6 @@ export default function AddMediaScreen({ navigation }) {
       setVideoFileSize(selectedVideo.size);
       setIsVideoPlaying(false);
     }
-  };
-
-  // Function to get file size for test videos - using MediaHelper
-  const getTestVideoFileSize = (uri) => {
-    return MediaHelper.getTestVideoFileSize(uri, testVideos);
-  };
-
-  // Function to check if a URI is a test video - using MediaHelper
-  const isTestVideo = (uri) => {
-    return MediaHelper.isTestVideo(uri, testVideos);
   };
 
   // Update checkTotalFileSize to use MediaHelper
@@ -430,7 +433,7 @@ export default function AddMediaScreen({ navigation }) {
     } catch (error) {
       console.error("Error uploading profile:");
 
-      let errorMessage = "Something went wrong while uploading.";
+      let errorMessage = "Uploading Error";
       let errorDetails = "";
 
       if (error.response) {
@@ -566,14 +569,28 @@ export default function AddMediaScreen({ navigation }) {
               </View>
             ) : (
               <View style={styles.videoUploadOptions}>
-                <TouchableOpacity onPress={handleRecordVideo} style={styles.uploadVideoButton}>
+                <TouchableOpacity
+                  onPress={async () => {
+                    const result = await MediaHelper.handleCombinedVideo(testVideos);
+                    if (result?.showTestOptions) {
+                      showTestVideoOptions();
+                    } else if (result) {
+                      const { uri, fileSize } = result;
+                      setVideoUri(uri);
+                      setVideoFileSize(fileSize);
+                      setIsVideoPlaying(false);
+                    } else if (result === false) {
+                      // Selection/Recording was cancelled, show test video options
+                      Alert.alert("Video Action Cancelled", "Would you like to use a test video instead?", [
+                        { text: "No", style: "cancel" },
+                        { text: "Yes", onPress: showTestVideoOptions },
+                      ]);
+                    }
+                  }}
+                  style={styles.uploadVideoButton}
+                >
                   <Image source={require("../assets/icons/record.png")} />
-                  <Text style={styles.uploadVideoText}>Record Video</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={handleVideoUpload} style={styles.selectVideoButton}>
-                  <Ionicons name='images-outline' size={24} color='#E4423F' />
-                  <Text style={styles.uploadVideoText}>Select Video</Text>
+                  <Text style={styles.uploadVideoText}>Add Video</Text>
                 </TouchableOpacity>
               </View>
             )}

@@ -15,7 +15,7 @@
       "usesAppleSignIn": true,
       "supportsTablet": true,
       "bundleIdentifier": "com.infiniteoptions.meetmeupapp",
-      "buildNumber": "41",
+      "buildNumber": "51",
       "infoPlist": {
         "CFBundleURLTypes": [
           {

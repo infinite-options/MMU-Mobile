@@ -137,14 +137,15 @@ const Preferences = () => {
         },
       });
 
-      console.log("Put response", response);
+      // console.log("Put response", response);
 
       // After updating preferences, check if there are matches available
       try {
         console.log(`Checking matches: https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/${uid}`);
         const matchesResponse = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/${uid}`);
 
-        console.log("Matches response:", matchesResponse.data);
+        // console.log("Matches response:", matchesResponse.data);
+        console.log("Number of matches:", matchesResponse.data.result.length);
 
         // Check if there are no matches
         if (matchesResponse.data["message"].startsWith("No matches found")) {

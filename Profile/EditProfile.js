@@ -53,7 +53,7 @@ console.log("--- In EditProfile.js ---");
 // console.log("Google API Key status:", GOOGLE_API_KEY ? "Key found (length: " + GOOGLE_API_KEY.length + ")" : "No key found");
 
 // Add axios default configuration
-axios.defaults.timeout = 10000; // 10 seconds timeout
+axios.defaults.timeout = 15000; // 15 seconds timeout
 axios.defaults.headers.common["Content-Type"] = "application/json";
 
 const screenHeight = Dimensions.get("window").height;

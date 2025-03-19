@@ -196,7 +196,8 @@ export default function UserProfile() {
   };
   const handleLikePress = async () => {
     const updatedIsLiked = !isLiked;
-    setIsLiked(updatedIsLiked);
+    console.log("updatedIsLiked:", updatedIsLiked);
+    console.log("userInfo.Liked:", userInfo?.Likes);
 
     const likedUserUid = userInfo.user_uid;
     const formData = new URLSearchParams();
@@ -209,39 +210,44 @@ export default function UserProfile() {
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
           },
+          timeout: 15000, // Increase timeout to 15 seconds
         });
 
         // Update like status after successful API call
         setLikeStatus((prev) => ({ ...prev, isLikedByMe: true }));
+        setIsLiked(true);
       } else {
         await axios.delete("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/likes", {
           data: formData.toString(),
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
           },
+          timeout: 15000, // Increase timeout to 15 seconds
         });
 
         // Update like status after successful API call
         setLikeStatus((prev) => ({ ...prev, isLikedByMe: false }));
+        setIsLiked(false);
+      }
+
+      // Check if both users have liked each other
+      if (updatedIsLiked && userInfo["Liked by"] === "YES") {
+        try {
+          // Store the matched user's UserUid
+          await AsyncStorage.setItem("meet_date_user_id", likedUserUid);
+          console.log("meet_date_user_id stored:", likedUserUid);
+          // Navigate to MatchPageNew
+          navigation.navigate("MatchPageNew", { meet_date_user_id: likedUserUid });
+        } catch (error) {
+          console.error("Failed to store meet_date_user_id:", error);
+        }
       }
     } catch (error) {
       console.error("Error handling like action", error.message);
       console.error("Error details:", error.response ? error.response.data : "No response data");
       // Revert UI state if API call fails
       setIsLiked(!updatedIsLiked);
-    }
-
-    // Check if both users have liked each other
-    if (updatedIsLiked && userInfo["Liked by"] === "YES") {
-      try {
-        // Store the matched user's UserUid
-        await AsyncStorage.setItem("meet_date_user_id", likedUserUid);
-        console.log("meet_date_user_id stored:", likedUserUid);
-        // Navigate to MatchPageNew
-        navigation.navigate("MatchPageNew", { meet_date_user_id: likedUserUid });
-      } catch (error) {
-        console.error("Failed to store meet_date_user_id:", error);
-      }
+      setLikeStatus((prev) => ({ ...prev, isLikedByMe: !updatedIsLiked }));
     }
   };
 
@@ -392,13 +398,14 @@ export default function UserProfile() {
         return;
       }
 
-      // 1. Get matched user information directly
-      console.log(`USERPROFILE DEBUG: Fetching matched user data: ${matchedUserId}`);
-      const startTime1 = Date.now();
-      const matchedUserData = await fetchUserInfo(matchedUserId);
-      const duration1 = Date.now() - startTime1;
-      console.log(`USERPROFILE DEBUG: Fetched matched user data in ${duration1}ms`);
-      console.log("Matched user data:", matchedUserData);
+      // 1. Get matched user information and like status in parallel
+      console.log(`USERPROFILE DEBUG: Fetching matched user data and like status for ${matchedUserId}`);
+      const startTime = Date.now();
+
+      const [matchedUserData, likeStatusData] = await Promise.all([fetchUserInfo(matchedUserId), getLikeStatus(userUid, matchedUserId)]);
+
+      const duration = Date.now() - startTime;
+      console.log(`USERPROFILE DEBUG: Fetched all data in ${duration}ms`);
 
       if (!matchedUserData) {
         setError("Could not retrieve matched user data");
@@ -406,63 +413,24 @@ export default function UserProfile() {
         return;
       }
 
-      // 2. Get like status between users
-      console.log(`USERPROFILE DEBUG: Getting like status between ${userUid} and ${matchedUserId}`);
-      const startTime2 = Date.now();
-      const likeStatusData = await getLikeStatus(userUid, matchedUserId);
-      const duration2 = Date.now() - startTime2;
-      console.log(`USERPROFILE DEBUG: Got like status in ${duration2}ms`);
-      setLikeStatus(likeStatusData);
-
-      // 3. Calculate distance between users - with enhanced validation
+      // 2. Calculate distance between users
       let distance = 0;
       try {
-        console.log(`USERPROFILE DEBUG: Fetching current user data for distance calculation: ${userUid}`);
-        const startTime3 = Date.now();
         const currentUserData = await fetchUserInfo(userUid);
-        const duration3 = Date.now() - startTime3;
-        console.log(`USERPROFILE DEBUG: Fetched current user data in ${duration3}ms`);
-
-        // Log coordinates to help debug
-        console.log("Current user coordinates:", {
-          latitude: currentUserData.user_latitude,
-          longitude: currentUserData.user_longitude,
-        });
-
-        console.log("Matched user coordinates:", {
-          latitude: matchedUserData.user_latitude,
-          longitude: matchedUserData.user_longitude,
-        });
-
-        // Validate coordinates before calculation
-        const currentUserLat = parseFloat(currentUserData.user_latitude);
-        const currentUserLng = parseFloat(currentUserData.user_longitude);
-        const matchedUserLat = parseFloat(matchedUserData.user_latitude);
-        const matchedUserLng = parseFloat(matchedUserData.user_longitude);
-
-        if (
-          !isNaN(currentUserLat) &&
-          !isNaN(currentUserLng) &&
-          !isNaN(matchedUserLat) &&
-          !isNaN(matchedUserLng) &&
-          currentUserLat !== 0 &&
-          currentUserLng !== 0 &&
-          matchedUserLat !== 0 &&
-          matchedUserLng !== 0
-        ) {
-          distance = calculateDistance(currentUserLat, currentUserLng, matchedUserLat, matchedUserLng);
-
+        if (currentUserData?.user_latitude && currentUserData?.user_longitude && matchedUserData?.user_latitude && matchedUserData?.user_longitude) {
+          distance = calculateDistance(
+            parseFloat(currentUserData.user_latitude),
+            parseFloat(currentUserData.user_longitude),
+            parseFloat(matchedUserData.user_latitude),
+            parseFloat(matchedUserData.user_longitude)
+          );
           console.log("Calculated distance:", distance);
-        } else {
-          console.warn("Invalid coordinates for distance calculation, using default distance");
-          distance = 0;
         }
-      } catch (locationError) {
-        console.error("Error calculating distance:", locationError);
-        distance = 0;
+      } catch (error) {
+        console.error("Error calculating distance:", error);
       }
 
-      // 4. Combine all data
+      // 3. Combine all data
       const completeUserInfo = {
         ...matchedUserData,
         "Liked by": likeStatusData.isLikedByOther ? "YES" : "NO",
@@ -472,13 +440,9 @@ export default function UserProfile() {
 
       // Force immediate update by using a functional update
       setUserInfo(() => completeUserInfo);
-
-      // Use actual API data instead of forcing it to true
+      setLikeStatus(likeStatusData);
       setIsLiked(likeStatusData.isLikedByMe);
 
-      console.log("API like status:", likeStatusData.isLikedByMe);
-      console.log("Setting complete user info:", completeUserInfo);
-      console.log("User updated info:", userInfo);
       const totalFetchTime = Date.now() - fetchDataStartTime;
       console.log(`USERPROFILE DEBUG: Total fetchData execution time: ${totalFetchTime}ms`);
       console.log("=== USERPROFILE DEBUG: Completed fetchData ===");
@@ -714,7 +678,27 @@ export default function UserProfile() {
                   try {
                     const photoUrls = typeof userInfo.user_photo_url === "string" ? JSON.parse(userInfo.user_photo_url.replace(/\\"/g, '"')) : userInfo.user_photo_url || [];
 
-                    return photoUrls.map((photoUrl, index) => (photoUrl ? <Image key={index} source={{ uri: photoUrl }} style={styles.userPhoto} resizeMode='cover' /> : null));
+                    // Reorder photos to put favorite first if it exists
+                    let orderedPhotos = [...photoUrls];
+                    if (userInfo.user_favorite_photo) {
+                      const favoriteIndex = photoUrls.indexOf(userInfo.user_favorite_photo);
+                      if (favoriteIndex !== -1) {
+                        orderedPhotos = [userInfo.user_favorite_photo, ...photoUrls.slice(0, favoriteIndex), ...photoUrls.slice(favoriteIndex + 1)];
+                      }
+                    }
+
+                    return orderedPhotos.map((photoUrl, index) =>
+                      photoUrl ? (
+                        <View key={index} style={{ position: "relative" }}>
+                          <Image source={{ uri: photoUrl }} style={styles.userPhoto} resizeMode='cover' />
+                          {photoUrl === userInfo.user_favorite_photo && (
+                            <View style={styles.heartIconContainer}>
+                              <Ionicons name='heart' size={16} color='#E4423F' />
+                            </View>
+                          )}
+                        </View>
+                      ) : null
+                    );
                   } catch (e) {
                     console.error("Error parsing photo URLs:", e);
                     return null;
@@ -1061,5 +1045,13 @@ const styles = StyleSheet.create({
   bottomSheetScroll: {
     paddingHorizontal: 20,
     paddingBottom: 120,
+  },
+  heartIconContainer: {
+    position: "absolute",
+    top: 5,
+    right: 5,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    borderRadius: 12,
+    padding: 2,
   },
 });

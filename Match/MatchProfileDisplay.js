@@ -262,11 +262,12 @@ export default function MatchProfileDisplay() {
 
   const fetchData = async (position) => {
     try {
-      console.log("userUid", userUid);
+      // console.log("userUid", userUid);
       console.log(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/${userUid}`);
       const response = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/${userUid}`);
 
-      console.log("responseData:", response.data);
+      // console.log("responseData:", response.data);
+      console.log("Number of matches:", response.data.result.length);
       // console.log("API Response MatchProfileDisplay:", response.data);
       if (response.data["message"].startsWith("No matches found")) {
         console.log("Message from API:", response.data["message"]);
@@ -274,7 +275,7 @@ export default function MatchProfileDisplay() {
         return;
       } else {
         let matchResults = response.data.hasOwnProperty("result of 1 way match") ? response.data["result of 1 way match"] : response.data["result"];
-        console.log("matchResults", matchResults);
+        // console.log("matchResults", matchResults);
         if (Array.isArray(matchResults)) {
           const arrsize = matchResults.length;
           setArrlength(arrsize);
@@ -283,10 +284,10 @@ export default function MatchProfileDisplay() {
           if (fetchedData) {
             const uid = fetchedData.user_uid;
             const data = await fetchUserInfo(uid);
-            console.log("data", data);
-            console.log("fetchedData", fetchedData);
-            console.log("userInfo", fetchedData.user_uid);
-            console.log("isLiked", fetchedData["Liked by"]);
+            // console.log("data", data);
+            // console.log("fetchedData", fetchedData);
+            // console.log("userInfo", fetchedData.user_uid);
+            // console.log("isLiked", fetchedData["Liked by"]);
 
             // Get current user info to calculate distance
             const currentUserData = await fetchUserInfo(userUid);
@@ -586,7 +587,29 @@ export default function MatchProfileDisplay() {
                       try {
                         const photoUrls = typeof userInfo.user_photo_url === "string" ? JSON.parse(userInfo.user_photo_url.replace(/\\"/g, '"')) : userInfo.user_photo_url || [];
 
-                        return photoUrls.map((photoUrl, index) => (photoUrl ? <Image key={index} source={{ uri: photoUrl }} style={styles.userPhoto} resizeMode='cover' /> : null));
+                        // Reorder photos to put favorite first if it exists
+                        let orderedPhotos = [...photoUrls];
+                        if (userInfo.user_favorite_photo) {
+                          // Remove favorite photo from its current position if it exists
+                          // Use string comparison to match URLs
+                          orderedPhotos = orderedPhotos.filter((photo) => photo.toString() !== userInfo.user_favorite_photo.toString());
+                          // Add it to the beginning
+                          orderedPhotos.unshift(userInfo.user_favorite_photo);
+                        }
+
+                        return orderedPhotos.map((photoUrl, index) =>
+                          photoUrl ? (
+                            <View key={index} style={{ position: "relative" }}>
+                              <Image source={{ uri: photoUrl.toString() }} style={styles.userPhoto} resizeMode='cover' />
+                              {/* Compare strings for equality */}
+                              {photoUrl.toString() === userInfo.user_favorite_photo?.toString() && (
+                                <View style={styles.heartIconContainer}>
+                                  <Ionicons name='heart' size={16} color='#E4423F' />
+                                </View>
+                              )}
+                            </View>
+                          ) : null
+                        );
                       } catch (e) {
                         console.error("Error parsing photo URLs:", e);
                         return null;
@@ -935,5 +958,13 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 10,
     marginRight: 8,
+  },
+  heartIconContainer: {
+    position: "absolute",
+    top: 5,
+    right: 5,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    borderRadius: 12,
+    padding: 2,
   },
 });

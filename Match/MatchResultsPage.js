@@ -222,10 +222,15 @@ const MatchResultsPage = () => {
 
             if (userInfoResponse.data && userInfoResponse.data.result && userInfoResponse.data.result.length > 0) {
               const userDetails = userInfoResponse.data.result[0];
+              console.log(`MATCH DEBUG: User ${match.user_uid} details from API:`, {
+                favorite_photo: userDetails.user_favorite_photo,
+                photo_urls: userDetails.user_photo_url,
+              });
               // Merge the user details into the match data
               return {
                 ...match,
                 user_general_interests: userDetails.user_general_interests,
+                user_favorite_photo: userDetails.user_favorite_photo,
               };
             }
             return match;
@@ -261,6 +266,7 @@ const MatchResultsPage = () => {
               return {
                 ...match,
                 user_general_interests: userDetails.user_general_interests,
+                user_favorite_photo: userDetails.user_favorite_photo,
               };
             }
             return match;
@@ -296,6 +302,7 @@ const MatchResultsPage = () => {
               return {
                 ...match,
                 user_general_interests: userDetails.user_general_interests,
+                user_favorite_photo: userDetails.user_favorite_photo,
               };
             }
             return match;
@@ -636,8 +643,18 @@ const MatchResultsPage = () => {
         {matchedResults.length > 0 ? (
           matchedResults.map((match) => {
             const photoUrls = safeJsonParse(match.user_photo_url, []);
-            const firstPhoto = photoUrls[0] || null;
-            return renderMatchRow(match.user_first_name, match.user_last_name, match.user_general_interests, firstPhoto, "Set up date or see invitation", match.user_uid);
+            console.log(`\n=== Photo Debug for user ${match.user_uid} ===`);
+            console.log("Favorite photo:", match.user_favorite_photo);
+            console.log("Photo URLs array:", photoUrls);
+            console.log("Photo URLs type:", typeof photoUrls);
+
+            // Use favorite photo if available, otherwise use first photo from array
+            const photoToShow = match.user_favorite_photo?.toString() || (photoUrls.length > 0 ? photoUrls[0].toString() : null);
+
+            console.log("Selected photo to show:", photoToShow);
+            console.log("===============================\n");
+
+            return renderMatchRow(match.user_first_name, match.user_last_name, match.user_general_interests, photoToShow, "Set up date or see invitation", match.user_uid);
           })
         ) : (
           <Text style={styles.noMatchesText}>No matches found</Text>
@@ -650,8 +667,17 @@ const MatchResultsPage = () => {
         {interestedInMe.length > 0 ? (
           interestedInMe.map((match) => {
             const photoUrls = safeJsonParse(match.user_photo_url, []);
-            const firstPhoto = photoUrls[0] || null;
-            return renderInterestedInMeRow(match.user_first_name, match.user_last_name, match.user_general_interests, firstPhoto, "Match", match.user_uid);
+            console.log(`\n=== Photo Debug for Interested In Me user ${match.user_uid} ===`);
+            console.log("Favorite photo:", match.user_favorite_photo);
+            console.log("Photo URLs array:", photoUrls);
+            console.log("Photo URLs type:", typeof photoUrls);
+
+            const photoToShow = match.user_favorite_photo?.toString() || (photoUrls.length > 0 ? photoUrls[0].toString() : null);
+
+            console.log("Selected photo to show:", photoToShow);
+            console.log("===============================\n");
+
+            return renderInterestedInMeRow(match.user_first_name, match.user_last_name, match.user_general_interests, photoToShow, "Match", match.user_uid);
           })
         ) : (
           <Text style={styles.noMatchesText}>No matches found</Text>
@@ -664,8 +690,17 @@ const MatchResultsPage = () => {
         {interestedIn.length > 0 ? (
           interestedIn.map((match) => {
             const photoUrls = safeJsonParse(match.user_photo_url, []);
-            const firstPhoto = photoUrls[0] || null;
-            return renderInterestedInRow(match.user_first_name, match.user_last_name, match.user_general_interests, firstPhoto, "See Profile", match.user_uid);
+            console.log(`\n=== Photo Debug for Interested In user ${match.user_uid} ===`);
+            console.log("Favorite photo:", match.user_favorite_photo);
+            console.log("Photo URLs array:", photoUrls);
+            console.log("Photo URLs type:", typeof photoUrls);
+
+            const photoToShow = match.user_favorite_photo?.toString() || (photoUrls.length > 0 ? photoUrls[0].toString() : null);
+
+            console.log("Selected photo to show:", photoToShow);
+            console.log("===============================\n");
+
+            return renderInterestedInRow(match.user_first_name, match.user_last_name, match.user_general_interests, photoToShow, "See Profile", match.user_uid);
           })
         ) : (
           <Text style={styles.noMatchesText}>No matches found</Text>

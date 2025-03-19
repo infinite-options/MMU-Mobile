@@ -19,9 +19,12 @@ const BottomNav = () => {
       <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("MatchResultsPage")}>
         <Image source={require("../assets/icons/twoheartsfilled.png")} />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Chat")}>
+      <View style={[styles.navButton, { pointerEvents: "none" }]}>
+        <Image source={require("../assets/icons/chat.png")} style={{ opacity: 0.5 }} />
+      </View>
+      {/* <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Chat")}>
         <Image source={require("../assets/icons/chat.png")} />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
       <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("MyProfile")}>
         <Image source={require("../assets/icons/profileoutline.png")} />
       </TouchableOpacity>
@@ -480,7 +483,7 @@ const MatchResultsPage = () => {
       // Pass the matched user UID to Chat
       navigation.navigate("Chat", { matchedUserId: matchId });
     } else {
-      // Also pass the UID to DateType
+      // Navigate to DateType
       navigation.navigate("DateType", { matchedUserId: matchId });
     }
   };

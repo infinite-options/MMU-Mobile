@@ -43,14 +43,32 @@ const MatchPageNew = () => {
         // Fetch current user's photo
         const userResponse = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${userId}`);
         const userData = userResponse.data.result[0]; // Access first result item
+        console.log("\n=== Current User Photo Debug ===");
+        console.log("User ID:", userId);
+        console.log("Favorite photo:", userData.user_favorite_photo);
         const userPhotoUrls = JSON.parse(userData.user_photo_url.replace(/\\"/g, '"')) || [];
-        setUserPhoto(userPhotoUrls[0] || null);
+        console.log("Photo URLs array:", userPhotoUrls);
+        console.log("Photo URLs type:", typeof userPhotoUrls);
+        // Use favorite photo if available, otherwise use first photo
+        const userPhotoToShow = userData.user_favorite_photo?.toString() || (userPhotoUrls.length > 0 ? userPhotoUrls[0].toString() : null);
+        console.log("Selected photo to show:", userPhotoToShow);
+        console.log("===============================\n");
+        setUserPhoto(userPhotoToShow);
 
         // Fetch matched user's photo
         const matchedUserResponse = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${meet_date_user_id}`);
         const matchedUserData = matchedUserResponse.data.result[0];
+        console.log("\n=== Matched User Photo Debug ===");
+        console.log("User ID:", meet_date_user_id);
+        console.log("Favorite photo:", matchedUserData.user_favorite_photo);
         const matchedPhotoUrls = JSON.parse(matchedUserData.user_photo_url.replace(/\\"/g, '"')) || [];
-        setMatchedUserPhoto(matchedPhotoUrls[0] || null);
+        console.log("Photo URLs array:", matchedPhotoUrls);
+        console.log("Photo URLs type:", typeof matchedPhotoUrls);
+        // Use favorite photo if available, otherwise use first photo
+        const matchedPhotoToShow = matchedUserData.user_favorite_photo?.toString() || (matchedPhotoUrls.length > 0 ? matchedPhotoUrls[0].toString() : null);
+        console.log("Selected photo to show:", matchedPhotoToShow);
+        console.log("===============================\n");
+        setMatchedUserPhoto(matchedPhotoToShow);
 
         // Get matched user's name
         setMatchedUserName(matchedUserData.user_first_name + " " + matchedUserData.user_last_name || "your match");

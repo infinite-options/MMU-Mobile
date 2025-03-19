@@ -92,16 +92,34 @@ export default function DateLocation({ navigation }) {
         if (currentUserId) {
           const currentUserResponse = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${currentUserId}`);
           const currentUserData = await currentUserResponse.json();
+          console.log("\n=== Current User Photo Debug (DateLocation) ===");
+          console.log("User ID:", currentUserId);
+          console.log("Favorite photo:", currentUserData.result[0]?.user_favorite_photo);
           const currentUserPhotoUrls = currentUserData.result[0]?.user_photo_url ? JSON.parse(currentUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
-          setCurrentUserImage(currentUserPhotoUrls[0] || null);
+          console.log("Photo URLs array:", currentUserPhotoUrls);
+          console.log("Photo URLs type:", typeof currentUserPhotoUrls);
+          // Use favorite photo if available, otherwise use first photo
+          const userPhotoToShow = currentUserData.result[0]?.user_favorite_photo?.toString() || (currentUserPhotoUrls.length > 0 ? currentUserPhotoUrls[0].toString() : null);
+          console.log("Selected photo to show:", userPhotoToShow);
+          console.log("===============================\n");
+          setCurrentUserImage(userPhotoToShow);
         }
 
         // Fetch matched user's image
         if (matchedUserId) {
           const matchedUserResponse = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${matchedUserId}`);
           const matchedUserData = await matchedUserResponse.json();
+          console.log("\n=== Matched User Photo Debug (DateLocation) ===");
+          console.log("User ID:", matchedUserId);
+          console.log("Favorite photo:", matchedUserData.result[0]?.user_favorite_photo);
           const matchedUserPhotoUrls = matchedUserData.result[0]?.user_photo_url ? JSON.parse(matchedUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
-          setMatchedUserImage(matchedUserPhotoUrls[0] || null);
+          console.log("Photo URLs array:", matchedUserPhotoUrls);
+          console.log("Photo URLs type:", typeof matchedUserPhotoUrls);
+          // Use favorite photo if available, otherwise use first photo
+          const matchedPhotoToShow = matchedUserData.result[0]?.user_favorite_photo?.toString() || (matchedUserPhotoUrls.length > 0 ? matchedUserPhotoUrls[0].toString() : null);
+          console.log("Selected photo to show:", matchedPhotoToShow);
+          console.log("===============================\n");
+          setMatchedUserImage(matchedPhotoToShow);
         }
       } catch (error) {
         console.error("Error fetching user images:", error);

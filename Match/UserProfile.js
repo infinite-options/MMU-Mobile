@@ -23,9 +23,9 @@ const BottomNav = () => {
       <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("MatchResultsPage")}>
         <Image source={require("../assets/icons/twoheartsdark.png")} />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Chat")}>
-        <Image source={require("../assets/icons/chatdark.png")} />
-      </TouchableOpacity>
+      <View style={[styles.navButton, { pointerEvents: "none" }]}>
+        <Image source={require("../assets/icons/chatdark.png")} style={{ opacity: 0.5 }} />
+      </View>
       <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("MyProfile")}>
         <Image source={require("../assets/icons/profileoutlinedark.png")} />
       </TouchableOpacity>

@@ -1,21 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import {
-  SafeAreaView,
-  Platform,
-  StatusBar,
-  View,
-  Text,
-  TouchableOpacity,
-  Pressable,
-  StyleSheet,
-  ScrollView,
-  Image,
-  TextInput,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import MaskedView from '@react-native-masked-view/masked-view';
+import React, { useState, useEffect } from "react";
+import { SafeAreaView, Platform, StatusBar, View, Text, TouchableOpacity, Pressable, StyleSheet, ScrollView, Image, TextInput } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import MaskedView from "@react-native-masked-view/masked-view";
 
 export default function DateOccurance({ navigation }) {
   const route = useRoute();
@@ -23,11 +11,10 @@ export default function DateOccurance({ navigation }) {
   useEffect(() => {
     const initMatchedUserId = async () => {
       if (!matchedUserId) {
-        const storedId = await AsyncStorage.getItem('matchedUserId');
+        const storedId = await AsyncStorage.getItem("matchedUserId");
         if (storedId) setMatchedUserId(storedId);
-      }
-      else {
-        await AsyncStorage.setItem('matchedUserId', matchedUserId);
+      } else {
+        await AsyncStorage.setItem("matchedUserId", matchedUserId);
       }
     };
     initMatchedUserId();
@@ -37,22 +24,22 @@ export default function DateOccurance({ navigation }) {
 
   // Enhanced time state with formatting
   const [timeState, setTimeState] = useState({
-    formattedInput: '',
+    formattedInput: "",
     hour: 0,
-    minute: 0
+    minute: 0,
   });
 
   // Track AM/PM selection
   const [amPm, setAmPm] = useState(null);
 
   // Days array with single letters for display
-  const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-  
+  const days = ["S", "M", "T", "W", "T", "F", "S"];
+
   // Full day names for storage and API
-  const fullDayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const fullDayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
   // Add state for user info
-  const [matchedUserName, setMatchedUserName] = useState('');
+  const [matchedUserName, setMatchedUserName] = useState("");
   const [matchedUserAvailability, setMatchedUserAvailability] = useState([]);
 
   // Add state for user images
@@ -64,51 +51,51 @@ export default function DateOccurance({ navigation }) {
     const loadSavedDayAndTime = async () => {
       try {
         // Load previously saved day
-        const savedDay = await AsyncStorage.getItem('user_date_day');
+        const savedDay = await AsyncStorage.getItem("user_date_day");
         if (savedDay) {
           // Find the index of the saved day in the fullDayNames array
-          const dayIndex = fullDayNames.findIndex(day => day === savedDay);
+          const dayIndex = fullDayNames.findIndex((day) => day === savedDay);
           if (dayIndex !== -1) {
             setSelectedDayIndex(dayIndex);
           }
         }
-        
+
         // Load previously saved time
-        const savedTime = await AsyncStorage.getItem('user_date_time');
+        const savedTime = await AsyncStorage.getItem("user_date_time");
         if (savedTime) {
           // Parse the time format (e.g., "7:30 PM")
-          const timeParts = savedTime.split(' ');
+          const timeParts = savedTime.split(" ");
           if (timeParts.length === 2) {
             const [timeString, periodStr] = timeParts;
-            const [hourStr, minuteStr] = timeString.split(':');
-            
+            const [hourStr, minuteStr] = timeString.split(":");
+
             // Set time values
             const hour = parseInt(hourStr, 10);
             const minute = parseInt(minuteStr, 10);
-            
+
             setTimeState({
               formattedInput: timeString,
               hour: hour,
-              minute: minute
+              minute: minute,
             });
-            
+
             // Set AM/PM
             setAmPm(periodStr);
           }
         }
       } catch (error) {
-        console.error('Error loading saved day and time:', error);
+        console.error("Error loading saved day and time:", error);
       }
     };
-    
+
     loadSavedDayAndTime();
   }, []);
 
   // Helper function to format time string for display and storage
   const formatTime = () => {
-    if (!timeState.formattedInput) return '';
+    if (!timeState.formattedInput) return "";
     const hour = timeState.hour || 12; // Default to 12 if hour is 0
-    const minute = timeState.minute.toString().padStart(2, '0');
+    const minute = timeState.minute.toString().padStart(2, "0");
     return `${hour}:${minute} ${amPm}`;
   };
 
@@ -121,17 +108,13 @@ export default function DateOccurance({ navigation }) {
           const data = await response.json();
           const userData = data.result[0];
           console.log("--- userData ---", userData);
-          setMatchedUserName(userData?.user_first_name || 'Your match');
+          setMatchedUserName(userData?.user_first_name || "Your match");
           const rawAvailability = userData?.user_available_time;
-          const availability = rawAvailability
-            ? JSON.parse(rawAvailability).map(slot => 
-                `${slot.day}, ${slot.start_time} to ${slot.end_time}`
-              )
-            : [];
+          const availability = rawAvailability ? JSON.parse(rawAvailability).map((slot) => `${slot.day}, ${slot.start_time} to ${slot.end_time}`) : [];
           setMatchedUserAvailability(availability);
         }
       } catch (error) {
-        console.error('Error fetching user info:', error);
+        console.error("Error fetching user info:", error);
       }
     };
     fetchMatchedUserInfo();
@@ -142,27 +125,43 @@ export default function DateOccurance({ navigation }) {
     const fetchUserImages = async () => {
       try {
         // Get current user ID from storage
-        const currentUserId = await AsyncStorage.getItem('user_uid');
-        
+        const currentUserId = await AsyncStorage.getItem("user_uid");
+
         // Fetch current user's image
         if (currentUserId) {
           const currentUserResponse = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${currentUserId}`);
           const currentUserData = await currentUserResponse.json();
-          const currentUserPhotoUrls = currentUserData.result[0]?.user_photo_url ? 
-            JSON.parse(currentUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
-          setCurrentUserImage(currentUserPhotoUrls[0] || null);
+          console.log("\n=== Current User Photo Debug (DateOccurance) ===");
+          console.log("User ID:", currentUserId);
+          console.log("Favorite photo:", currentUserData.result[0]?.user_favorite_photo);
+          const currentUserPhotoUrls = currentUserData.result[0]?.user_photo_url ? JSON.parse(currentUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
+          console.log("Photo URLs array:", currentUserPhotoUrls);
+          console.log("Photo URLs type:", typeof currentUserPhotoUrls);
+          // Use favorite photo if available, otherwise use first photo
+          const userPhotoToShow = currentUserData.result[0]?.user_favorite_photo?.toString() || (currentUserPhotoUrls.length > 0 ? currentUserPhotoUrls[0].toString() : null);
+          console.log("Selected photo to show:", userPhotoToShow);
+          console.log("===============================\n");
+          setCurrentUserImage(userPhotoToShow);
         }
 
         // Fetch matched user's image
         if (matchedUserId) {
           const matchedUserResponse = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${matchedUserId}`);
           const matchedUserData = await matchedUserResponse.json();
-          const matchedUserPhotoUrls = matchedUserData.result[0]?.user_photo_url ? 
-            JSON.parse(matchedUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
-          setMatchedUserImage(matchedUserPhotoUrls[0] || null);
+          console.log("\n=== Matched User Photo Debug (DateOccurance) ===");
+          console.log("User ID:", matchedUserId);
+          console.log("Favorite photo:", matchedUserData.result[0]?.user_favorite_photo);
+          const matchedUserPhotoUrls = matchedUserData.result[0]?.user_photo_url ? JSON.parse(matchedUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
+          console.log("Photo URLs array:", matchedUserPhotoUrls);
+          console.log("Photo URLs type:", typeof matchedUserPhotoUrls);
+          // Use favorite photo if available, otherwise use first photo
+          const matchedPhotoToShow = matchedUserData.result[0]?.user_favorite_photo?.toString() || (matchedUserPhotoUrls.length > 0 ? matchedUserPhotoUrls[0].toString() : null);
+          console.log("Selected photo to show:", matchedPhotoToShow);
+          console.log("===============================\n");
+          setMatchedUserImage(matchedPhotoToShow);
         }
       } catch (error) {
-        console.error('Error fetching user images:', error);
+        console.error("Error fetching user images:", error);
       }
     };
 
@@ -182,10 +181,10 @@ export default function DateOccurance({ navigation }) {
   // Handler for time input with formatting and validation
   const handleTimeChange = (val) => {
     // Allow only numbers
-    const digitsOnly = val.replace(/[^0-9]/g, '');
-    
+    const digitsOnly = val.replace(/[^0-9]/g, "");
+
     // Format time as user types (HH:MM)
-    let formatted = '';
+    let formatted = "";
     if (digitsOnly.length > 0) {
       // First digit of hour
       const hour1 = parseInt(digitsOnly[0], 10);
@@ -193,39 +192,37 @@ export default function DateOccurance({ navigation }) {
       if (digitsOnly.length > 1 && hour1 > 1) {
         return; // Invalid hour first digit
       }
-      
+
       if (digitsOnly.length === 1) {
         formatted = digitsOnly[0];
       } else if (digitsOnly.length === 2) {
         // Check for valid hour
         const hour = parseInt(digitsOnly.substring(0, 2), 10);
         if (hour === 0 || hour > 12) return; // Invalid hour
-        formatted = digitsOnly.substring(0, 2) + ':';
+        formatted = digitsOnly.substring(0, 2) + ":";
       } else if (digitsOnly.length >= 3) {
         // Add minutes
         const hour = parseInt(digitsOnly.substring(0, 2), 10);
         if (hour === 0 || hour > 12) return; // Invalid hour
-        
+
         const min1 = parseInt(digitsOnly[2], 10);
         if (min1 > 5) return; // First minute digit can only be 0-5
-        
+
         if (digitsOnly.length === 3) {
-          formatted = digitsOnly.substring(0, 2) + ':' + digitsOnly[2];
+          formatted = digitsOnly.substring(0, 2) + ":" + digitsOnly[2];
         } else {
           const minutes = parseInt(digitsOnly.substring(2, 4), 10);
           if (minutes > 59) return; // Invalid minutes
-          formatted = digitsOnly.substring(0, 2) + ':' + digitsOnly.substring(2, 4);
+          formatted = digitsOnly.substring(0, 2) + ":" + digitsOnly.substring(2, 4);
         }
       }
     }
-    
+
     // Update state with formatted value and actual time values
     setTimeState({
       formattedInput: formatted,
       hour: digitsOnly.length >= 2 ? parseInt(digitsOnly.substring(0, 2), 10) : 0,
-      minute: digitsOnly.length >= 4 
-        ? parseInt(digitsOnly.substring(2, 4), 10) 
-        : (digitsOnly.length === 3 ? parseInt(digitsOnly[2] + '0', 10) : 0)
+      minute: digitsOnly.length >= 4 ? parseInt(digitsOnly.substring(2, 4), 10) : digitsOnly.length === 3 ? parseInt(digitsOnly[2] + "0", 10) : 0,
     });
   };
 
@@ -233,13 +230,13 @@ export default function DateOccurance({ navigation }) {
   const isFormComplete = () => {
     // Day selected
     const hasDaySelected = selectedDayIndex !== null;
-    
+
     // Valid time entered
     const hasValidTime = timeState.hour > 0 || timeState.minute > 0;
-    
+
     // AM/PM selected
     const hasAmPmSelected = amPm !== null;
-    
+
     return hasDaySelected && hasValidTime && hasAmPmSelected;
   };
 
@@ -251,17 +248,17 @@ export default function DateOccurance({ navigation }) {
         const dayLetter = days[selectedDayIndex];
         const dayFullName = fullDayNames[selectedDayIndex];
         const selectedTime = formatTime();
-        
-        await AsyncStorage.setItem('user_date_day', dayFullName);
-        await AsyncStorage.setItem('user_date_time', selectedTime);
 
-        console.log('Day stored:', dayFullName);
-        console.log('Time stored:', selectedTime);
+        await AsyncStorage.setItem("user_date_day", dayFullName);
+        await AsyncStorage.setItem("user_date_time", selectedTime);
+
+        console.log("Day stored:", dayFullName);
+        console.log("Time stored:", selectedTime);
       } catch (error) {
-        console.error('Error storing date info:', error);
+        console.error("Error storing date info:", error);
       }
       // Navigate to the next screen with full day name
-      navigation.navigate('DateLocation', {
+      navigation.navigate("DateLocation", {
         selectedDayIndex,
         selectedDay: fullDayNames[selectedDayIndex],
         startTime: formatTime(),
@@ -283,52 +280,26 @@ export default function DateOccurance({ navigation }) {
         <View style={styles.heartsContainer}>
           {/* First heart using MaskedView */}
           <View style={styles.heartWrapper}>
-            <MaskedView
-              style={styles.maskedView}
-              maskElement={
-                <Image
-                  source={require('../assets/icons/Primaryheart.png')}
-                  style={styles.maskImage}
-                  resizeMode="contain"
-                />
-              }
-            >
+            <MaskedView style={styles.maskedView} maskElement={<Image source={require("../assets/icons/Primaryheart.png")} style={styles.maskImage} resizeMode='contain' />}>
               <Image
-                source={currentUserImage ? { uri: currentUserImage } : require('../src/Assets/Images/account.png')}
+                source={currentUserImage ? { uri: currentUserImage } : require("../src/Assets/Images/account.png")}
                 style={styles.fullImage}
-                defaultSource={require('../src/Assets/Images/account.png')}
+                defaultSource={require("../src/Assets/Images/account.png")}
               />
             </MaskedView>
-            <Image
-              source={require('../assets/icons/primaryheartoutline.png')}
-              style={styles.heartOutline}
-              resizeMode="contain"
-            />
+            <Image source={require("../assets/icons/primaryheartoutline.png")} style={styles.heartOutline} resizeMode='contain' />
           </View>
-          
+
           {/* Second heart using MaskedView */}
           <View style={[styles.heartWrapper, styles.secondHeartWrapper]}>
-            <MaskedView
-              style={styles.maskedView}
-              maskElement={
-                <Image
-                  source={require('../assets/icons/Secondaryheart.png')}
-                  style={styles.maskImage}
-                  resizeMode="contain"
-                />
-              }
-            >
+            <MaskedView style={styles.maskedView} maskElement={<Image source={require("../assets/icons/Secondaryheart.png")} style={styles.maskImage} resizeMode='contain' />}>
               <Image
-                source={matchedUserImage ? { uri: matchedUserImage } : require('../src/Assets/Images/account.png')}
+                source={matchedUserImage ? { uri: matchedUserImage } : require("../src/Assets/Images/account.png")}
                 style={styles.fullImage}
-                defaultSource={require('../src/Assets/Images/account.png')}
+                defaultSource={require("../src/Assets/Images/account.png")}
               />
             </MaskedView>
-            <Image
-              source={require('../assets/icons/secondaryheartoutline.png')}
-              style={styles.heartOutline}
-              resizeMode="contain"
-            />
+            <Image source={require("../assets/icons/secondaryheartoutline.png")} style={styles.heartOutline} resizeMode='contain' />
           </View>
         </View>
 
@@ -356,22 +327,8 @@ export default function DateOccurance({ navigation }) {
               {days.map((day, index) => {
                 const isSelected = selectedDayIndex === index;
                 return (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.dayCircle,
-                      isSelected && { backgroundColor: '#000' },
-                    ]}
-                    onPress={() => handleDayPress(index)}
-                  >
-                    <Text
-                      style={[
-                        styles.dayText,
-                        isSelected && { color: '#FFF' },
-                      ]}
-                    >
-                      {day}
-                    </Text>
+                  <TouchableOpacity key={index} style={[styles.dayCircle, isSelected && { backgroundColor: "#000" }]} onPress={() => handleDayPress(index)}>
+                    <Text style={[styles.dayText, isSelected && { color: "#FFF" }]}>{day}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -381,52 +338,18 @@ export default function DateOccurance({ navigation }) {
             <View style={styles.timeRow}>
               <Text style={styles.timeLabel}>Start Time</Text>
               <View style={styles.timeInputContainer}>
-                <TextInput
-                  style={styles.timeInput}
-                  placeholder="00:00"
-                  value={timeState.formattedInput}
-                  onChangeText={handleTimeChange}
-                  keyboardType="numeric"
-                />
+                <TextInput style={styles.timeInput} placeholder='00:00' value={timeState.formattedInput} onChangeText={handleTimeChange} keyboardType='numeric' />
               </View>
 
               <View style={styles.amPmContainer}>
                 {/* AM toggle */}
-                <TouchableOpacity
-                  style={[
-                    styles.amPmButton,
-                    styles.amPmButtonLeft,
-                    amPm === 'AM' && { backgroundColor: '#000' },
-                  ]}
-                  onPress={() => handleAmPmPress('AM')}
-                >
-                  <Text
-                    style={[
-                      styles.amPmText,
-                      amPm === 'AM' && { color: '#FFF' },
-                    ]}
-                  >
-                    AM
-                  </Text>
+                <TouchableOpacity style={[styles.amPmButton, styles.amPmButtonLeft, amPm === "AM" && { backgroundColor: "#000" }]} onPress={() => handleAmPmPress("AM")}>
+                  <Text style={[styles.amPmText, amPm === "AM" && { color: "#FFF" }]}>AM</Text>
                 </TouchableOpacity>
 
                 {/* PM toggle */}
-                <TouchableOpacity
-                  style={[
-                    styles.amPmButton,
-                    styles.amPmButtonRight,
-                    amPm === 'PM' && { backgroundColor: '#000' },
-                  ]}
-                  onPress={() => handleAmPmPress('PM')}
-                >
-                  <Text
-                    style={[
-                      styles.amPmText,
-                      amPm === 'PM' && { color: '#FFF' },
-                    ]}
-                  >
-                    PM
-                  </Text>
+                <TouchableOpacity style={[styles.amPmButton, styles.amPmButtonRight, amPm === "PM" && { backgroundColor: "#000" }]} onPress={() => handleAmPmPress("PM")}>
+                  <Text style={[styles.amPmText, amPm === "PM" && { color: "#FFF" }]}>PM</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -435,22 +358,15 @@ export default function DateOccurance({ navigation }) {
       </ScrollView>
 
       {/* Continue Button */}
-      <Pressable
-        style={[
-          styles.continueButton,
-          { backgroundColor: isFormComplete() ? '#E4423F' : '#ccc' },
-        ]}
-        onPress={handleContinue}
-        disabled={!isFormComplete()}
-      >
+      <Pressable style={[styles.continueButton, { backgroundColor: isFormComplete() ? "#E4423F" : "#ccc" }]} onPress={handleContinue} disabled={!isFormComplete()}>
         <Text style={styles.continueButtonText}>Continue</Text>
       </Pressable>
 
       {/* Three progress dots (2nd one highlighted) */}
       <View style={styles.progressDotsContainer}>
-        <View style={[styles.dot, { backgroundColor: '#ccc' }]} />
-        <View style={[styles.dot, { backgroundColor: '#E4423F' }]} />
-        <View style={[styles.dot, { backgroundColor: '#ccc' }]} />
+        <View style={[styles.dot, { backgroundColor: "#ccc" }]} />
+        <View style={[styles.dot, { backgroundColor: "#E4423F" }]} />
+        <View style={[styles.dot, { backgroundColor: "#ccc" }]} />
       </View>
     </SafeAreaView>
   );
@@ -460,9 +376,9 @@ const styles = StyleSheet.create({
   // Main container
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
 
   // Back button
@@ -475,15 +391,15 @@ const styles = StyleSheet.create({
 
   // Hearts
   heartsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginBottom: 20,
   },
   // Heart images using MaskedView
   heartWrapper: {
     width: 60,
     height: 60,
-    position: 'relative',
+    position: "relative",
   },
   secondHeartWrapper: {
     marginLeft: -20,
@@ -491,8 +407,8 @@ const styles = StyleSheet.create({
   maskedView: {
     width: 60,
     height: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   maskImage: {
     width: 60,
@@ -501,10 +417,10 @@ const styles = StyleSheet.create({
   fullImage: {
     width: 60,
     height: 60,
-    resizeMode: 'cover',
+    resizeMode: "cover",
   },
   heartOutline: {
-    position: 'absolute',
+    position: "absolute",
     width: 60,
     height: 60,
     top: 0,
@@ -514,63 +430,63 @@ const styles = StyleSheet.create({
   // Content area
   content: {
     flex: 1,
-    justifyContent: 'flex-start',
+    justifyContent: "flex-start",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 14,
-    color: '#888',
+    color: "#888",
     marginBottom: 5,
   },
   bulletItem: {
     fontSize: 14,
-    color: '#888',
+    color: "#888",
     marginBottom: 5,
   },
 
   // Gray box container
   selectionContainer: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
     borderRadius: 12,
     padding: 20,
   },
 
   // Days row
   daysRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 20,
   },
   dayCircle: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFF',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#FFF",
+    justifyContent: "center",
+    alignItems: "center",
   },
   dayText: {
-    color: '#000',
-    fontWeight: '600',
+    color: "#000",
+    fontWeight: "600",
   },
 
   // Time row
   timeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
     marginTop: 20,
     paddingHorizontal: 5,
   },
   timeLabel: {
     fontSize: 16,
-    color: '#000',
-    fontWeight: '600',
+    color: "#000",
+    fontWeight: "600",
     width: 90,
     marginRight: 5,
   },
@@ -579,13 +495,13 @@ const styles = StyleSheet.create({
     marginRight: 15,
   },
   timeInput: {
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
     borderRadius: 12,
     paddingHorizontal: 15,
     paddingVertical: 12,
     fontSize: 16,
-    textAlign: 'center',
-    shadowColor: '#000',
+    textAlign: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 1,
@@ -594,52 +510,52 @@ const styles = StyleSheet.create({
 
   // AM/PM toggles
   amPmContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   amPmButton: {
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: '#FFF',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#FFF",
+    alignItems: "center",
+    justifyContent: "center",
   },
   amPmButtonLeft: {
     borderTopLeftRadius: 12,
     borderBottomLeftRadius: 12,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderWidth: 1,
     borderRightWidth: 0,
   },
   amPmButtonRight: {
     borderTopRightRadius: 12,
     borderBottomRightRadius: 12,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderWidth: 1,
   },
   amPmText: {
-    color: '#888',
-    fontWeight: '500',
+    color: "#888",
+    fontWeight: "500",
     fontSize: 16,
   },
 
   // Continue button
   continueButton: {
     height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderRadius: 30,
-    marginBottom: 10, 
+    marginBottom: 10,
   },
   continueButtonText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 
   // Progress dots
   progressDotsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginBottom: 20,
   },
   dot: {

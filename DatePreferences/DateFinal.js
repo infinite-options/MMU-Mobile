@@ -1,24 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import {
-  SafeAreaView,
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  Pressable,
-  Platform,
-  StatusBar,
-  Image,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useEffect } from "react";
+import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity, Modal, Pressable, Platform, StatusBar, Image } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 // Import your custom SlideToSend
-import SlideToSend from '../src/Assets/Components/SlideToSend.js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
-import axios from 'axios';
-import MaskedView from '@react-native-masked-view/masked-view';
-import LinearGradient from 'react-native-linear-gradient';
+import SlideToSend from "../src/Assets/Components/SlideToSend.js";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
+import axios from "axios";
+import MaskedView from "@react-native-masked-view/masked-view";
+import LinearGradient from "react-native-linear-gradient";
 
 export default function DateFinal({ navigation }) {
   const route = useRoute();
@@ -29,11 +18,10 @@ export default function DateFinal({ navigation }) {
   useEffect(() => {
     const initMatchedUserId = async () => {
       if (!matchedUserId) {
-        const storedId = await AsyncStorage.getItem('matchedUserId');
+        const storedId = await AsyncStorage.getItem("matchedUserId");
         if (storedId) setMatchedUserId(storedId);
-      }
-      else {
-        await AsyncStorage.setItem('matchedUserId', matchedUserId);
+      } else {
+        await AsyncStorage.setItem("matchedUserId", matchedUserId);
       }
     };
     initMatchedUserId();
@@ -42,64 +30,80 @@ export default function DateFinal({ navigation }) {
   useEffect(() => {
     const fetchUserImages = async () => {
       try {
-        const currentUserId = await AsyncStorage.getItem('user_uid');
-        
+        const currentUserId = await AsyncStorage.getItem("user_uid");
+
         if (currentUserId) {
           const currentUserResponse = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${currentUserId}`);
           const currentUserData = await currentUserResponse.json();
-          const currentUserPhotoUrls = currentUserData.result[0]?.user_photo_url ? 
-            JSON.parse(currentUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
-          setCurrentUserImage(currentUserPhotoUrls[0] || null);
+          console.log("\n=== Current User Photo Debug (DateFinal) ===");
+          console.log("User ID:", currentUserId);
+          console.log("Favorite photo:", currentUserData.result[0]?.user_favorite_photo);
+          const currentUserPhotoUrls = currentUserData.result[0]?.user_photo_url ? JSON.parse(currentUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
+          console.log("Photo URLs array:", currentUserPhotoUrls);
+          console.log("Photo URLs type:", typeof currentUserPhotoUrls);
+          // Use favorite photo if available, otherwise use first photo
+          const userPhotoToShow = currentUserData.result[0]?.user_favorite_photo?.toString() || (currentUserPhotoUrls.length > 0 ? currentUserPhotoUrls[0].toString() : null);
+          console.log("Selected photo to show:", userPhotoToShow);
+          console.log("===============================\n");
+          setCurrentUserImage(userPhotoToShow);
         }
 
         if (matchedUserId) {
           const matchedUserResponse = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${matchedUserId}`);
           const matchedUserData = await matchedUserResponse.json();
-          const matchedUserPhotoUrls = matchedUserData.result[0]?.user_photo_url ? 
-            JSON.parse(matchedUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
-          setMatchedUserImage(matchedUserPhotoUrls[0] || null);
+          console.log("\n=== Matched User Photo Debug (DateFinal) ===");
+          console.log("User ID:", matchedUserId);
+          console.log("Favorite photo:", matchedUserData.result[0]?.user_favorite_photo);
+          const matchedUserPhotoUrls = matchedUserData.result[0]?.user_photo_url ? JSON.parse(matchedUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
+          console.log("Photo URLs array:", matchedUserPhotoUrls);
+          console.log("Photo URLs type:", typeof matchedUserPhotoUrls);
+          // Use favorite photo if available, otherwise use first photo
+          const matchedPhotoToShow = matchedUserData.result[0]?.user_favorite_photo?.toString() || (matchedUserPhotoUrls.length > 0 ? matchedUserPhotoUrls[0].toString() : null);
+          console.log("Selected photo to show:", matchedPhotoToShow);
+          console.log("===============================\n");
+          setMatchedUserImage(matchedPhotoToShow);
         }
       } catch (error) {
-        console.error('Error fetching user images:', error);
+        console.error("Error fetching user images:", error);
       }
     };
 
     fetchUserImages();
   }, [matchedUserId]);
 
-  const [dateType, setDateType] = useState('No date type selected');
-  const [dateDay, setDateDay] = useState('No date day selected');
-  const [dateTime, setDateTime] = useState('No date time selected');
-  const [dateLocation, setDateLocation] = useState('No date location selected');
+  const [dateType, setDateType] = useState("No date type selected");
+  const [dateDay, setDateDay] = useState("No date day selected");
+  const [dateTime, setDateTime] = useState("No date time selected");
+  const [dateLocation, setDateLocation] = useState("No date location selected");
 
   // Replace useEffect with useFocusEffect for screen focus updates
   useFocusEffect(
     React.useCallback(() => {
       const fetchDateDetails = async () => {
         try {
-          console.log('DateFinal: Fetching date details');
-          
+          console.log("DateFinal: Fetching date details");
+
           // First check route.params for any new selections (highest priority)
           if (route.params?.dateType) {
             setDateType(route.params.dateType);
-            await AsyncStorage.setItem('user_date_type', route.params.dateType);
+            await AsyncStorage.setItem("user_date_type", route.params.dateType);
           }
-          
+
           if (route.params?.dateDay) {
             setDateDay(route.params.dateDay);
-            await AsyncStorage.setItem('user_date_day', route.params.dateDay);
+            await AsyncStorage.setItem("user_date_day", route.params.dateDay);
           }
-          
+
           if (route.params?.dateTime) {
             setDateTime(route.params.dateTime);
-            await AsyncStorage.setItem('user_date_time', route.params.dateTime);
+            await AsyncStorage.setItem("user_date_time", route.params.dateTime);
           }
 
           // Then check AsyncStorage for saved values (second priority)
-          const storedDateType = await AsyncStorage.getItem('user_date_type');
-          const storedDateDay = await AsyncStorage.getItem('user_date_day');
-          const storedDateTime = await AsyncStorage.getItem('user_date_time');
-          const storedDateLocation = await AsyncStorage.getItem('selected_location_name');
+          const storedDateType = await AsyncStorage.getItem("user_date_type");
+          const storedDateDay = await AsyncStorage.getItem("user_date_day");
+          const storedDateTime = await AsyncStorage.getItem("user_date_time");
+          const storedDateLocation = await AsyncStorage.getItem("selected_location_name");
 
           // Set values from AsyncStorage if they exist and weren't already set from route.params
           if (storedDateType && !route.params?.dateType) setDateType(storedDateType);
@@ -109,40 +113,39 @@ export default function DateFinal({ navigation }) {
 
           // Special handling for location from route.params
           if (route.params?.location?.name) {
-            const locationText = route.params.location.name + ' - ' + route.params.location.address;
+            const locationText = route.params.location.name + " - " + route.params.location.address;
             setDateLocation(locationText);
-            
+
             // Save to AsyncStorage for persistence
-            await AsyncStorage.setItem('selected_location_name', locationText);
-            await AsyncStorage.setItem('selected_date_location_lat', String(route.params.location.latitude));
-            await AsyncStorage.setItem('selected_date_location_lng', String(route.params.location.longitude));
+            await AsyncStorage.setItem("selected_location_name", locationText);
+            await AsyncStorage.setItem("selected_date_location_lat", String(route.params.location.latitude));
+            await AsyncStorage.setItem("selected_date_location_lng", String(route.params.location.longitude));
           } else if (!storedDateLocation) {
             // Try to parse from savedLocation if no other location is set
-            const savedLocationJSON = await AsyncStorage.getItem('savedLocation');
+            const savedLocationJSON = await AsyncStorage.getItem("savedLocation");
             if (savedLocationJSON) {
               try {
                 const savedLocation = JSON.parse(savedLocationJSON);
                 if (savedLocation.name) {
-                  const locationText = savedLocation.name + (savedLocation.address ? ' - ' + savedLocation.address : '');
+                  const locationText = savedLocation.name + (savedLocation.address ? " - " + savedLocation.address : "");
                   setDateLocation(locationText);
-                  await AsyncStorage.setItem('selected_location_name', locationText);
-                  await AsyncStorage.setItem('selected_date_location_lat', String(savedLocation.latitude));
-                  await AsyncStorage.setItem('selected_date_location_lng', String(savedLocation.longitude));
+                  await AsyncStorage.setItem("selected_location_name", locationText);
+                  await AsyncStorage.setItem("selected_date_location_lat", String(savedLocation.latitude));
+                  await AsyncStorage.setItem("selected_date_location_lng", String(savedLocation.longitude));
                 }
               } catch (e) {
-                console.error('Error parsing saved location:', e);
+                console.error("Error parsing saved location:", e);
               }
             }
           }
 
           // Fallback to API endpoint only if we don't have critical data yet (lowest priority)
-          const hasDateInfo = storedDateType || storedDateDay || storedDateTime || storedDateLocation || 
-                             route.params?.dateType || route.params?.dateDay || 
-                             route.params?.dateTime || route.params?.location;
-                             
+          const hasDateInfo =
+            storedDateType || storedDateDay || storedDateTime || storedDateLocation || route.params?.dateType || route.params?.dateDay || route.params?.dateTime || route.params?.location;
+
           if (!hasDateInfo) {
-            console.log('DateFinal: No local data found, fetching from API');
-            const meetUserId = await AsyncStorage.getItem('user_uid');
+            console.log("DateFinal: No local data found, fetching from API");
+            const meetUserId = await AsyncStorage.getItem("user_uid");
             if (meetUserId && matchedUserId) {
               try {
                 const checkUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet/${meetUserId}`;
@@ -157,39 +160,39 @@ export default function DateFinal({ navigation }) {
                   } else {
                     resultArray = [checkData];
                   }
-                  
-                  const matchingMeet = resultArray.find(item => item.meet_date_user_id === matchedUserId);
+
+                  const matchingMeet = resultArray.find((item) => item.meet_date_user_id === matchedUserId);
                   if (matchingMeet) {
-                    console.log('DateFinal: Found matching meet in API data');
+                    console.log("DateFinal: Found matching meet in API data");
                     // Set values from meet data and store them in AsyncStorage
                     if (matchingMeet.meet_date_type) {
                       setDateType(matchingMeet.meet_date_type);
-                      await AsyncStorage.setItem('user_date_type', matchingMeet.meet_date_type);
+                      await AsyncStorage.setItem("user_date_type", matchingMeet.meet_date_type);
                     }
-                    
+
                     if (matchingMeet.meet_day) {
                       setDateDay(matchingMeet.meet_day);
-                      await AsyncStorage.setItem('user_date_day', matchingMeet.meet_day);
+                      await AsyncStorage.setItem("user_date_day", matchingMeet.meet_day);
                     }
-                    
+
                     if (matchingMeet.meet_time) {
                       setDateTime(matchingMeet.meet_time);
-                      await AsyncStorage.setItem('user_date_time', matchingMeet.meet_time);
+                      await AsyncStorage.setItem("user_date_time", matchingMeet.meet_time);
                     }
-                    
+
                     if (matchingMeet.meet_location) {
                       setDateLocation(matchingMeet.meet_location);
-                      await AsyncStorage.setItem('selected_location_name', matchingMeet.meet_location);
+                      await AsyncStorage.setItem("selected_location_name", matchingMeet.meet_location);
                     }
                   }
                 }
               } catch (error) {
-                console.error('Error fetching meet data:', error);
+                console.error("Error fetching meet data:", error);
               }
             }
           }
         } catch (error) {
-          console.error('Error retrieving date details:', error);
+          console.error("Error retrieving date details:", error);
         }
       };
 
@@ -204,24 +207,24 @@ export default function DateFinal({ navigation }) {
   const handleSlideComplete = async () => {
     setInvitationSent(true);
     try {
-      const meetUserId = await AsyncStorage.getItem('user_uid');
+      const meetUserId = await AsyncStorage.getItem("user_uid");
       const meetDateUserId = matchedUserId;
-      const meetDay = await AsyncStorage.getItem('user_date_day');
-      const meetTime = await AsyncStorage.getItem('user_date_time');
-      const meetDateType = await AsyncStorage.getItem('user_date_type');
-      const meetLocation = await AsyncStorage.getItem('selected_location_name');
-      const meetLatitude = await AsyncStorage.getItem('selected_date_location_lat');
-      const meetLongitude = await AsyncStorage.getItem('selected_date_location_lng');
+      const meetDay = await AsyncStorage.getItem("user_date_day");
+      const meetTime = await AsyncStorage.getItem("user_date_time");
+      const meetDateType = await AsyncStorage.getItem("user_date_type");
+      const meetLocation = await AsyncStorage.getItem("selected_location_name");
+      const meetLatitude = await AsyncStorage.getItem("selected_date_location_lat");
+      const meetLongitude = await AsyncStorage.getItem("selected_date_location_lng");
 
       // Clear date-related AsyncStorage values after retrieving them
       await Promise.all([
-        AsyncStorage.removeItem('matchedUserId'),
-        AsyncStorage.removeItem('user_date_type'),
-        AsyncStorage.removeItem('user_date_day'),
-        AsyncStorage.removeItem('user_date_time'),
-        AsyncStorage.removeItem('selected_location_name'),
-        AsyncStorage.removeItem('selected_date_location_lat'),
-        AsyncStorage.removeItem('selected_date_location_lng')
+        AsyncStorage.removeItem("matchedUserId"),
+        AsyncStorage.removeItem("user_date_type"),
+        AsyncStorage.removeItem("user_date_day"),
+        AsyncStorage.removeItem("user_date_time"),
+        AsyncStorage.removeItem("selected_location_name"),
+        AsyncStorage.removeItem("selected_date_location_lat"),
+        AsyncStorage.removeItem("selected_date_location_lng"),
       ]);
 
       // Check if a meet already exists between the users
@@ -232,7 +235,7 @@ export default function DateFinal({ navigation }) {
         const checkResponse = await fetch(checkUrl, { method: "GET" });
         if (checkResponse.ok) {
           const checkData = await checkResponse.json();
-          if (checkData && (((Array.isArray(checkData) && checkData.length > 0)) || (checkData.result && Array.isArray(checkData.result) && checkData.result.length > 0))) {
+          if (checkData && ((Array.isArray(checkData) && checkData.length > 0) || (checkData.result && Array.isArray(checkData.result) && checkData.result.length > 0))) {
             let resultArray = [];
             if (Array.isArray(checkData)) {
               resultArray = checkData;
@@ -241,86 +244,86 @@ export default function DateFinal({ navigation }) {
             } else {
               resultArray = [checkData];
             }
-            const matchingMeet = resultArray.find(item => item.meet_date_user_id === meetDateUserId);
-            console.log('Matching meet:', matchingMeet);
+            const matchingMeet = resultArray.find((item) => item.meet_date_user_id === meetDateUserId);
+            console.log("Matching meet:", matchingMeet);
             if (matchingMeet) {
               existingMeet = true;
               existingMeetData = matchingMeet;
             } else {
-              console.log('No matching meet found for meetDateUserId:', meetDateUserId);
+              console.log("No matching meet found for meetDateUserId:", meetDateUserId);
             }
           } else {
-            console.log('checkData does not contain a valid result array');
+            console.log("checkData does not contain a valid result array");
           }
         }
-        console.log('Existing meet:', existingMeetData);
+        console.log("Existing meet:", existingMeetData);
       } catch (error) {
-        console.error('Error checking for existing meet:', error);
+        console.error("Error checking for existing meet:", error);
       }
-      
+
       let response;
       if (existingMeet && existingMeetData) {
         // Use PUT to update the existing meet with new date information using the retrieved meet_uid
         const formData = new FormData();
-        formData.append('meet_uid', existingMeetData.meet_uid);
-        formData.append('meet_user_id', meetUserId);
-        formData.append('meet_date_user_id', meetDateUserId);
-        formData.append('meet_day', meetDay);
-        formData.append('meet_time', meetTime);
-        formData.append('meet_date_type', meetDateType);
-        formData.append('meet_location', meetLocation);
-        formData.append('meet_latitude', meetLatitude);
-        formData.append('meet_longitude', meetLongitude);
-        formData.append('meet_confirmed', 0);
-        console.log('Existing meet found. Updating with PUT using meet_uid:', existingMeetData.meet_uid);
-        response = await fetch('https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet', {
+        formData.append("meet_uid", existingMeetData.meet_uid);
+        formData.append("meet_user_id", meetUserId);
+        formData.append("meet_date_user_id", meetDateUserId);
+        formData.append("meet_day", meetDay);
+        formData.append("meet_time", meetTime);
+        formData.append("meet_date_type", meetDateType);
+        formData.append("meet_location", meetLocation);
+        formData.append("meet_latitude", meetLatitude);
+        formData.append("meet_longitude", meetLongitude);
+        formData.append("meet_confirmed", 0);
+        console.log("Existing meet found. Updating with PUT using meet_uid:", existingMeetData.meet_uid);
+        response = await fetch("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet", {
           method: "PUT",
           body: formData,
         });
       } else {
         // Create a new meet using POST with values from AsyncStorage
         const formData = new FormData();
-        formData.append('meet_user_id', meetUserId);
-        formData.append('meet_date_user_id', meetDateUserId);
-        formData.append('meet_day', meetDay);
-        formData.append('meet_time', meetTime);
-        formData.append('meet_date_type', meetDateType);
-        formData.append('meet_location', meetLocation);
-        formData.append('meet_latitude', meetLatitude);
-        formData.append('meet_longitude', meetLongitude);
-        console.log('No existing meet. Creating new meet with POST');
-        response = await fetch('https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet', {
+        formData.append("meet_user_id", meetUserId);
+        formData.append("meet_date_user_id", meetDateUserId);
+        formData.append("meet_day", meetDay);
+        formData.append("meet_time", meetTime);
+        formData.append("meet_date_type", meetDateType);
+        formData.append("meet_location", meetLocation);
+        formData.append("meet_latitude", meetLatitude);
+        formData.append("meet_longitude", meetLongitude);
+        console.log("No existing meet. Creating new meet with POST");
+        response = await fetch("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet", {
           method: "POST",
           body: formData,
         });
       }
-      
+
       if (response.ok) {
         const result = await response.json();
         console.log("Response from server:", result);
         // Send date invitation message to messages endpoint
         const messageText = `Date Invitation:\nType: ${dateType}\nDate: ${dateDay}\nTime: ${dateTime}\nLocation: ${dateLocation}`;
         await axios.post(
-          'https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/messages',
+          "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/messages",
           {
             sender_id: meetUserId,
             receiver_id: meetDateUserId,
-            message_content: messageText
+            message_content: messageText,
           },
           {
-            headers: { 'Content-Type': 'application/json' }
+            headers: { "Content-Type": "application/json" },
           }
         );
       }
     } catch (error) {
-      console.error('Error in handleSlideComplete:', error);
+      console.error("Error in handleSlideComplete:", error);
     }
   };
 
   // Confirm cancel => exit or go back
   const handleConfirmCancel = () => {
     setShowCancelModal(false);
-    navigation.navigate('MatchResultsPage',{  matchedUserId: matchedUserId });
+    navigation.navigate("MatchResultsPage", { matchedUserId: matchedUserId });
   };
 
   if (invitationSent) {
@@ -328,66 +331,35 @@ export default function DateFinal({ navigation }) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.sentContainer}>
-        <View style={styles.heartsContainer}>
-        {/* First heart using MaskedView */}
-        <View style={styles.heartWrapper}>
-          <MaskedView
-            style={styles.maskedView}
-            maskElement={
-              <Image
-                source={require('../assets/icons/Primaryheart.png')}
-                style={styles.maskImage}
-                resizeMode="contain"
-              />
-            }
-          >
-            <Image
-              source={currentUserImage ? { uri: currentUserImage } : require('../src/Assets/Images/account.png')}
-              style={styles.fullImage}
-              defaultSource={require('../src/Assets/Images/account.png')}
-            />
-          </MaskedView>
-          <Image
-            source={require('../assets/icons/primaryheartoutline.png')}
-            style={styles.heartOutline}
-            resizeMode="contain"
-          />
-        </View>
-        
-        {/* Second heart using MaskedView */}
-        <View style={[styles.heartWrapper, styles.secondHeartWrapper]}>
-          <MaskedView
-            style={styles.maskedView}
-            maskElement={
-              <Image
-                source={require('../assets/icons/Secondaryheart.png')}
-                style={styles.maskImage}
-                resizeMode="contain"
-              />
-            }
-          >
-            <Image
-              source={matchedUserImage ? { uri: matchedUserImage } : require('../src/Assets/Images/account.png')}
-              style={styles.fullImage}
-              defaultSource={require('../src/Assets/Images/account.png')}
-            />
-          </MaskedView>
-          <Image
-            source={require('../assets/icons/secondaryheartoutline.png')}
-            style={styles.heartOutline}
-            resizeMode="contain"
-          />
-        </View>
-      </View>
-          <Text style={styles.sentTitle}>Invitation Sent!</Text>
-          <Text style={styles.sentSubtitle}>
-            Your date invitation was successfully sent.
-          </Text>
+          <View style={styles.heartsContainer}>
+            {/* First heart using MaskedView */}
+            <View style={styles.heartWrapper}>
+              <MaskedView style={styles.maskedView} maskElement={<Image source={require("../assets/icons/Primaryheart.png")} style={styles.maskImage} resizeMode='contain' />}>
+                <Image
+                  source={currentUserImage ? { uri: currentUserImage } : require("../src/Assets/Images/account.png")}
+                  style={styles.fullImage}
+                  defaultSource={require("../src/Assets/Images/account.png")}
+                />
+              </MaskedView>
+              <Image source={require("../assets/icons/primaryheartoutline.png")} style={styles.heartOutline} resizeMode='contain' />
+            </View>
 
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.navigate('MatchResultsPage',{  matchedUserId: matchedUserId })}
-          >
+            {/* Second heart using MaskedView */}
+            <View style={[styles.heartWrapper, styles.secondHeartWrapper]}>
+              <MaskedView style={styles.maskedView} maskElement={<Image source={require("../assets/icons/Secondaryheart.png")} style={styles.maskImage} resizeMode='contain' />}>
+                <Image
+                  source={matchedUserImage ? { uri: matchedUserImage } : require("../src/Assets/Images/account.png")}
+                  style={styles.fullImage}
+                  defaultSource={require("../src/Assets/Images/account.png")}
+                />
+              </MaskedView>
+              <Image source={require("../assets/icons/secondaryheartoutline.png")} style={styles.heartOutline} resizeMode='contain' />
+            </View>
+          </View>
+          <Text style={styles.sentTitle}>Invitation Sent!</Text>
+          <Text style={styles.sentSubtitle}>Your date invitation was successfully sent.</Text>
+
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("MatchResultsPage", { matchedUserId: matchedUserId })}>
             <Text style={styles.backButtonText}>Back to my matches</Text>
           </TouchableOpacity>
         </View>
@@ -400,13 +372,13 @@ export default function DateFinal({ navigation }) {
     <SafeAreaView style={styles.container}>
       {/* Cancel (X) in top right */}
       <TouchableOpacity
-  style={styles.cancelButton}
-  onPress={() => {
-    console.log('X was pressed!');
-    setShowCancelModal(true);
-  }}
->
-        <Ionicons name="close" size={28} color="red" />
+        style={styles.cancelButton}
+        onPress={() => {
+          console.log("X was pressed!");
+          setShowCancelModal(true);
+        }}
+      >
+        <Ionicons name='close' size={28} color='red' />
       </TouchableOpacity>
 
       <Text style={styles.title}>Confirm date details!</Text>
@@ -415,124 +387,73 @@ export default function DateFinal({ navigation }) {
       <View style={styles.heartsContainer}>
         {/* First heart using MaskedView */}
         <View style={styles.heartWrapper}>
-          <MaskedView
-            style={styles.maskedView}
-            maskElement={
-              <Image
-                source={require('../assets/icons/Primaryheart.png')}
-                style={styles.maskImage}
-                resizeMode="contain"
-              />
-            }
-          >
+          <MaskedView style={styles.maskedView} maskElement={<Image source={require("../assets/icons/Primaryheart.png")} style={styles.maskImage} resizeMode='contain' />}>
             <Image
-              source={currentUserImage ? { uri: currentUserImage } : require('../src/Assets/Images/account.png')}
+              source={currentUserImage ? { uri: currentUserImage } : require("../src/Assets/Images/account.png")}
               style={styles.fullImage}
-              defaultSource={require('../src/Assets/Images/account.png')}
+              defaultSource={require("../src/Assets/Images/account.png")}
             />
           </MaskedView>
-          <Image
-            source={require('../assets/icons/primaryheartoutline.png')}
-            style={styles.heartOutline}
-            resizeMode="contain"
-          />
+          <Image source={require("../assets/icons/primaryheartoutline.png")} style={styles.heartOutline} resizeMode='contain' />
         </View>
-        
+
         {/* Second heart using MaskedView */}
         <View style={[styles.heartWrapper, styles.secondHeartWrapper]}>
-          <MaskedView
-            style={styles.maskedView}
-            maskElement={
-              <Image
-                source={require('../assets/icons/Secondaryheart.png')}
-                style={styles.maskImage}
-                resizeMode="contain"
-              />
-            }
-          >
+          <MaskedView style={styles.maskedView} maskElement={<Image source={require("../assets/icons/Secondaryheart.png")} style={styles.maskImage} resizeMode='contain' />}>
             <Image
-              source={matchedUserImage ? { uri: matchedUserImage } : require('../src/Assets/Images/account.png')}
+              source={matchedUserImage ? { uri: matchedUserImage } : require("../src/Assets/Images/account.png")}
               style={styles.fullImage}
-              defaultSource={require('../src/Assets/Images/account.png')}
+              defaultSource={require("../src/Assets/Images/account.png")}
             />
           </MaskedView>
-          <Image
-            source={require('../assets/icons/secondaryheartoutline.png')}
-            style={styles.heartOutline}
-            resizeMode="contain"
-          />
+          <Image source={require("../assets/icons/secondaryheartoutline.png")} style={styles.heartOutline} resizeMode='contain' />
         </View>
       </View>
 
       {/* Example: Date Info */}
       <View style={styles.detailsContainer}>
         {/* Date Type */}
-        <TouchableOpacity
-          style={styles.detailRow}
-          onPress={() => navigation.navigate('DateType',{ matchedUserId: matchedUserId })}
-        >
-          <Ionicons name="people" size={24} color="#666" style={styles.detailIcon} />
+        <TouchableOpacity style={styles.detailRow} onPress={() => navigation.navigate("DateType", { matchedUserId: matchedUserId })}>
+          <Ionicons name='people' size={24} color='#666' style={styles.detailIcon} />
           <Text style={styles.detailText}>{dateType}</Text>
         </TouchableOpacity>
 
         {/* Day */}
-        <TouchableOpacity
-          style={styles.detailRow}
-          onPress={() => navigation.navigate('DateOccurance',{ matchedUserId: matchedUserId })}
-        >
-          <Ionicons name="calendar" size={24} color="#666" style={styles.detailIcon} />
+        <TouchableOpacity style={styles.detailRow} onPress={() => navigation.navigate("DateOccurance", { matchedUserId: matchedUserId })}>
+          <Ionicons name='calendar' size={24} color='#666' style={styles.detailIcon} />
           <Text style={styles.detailText}>{dateDay}</Text>
         </TouchableOpacity>
 
         {/* Time */}
-        <TouchableOpacity
-          style={styles.detailRow}
-          onPress={() => navigation.navigate('DateOccurance',{ matchedUserId: matchedUserId })}
-        >
-          <Ionicons name="time" size={24} color="#666" style={styles.detailIcon} />
+        <TouchableOpacity style={styles.detailRow} onPress={() => navigation.navigate("DateOccurance", { matchedUserId: matchedUserId })}>
+          <Ionicons name='time' size={24} color='#666' style={styles.detailIcon} />
           <Text style={styles.detailText}>{dateTime}</Text>
         </TouchableOpacity>
 
         {/* Location */}
-        <TouchableOpacity
-          style={styles.detailRow}
-          onPress={() => navigation.navigate('DateLocation',{ matchedUserId: matchedUserId })}
-        >
-          <Ionicons name="location-sharp" size={24} color="#666" style={styles.detailIcon} />
+        <TouchableOpacity style={styles.detailRow} onPress={() => navigation.navigate("DateLocation", { matchedUserId: matchedUserId })}>
+          <Ionicons name='location-sharp' size={24} color='#666' style={styles.detailIcon} />
           <Text style={styles.detailText}>{dateLocation}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Slide to send at bottom */}
-      <View style={{ flex: 1, justifyContent: 'flex-end', marginBottom: 40 }}>
+      <View style={{ flex: 1, justifyContent: "flex-end", marginBottom: 40 }}>
         <SlideToSend onSlideSuccess={handleSlideComplete} />
       </View>
 
       {/* Cancel Modal */}
-      <Modal
-        visible={showCancelModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowCancelModal(false)}
-      >
+      <Modal visible={showCancelModal} transparent animationType='fade' onRequestClose={() => setShowCancelModal(false)}>
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Cancel Invitation?</Text>
-            <Text style={styles.modalSubtitle}>
-              All information entered will be lost.
-            </Text>
+            <Text style={styles.modalSubtitle}>All information entered will be lost.</Text>
 
-            <TouchableOpacity
-              style={styles.confirmCancelButton}
-              onPress={handleConfirmCancel}
-            >
+            <TouchableOpacity style={styles.confirmCancelButton} onPress={handleConfirmCancel}>
               <Text style={styles.confirmCancelText}>Yes, cancel invitation</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.neverMindButton}
-              onPress={() => setShowCancelModal(false)}
-            >
+            <TouchableOpacity style={styles.neverMindButton} onPress={() => setShowCancelModal(false)}>
               <Text style={styles.neverMindText}>No, continue planning date</Text>
             </TouchableOpacity>
           </View>
@@ -540,61 +461,60 @@ export default function DateFinal({ navigation }) {
       </Modal>
     </SafeAreaView>
   );
-// return (
-//     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF' }}>
-//       <TouchableOpacity
-//         onPress={() => {
-//           console.log('X Pressed!');
-//           alert('Pressed X');
-//         }}
-//         style={{
-//           marginTop: 100,         // <-- Move it down
-//           width: 50,
-//           height: 50,
-//           backgroundColor: 'red',
-//         }}
-//       />
-//     </SafeAreaView>
-//   );
-  
+  // return (
+  //     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF' }}>
+  //       <TouchableOpacity
+  //         onPress={() => {
+  //           console.log('X Pressed!');
+  //           alert('Pressed X');
+  //         }}
+  //         style={{
+  //           marginTop: 100,         // <-- Move it down
+  //           width: 50,
+  //           height: 50,
+  //           backgroundColor: 'red',
+  //         }}
+  //       />
+  //     </SafeAreaView>
+  //   );
 }
 
 // STYLES
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   cancelButton: {
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
     marginTop: 10,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
     marginTop: 10,
     marginBottom: 5,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   subtitle: {
     fontSize: 14,
-    color: '#888',
+    color: "#888",
     marginBottom: 20,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   heartsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginVertical: 30,
   },
   heartWrapper: {
     width: 130,
     height: 130,
-    position: 'relative',
+    position: "relative",
   },
   secondHeartWrapper: {
     marginLeft: -25,
@@ -603,8 +523,8 @@ const styles = StyleSheet.create({
   maskedView: {
     width: 130,
     height: 130,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   maskImage: {
     width: 130,
@@ -613,15 +533,15 @@ const styles = StyleSheet.create({
   fullImage: {
     width: 130,
     height: 130,
-    resizeMode: 'cover',
+    resizeMode: "cover",
   },
   detailsContainer: {
     marginHorizontal: 10,
     marginVertical: 10,
   },
   detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: 12,
   },
   detailIcon: {
@@ -629,89 +549,89 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 16,
-    color: '#000',
+    color: "#000",
   },
 
   // Cancel Modal
   modalBackground: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalContainer: {
-    width: '80%',
-    backgroundColor: '#FFF',
+    width: "80%",
+    backgroundColor: "#FFF",
     borderRadius: 12,
     padding: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
     marginBottom: 10,
   },
   modalSubtitle: {
     fontSize: 14,
-    color: '#888',
+    color: "#888",
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
   confirmCancelButton: {
-    backgroundColor: '#E4423F',
+    backgroundColor: "#E4423F",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 30,
     marginBottom: 15,
   },
   confirmCancelText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   neverMindButton: {
     marginBottom: 10,
   },
   neverMindText: {
     fontSize: 16,
-    color: '#000',
-    textDecorationLine: 'underline',
+    color: "#000",
+    textDecorationLine: "underline",
   },
 
   // Invitation Sent screen
   sentContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   sentTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
     marginTop: 20,
     marginBottom: 10,
   },
   sentSubtitle: {
     fontSize: 14,
-    color: '#888',
+    color: "#888",
     marginBottom: 30,
   },
   backButton: {
-    width: '80%',
+    width: "80%",
     height: 50,
-    backgroundColor: '#E4423F',
+    backgroundColor: "#E4423F",
     borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   backButtonText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   heartOutline: {
-    position: 'absolute',
+    position: "absolute",
     width: 130,
     height: 130,
     top: 0,

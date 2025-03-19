@@ -1,20 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import {
-  SafeAreaView,
-  Platform,
-  StatusBar,
-  View,
-  Text,
-  TouchableOpacity,
-  Pressable,
-  StyleSheet,
-  ScrollView,
-  Image,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import MaskedView from '@react-native-masked-view/masked-view';
+import React, { useState, useEffect } from "react";
+import { SafeAreaView, Platform, StatusBar, View, Text, TouchableOpacity, Pressable, StyleSheet, ScrollView, Image } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import MaskedView from "@react-native-masked-view/masked-view";
 
 export default function DateType({ navigation }) {
   const route = useRoute();
@@ -22,11 +11,10 @@ export default function DateType({ navigation }) {
   useEffect(() => {
     const initMatchedUserId = async () => {
       if (!matchedUserId) {
-        const storedId = await AsyncStorage.getItem('matchedUserId');
+        const storedId = await AsyncStorage.getItem("matchedUserId");
         if (storedId) setMatchedUserId(storedId);
-      }
-      else {
-        await AsyncStorage.setItem('matchedUserId', matchedUserId);
+      } else {
+        await AsyncStorage.setItem("matchedUserId", matchedUserId);
       }
     };
     initMatchedUserId();
@@ -40,21 +28,21 @@ export default function DateType({ navigation }) {
   useEffect(() => {
     const loadSavedDateType = async () => {
       try {
-        const savedDateType = await AsyncStorage.getItem('user_date_type');
+        const savedDateType = await AsyncStorage.getItem("user_date_type");
         if (savedDateType) {
           setSelectedDateType(savedDateType);
-          console.log('Loaded previously selected date type:', savedDateType);
+          console.log("Loaded previously selected date type:", savedDateType);
         }
       } catch (error) {
-        console.error('Error loading saved date type:', error);
+        console.error("Error loading saved date type:", error);
       }
     };
-    
+
     loadSavedDateType();
   }, []);
 
   // Add state for matched user's info
-  const [matchedUserName, setMatchedUserName] = useState('');
+  const [matchedUserName, setMatchedUserName] = useState("");
   const [matchedUserPreferences, setMatchedUserPreferences] = useState([]);
   const [matchedUserImage, setMatchedUserImage] = useState(null);
   const [currentUserImage, setCurrentUserImage] = useState(null);
@@ -67,16 +55,14 @@ export default function DateType({ navigation }) {
           const response = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${matchedUserId}`);
           const data = await response.json();
           console.log("--- data ---", data);
-          
+
           setMatchedUserName(data.result[0].user_first_name);
           // Parse user_date_interests as JSON and provide empty array fallback
-          const preferences = data.result[0].user_date_interests 
-            ? JSON.parse(data.result[0].user_date_interests)
-            : [];
+          const preferences = data.result[0].user_date_interests ? JSON.parse(data.result[0].user_date_interests) : [];
           setMatchedUserPreferences(preferences);
         }
       } catch (error) {
-        console.error('Error fetching user info:', error);
+        console.error("Error fetching user info:", error);
       }
     };
 
@@ -88,28 +74,44 @@ export default function DateType({ navigation }) {
     const fetchUserImages = async () => {
       try {
         // Get current user ID from storage
-        const currentUserId = await AsyncStorage.getItem('user_uid');
+        const currentUserId = await AsyncStorage.getItem("user_uid");
         console.log("--- currentUserId ---", currentUserId);
-        
+
         // Fetch current user's image
         if (currentUserId) {
           const currentUserResponse = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${currentUserId}`);
           const currentUserData = await currentUserResponse.json();
-          const currentUserPhotoUrls = currentUserData.result[0]?.user_photo_url ? 
-            JSON.parse(currentUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
-          setCurrentUserImage(currentUserPhotoUrls[0] || null);
+          console.log("\n=== Current User Photo Debug (DateType) ===");
+          console.log("User ID:", currentUserId);
+          console.log("Favorite photo:", currentUserData.result[0]?.user_favorite_photo);
+          const currentUserPhotoUrls = currentUserData.result[0]?.user_photo_url ? JSON.parse(currentUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
+          console.log("Photo URLs array:", currentUserPhotoUrls);
+          console.log("Photo URLs type:", typeof currentUserPhotoUrls);
+          // Use favorite photo if available, otherwise use first photo
+          const userPhotoToShow = currentUserData.result[0]?.user_favorite_photo?.toString() || (currentUserPhotoUrls.length > 0 ? currentUserPhotoUrls[0].toString() : null);
+          console.log("Selected photo to show:", userPhotoToShow);
+          console.log("===============================\n");
+          setCurrentUserImage(userPhotoToShow);
         }
 
         // Fetch matched user's image
         if (matchedUserId) {
           const matchedUserResponse = await fetch(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${matchedUserId}`);
           const matchedUserData = await matchedUserResponse.json();
-          const matchedUserPhotoUrls = matchedUserData.result[0]?.user_photo_url ? 
-            JSON.parse(matchedUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
-          setMatchedUserImage(matchedUserPhotoUrls[0] || null);
+          console.log("\n=== Matched User Photo Debug (DateType) ===");
+          console.log("User ID:", matchedUserId);
+          console.log("Favorite photo:", matchedUserData.result[0]?.user_favorite_photo);
+          const matchedUserPhotoUrls = matchedUserData.result[0]?.user_photo_url ? JSON.parse(matchedUserData.result[0].user_photo_url.replace(/\\"/g, '"')) || [] : [];
+          console.log("Photo URLs array:", matchedUserPhotoUrls);
+          console.log("Photo URLs type:", typeof matchedUserPhotoUrls);
+          // Use favorite photo if available, otherwise use first photo
+          const matchedPhotoToShow = matchedUserData.result[0]?.user_favorite_photo?.toString() || (matchedUserPhotoUrls.length > 0 ? matchedUserPhotoUrls[0].toString() : null);
+          console.log("Selected photo to show:", matchedPhotoToShow);
+          console.log("===============================\n");
+          setMatchedUserImage(matchedPhotoToShow);
         }
       } catch (error) {
-        console.error('Error fetching user images:', error);
+        console.error("Error fetching user images:", error);
       }
     };
 
@@ -117,7 +119,7 @@ export default function DateType({ navigation }) {
   }, [matchedUserId]);
 
   // List of date type options
-  const dateOptions = ['Lunch', 'Dinner', 'Coffee', 'Drinks', 'Movies', 'Other'];
+  const dateOptions = ["Lunch", "Dinner", "Coffee", "Drinks", "Movies", "Other"];
 
   // When an option is pressed, update state
   const handleOptionPress = (option) => {
@@ -131,13 +133,13 @@ export default function DateType({ navigation }) {
     if (isFormComplete) {
       try {
         // Optional: store selection in AsyncStorage
-        await AsyncStorage.setItem('user_date_type', selectedDateType);
-        console.log('User date type stored:', selectedDateType);
+        await AsyncStorage.setItem("user_date_type", selectedDateType);
+        console.log("User date type stored:", selectedDateType);
       } catch (error) {
-        console.error('Error storing user_date_type:', error);
+        console.error("Error storing user_date_type:", error);
       }
       // Navigate to the next screen
-      navigation.navigate('DateOccurance', { dateType: selectedDateType, matchedUserId: matchedUserId });
+      navigation.navigate("DateOccurance", { dateType: selectedDateType, matchedUserId: matchedUserId });
     }
   };
 
@@ -153,52 +155,26 @@ export default function DateType({ navigation }) {
         <View style={styles.heartsContainer}>
           {/* First heart using MaskedView */}
           <View style={styles.heartWrapper}>
-            <MaskedView
-              style={styles.maskedView}
-              maskElement={
-                <Image
-                  source={require('../assets/icons/Primaryheart.png')}
-                  style={styles.maskImage}
-                  resizeMode="contain"
-                />
-              }
-            >
+            <MaskedView style={styles.maskedView} maskElement={<Image source={require("../assets/icons/Primaryheart.png")} style={styles.maskImage} resizeMode='contain' />}>
               <Image
-                source={currentUserImage ? { uri: currentUserImage } : require('../src/Assets/Images/account.png')}
+                source={currentUserImage ? { uri: currentUserImage } : require("../src/Assets/Images/account.png")}
                 style={styles.fullImage}
-                defaultSource={require('../src/Assets/Images/account.png')}
+                defaultSource={require("../src/Assets/Images/account.png")}
               />
             </MaskedView>
-            <Image
-              source={require('../assets/icons/primaryheartoutline.png')}
-              style={styles.heartOutline}
-              resizeMode="contain"
-            />
+            <Image source={require("../assets/icons/primaryheartoutline.png")} style={styles.heartOutline} resizeMode='contain' />
           </View>
-          
+
           {/* Second heart using MaskedView */}
           <View style={[styles.heartWrapper, styles.secondHeartWrapper]}>
-            <MaskedView
-              style={styles.maskedView}
-              maskElement={
-                <Image
-                  source={require('../assets/icons/Secondaryheart.png')}
-                  style={styles.maskImage}
-                  resizeMode="contain"
-                />
-              }
-            >
+            <MaskedView style={styles.maskedView} maskElement={<Image source={require("../assets/icons/Secondaryheart.png")} style={styles.maskImage} resizeMode='contain' />}>
               <Image
-                source={matchedUserImage ? { uri: matchedUserImage } : require('../src/Assets/Images/account.png')}
+                source={matchedUserImage ? { uri: matchedUserImage } : require("../src/Assets/Images/account.png")}
                 style={styles.fullImage}
-                defaultSource={require('../src/Assets/Images/account.png')}
+                defaultSource={require("../src/Assets/Images/account.png")}
               />
             </MaskedView>
-            <Image
-              source={require('../assets/icons/secondaryheartoutline.png')}
-              style={styles.heartOutline}
-              resizeMode="contain"
-            />
+            <Image source={require("../assets/icons/secondaryheartoutline.png")} style={styles.heartOutline} resizeMode='contain' />
           </View>
         </View>
 
@@ -206,8 +182,8 @@ export default function DateType({ navigation }) {
         <View style={styles.content}>
           <Text style={styles.title}>What type of date will it be?</Text>
           <Text style={styles.subtitle}>
-            {matchedUserPreferences.length > 0 
-              ? `${matchedUserName}'s preferences are ${matchedUserPreferences.join(', ').replace(/, ([^,]*)$/, ' & $1')}.`
+            {matchedUserPreferences.length > 0
+              ? `${matchedUserName}'s preferences are ${matchedUserPreferences.join(", ").replace(/, ([^,]*)$/, " & $1")}.`
               : `${matchedUserName} hasn't set up date preferences yet.`}
           </Text>
 
@@ -218,40 +194,29 @@ export default function DateType({ navigation }) {
               style={[
                 styles.optionButton,
                 {
-                  backgroundColor: selectedDateType === option ? '#000' : '#FFF',
-                  borderColor: '#CCC',
+                  backgroundColor: selectedDateType === option ? "#000" : "#FFF",
+                  borderColor: "#CCC",
                 },
               ]}
               onPress={() => handleOptionPress(option)}
             >
-              <Text
-                style={{ color: selectedDateType === option ? '#FFF' : '#000' }}
-              >
-                {option}
-              </Text>
+              <Text style={{ color: selectedDateType === option ? "#FFF" : "#000" }}>{option}</Text>
             </TouchableOpacity>
           ))}
         </View>
       </ScrollView>
 
       {/* Continue Button */}
-      <Pressable
-        style={[
-          styles.continueButton,
-          { backgroundColor: isFormComplete ? '#E4423F' : '#ccc' },
-        ]}
-        onPress={handleContinue}
-        disabled={!isFormComplete}
-      >
+      <Pressable style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#ccc" }]} onPress={handleContinue} disabled={!isFormComplete}>
         <Text style={styles.continueButtonText}>Continue</Text>
       </Pressable>
 
       {/* Three progress dots below the Continue button */}
       <View style={styles.progressDotsContainer}>
         {/* For illustration, we'll highlight the middle dot as "active" */}
-        <View style={[styles.dot, { backgroundColor: '#E4423F' }]} />
-        <View style={[styles.dot, { backgroundColor: '#ccc' }]} />
-        <View style={[styles.dot, { backgroundColor: '#ccc' }]} />
+        <View style={[styles.dot, { backgroundColor: "#E4423F" }]} />
+        <View style={[styles.dot, { backgroundColor: "#ccc" }]} />
+        <View style={[styles.dot, { backgroundColor: "#ccc" }]} />
       </View>
     </SafeAreaView>
   );
@@ -261,9 +226,9 @@ const styles = StyleSheet.create({
   // Overall container
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   // Back button style
   backButton: {
@@ -274,15 +239,15 @@ const styles = StyleSheet.create({
   },
   // Hearts container
   heartsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginBottom: 20,
   },
   // Heart images using MaskedView
   heartWrapper: {
     width: 60,
     height: 60,
-    position: 'relative',
+    position: "relative",
   },
   secondHeartWrapper: {
     marginLeft: -20,
@@ -290,8 +255,8 @@ const styles = StyleSheet.create({
   maskedView: {
     width: 60,
     height: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   maskImage: {
     width: 60,
@@ -300,10 +265,10 @@ const styles = StyleSheet.create({
   fullImage: {
     width: 60,
     height: 60,
-    resizeMode: 'cover',
+    resizeMode: "cover",
   },
   heartOutline: {
-    position: 'absolute',
+    position: "absolute",
     width: 60,
     height: 60,
     top: 0,
@@ -312,19 +277,19 @@ const styles = StyleSheet.create({
   // Body content
   content: {
     flex: 1,
-    justifyContent: 'flex-start',
+    justifyContent: "flex-start",
   },
   // Title
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
     marginBottom: 10,
   },
   // Subtitle
   subtitle: {
     fontSize: 14,
-    color: '#888',
+    color: "#888",
     marginBottom: 20,
   },
   // Option buttons (pill shape)
@@ -333,26 +298,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 30,
     marginVertical: 10,
-    alignItems: 'center',
+    alignItems: "center",
   },
   // Continue button
   continueButton: {
     height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderRadius: 30,
     marginBottom: 10, // so there's space for the dots
   },
   continueButtonText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   // Three dots container
   progressDotsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 20, 
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 20,
   },
   // Single dot
   dot: {

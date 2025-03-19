@@ -1337,8 +1337,10 @@ export default function EditProfile() {
       }
 
       try {
-        // Create FormData object
+        // Create FormData object with proper array handling
         const uploadData = new FormData();
+
+        // Basic user info
         uploadData.append("user_uid", userData.user_uid);
         uploadData.append("user_email_id", userData.user_email_id);
 
@@ -1347,6 +1349,29 @@ export default function EditProfile() {
           const calculatedAge = calculateAge(formValues.birthdate);
           uploadData.append("user_age", calculatedAge.toString());
         }
+
+        // Handle arrays - ensure they're stringified
+        uploadData.append("user_general_interests", JSON.stringify(formValues.interests || []));
+        uploadData.append("user_date_interests", JSON.stringify(formValues.dateTypes || []));
+        uploadData.append("user_open_to", JSON.stringify(formValues.openTo || []));
+
+        // Handle potentially empty fields - only append if they have a value
+        if (formValues.bio?.trim()) uploadData.append("user_profile_bio", formValues.bio.trim());
+        if (formValues.availableTime) uploadData.append("user_available_time", formValues.availableTime);
+        if (formValues.nationality?.trim()) uploadData.append("user_nationality", formValues.nationality.trim());
+        if (formValues.firstName?.trim()) uploadData.append("user_first_name", formValues.firstName.trim());
+        if (formValues.lastName?.trim()) uploadData.append("user_last_name", formValues.lastName.trim());
+        if (formValues.phoneNumber?.trim()) uploadData.append("user_phone_number", formValues.phoneNumber.trim());
+        if (formValues.birthdate) uploadData.append("user_birthdate", formValues.birthdate);
+        if (formValues.height) uploadData.append("user_height", formValues.height.toString());
+        if (formValues.kids) uploadData.append("user_kids", formValues.kids.toString());
+        if (formValues.gender?.trim()) uploadData.append("user_gender", formValues.gender.trim());
+        if (formValues.identity?.trim()) uploadData.append("user_identity", formValues.identity.trim());
+        if (formValues.address?.trim()) uploadData.append("user_address", formValues.address.trim());
+        if (formValues.bodyComposition?.trim()) uploadData.append("user_body_composition", formValues.bodyComposition.trim());
+        if (formValues.job?.trim()) uploadData.append("user_job", formValues.job.trim());
+        if (formValues.latitude) uploadData.append("user_latitude", formValues.latitude.toString());
+        if (formValues.longitude) uploadData.append("user_longitude", formValues.longitude.toString());
 
         // Filter out null photos and only include actual photo URIs
         const originalPhotos = userData.user_photo_url ? JSON.parse(userData.user_photo_url) : [];
@@ -1451,60 +1476,36 @@ export default function EditProfile() {
           }
         }
 
-        // Add form values
-        const formFields = {
-          user_first_name: formValues.firstName,
-          user_last_name: formValues.lastName,
-          user_phone_number: formValues.phoneNumber,
-          user_profile_bio: formValues.bio,
-          user_general_interests: JSON.stringify(interests),
-          user_date_interests: JSON.stringify(dateTypes),
-          user_available_time: formValues.availableTimes,
-          user_birthdate: formValues.birthdate,
-          user_height: heightCm,
-          user_kids: formValues.children,
-          user_gender: genderValue,
-          user_identity: identityValue,
-          user_open_to: JSON.stringify(openToValue),
-          user_address: formValues.address,
-          user_nationality: formValues.nationality,
-          user_body_composition: bodyTypeValue,
-          user_education: educationValue,
-          user_job: formValues.job,
-          user_smoking: smokingValue,
-          user_drinking: drinkingValue,
-          user_religion: religionValue,
-          user_star_sign: starSignValue,
-          user_latitude: formValues.latitude?.toString(),
-          user_longitude: formValues.longitude?.toString(),
-        };
-
-        // Add form fields to uploadData
-        Object.entries(formFields).forEach(([key, value]) => {
-          if (value !== null && value !== undefined) {
-            uploadData.append(key, value);
-          }
-        });
-
         // Make the upload request
         console.log("=== Profile Update API Request ===");
         console.log("Making API request to update profile with timeout of 120 seconds...");
         console.log("API endpoint: https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo");
 
         // Log the FormData contents (but not the actual file data)
-        console.log("FormData contents:");
+        console.log("\nFormData contents:");
+        console.log("==================");
         for (let [key, value] of uploadData._parts) {
-          if (key === "user_video") {
-            console.log(`${key}: [File data omitted, size: ${videoFileSize}MB]`);
+          if (key === "user_video_url") {
+            console.log(`${key}: ${value}`);
+            console.log(`Video file size: ${videoFileSize}MB`);
           } else if (key.startsWith("img_")) {
             // Extract the index from img_0, img_1, etc.
             const imgIndex = parseInt(key.substring(4), 10);
             const fileSize = photoFileSizes[imgIndex] || "unknown";
             console.log(`${key}: [File data omitted, size: ${fileSize}MB]`);
+          } else if (key === "user_photo_url" || key === "user_delete_photo" || key === "user_general_interests" || key === "user_date_interests" || key === "user_open_to") {
+            // Pretty print JSON arrays
+            try {
+              const parsed = JSON.parse(value);
+              console.log(`${key}:`, JSON.stringify(parsed, null, 2));
+            } catch {
+              console.log(`${key}: ${value}`);
+            }
           } else {
             console.log(`${key}: ${value}`);
           }
         }
+        console.log("==================\n");
 
         const startTime = Date.now();
         setUploadStatus("Sending data to server...");

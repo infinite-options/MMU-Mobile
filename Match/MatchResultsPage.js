@@ -185,10 +185,10 @@ const MatchResultsPage = () => {
       const text = await response.text();
 
       const initialApiDuration = Date.now() - matchesStartTime;
-      console.log(`MATCH DEBUG: Initial API call completed in ${initialApiDuration}ms`);
+      // console.log(`MATCH DEBUG: Initial API call completed in ${initialApiDuration}ms`);
 
       // Debug:
-      console.log("--- Raw server response ---", text);
+      // console.log("--- Raw server response ---", text);
 
       // Now parse the text as JSON
       let data;

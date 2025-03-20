@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import CustomSingleSlider from "../src/components/CustomSingleSlider";
+import { __DEV_MODE__ } from "../config";
 
 const Preferences = () => {
   const [maxDistance, setMaxDistance] = useState(80);
@@ -144,20 +145,18 @@ const Preferences = () => {
         console.log(`Checking matches: https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/${uid}`);
         const matchesResponse = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/${uid}`);
 
-        // console.log("Matches response:", matchesResponse.data);
-        console.log("Number of matches:", matchesResponse.data.result.length);
-
         // Check if there are no matches
         if (matchesResponse.data["message"].startsWith("No matches found")) {
           Alert.alert("No matches found", "Please adjust your preferences.", [{ text: "OK" }]);
           // Stay on the preferences page (no navigation)
         } else {
           // Navigate to MatchProfileDisplay since matches were found
+          console.log("Number of matches:", matchesResponse.data.result.length);
           navigation.navigate("MatchProfileDisplay");
         }
       } catch (matchError) {
         console.error("Error fetching matches:", matchError);
-        Alert.alert("Error", "Unable to retrieve matches. Please try again later.", [{ text: "OK" }]);
+        Alert.alert("Error", "Unable to retrieve matches. Please adjust your preferences and try again.", [{ text: "OK" }]);
       }
     } catch (error) {
       console.error("Error details:", {
@@ -177,9 +176,12 @@ const Preferences = () => {
           <Ionicons name='arrow-back' size={28} color='#E4423F' />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Preferences</Text>
-        <TouchableOpacity style={styles.headerButton} onPress={() => console.log("Settings clicked!")}>
-          <Ionicons name='settings-outline' size={24} color='#E4423F' />
-        </TouchableOpacity>
+        {__DEV_MODE__ && (
+          <TouchableOpacity style={styles.headerButton} onPress={() => console.log("Settings clicked!")}>
+            <Ionicons name='settings-outline' size={24} color='#E4423F' />
+          </TouchableOpacity>
+        )}
+        {!__DEV_MODE__ && <View style={{ width: 40, height: 40 }} />}
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>

@@ -478,7 +478,7 @@ export default function MatchProfileDisplay() {
             {arrposition + 1} of {arrlength}
           </Text>
         </View>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate("Preferences")}>
           <Ionicons name='options' size={24} color='#999' />
         </TouchableOpacity>
       </View>

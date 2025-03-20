@@ -288,9 +288,9 @@ export default function UserProfile() {
       const duration = Date.now() - startTime;
 
       const likeStatusDuration = Date.now() - likeStatusStartTime;
-      console.log(`USERPROFILE DEBUG: Received likes data in ${duration}ms`);
+      // console.log(`USERPROFILE DEBUG: Received likes data in ${duration}ms`);
 
-      console.log("Likes response received:", JSON.stringify(response.data).substring(0, 300) + "...");
+      // console.log("Likes response received:", JSON.stringify(response.data).substring(0, 300) + "...");
 
       // Check if response has the expected structure
       if (!response.data || response.data.code !== 200) {
@@ -299,8 +299,8 @@ export default function UserProfile() {
       }
 
       // Deep logging of response structure to debug
-      console.log("Response structure:", Object.keys(response.data));
-      console.log("Result array type:", Array.isArray(response.data.result));
+      // console.log("Response structure:", Object.keys(response.data));
+      // console.log("Result array type:", Array.isArray(response.data.result));
       if (response.data.result) {
         console.log("Result array length:", response.data.result.length);
       }
@@ -311,29 +311,29 @@ export default function UserProfile() {
 
       // Check top-level arrays first
       if (Array.isArray(response.data.people_whom_you_selected)) {
-        console.log("Checking top-level people_whom_you_selected array");
+        // console.log("Checking top-level people_whom_you_selected array");
         isLikedByMe = response.data.people_whom_you_selected.some((user) => user.user_uid === matchedUserUid);
       }
 
       if (Array.isArray(response.data.people_who_selected_you)) {
-        console.log("Checking top-level people_who_selected_you array");
+        // console.log("Checking top-level people_who_selected_you array");
         isLikedByOther = response.data.people_who_selected_you.some((user) => user.user_uid === matchedUserUid);
       }
 
       // If we couldn't find the info in top-level arrays, look in the result array
       if ((!isLikedByMe || !isLikedByOther) && Array.isArray(response.data.result)) {
         response.data.result.forEach((item, index) => {
-          console.log(`Checking result[${index}] keys:`, Object.keys(item));
+          // console.log(`Checking result[${index}] keys:`, Object.keys(item));
 
           if (Array.isArray(item.people_whom_you_selected)) {
-            console.log(`Checking nested people_whom_you_selected at index ${index}`);
+            // console.log(`Checking nested people_whom_you_selected at index ${index}`);
             if (item.people_whom_you_selected.some((user) => user.user_uid === matchedUserUid)) {
               isLikedByMe = true;
             }
           }
 
           if (Array.isArray(item.people_who_selected_you)) {
-            console.log(`Checking nested people_who_selected_you at index ${index}`);
+            // console.log(`Checking nested people_who_selected_you at index ${index}`);
             if (item.people_who_selected_you.some((user) => user.user_uid === matchedUserUid)) {
               isLikedByOther = true;
             }
@@ -343,7 +343,7 @@ export default function UserProfile() {
 
       // Check matched_results as well, which might contain mutual matches
       if (Array.isArray(response.data.matched_results)) {
-        console.log("Checking matched_results array");
+        // console.log("Checking matched_results array");
         const isMutualMatch = response.data.matched_results.some((user) => user.user_uid === matchedUserUid);
         if (isMutualMatch) {
           isLikedByMe = true;
@@ -351,8 +351,8 @@ export default function UserProfile() {
         }
       }
 
-      console.log("USERPROFILE DEBUG: Final like status:", { isLikedByMe, isLikedByOther });
-      console.log(`USERPROFILE DEBUG: Total getLikeStatus processing time: ${Date.now() - likeStatusStartTime}ms`);
+      // console.log("USERPROFILE DEBUG: Final like status:", { isLikedByMe, isLikedByOther });
+      // console.log(`USERPROFILE DEBUG: Total getLikeStatus processing time: ${Date.now() - likeStatusStartTime}ms`);
       return { isLikedByMe, isLikedByOther };
     } catch (error) {
       console.error("USERPROFILE DEBUG: ⚠️ ERROR getting like status:", error);
@@ -444,8 +444,8 @@ export default function UserProfile() {
       setIsLiked(likeStatusData.isLikedByMe);
 
       const totalFetchTime = Date.now() - fetchDataStartTime;
-      console.log(`USERPROFILE DEBUG: Total fetchData execution time: ${totalFetchTime}ms`);
-      console.log("=== USERPROFILE DEBUG: Completed fetchData ===");
+      // console.log(`USERPROFILE DEBUG: Total fetchData execution time: ${totalFetchTime}ms`);
+      // console.log("=== USERPROFILE DEBUG: Completed fetchData ===");
     } catch (err) {
       console.error("USERPROFILE DEBUG: ⚠️ ERROR in fetchData:", err);
       console.error("USERPROFILE DEBUG: Error message:", err.message);

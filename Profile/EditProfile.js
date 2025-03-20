@@ -1251,61 +1251,61 @@ export default function EditProfile() {
 
   // Updated handleSaveChanges function
   const handleSaveChanges = async () => {
-    const uid = await AsyncStorage.getItem("user_uid");
-    if (!uid) {
-      Alert.alert("Error", "User ID not found");
-      return;
-    }
-
-    setIsLoading(true);
-
-    // Check total file size before uploading using MediaHelper
-    const totalSize = checkTotalFileSize();
-    const shouldProceed = await MediaHelper.promptLargeFileSize(totalSize, 5);
-
-    if (!shouldProceed) {
-      setIsLoading(false);
-      return;
-    }
-
+    console.log("--- In EditProfile.js handleSaveChanges Function ---");
     try {
-      // Validate form fields
-      const firstNameError = validateName(formValues.firstName, "First name");
-      const lastNameError = validateName(formValues.lastName, "Last name");
+      setIsLoading(true);
 
-      setNameErrors({
-        firstName: firstNameError,
-        lastName: lastNameError,
-      });
-
-      if (firstNameError || lastNameError) {
-        Alert.alert("Validation Error", "Please correct the errors in the form before saving.");
+      // Get user_uid from AsyncStorage
+      const uid = await AsyncStorage.getItem("user_uid");
+      if (!uid) {
+        Alert.alert("Error", "User ID not found. Please log in again.");
         setIsLoading(false);
         return;
       }
 
+      // Check total file size before uploading using MediaHelper
+      const totalSize = checkTotalFileSize();
+      const shouldProceed = await MediaHelper.promptLargeFileSize(totalSize, 5);
+
+      if (!shouldProceed) {
+        setIsLoading(false);
+        return;
+      }
+
+      // Log form data before upload
+      // console.log(
+      //   "FORM DATA before upload in EditProfile.js:",
+      //   JSON.stringify(
+      //     {
+      //       user_uid: uid,
+      //       formValues: formValues,
+      //       photos: photos.map((p) => (p ? (typeof p === "string" ? (p.length > 50 ? p.substring(0, 50) + "..." : p) : "[Object]") : null)),
+      //       videoUri: videoUri ? (videoUri.length > 50 ? videoUri.substring(0, 50) + "..." : videoUri) : null,
+      //       videoFileSize: videoFileSize,
+      //       bodyType: bodyTypeValue,
+      //       gender: genderValue,
+      //       identity: identityValue,
+      //       deletedPhotos: deletedPhotos.length,
+      //       deletedVideo: deletedVideo,
+      //       interests: interests.length,
+      //       dateTypes: dateTypes.length,
+      //     },
+      //     null,
+      //     2
+      //   )
+      // );
+
       try {
-        setIsLoading(true);
-        // const uid = await AsyncStorage.getItem("user_uid");
-        // if (!uid) {
-        //   Alert.alert("Error", "User ID not found");
-        //   setIsLoading(false);
-        //   return;
-        // }
-
-        // Filter out null photos and only include actual photo URIs
-        const originalPhotos = userData.user_photo_url ? JSON.parse(userData.user_photo_url) : [];
-        const photoUrls = photos.filter((uri) => uri !== null && uri !== undefined);
-
-        console.log("=== Debug Photo Arrays ===");
-        console.log("Original photos array:", originalPhotos);
-        console.log("Current photos array:", photoUrls);
-        console.log("Deleted photos array:", deletedPhotos);
-        console.log("=== End Debug Photo Arrays ===");
+        // Validate the form before submitting
+        // Check if there have been any changes
+        // Only upload if there are changes
+        // Check phone number format if provided
 
         // Create FormData object
         const uploadData = new FormData();
-        uploadData.append("user_uid", userData.user_uid);
+        uploadData.append("user_uid", uid);
+
+        // Add modified fields to FormData
         uploadData.append("user_email_id", userData.user_email_id);
 
         // Add age calculation from birthdate
@@ -1630,30 +1630,30 @@ export default function EditProfile() {
         });
 
         // Log the final FormData contents
-        console.log("=== Final FormData Contents ===");
-        for (let [key, value] of uploadData._parts) {
-          if (key === "user_video") {
-            console.log(`${key}: [File data omitted, size: ${videoFileSize}MB]`);
-          } else if (key.startsWith("img_")) {
-            // Extract the index from img_0, img_1, etc.
-            const imgIndex = parseInt(key.substring(4), 10);
-            // Try to find the corresponding file size in photoFileSizes
-            // This is more complex in EditProfile as img_0 might not correspond to photos[0]
-            // due to the reorganization of photos (e.g., favorite photo first)
-            let fileSize = "unknown";
-            if (imgIndex < newLocalPhotos.length) {
-              const photoUri = newLocalPhotos[imgIndex];
-              // Find the index in the original photos array
-              const originalIndex = photos.indexOf(photoUri);
-              if (originalIndex !== -1 && photoFileSizes[originalIndex]) {
-                fileSize = photoFileSizes[originalIndex];
-              }
-            }
-            console.log(`${key}: [File data omitted, size: ${fileSize}MB]`);
-          } else {
-            console.log(`${key}: ${value}`);
-          }
-        }
+        // console.log("=== Final FormData Contents ===");
+        // for (let [key, value] of uploadData._parts) {
+        //   if (key === "user_video") {
+        //     console.log(`${key}: [File data omitted, size: ${videoFileSize}MB]`);
+        //   } else if (key.startsWith("img_")) {
+        //     // Extract the index from img_0, img_1, etc.
+        //     const imgIndex = parseInt(key.substring(4), 10);
+        //     // Try to find the corresponding file size in photoFileSizes
+        //     // This is more complex in EditProfile as img_0 might not correspond to photos[0]
+        //     // due to the reorganization of photos (e.g., favorite photo first)
+        //     let fileSize = "unknown";
+        //     if (imgIndex < newLocalPhotos.length) {
+        //       const photoUri = newLocalPhotos[imgIndex];
+        //       // Find the index in the original photos array
+        //       const originalIndex = photos.indexOf(photoUri);
+        //       if (originalIndex !== -1 && photoFileSizes[originalIndex]) {
+        //         fileSize = photoFileSizes[originalIndex];
+        //       }
+        //     }
+        //     console.log(`${key}: [File data omitted, size: ${fileSize}MB]`);
+        //   } else {
+        //     console.log(`${key}: ${value}`);
+        //   }
+        // }
 
         // Add favorite photo to upload data if one is selected
         if (favoritePhotoIndex !== null && photos[favoritePhotoIndex]) {
@@ -1699,32 +1699,33 @@ export default function EditProfile() {
         console.log("API endpoint: https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo");
 
         // Log the FormData contents (but not the actual file data)
-        console.log("FormData contents:");
-        for (let [key, value] of uploadData._parts) {
-          if (key === "user_video") {
-            console.log(`${key}: [File data omitted, size: ${videoFileSize}MB]`);
-          } else if (key.startsWith("img_")) {
-            // Extract the index from img_0, img_1, etc.
-            const imgIndex = parseInt(key.substring(4), 10);
-            // Try to find the corresponding file size in photoFileSizes
-            // This is more complex in EditProfile as img_0 might not correspond to photos[0]
-            // due to the reorganization of photos (e.g., favorite photo first)
-            let fileSize = "unknown";
-            if (imgIndex < newLocalPhotos.length) {
-              const photoUri = newLocalPhotos[imgIndex];
-              // Find the index in the original photos array
-              const originalIndex = photos.indexOf(photoUri);
-              if (originalIndex !== -1 && photoFileSizes[originalIndex]) {
-                fileSize = photoFileSizes[originalIndex];
-              }
-            }
-            console.log(`${key}: [File data omitted, size: ${fileSize}MB]`);
-          } else {
-            console.log(`${key}: ${value}`);
-          }
-        }
+        // console.log("FormData contents:");
+        // for (let [key, value] of uploadData._parts) {
+        //   if (key === "user_video") {
+        //     console.log(`${key}: [File data omitted, size: ${videoFileSize}MB]`);
+        //   } else if (key.startsWith("img_")) {
+        //     // Extract the index from img_0, img_1, etc.
+        //     const imgIndex = parseInt(key.substring(4), 10);
+        //     // Try to find the corresponding file size in photoFileSizes
+        //     // This is more complex in EditProfile as img_0 might not correspond to photos[0]
+        //     // due to the reorganization of photos (e.g., favorite photo first)
+        //     let fileSize = "unknown";
+        //     if (imgIndex < newLocalPhotos.length) {
+        //       const photoUri = newLocalPhotos[imgIndex];
+        //       // Find the index in the original photos array
+        //       const originalIndex = photos.indexOf(photoUri);
+        //       if (originalIndex !== -1 && photoFileSizes[originalIndex]) {
+        //         fileSize = photoFileSizes[originalIndex];
+        //       }
+        //     }
+        //     console.log(`${key}: [File data omitted, size: ${fileSize}MB]`);
+        //   } else {
+        //     console.log(`${key}: ${value}`);
+        //   }
+        // }
 
         const startTime = Date.now();
+        console.log("FORM DATA Being sent to server from EditProfile.js: ", uploadData);
         // console.log("Request started at:", new Date(startTime).toISOString());
 
         const response = await axios.put("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo", uploadData, {
@@ -1762,14 +1763,14 @@ export default function EditProfile() {
           console.error("Response data:", error.response.data);
           console.error("Response status:", error.response.status);
           console.error("Response headers:", error.response.headers);
-          Alert.alert("Server Error", `Failed to update profile. Server responded with status: ${error.response.status}`);
+          Alert.alert("Server Error", `Failed to update profile. Please consider selecting smaller videos and photos or try saving images individually.`);
         } else if (error.request) {
           // The request was made but no response was received
           console.error("No response received:", error.request);
           if (error.code === "ECONNABORTED") {
-            Alert.alert("Timeout Error", "The request took too long to complete. This might be due to a large file upload or slow connection. Please try again or use a smaller video file.");
+            Alert.alert("Timeout Error", "The request took too long to complete. Please consider selecting smaller videos and photos or try saving images individually.");
           } else {
-            Alert.alert("Network Error", "Failed to update profile. No response received from server. Please check your internet connection and try again.");
+            Alert.alert("Network Error", "Failed to update profile. Please check your internet connection and try again.");
           }
         } else {
           // Something happened in setting up the request that triggered an Error
@@ -1781,8 +1782,7 @@ export default function EditProfile() {
         setIsLoading(false);
       }
     } catch (error) {
-      console.error("Error handling save:", error);
-      Alert.alert("Error", "An unexpected error occurred while saving. Please try again.");
+      console.error("Error uploading profile:", error);
       setIsLoading(false);
     }
   };
@@ -1967,10 +1967,12 @@ export default function EditProfile() {
                   <Text style={styles.uploadVideoText}>Record Video</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={handleVideoUpload} style={[styles.uploadVideoButton, { marginTop: 10 }]}>
-                  <Ionicons name='cloud-upload-outline' size={20} color='#E4423F' />
-                  <Text style={styles.uploadVideoText}>Select Video</Text>
-                </TouchableOpacity>
+                {__DEV__ && (
+                  <TouchableOpacity onPress={handleVideoUpload} style={[styles.uploadVideoButton, { marginTop: 10 }]}>
+                    <Ionicons name='cloud-upload-outline' size={20} color='#E4423F' />
+                    <Text style={styles.uploadVideoText}>Select Video</Text>
+                  </TouchableOpacity>
+                )}
 
                 {/* Test S3 Upload Button */}
                 {videoUri && videoFileSize && parseFloat(videoFileSize) > 1 && (
@@ -2025,16 +2027,18 @@ export default function EditProfile() {
           </View>
 
           {/* Total File Size Button */}
-          <TouchableOpacity
-            style={styles.fileSizeButton}
-            onPress={() => {
-              const totalSize = checkTotalFileSize();
-              Alert.alert("Total Media Size", `The total size of your media files is ${totalSize}MB.`, [{ text: "OK" }]);
-            }}
-          >
-            <Ionicons name='information-circle-outline' size={20} color='#E4423F' />
-            <Text style={styles.fileSizeButtonText}>Check Total File Size</Text>
-          </TouchableOpacity>
+          {__DEV__ && (
+            <TouchableOpacity
+              style={styles.fileSizeButton}
+              onPress={() => {
+                const totalSize = checkTotalFileSize();
+                Alert.alert("Total Media Size", `The total size of your media files is ${totalSize}MB.`, [{ text: "OK" }]);
+              }}
+            >
+              <Ionicons name='information-circle-outline' size={20} color='#E4423F' />
+              <Text style={styles.fileSizeButtonText}>Check Total File Size</Text>
+            </TouchableOpacity>
+          )}
 
           {/* Driver's License */}
           {/* <TouchableOpacity style={styles.uploadButton} onPress={handleLicenseUpload}>
@@ -2743,25 +2747,27 @@ export default function EditProfile() {
           </TouchableOpacity>
 
           {/* Debug Button - Remove in production */}
-          <TouchableOpacity
-            style={[styles.saveButton, { marginTop: 10, backgroundColor: "#333" }]}
-            onPress={() => {
-              console.log("Manual check for changes");
-              console.log("hasChanges before:", hasChanges);
-              const result = checkForChanges();
-              console.log("checkForChanges result:", result);
-              console.log("Current state:", {
-                originalVideoUrl,
-                videoUri,
-                deletedVideo,
-                photos,
-                originalValues: originalValues?.photos,
-                hasChanges,
-              });
-            }}
-          >
-            <Text style={styles.saveButtonText}>Debug Check Changes</Text>
-          </TouchableOpacity>
+          {__DEV__ && (
+            <TouchableOpacity
+              style={[styles.saveButton, { marginTop: 10, backgroundColor: "#333" }]}
+              onPress={() => {
+                console.log("Manual check for changes");
+                console.log("hasChanges before:", hasChanges);
+                const result = checkForChanges();
+                console.log("checkForChanges result:", result);
+                console.log("Current state:", {
+                  originalVideoUrl,
+                  videoUri,
+                  deletedVideo,
+                  photos,
+                  originalValues: originalValues?.photos,
+                  hasChanges,
+                });
+              }}
+            >
+              <Text style={styles.saveButtonText}>Debug Check Changes</Text>
+            </TouchableOpacity>
+          )}
 
           <Modal visible={modalVisible} animationType='slide' transparent={true} onRequestClose={() => setModalVisible(false)}>
             <View style={styles.modalContainer}>
@@ -2825,6 +2831,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingBottom: 30,
   },
   headerTitle: {
     fontSize: 22,

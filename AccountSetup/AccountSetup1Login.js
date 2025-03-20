@@ -63,7 +63,7 @@ export default function AccountSetup1Login() {
       }
     } catch (error) {
       console.error("Error occurred:", error);
-      Alert.alert("Error", "Invalid credentials or server error.");
+      Alert.alert("Error", "Invalid credentials. Please check your email and password and try again.");
     } finally {
       setShowSpinner(false);
     }

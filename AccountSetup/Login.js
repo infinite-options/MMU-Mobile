@@ -405,7 +405,7 @@ export default function Login() {
       const saltObject = saltResponse.data;
 
       if (saltObject.code !== 200) {
-        Alert.alert("Error", "User does not exist or server error.");
+        Alert.alert("Error", "User does not exist. Please Sign Up.");
         return;
       }
 
@@ -435,7 +435,7 @@ export default function Login() {
       navigation.navigate("MyProfile");
     } catch (error) {
       console.error("LP Error occurred:", error);
-      Alert.alert("Error", "Invalid credentials or server error.");
+      Alert.alert("Error", "Invalid credentials. Please check your email and password and try again.");
     } finally {
       setShowSpinner(false);
     }
@@ -519,26 +519,28 @@ export default function Login() {
         </TouchableOpacity>
 
         {/* Google Sign-In Configuration Status - For debugging */}
-        <View style={styles.debugContainer}>
-          <Text style={styles.debugText}>Google Sign-In Status:</Text>
-          <Text style={styles.debugText}>
-            isGoogleConfigured: <Text style={{ color: isGoogleConfigured ? "#00AA00" : "#FF0000", fontWeight: "bold", fontSize: 14 }}>{isGoogleConfigured ? "TRUE" : "FALSE"}</Text>
-          </Text>
-          <Text style={styles.debugText}>
-            isGoogleConfiguring: <Text style={{ color: isGoogleConfiguring ? "#00AA00" : "#FF0000", fontWeight: "bold", fontSize: 14 }}>{isGoogleConfiguring ? "TRUE" : "FALSE"}</Text>
-          </Text>
-          <Text style={styles.debugText}>
-            Config Attempts:{" "}
-            <Text style={{ fontWeight: "bold", fontSize: 14 }}>
-              {configAttemptCount}/{maxAttempts}
+        {__DEV__ && (
+          <View style={styles.debugContainer}>
+            <Text style={styles.debugText}>Google Sign-In Status:</Text>
+            <Text style={styles.debugText}>
+              isGoogleConfigured: <Text style={{ color: isGoogleConfigured ? "#00AA00" : "#FF0000", fontWeight: "bold", fontSize: 14 }}>{isGoogleConfigured ? "TRUE" : "FALSE"}</Text>
             </Text>
-          </Text>
+            <Text style={styles.debugText}>
+              isGoogleConfiguring: <Text style={{ color: isGoogleConfiguring ? "#00AA00" : "#FF0000", fontWeight: "bold", fontSize: 14 }}>{isGoogleConfiguring ? "TRUE" : "FALSE"}</Text>
+            </Text>
+            <Text style={styles.debugText}>
+              Config Attempts:{" "}
+              <Text style={{ fontWeight: "bold", fontSize: 14 }}>
+                {configAttemptCount}/{maxAttempts}
+              </Text>
+            </Text>
 
-          {/* Debug button to check Google Sign-In status */}
-          <TouchableOpacity style={styles.debugButton} onPress={handleGoogleSignIn}>
-            <Text style={styles.debugButtonText}>Check Google Sign-In Status</Text>
-          </TouchableOpacity>
-        </View>
+            {/* Debug button to check Google Sign-In status */}
+            <TouchableOpacity style={styles.debugButton} onPress={handleGoogleSignIn}>
+              <Text style={styles.debugButtonText}>Check Google Sign-In Status</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

@@ -296,6 +296,23 @@ export default function AddMediaScreen({ navigation }) {
 
     setIsLoading(true);
 
+    // Log form data before upload
+    console.log(
+      "FORM DATA before upload in AddMediaScreen.js:",
+      JSON.stringify(
+        {
+          user_uid: userId,
+          user_email_id: userEmail,
+          photos: photos.map((p) => (p ? (typeof p === "string" ? (p.length > 50 ? p.substring(0, 50) + "..." : p) : "[Object]") : null)),
+          videoUri: videoUri ? (videoUri.length > 50 ? videoUri.substring(0, 50) + "..." : videoUri) : null,
+          videoFileSize: videoFileSize,
+          photoFileSizes: photoFileSizes,
+        },
+        null,
+        2
+      )
+    );
+
     // Check total file size before uploading using MediaHelper
     const totalSize = checkTotalFileSize();
     const shouldProceed = await MediaHelper.promptLargeFileSize(totalSize, 5);
@@ -341,7 +358,7 @@ export default function AddMediaScreen({ navigation }) {
 
         if (presignedData && presignedData.url) {
           setUploadStatus(`Uploading ${videoFileSize}MB video directly to S3...`);
-          console.log("Got presigned URL, starting upload to S3...");
+          console.log("Got presigned URL, starting upload to S3...", presignedData.url);
 
           // Perform the actual upload
           const uploadResult = await uploadVideoToS3(videoUri, presignedData.url);
@@ -354,29 +371,86 @@ export default function AddMediaScreen({ navigation }) {
             uploadData.append("user_video_url", presignedData.videoUrl);
             console.log("Added user_video_url to form data:", presignedData.videoUrl);
           } else {
-            console.error("Direct S3 upload failed, falling back to regular upload");
-            setUploadStatus("S3 upload failed, falling back to regular upload");
-            // Fall back to regular upload
-            console.log("Adding video as multipart form data...");
-            uploadData.append("user_video", {
-              uri: videoUri,
-              type: "video/mp4",
-              name: "user_video.mp4",
+            console.error("Direct S3 upload failed, showing alert to user");
+            setUploadStatus("S3 upload failed, waiting for user input...");
+
+            // Show alert to user with options to try regular upload or cancel
+            return new Promise((resolve) => {
+              Alert.alert("S3 Upload Failed", "Your video could not be uploaded to our secure server. Would you like to try a regular upload instead?", [
+                {
+                  text: "Cancel",
+                  style: "cancel",
+                  onPress: () => {
+                    console.log("User cancelled after S3 upload failure");
+                    setIsLoading(false);
+                    setUploadStatus("");
+                    navigation.goBack(); // Return to previous screen
+                    resolve(false);
+                  },
+                },
+                {
+                  text: "OK",
+                  onPress: () => {
+                    console.log("User opted to try regular upload");
+                    setUploadStatus("Trying regular upload...");
+                    // Fall back to regular upload
+                    console.log("Adding video as multipart form data...");
+                    uploadData.append("user_video", {
+                      uri: videoUri,
+                      type: "video/mp4",
+                      name: "user_video.mp4",
+                    });
+                    console.log("Added user_video to form data as multipart");
+                    resolve(true);
+                  },
+                },
+              ]);
+            }).then((shouldContinue) => {
+              if (!shouldContinue) {
+                throw new Error("Upload cancelled by user after S3 upload failure");
+              }
             });
-            console.log("Added user_video to form data as multipart");
           }
         } else {
-          console.error("Failed to get presigned URL, falling back to regular upload");
-          setUploadStatus("Failed to get presigned URL, falling back to regular upload");
+          console.error("Failed to get presigned URL, showing alert to user");
+          setUploadStatus("Failed to get presigned URL, waiting for user input...");
 
-          // Fall back to regular upload
-          console.log("Adding video as multipart form data (presigned URL failed)...");
-          uploadData.append("user_video", {
-            uri: videoUri,
-            type: "video/mp4",
-            name: "user_video.mp4",
+          // Show alert to user with options to try regular upload or cancel
+          return new Promise((resolve) => {
+            Alert.alert("S3 Upload Failed", "We couldn't prepare our secure server for upload. Would you like to try a regular upload instead?", [
+              {
+                text: "Cancel",
+                style: "cancel",
+                onPress: () => {
+                  console.log("User cancelled after presigned URL failure");
+                  setIsLoading(false);
+                  setUploadStatus("");
+                  navigation.goBack(); // Return to previous screen
+                  resolve(false);
+                },
+              },
+              {
+                text: "OK",
+                onPress: () => {
+                  console.log("User opted to try regular upload");
+                  setUploadStatus("Trying regular upload...");
+                  // Fall back to regular upload
+                  console.log("Adding video as multipart form data (presigned URL failed)...");
+                  uploadData.append("user_video", {
+                    uri: videoUri,
+                    type: "video/mp4",
+                    name: "user_video.mp4",
+                  });
+                  console.log("Added user_video to form data as multipart");
+                  resolve(true);
+                },
+              },
+            ]);
+          }).then((shouldContinue) => {
+            if (!shouldContinue) {
+              throw new Error("Upload cancelled by user after presigned URL failure");
+            }
           });
-          console.log("Added user_video to form data as multipart");
         }
       }
 
@@ -388,22 +462,22 @@ export default function AddMediaScreen({ navigation }) {
       console.log("API endpoint: https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo");
 
       // Log the FormData contents (but not the actual file data)
-      console.log("FormData contents:");
-      for (let [key, value] of uploadData._parts) {
-        if (key === "user_video") {
-          console.log(`${key}: [File data omitted, size: ${videoFileSize}MB]`);
-        } else if (key.startsWith("img_")) {
-          // Extract the index from img_0, img_1, etc.
-          const imgIndex = parseInt(key.substring(4), 10);
-          const fileSize = photoFileSizes[imgIndex] || "unknown";
-          console.log(`${key}: [File data omitted, size: ${fileSize}MB]`);
-        } else {
-          console.log(`${key}: ${value}`);
-        }
-      }
+      // console.log("FormData contents:");
+      // for (let [key, value] of uploadData._parts) {
+      //   if (key === "user_video") {
+      //     console.log(`${key}: [File data omitted, size: ${videoFileSize}MB]`);
+      //   } else if (key.startsWith("img_")) {
+      //     // Extract the index from img_0, img_1, etc.
+      //     const imgIndex = parseInt(key.substring(4), 10);
+      //     const fileSize = photoFileSizes[imgIndex] || "unknown";
+      //     console.log(`${key}: [File data omitted, size: ${fileSize}MB]`);
+      //   } else {
+      //     console.log(`${key}: ${value}`);
+      //   }
+      // }
 
       const startTime = Date.now();
-      setUploadStatus("Sending data to server...");
+      setUploadStatus("Sending data to server...", uploadData);
 
       const response = await axios.put("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo", uploadData, {
         headers: {
@@ -442,7 +516,7 @@ export default function AddMediaScreen({ navigation }) {
         errorMessage = "Server Error";
 
         if (error.response.status === 413) {
-          errorDetails = "The video is too large for the server to process. The file has been automatically uploaded to our S3 server instead.";
+          errorDetails = "The video is too large.  Please record a shorter video and try again.";
         } else if (error.response.status === 403) {
           errorDetails = "You don't have permission to upload this content.";
         } else if (error.response.status === 500) {
@@ -571,10 +645,12 @@ export default function AddMediaScreen({ navigation }) {
                   <Text style={styles.uploadVideoText}>Record Video</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={handleVideoUpload} style={styles.selectVideoButton}>
-                  <Ionicons name='images-outline' size={24} color='#E4423F' />
-                  <Text style={styles.uploadVideoText}>Select Video</Text>
-                </TouchableOpacity>
+                {__DEV__ && (
+                  <TouchableOpacity onPress={handleVideoUpload} style={styles.selectVideoButton}>
+                    <Ionicons name='images-outline' size={24} color='#E4423F' />
+                    <Text style={styles.uploadVideoText}>Select Video</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             )}
           </View>

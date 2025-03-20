@@ -625,7 +625,7 @@ export default function AccountSetup2Create() {
     return emailRegex.test(email);
   };
   const handleInputChange = (name, value) => {
-    console.log("---In AS2C handleInputChange:", name, value);
+    // console.log("---In AS2C handleInputChange:", name, value);
     setFormData({ ...formData, [name]: value });
 
     if (name === "password") {
@@ -791,7 +791,7 @@ export default function AccountSetup2Create() {
   // const formIsComplete = isValidEmail(formData.email) && formData.password !== "" && formData.confirmPassword !== "" && passwordsMatch;
   // const isFormComplete = formData.firstName.trim() !== "" && formData.lastName.trim() !== "" && !nameErrors.firstName && !nameErrors.lastName;
   const isFormComplete = isValidEmail(formData.email) && formData.password !== "" && formData.confirmPassword !== "" && passwordsMatch;
-  console.log("---In AS2C isFormComplete:", isFormComplete);
+  // console.log("---In AS2C isFormComplete:", isFormComplete);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -910,29 +910,31 @@ export default function AccountSetup2Create() {
         </TouchableOpacity>
 
         {/* Google Sign-In Configuration Status - For debugging */}
-        <View style={styles.debugContainer}>
-          <Text style={styles.debugText}>Google Sign-In Status:</Text>
-          <Text style={styles.debugText}>
-            isGoogleConfigured: <Text style={{ color: isGoogleConfigured ? "#00AA00" : "#FF0000", fontWeight: "bold", fontSize: 14 }}>{isGoogleConfigured ? "TRUE" : "FALSE"}</Text>
-          </Text>
-          <Text style={styles.debugText}>
-            isGoogleConfiguring: <Text style={{ color: isGoogleConfiguring ? "#00AA00" : "#FF0000", fontWeight: "bold", fontSize: 14 }}>{isGoogleConfiguring ? "TRUE" : "FALSE"}</Text>
-          </Text>
-          <Text style={styles.debugText}>
-            signInInProgress: <Text style={{ color: signInInProgress ? "#00AA00" : "#FF0000", fontWeight: "bold", fontSize: 14 }}>{signInInProgress ? "TRUE" : "FALSE"}</Text>
-          </Text>
-          <Text style={styles.debugText}>
-            Config Attempts:{" "}
-            <Text style={{ fontWeight: "bold", fontSize: 14 }}>
-              {configAttemptCount}/{maxAttempts}
+        {__DEV__ && (
+          <View style={styles.debugContainer}>
+            <Text style={styles.debugText}>Google Sign-In Status:</Text>
+            <Text style={styles.debugText}>
+              isGoogleConfigured: <Text style={{ color: isGoogleConfigured ? "#00AA00" : "#FF0000", fontWeight: "bold", fontSize: 14 }}>{isGoogleConfigured ? "TRUE" : "FALSE"}</Text>
             </Text>
-          </Text>
+            <Text style={styles.debugText}>
+              isGoogleConfiguring: <Text style={{ color: isGoogleConfiguring ? "#00AA00" : "#FF0000", fontWeight: "bold", fontSize: 14 }}>{isGoogleConfiguring ? "TRUE" : "FALSE"}</Text>
+            </Text>
+            <Text style={styles.debugText}>
+              signInInProgress: <Text style={{ color: signInInProgress ? "#00AA00" : "#FF0000", fontWeight: "bold", fontSize: 14 }}>{signInInProgress ? "TRUE" : "FALSE"}</Text>
+            </Text>
+            <Text style={styles.debugText}>
+              Config Attempts:{" "}
+              <Text style={{ fontWeight: "bold", fontSize: 14 }}>
+                {configAttemptCount}/{maxAttempts}
+              </Text>
+            </Text>
 
-          {/* Debug button to check Google Sign-In status */}
-          <Pressable style={styles.debugButton} onPress={checkGoogleStates}>
-            <Text style={styles.debugButtonText}>Check Google Sign-In Status</Text>
-          </Pressable>
-        </View>
+            {/* Debug button to check Google Sign-In status */}
+            <Pressable style={styles.debugButton} onPress={checkGoogleStates}>
+              <Text style={styles.debugButtonText}>Check Google Sign-In Status</Text>
+            </Pressable>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

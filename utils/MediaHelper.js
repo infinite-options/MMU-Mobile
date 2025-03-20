@@ -302,3 +302,117 @@ export const promptLargeFileSize = async (totalSize, threshold = 5) => {
     );
   });
 };
+
+export const handleCombinedVideo = async (testVideos) => {
+  console.log("=== Starting handleCombinedVideo ===", Constants.executionEnvironment, Constants.modelName, Constants.isDevice);
+  // More reliable simulator detection
+  const isSimulator = Platform.select({
+    // For iOS, check both executionEnvironment and model name
+    ios: Constants.executionEnvironment === "simulator" || Constants.modelName?.toLowerCase().includes("simulator") || !Constants.isDevice,
+    // For Android, check isDevice
+    android: !Constants.isDevice,
+    default: false,
+  });
+
+  console.log("=== Device Detection ===");
+  console.log("Platform:", Platform.OS);
+  console.log("Is Simulator:", isSimulator);
+  console.log("iOS Model Name:", Constants.modelName);
+  console.log("Is Device:", Constants.isDevice);
+  console.log("Execution Environment:", Constants.executionEnvironment);
+  console.log("=====================");
+
+  const handleCancelFlow = (resolve) => {
+    Alert.alert("Video Action Cancelled", "Would you like to select a video instead?", [
+      { text: "No", style: "cancel", onPress: () => resolve(false) },
+      {
+        text: "Yes",
+        onPress: () => {
+          console.log("User chose to select video - Device type:", isSimulator ? "Simulator" : "Real Device");
+          if (isSimulator) {
+            console.log("Routing to Test Video selection");
+            resolve({ showTestOptions: true });
+          } else {
+            console.log("Routing to Photo Library");
+            // For real device, launch photo library
+            resolve({ launchPhotoLibrary: true });
+          }
+        },
+      },
+    ]);
+  };
+
+  // Show action sheet with Record Video and Cancel options
+  if (Platform.OS === "ios") {
+    return new Promise((resolve) => {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ["Cancel", "Record Video"],
+          cancelButtonIndex: 0,
+        },
+        async (buttonIndex) => {
+          if (buttonIndex === 1) {
+            // Record Video selected
+            if (isSimulator) {
+              console.log("Record Video pressed on Simulator - showing test videos");
+              resolve({ showTestOptions: true });
+            } else {
+              console.log("Record Video pressed on real device - launching camera");
+              const result = await recordVideo(testVideos);
+              if (result === false) {
+                // Recording was cancelled
+                handleCancelFlow(resolve);
+              } else {
+                resolve(result);
+              }
+            }
+          } else {
+            // Cancel was selected
+            handleCancelFlow(resolve);
+          }
+        }
+      );
+    }).then(async (result) => {
+      if (result?.launchPhotoLibrary) {
+        console.log("Launching photo library for video selection");
+        return await pickVideo(testVideos);
+      }
+      return result;
+    });
+  } else {
+    // For Android, show Alert with options
+    return new Promise((resolve) => {
+      Alert.alert("Add Video", "Choose an option", [
+        {
+          text: "Record Video",
+          onPress: async () => {
+            if (isSimulator) {
+              console.log("Record Video pressed on Simulator - showing test videos");
+              resolve({ showTestOptions: true });
+            } else {
+              console.log("Record Video pressed on real device - launching camera");
+              const result = await recordVideo(testVideos);
+              if (result === false) {
+                // Recording was cancelled
+                handleCancelFlow(resolve);
+              } else {
+                resolve(result);
+              }
+            }
+          },
+        },
+        {
+          text: "Cancel",
+          style: "cancel",
+          onPress: () => handleCancelFlow(resolve),
+        },
+      ]);
+    }).then(async (result) => {
+      if (result?.launchPhotoLibrary) {
+        console.log("Launching photo library for video selection");
+        return await pickVideo(testVideos);
+      }
+      return result;
+    });
+  }
+};

@@ -538,8 +538,11 @@ export default function MatchProfileDisplay() {
               </TouchableOpacity>
             </>
           ) : (
-            <View style={styles.noVideoContainer}>
-              <Text style={styles.noVideoText}>No Video</Text>
+            <View style={styles.backgroundVideo}>
+              {/* Display a black background instead of "No Video" text */}
+              <View style={styles.noVideoIndicator}>
+                <Text style={styles.noVideoIndicatorText}>No Video Available</Text>
+              </View>
             </View>
           )}
 
@@ -748,18 +751,20 @@ export default function MatchProfileDisplay() {
             </ScrollView>
 
             {/* Progress slider positioned above bottom nav */}
-            <View style={styles.progressContainer}>
-              <Slider
-                style={styles.slider}
-                minimumValue={0}
-                maximumValue={videoDuration}
-                value={videoPosition}
-                onValueChange={handleSeek}
-                minimumTrackTintColor='#FFFFFF'
-                maximumTrackTintColor='#000000'
-                thumbTintColor='#FF6347'
-              />
-            </View>
+            {isValidUrl(videoUrl) && videoDuration > 0 && (
+              <View style={styles.progressContainer}>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={0}
+                  maximumValue={videoDuration}
+                  value={videoPosition}
+                  onValueChange={handleSeek}
+                  minimumTrackTintColor='#FFFFFF'
+                  maximumTrackTintColor='#000000'
+                  thumbTintColor='#FF6347'
+                />
+              </View>
+            )}
           </Animated.View>
         </>
       )}
@@ -800,6 +805,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    backgroundColor: "#000", // Ensure background is black
   },
   noVideoContainer: {
     flex: 1,
@@ -995,5 +1001,19 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.8)",
     borderRadius: 12,
     padding: 2,
+  },
+  noVideoIndicator: {
+    position: "absolute",
+    top: 100,
+    alignSelf: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    paddingVertical: 5,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+  },
+  noVideoIndicatorText: {
+    color: "#fff",
+    fontSize: 14,
+    opacity: 0.7,
   },
 });

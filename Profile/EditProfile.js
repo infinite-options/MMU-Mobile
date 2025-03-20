@@ -1378,6 +1378,7 @@ export default function EditProfile() {
             if (uploadSuccess && presignedData.videoUrl) {
               console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
               // setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
+              uploadData.append("user_delete_video", JSON.stringify([originalVideoUrl]));
               uploadData.append("user_video_url", presignedData.videoUrl);
               console.log("Added user_video_url to form data:", presignedData.videoUrl);
             } else {

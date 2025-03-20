@@ -166,7 +166,7 @@ export default function EditProfile() {
   const defaultCm = Math.round((5 * 12 + 11) * 2.54);
   const [heightCm, setHeightCm] = useState(defaultCm.toString());
   // heightUnit can be either "in" (for feet/inches) or "cm" (for centimeters)
-  const [heightUnit, setHeightUnit] = useState("in");
+  const [heightUnit, setHeightUnit] = useState("cm");
 
   // -------------------------------
   // Other form states and dropdown states (e.g., gender, openTo, etc.)
@@ -1378,7 +1378,11 @@ export default function EditProfile() {
             if (uploadSuccess && presignedData.videoUrl) {
               console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
               // setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
-              uploadData.append("user_delete_video", JSON.stringify([originalVideoUrl]));
+              // Only include user_delete_video if there was an original video to delete
+              if (originalVideoUrl) {
+                uploadData.append("user_delete_video", JSON.stringify([originalVideoUrl]));
+                console.log("Added user_delete_video to form data:", JSON.stringify([originalVideoUrl]));
+              }
               uploadData.append("user_video_url", presignedData.videoUrl);
               console.log("Added user_video_url to form data:", presignedData.videoUrl);
             } else {

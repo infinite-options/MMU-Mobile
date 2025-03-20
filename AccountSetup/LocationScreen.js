@@ -20,6 +20,8 @@ export default function LocationScreen({ navigation }) {
   const [region, setRegion] = useState({
     latitude: 37.7749, // e.g., SF
     longitude: -122.4194,
+    // latitude: -33.8688, // Sydney, Australia
+    // longitude: 151.2093,
     latitudeDelta: 0.06,
     longitudeDelta: 0.06,
   });
@@ -63,6 +65,8 @@ export default function LocationScreen({ navigation }) {
 
     try {
       const endpoint = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&key=${GOOGLE_API_KEY}&components=country:us`;
+      // For Australia use au.  For International sites remove &components=country:au
+      // const endpoint = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&key=${GOOGLE_API_KEY}&components=country:au`;
       const response = await fetch(endpoint);
       const data = await response.json();
 

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform, Alert } from "react
 import { useNavigation } from "@react-navigation/native";
 import config from "../config"; // Import config for Google client IDs
 import * as AppleAuthentication from "expo-apple-authentication";
+import { __DEV_MODE__ } from "../config";
 
 // Helper function to extract the last two digits before .apps.googleusercontent.com
 const getLastTwoDigits = (clientId) => {
@@ -68,7 +69,7 @@ const StartPage = () => {
       <Text style={styles.title}>meet me up</Text>
 
       {/* API Keys Info - For debugging */}
-      {__DEV__ && (
+      {__DEV_MODE__ && (
         <View style={styles.apiKeysContainer}>
           <Text style={styles.apiKeysTitle}>API Keys (Last 2 Digits):</Text>
           <Text style={styles.apiKeysText}>iOS: {getLastTwoDigits(config.googleClientIds.ios)}</Text>

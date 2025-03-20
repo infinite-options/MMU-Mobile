@@ -48,6 +48,8 @@ export default function MatchProfileDisplay() {
   const [arrlength, setArrlength] = useState(0);
   const [arrposition, setArrposition] = useState(0);
   const [userUid, setUserUid] = useState(null);
+  const [currentUserData, setCurrentUserData] = useState(null);
+  const [matchedUserData, setMatchedUserData] = useState(null);
 
   // For video slider (optional)
   const [videoPosition, setVideoPosition] = useState(0);
@@ -172,10 +174,12 @@ export default function MatchProfileDisplay() {
     if (arrposition > 0) {
       const newPos = arrposition - 1;
       setArrposition(newPos);
-      fetchData(newPos);
+      // console.log("Fetching data for position 1:", newPos);
+      // fetchData(newPos);
     } else {
       setArrposition(arrlength - 1);
-      fetchData(arrlength - 1);
+      // console.log("Fetching data for position 2:", arrlength - 1);
+      // fetchData(arrlength - 1);
     }
   };
 
@@ -183,10 +187,12 @@ export default function MatchProfileDisplay() {
     if (arrposition < arrlength - 1) {
       const newPos = arrposition + 1;
       setArrposition(newPos);
-      fetchData(newPos);
+      // console.log("Fetching data for position 3:", newPos);
+      // fetchData(newPos);
     } else {
       setArrposition(0);
-      fetchData(0);
+      // console.log("Fetching data for position 4:", 0);
+      // fetchData(0);
     }
   };
   const handleLikePress = async () => {
@@ -260,21 +266,44 @@ export default function MatchProfileDisplay() {
     return distance;
   };
 
+  const getUserUid = async () => {
+    try {
+      const uid = await AsyncStorage.getItem("user_uid");
+      if (uid !== null) {
+        setUserUid(uid);
+        // Fetch current user data once when we have the UID
+        const userData = await fetchUserInfo(uid);
+        console.log("Current userData", userData);
+        setCurrentUserData(userData);
+        const response = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/${uid}`);
+        // console.log("responseData:", response.data);
+        setMatchedUserData(response.data);
+      } else {
+        setError("User UID not found.");
+        setLoading(false);
+      }
+    } catch (err) {
+      setError("Failed to retrieve user UID.");
+      setLoading(false);
+    }
+  };
+
   const fetchData = async (position) => {
     try {
-      // console.log("userUid", userUid);
-      console.log(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/${userUid}`);
-      const response = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/${userUid}`);
+      // Check if matchedUserData is loaded
+      if (!matchedUserData) {
+        console.log("matchedUserData is not loaded yet");
+        setLoading(true);
+        return; // Exit early, we'll try again when matchedUserData is loaded
+      }
 
-      // console.log("responseData:", response.data);
-      console.log("Number of matches:", response.data.result.length);
-      // console.log("API Response MatchProfileDisplay:", response.data);
-      if (response.data["message"].startsWith("No matches found")) {
-        console.log("Message from API:", response.data["message"]);
+      console.log("matchedUserData available:", !!matchedUserData);
+      if (matchedUserData["message"]?.startsWith("No matches found")) {
+        console.log("Message from API:", matchedUserData["message"]);
         setUserInfo(null);
         return;
       } else {
-        let matchResults = response.data.hasOwnProperty("result of 1 way match") ? response.data["result of 1 way match"] : response.data["result"];
+        let matchResults = matchedUserData.hasOwnProperty("result of 1 way match") ? matchedUserData["result of 1 way match"] : matchedUserData["result"];
         // console.log("matchResults", matchResults);
         if (Array.isArray(matchResults)) {
           const arrsize = matchResults.length;
@@ -283,6 +312,14 @@ export default function MatchProfileDisplay() {
           const fetchedData = matchResults[position];
           if (fetchedData) {
             const uid = fetchedData.user_uid;
+            console.log("In fetchedData uid", uid);
+
+            // If this user's info is already being fetched or has been fetched and set in userInfo, skip
+            if (userInfo && userInfo.user_uid === uid) {
+              // Already have this user's info, no need to fetch again
+              return;
+            }
+
             const data = await fetchUserInfo(uid);
             // console.log("data", data);
             // console.log("fetchedData", fetchedData);
@@ -290,7 +327,9 @@ export default function MatchProfileDisplay() {
             // console.log("isLiked", fetchedData["Liked by"]);
 
             // Get current user info to calculate distance
-            const currentUserData = await fetchUserInfo(userUid);
+            // console.log("In fetchedData userUid", userUid);
+            // const currentUserData = await fetchUserInfo(userUid);
+            // console.log("currentUserData", currentUserData);
 
             // Calculate distance between users
             let distance = 0;
@@ -327,30 +366,20 @@ export default function MatchProfileDisplay() {
     }
   };
 
-  const getUserUid = async () => {
-    try {
-      const uid = await AsyncStorage.getItem("user_uid");
-      if (uid !== null) {
-        setUserUid(uid);
-      } else {
-        setError("User UID not found.");
-        setLoading(false);
-      }
-    } catch (err) {
-      setError("Failed to retrieve user UID.");
-      setLoading(false);
-    }
-  };
+  // Add a ref to track the last processed position
+  const lastPositionRef = useRef(-1);
 
   useEffect(() => {
     getUserUid();
   }, []);
 
   useEffect(() => {
-    if (userUid) {
+    if (userUid && matchedUserData && lastPositionRef.current !== arrposition) {
+      lastPositionRef.current = arrposition;
+      console.log("Fetching data for position 0:", arrposition);
       fetchData(arrposition);
     }
-  }, [userUid, arrposition]);
+  }, [userUid, matchedUserData, arrposition]);
 
   if (loading) {
     return (

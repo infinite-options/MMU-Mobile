@@ -10,6 +10,11 @@ const ENV = {
   APPLE_SERVICE_ID: process.env.EXPO_PUBLIC_MMU_APPLE_SERVICE_ID,
 };
 
+// Global development mode flag
+// IMPORTANT: Set this to false before deploying to production/app store
+export const __DEV_MODE__ = false;
+console.log("__DEV_MODE__:", __DEV_MODE__);
+
 // console.log("IOS Client ID:", ENV.IOS_CLIENT_ID);
 // console.log("Android Client ID Debug:", ENV.ANDROID_CLIENT_ID_Debug);
 // console.log("Android Client ID Release:", ENV.ANDROID_CLIENT_ID_Release);

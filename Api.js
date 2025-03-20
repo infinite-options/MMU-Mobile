@@ -24,7 +24,7 @@ export async function fetchUserInfo(user_uid) {
     const startTimeTotal = Date.now();
 
     const apiEndpoint = apiUrl + "/" + user_uid;
-    console.log(`API DEBUG: Calling endpoint: ${apiEndpoint}`);
+    // console.log(`API DEBUG: Calling endpoint: ${apiEndpoint}`);
 
     const startTime = Date.now();
     const controller = new AbortController();
@@ -39,7 +39,7 @@ export async function fetchUserInfo(user_uid) {
 
     clearTimeout(timeoutId);
     const duration = Date.now() - startTime;
-    console.log(`API DEBUG: Received response for ${user_uid} in ${duration}ms`);
+    // console.log(`API DEBUG: Received response for ${user_uid} in ${duration}ms`);
 
     if (!response.ok) {
       console.error(`API DEBUG: HTTP error! Status: ${response.status} for user ${user_uid}`);
@@ -48,14 +48,14 @@ export async function fetchUserInfo(user_uid) {
 
     const data = await response.json();
     const totalDuration = Date.now() - startTimeTotal;
-    console.log(`API DEBUG: Total time to fetch and parse data for ${user_uid}: ${totalDuration}ms`);
+    // console.log(`API DEBUG: Total time to fetch and parse data for ${user_uid}: ${totalDuration}ms`);
 
     if (!data.result || !data.result[0]) {
       console.error(`API DEBUG: No user data found for ${user_uid}`);
       throw new Error(`No user data found for ${user_uid}`);
     }
 
-    console.log(`API DEBUG: Successfully fetched data for ${user_uid}`);
+    // console.log(`API DEBUG: Successfully fetched data for ${user_uid}`);
     return data.result[0];
   } catch (error) {
     console.error(`API DEBUG: ⚠️ ERROR fetching userInfo for ${user_uid}:`, error);

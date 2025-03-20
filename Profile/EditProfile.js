@@ -44,6 +44,7 @@ import { useBackHandler } from "@react-native-community/hooks";
 import { LinearGradient } from "expo-linear-gradient";
 import { getPresignedUrl, uploadVideoToS3, getFileSizeInMB, loadTestVideos } from "../utils/S3Helper";
 import * as MediaHelper from "../utils/MediaHelper";
+import { __DEV_MODE__ } from "../config";
 
 // Fallback to a placeholder to prevent crashes - replace with your actual key when testing
 const GOOGLE_API_KEY = Constants.expoConfig?.extra?.googleApiKey || process.env.EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY || "YOUR_GOOGLE_API_KEY_HERE";
@@ -1967,7 +1968,7 @@ export default function EditProfile() {
                   <Text style={styles.uploadVideoText}>Record Video</Text>
                 </TouchableOpacity>
 
-                {__DEV__ && (
+                {__DEV_MODE__ && (
                   <TouchableOpacity onPress={handleVideoUpload} style={[styles.uploadVideoButton, { marginTop: 10 }]}>
                     <Ionicons name='cloud-upload-outline' size={20} color='#E4423F' />
                     <Text style={styles.uploadVideoText}>Select Video</Text>
@@ -2027,7 +2028,7 @@ export default function EditProfile() {
           </View>
 
           {/* Total File Size Button */}
-          {__DEV__ && (
+          {__DEV_MODE__ && (
             <TouchableOpacity
               style={styles.fileSizeButton}
               onPress={() => {
@@ -2747,7 +2748,7 @@ export default function EditProfile() {
           </TouchableOpacity>
 
           {/* Debug Button - Remove in production */}
-          {__DEV__ && (
+          {__DEV_MODE__ && (
             <TouchableOpacity
               style={[styles.saveButton, { marginTop: 10, backgroundColor: "#333" }]}
               onPress={() => {

@@ -5,7 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ProgressBar from "../src/Assets/Components/ProgressBar";
 import { GoogleSignin, statusCodes, GoogleSigninButton } from "@react-native-google-signin/google-signin";
-import config from "../config"; // Import config
+import config, { __DEV_MODE__ } from "../config"; // Import __DEV_MODE__ along with config
 import AppleSignIn from "./AppleSignIn"; // Import AppleSignIn component
 
 // Static utility function to reset Google Sign-In state
@@ -910,7 +910,7 @@ export default function AccountSetup2Create() {
         </TouchableOpacity>
 
         {/* Google Sign-In Configuration Status - For debugging */}
-        {__DEV__ && (
+        {__DEV_MODE__ && (
           <View style={styles.debugContainer}>
             <Text style={styles.debugText}>Google Sign-In Status:</Text>
             <Text style={styles.debugText}>

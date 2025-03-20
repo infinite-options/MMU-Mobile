@@ -10,6 +10,7 @@ import { Asset } from "expo-asset";
 import { getPresignedUrl, uploadVideoToS3, getFileSizeInMB, loadTestVideos } from "../utils/S3Helper";
 import * as MediaHelper from "../utils/MediaHelper";
 import ProgressBar from "../src/Assets/Components/ProgressBar";
+import { __DEV_MODE__ } from "../config";
 
 export default function AddMediaScreen({ navigation }) {
   console.log("--- In AddMediaScreen.js ---");
@@ -645,7 +646,7 @@ export default function AddMediaScreen({ navigation }) {
                   <Text style={styles.uploadVideoText}>Record Video</Text>
                 </TouchableOpacity>
 
-                {__DEV__ && (
+                {__DEV_MODE__ && (
                   <TouchableOpacity onPress={handleVideoUpload} style={styles.selectVideoButton}>
                     <Ionicons name='images-outline' size={24} color='#E4423F' />
                     <Text style={styles.uploadVideoText}>Select Video</Text>

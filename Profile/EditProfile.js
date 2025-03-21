@@ -2740,7 +2740,7 @@ export default function EditProfile() {
               onChangeText={(text) =>
                 setFormValues((prev) => ({
                   ...prev,
-                  job: text.replace(/\s+/g, " ").trim(),
+                  job: text.replace(/\s+/g, " "), // Replace multiple spaces with a single space
                 }))
               }
               outlineStyle={styles.textInputOutline}

@@ -21,6 +21,10 @@ const getLastTwoDigits = (clientId) => {
   return "..." + clientId.slice(-2);
 };
 
+// Get Maps API Key from environment variables and export it for use in other components
+export const mapsApiKey = process.env.EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY;
+const mapsApiKeyDisplay = mapsApiKey ? "..." + mapsApiKey.slice(-4) : "Not set";
+
 const StartPage = () => {
   const navigation = useNavigation();
   const [appleAuthStatus, setAppleAuthStatus] = useState("Checking...");
@@ -58,10 +62,6 @@ const StartPage = () => {
 
     checkAppleAuthAvailability();
   }, []);
-
-  // Get Maps API Key from environment variables
-  const mapsApiKey = process.env.EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY;
-  const mapsApiKeyDisplay = mapsApiKey ? "..." + mapsApiKey.slice(-4) : "Not set";
 
   return (
     <View style={styles.container}>

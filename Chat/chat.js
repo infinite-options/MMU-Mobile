@@ -6,6 +6,9 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 
+// Import mapsApiKey from Start.js
+import { mapsApiKey } from "../Intro/Start.js";
+
 // Local assets
 import gemmaChatIcon from "../assets/icons/gemmachat.png";
 import sendIcon from "../assets/icons/chatsend.png";
@@ -136,6 +139,10 @@ export default function Chat() {
   const [meetConfirmed, setMeetConfirmed] = useState(false);
   const [meetUid, setMeetUid] = useState(null);
   const [serverTimeOffset, setServerTimeOffset] = useState(0); // Track time difference between server and client
+  // const [recipientAddress, setRecipientAddress] = useState("");
+  const [recipientLatitude, setRecipientLatitude] = useState(null);
+  const [recipientLongitude, setRecipientLongitude] = useState(null);
+  const [cachedTimeZoneId, setCachedTimeZoneId] = useState(null);
 
   // Load user UID from storage
   useEffect(() => {
@@ -167,6 +174,7 @@ export default function Chat() {
           },
         });
 
+        console.log("========== Messages API response:", response);
         // Process messages with standardized timestamps
         let apiMessages = [];
         if (response.data && Array.isArray(response.data.result)) {
@@ -210,31 +218,15 @@ export default function Chat() {
             console.log("Message ID:", msg.message_uid);
             console.log("Raw server timestamp (GMT):", msg.message_sent_at);
 
-            // Parse the GMT timestamp correctly
-            const [datePart, timePart] = msg.message_sent_at.split(" ");
-            const [year, month, day] = datePart.split("-");
-            const [hours, minutes, seconds] = timePart.split(":");
+            // Use standardizeTimestamp to ensure consistent parsing
+            const standardizedTimestamp = standardizeTimestamp(msg.message_sent_at);
+            console.log("Standardized timestamp:", standardizedTimestamp);
 
-            // Create Date object in GMT
-            const messageDate = new Date(
-              Date.UTC(
-                parseInt(year),
-                parseInt(month) - 1, // months are 0-based
-                parseInt(day),
-                parseInt(hours),
-                parseInt(minutes),
-                parseInt(seconds)
-              )
-            );
-
-            console.log("Parsed GMT time:", messageDate.toUTCString());
-            console.log("Local time:", messageDate.toLocaleString());
-            console.log("Timezone offset (minutes):", messageDate.getTimezoneOffset());
-
+            // Create the message object with standardized timestamp
             return {
               id: msg.message_uid || `msg-${Date.now()}-${Math.random()}`,
               text: msg.message_content || "",
-              timestamp: messageDate.toISOString(), // Store as ISO string
+              timestamp: standardizedTimestamp,
               isSent: msg.message_sender_user_id === localUid,
               isReceived: msg.message_sender_user_id !== localUid,
             };
@@ -308,11 +300,20 @@ export default function Chat() {
         if (response.data && response.data.result && response.data.result.length > 0) {
           const userData = response.data.result[0];
 
-          // Set user name
+          // Extract existing information
           const firstName = userData.user_first_name || "";
           const lastName = userData.user_last_name || "";
           const fullName = `${firstName} ${lastName}`.trim() || "Chat Partner";
           setChatPartnerName(fullName);
+
+          // Extract address information
+          // const userAddress = userData.user_address || "No address provided";
+          const userLatitude = userData.user_latitude || "No latitude provided";
+          const userLongitude = userData.user_longitude || "No longitude provided";
+          // Add state to store the address
+          // setRecipientAddress(userAddress);
+          setRecipientLatitude(userLatitude);
+          setRecipientLongitude(userLongitude);
 
           // Set user photo - prioritize favorite photo
           console.log("\n=== Chat Partner Photo Debug ===");
@@ -341,6 +342,157 @@ export default function Chat() {
 
     fetchUserDetails();
   }, [matchedUserId]);
+
+  const getTimeZoneFromLatLng = async (lat, lng) => {
+    console.log("lat:", lat, "| lng:", lng);
+
+    // If we already have a cached timezone ID for this location, return it
+    if (cachedTimeZoneId) {
+      console.log("Using cached timezone:", cachedTimeZoneId);
+      return cachedTimeZoneId;
+    }
+
+    const GOOGLE_API_KEY = mapsApiKey; // Using mapsApiKey imported from Start.js
+    console.log("GOOGLE_API_KEY:", GOOGLE_API_KEY);
+    const timestamp = Math.floor(Date.now() / 1000); // Current timestamp in seconds
+    const url = `https://maps.googleapis.com/maps/api/timezone/json?location=${lat},${lng}&timestamp=${timestamp}&key=${GOOGLE_API_KEY}`;
+    console.log("url:", url);
+
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      console.log("data:", data);
+
+      if (data.status === "OK") {
+        console.log("data.timeZoneId:", data.timeZoneId);
+        // Cache the timezone ID for future use
+        setCachedTimeZoneId(data.timeZoneId);
+        return data.timeZoneId; // Example: "America/New_York"
+      } else {
+        throw new Error(`Error: ${data.status}`);
+      }
+    } catch (error) {
+      console.error("Failed to fetch time zone:", error);
+      return null;
+    }
+  };
+
+  /**
+   * Standardizes a timestamp to ISO format
+   * @param {string} timestamp - The timestamp to standardize
+   * @returns {string} - ISO formatted timestamp
+   */
+  const standardizeTimestamp = (timestamp) => {
+    try {
+      if (!timestamp) return new Date().toISOString();
+
+      // If it's already in ISO format, return it
+      if (timestamp.includes("T") && timestamp.includes("Z")) {
+        return timestamp;
+      }
+
+      // If it's in MySQL format (YYYY-MM-DD HH:MM:SS), convert to ISO
+      if (timestamp.includes("-") && timestamp.includes(":") && timestamp.includes(" ")) {
+        console.log("Parsing MySQL timestamp:", timestamp);
+
+        // Split the MySQL timestamp into components
+        const [datePart, timePart] = timestamp.split(" ");
+        const [year, month, day] = datePart.split("-");
+        const [hours, minutes, seconds] = timePart.split(":");
+
+        // Create Date object in UTC using Date.UTC to ensure proper timezone handling
+        const date = new Date(
+          Date.UTC(
+            parseInt(year),
+            parseInt(month) - 1, // months are 0-based
+            parseInt(day),
+            parseInt(hours),
+            parseInt(minutes),
+            parseInt(seconds || 0) // Handle case when seconds might be missing
+          )
+        );
+
+        const isoString = date.toISOString();
+        console.log("Converted MySQL timestamp to ISO:", isoString);
+        return isoString;
+      }
+
+      // Try to parse any other format
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) {
+        console.warn("Could not parse timestamp:", timestamp);
+        return new Date().toISOString();
+      }
+
+      return date.toISOString();
+    } catch (error) {
+      console.error("Error standardizing timestamp:", error, "for timestamp:", timestamp);
+      return new Date().toISOString();
+    }
+  };
+
+  /**
+   * Converts a UTC timestamp to the recipient's local time based on their location
+   * @param {string} utcTimestamp - ISO timestamp in UTC
+   * @returns {string} - Timestamp adjusted to recipient's timezone
+   */
+  const convertToLocalTimestamp = async (utcTimestamp) => {
+    try {
+      // If recipient location is not available, return the UTC timestamp
+      if (!recipientLatitude || !recipientLongitude || recipientLatitude === "No latitude provided" || recipientLongitude === "No longitude provided") {
+        console.log("Recipient location not available, using UTC timestamp");
+        return utcTimestamp;
+      }
+
+      // Get the recipient's time zone using their coordinates
+      const timeZoneId = await getTimeZoneFromLatLng(recipientLatitude, recipientLongitude);
+
+      if (!timeZoneId) {
+        console.log("Could not determine recipient's timezone, using UTC timestamp");
+        return utcTimestamp;
+      }
+
+      // Parse the UTC timestamp
+      const date = new Date(utcTimestamp);
+
+      // Format the date to the recipient's timezone
+      const options = {
+        timeZone: timeZoneId,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      };
+
+      // Get the formatted parts in the recipient's timezone
+      const formatter = new Intl.DateTimeFormat("en-US", options);
+      const parts = formatter.formatToParts(date);
+
+      // Extract date parts
+      const dateParts = {};
+      parts.forEach((part) => {
+        if (part.type !== "literal") {
+          dateParts[part.type] = part.value;
+        }
+      });
+
+      // Create an ISO-compatible string
+      // Format: YYYY-MM-DDThh:mm:ss.sssZ
+      const localISOString = `${dateParts.year}-${dateParts.month}-${dateParts.day}T${dateParts.hour}:${dateParts.minute}:${dateParts.second}.000Z`;
+
+      console.log(`Converted UTC timestamp ${utcTimestamp} to local ISO string ${localISOString} in timezone ${timeZoneId}`);
+
+      // Return the ISO formatted string
+      return localISOString;
+    } catch (error) {
+      console.error("Error converting timestamp to local time:", error);
+      // Fall back to UTC timestamp in case of error
+      return utcTimestamp;
+    }
+  };
 
   // Handle sending messages
   const handleSend = async (text) => {
@@ -403,32 +555,37 @@ export default function Chat() {
 
   // Handle meeting response with proper time conversion
   const handleMeetResponse = async (responseText) => {
+    console.log("handleMeetResponse", responseText, typeof responseText);
     if (!localUid || !matchedUserId) return;
+    (localUid || matchedUserId) && console.log("localUid:", localUid, "| matchedUserId:", matchedUserId);
 
     // Create timestamp in UTC format for consistent storage
     const now = new Date();
-
+    const nowUtc = now.toISOString();
+    console.log("now:", now);
+    console.log("nowUtc:", nowUtc);
     // Apply the server time offset if needed for consistency
-    if (serverTimeOffset !== 0) {
-      now.setTime(now.getTime() + serverTimeOffset);
-    }
+    // if (serverTimeOffset !== 0) {
+    //   now.setTime(now.getTime() + serverTimeOffset);
+    // }
+    // console.log("now after serverTimeOffset:", now);
 
     // Get timestamp in UTC format
-    const utcTimestamp = now.toISOString();
+    // const utcTimestamp = now.toISOString();
+    // console.log("utcTimestamp:", utcTimestamp);
 
-    // Convert to local time for display
-    const localTimestamp = convertToLocalTimestamp(utcTimestamp);
-
-    // Create temporary message with client-generated ID
+    // Create temporary message with client-generated ID using the UTC timestamp directly
     const tempMessage = {
       id: `temp-${Date.now()}-${Math.random()}`,
       text: responseText,
-      timestamp: localTimestamp, // Use local timestamp
+      timestamp: now, // Use UTC timestamp for consistent storage
       isSent: true,
     };
-
+    console.log("tempMessage:", tempMessage);
+    console.log("responseText before if:", responseText);
     if (responseText === "Yes, I'd love to!") {
       try {
+        console.log("Inside if: Yes, I'd love to!");
         // Update UI state first with temporary message
         setMeetConfirmed(true);
         setMessages((prev) => [...prev, tempMessage]);
@@ -439,6 +596,7 @@ export default function Chat() {
         formData.append("meet_user_id", matchedUserId);
         formData.append("meet_date_user_id", localUid);
         formData.append("meet_confirmed", 1);
+        console.log("Message formData:", formData);
 
         await fetch("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet", {
           method: "PUT",
@@ -457,21 +615,25 @@ export default function Chat() {
             headers: { "Content-Type": "application/json" },
           }
         );
-
+        // console.log("messageResponse:", messageResponse);
         // If server returns the created message with its timestamp, update our local copy
         if (messageResponse.data && messageResponse.data.message_uid) {
           // Get standardized UTC timestamp from server
-          const serverUtcTimestamp = standardizeTimestamp(messageResponse.data.message_sent_at || utcTimestamp);
-
-          // Convert to local time
-          const serverLocalTimestamp = convertToLocalTimestamp(serverUtcTimestamp);
-
+          // console.log("Server returned raw timestamp:", messageResponse.data.message_sent_at);
+          // const serverUtcTimestamp = standardizeTimestamp(messageResponse.data.message_sent_at || utcTimestamp);
+          // console.log("Standardized server timestamp:", serverUtcTimestamp);
+          console.log("In handleMeetResponse, Formatting timestamp for display:", nowUtc);
+          // const serverUtcTimestamp = formatMessageTime(now);
+          const serverUtcTimestamp = nowUtc;
+          console.log("In handleMeetResponse, Formatted timestamp:", serverUtcTimestamp);
+          // Create server message with the server timestamp
           const serverMessage = {
             id: messageResponse.data.message_uid,
             text: responseText,
-            timestamp: serverLocalTimestamp, // Use local timestamp
+            timestamp: serverUtcTimestamp, // Use server timestamp directly
             isSent: true,
           };
+          console.log("Created server message with timestamp:", serverUtcTimestamp);
 
           // Replace temporary message with server version
           setMessages((prev) => prev.filter((m) => m.id !== tempMessage.id).concat(serverMessage));
@@ -504,17 +666,18 @@ export default function Chat() {
         // If server returns the created message with its timestamp, update our local copy
         if (messageResponse.data && messageResponse.data.message_uid) {
           // Get standardized UTC timestamp from server
+          console.log("Server returned raw timestamp (decline):", messageResponse.data.message_sent_at);
           const serverUtcTimestamp = standardizeTimestamp(messageResponse.data.message_sent_at || utcTimestamp);
+          console.log("Standardized server timestamp (decline):", serverUtcTimestamp);
 
-          // Convert to local time
-          const serverLocalTimestamp = convertToLocalTimestamp(serverUtcTimestamp);
-
+          // Create server message with the server timestamp
           const serverMessage = {
             id: messageResponse.data.message_uid,
             text: responseText,
-            timestamp: serverLocalTimestamp, // Use local timestamp
+            timestamp: serverUtcTimestamp, // Use server timestamp directly
             isSent: true,
           };
+          console.log("Created server message with timestamp (decline):", serverUtcTimestamp);
 
           // Replace temporary message with server version
           setMessages((prev) => prev.filter((m) => m.id !== tempMessage.id).concat(serverMessage));
@@ -549,6 +712,69 @@ export default function Chat() {
     }
   }, [loading]);
 
+  // Debug utility for timestamp conversions - can be called from dev console
+  // Not used in the application flow but helpful for debugging
+  if (__DEV__) {
+    global.debugTimestamp = {
+      // Test standardizing a MySQL timestamp
+      standardize: (mysqlTimestamp) => {
+        console.log("Testing timestamp standardization");
+        console.log("Input MySQL timestamp:", mysqlTimestamp);
+        const standardized = standardizeTimestamp(mysqlTimestamp);
+        console.log("Standardized timestamp:", standardized);
+        return standardized;
+      },
+
+      // Test display formatting with different timezones
+      formatWithTimezone: (timestamp, timezone) => {
+        console.log("Testing timestamp formatting with timezone");
+        console.log("Input timestamp:", timestamp);
+        console.log("Test timezone:", timezone);
+
+        try {
+          const date = new Date(timestamp);
+          const formatted = date.toLocaleTimeString("en-US", {
+            timeZone: timezone,
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          });
+          console.log("Formatted result:", formatted);
+          return formatted;
+        } catch (err) {
+          console.error("Error in test formatting:", err);
+          return "Error formatting";
+        }
+      },
+
+      // Analyze the current state of timestamp handling
+      analyzeMessage: (messageId) => {
+        const message = messages.find((m) => m.id === messageId);
+        if (!message) {
+          console.log("Message not found with ID:", messageId);
+          return null;
+        }
+
+        console.log("Message analysis:", {
+          id: message.id,
+          text: message.text,
+          rawTimestamp: message.timestamp,
+          parsedDate: new Date(message.timestamp).toString(),
+          utcString: new Date(message.timestamp).toUTCString(),
+          localString: new Date(message.timestamp).toLocaleString(),
+          formattedDisplay: formatMessageTime(message.timestamp),
+          recipientCoords: {
+            lat: recipientLatitude,
+            lng: recipientLongitude,
+          },
+          cachedTimeZone: cachedTimeZoneId,
+        });
+
+        return message;
+      },
+    };
+  }
+
   // Get grouped messages
   const groupedMessages = groupMessagesByDate(messages);
 
@@ -559,6 +785,85 @@ export default function Chat() {
   const sortedInvitations = receivedInvitations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
   const latestInvitation = sortedInvitations.length > 0 ? sortedInvitations[0] : null;
+
+  /**
+   * Formats a message timestamp for display, converting to recipient's timezone if possible
+   * @param {string} timestamp - ISO timestamp to format
+   * @returns {string} - Formatted time string in recipient's timezone
+   */
+  const formatMessageTime = (timestamp) => {
+    try {
+      console.log("In formatMessageTime, Formatting timestamp for display:", timestamp);
+
+      // Parse the timestamp to a Date object
+      const date = new Date(timestamp);
+
+      // Log the parsed date information for debugging
+      console.log("Parsed timestamp:", {
+        original: timestamp,
+        asDate: date.toString(),
+        inGMT: date.toUTCString(),
+        inLocal: date.toLocaleString(),
+        timestamp: date.getTime(),
+      });
+
+      // If recipient location is available and valid, display time in their timezone
+      if (recipientLatitude && recipientLongitude && recipientLatitude !== "No latitude provided" && recipientLongitude !== "No longitude provided") {
+        // If we have a cached timezone, use it right away
+        if (cachedTimeZoneId) {
+          try {
+            console.log("Using cached timezone for formatting:", cachedTimeZoneId);
+            const formattedTime = date.toLocaleTimeString("en-US", {
+              timeZone: cachedTimeZoneId,
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            });
+            console.log("Formatted with timezone:", formattedTime);
+            return formattedTime;
+          } catch (err) {
+            console.warn("Error formatting with cached timezone:", err);
+            // Fall through to default formatting
+          }
+        }
+
+        // For immediate display, use the browser's best guess at the timezone
+        const formattedTime = date.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        });
+        console.log("Using browser timezone for initial display:", formattedTime);
+
+        // Asynchronously fetch timezone if we don't have it cached yet
+        if (!cachedTimeZoneId) {
+          (async () => {
+            try {
+              console.log("Fetching timezone for coordinates:", recipientLatitude, recipientLongitude);
+              await getTimeZoneFromLatLng(recipientLatitude, recipientLongitude);
+              // This will trigger a re-render with the cached timezone on next state update
+            } catch (error) {
+              console.error("Error getting timezone for message display:", error);
+            }
+          })();
+        }
+
+        return formattedTime;
+      }
+
+      // Fallback to device local time if recipient location is not available
+      const fallbackTime = date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+      console.log("Using device local time fallback:", fallbackTime);
+      return fallbackTime;
+    } catch (error) {
+      console.error("Error formatting message time:", error, "for timestamp:", timestamp);
+      return "Unknown time";
+    }
+  };
 
   // Loading state
   if (loading) {
@@ -661,7 +966,7 @@ export default function Chat() {
                         <Text style={styles.receivedDateText}>{location}</Text>
                       </View>
 
-                      <Text style={[styles.messageTimestamp, { color: "#999" }]}>{formatDateTime(item.timestamp, "time")}</Text>
+                      <Text style={[styles.messageTimestamp, { color: "#999" }]}>{formatMessageTime(item.timestamp)}</Text>
 
                       <View style={styles.leftArrowDate} />
 
@@ -697,7 +1002,7 @@ export default function Chat() {
                         <Text style={styles.dateInvitationText}>{location}</Text>
                       </View>
 
-                      <Text style={styles.messageTimestamp}>{formatDateTime(item.timestamp, "time")}</Text>
+                      <Text style={styles.messageTimestamp}>{formatMessageTime(nowUtc)}</Text>
 
                       <View style={styles.rightArrow} />
                     </LinearGradient>
@@ -708,7 +1013,7 @@ export default function Chat() {
                 bubbleContent = (
                   <LinearGradient colors={item.isSent ? ["#FF5E62", "#FF9966"] : ["#F5F5F5", "#F5F5F5"]} style={styles.bubbleContainer}>
                     <Text style={item.isSent ? styles.rightBubbleText : styles.leftBubbleText}>{textContent}</Text>
-                    <Text style={item.isSent ? styles.messageTimestamp : styles.messageTimestampDark}>{formatDateTime(item.timestamp, "time")}</Text>
+                    <Text style={item.isSent ? styles.messageTimestamp : styles.messageTimestampDark}>{formatMessageTime(item.timestamp)}</Text>
                     {item.isSent ? <View style={styles.rightArrow} /> : <View style={styles.leftArrow} />}
                   </LinearGradient>
                 );

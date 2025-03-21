@@ -25,6 +25,7 @@ const HeartIcon = () => <Text style={{ fontSize: 16, color: "#fff" }}>♥</Text>
  * @returns {string} Formatted date or time string
  */
 const formatDateTime = (dateValue, format = "date") => {
+  console.log("In formatDateTime", dateValue);
   try {
     let date;
 
@@ -70,6 +71,7 @@ const formatDateTime = (dateValue, format = "date") => {
  * @returns {Object} Date-grouped messages with each group sorted by timestamp
  */
 const groupMessagesByDate = (messages) => {
+  console.log("In groupMessagesByDate", messages);
   // First create groups by date
   const groups = messages.reduce((groups, message) => {
     const date = formatDateTime(message.timestamp, "date");
@@ -110,6 +112,7 @@ const groupMessagesByDate = (messages) => {
  * @returns {*} Parsed JSON or fallback
  */
 function safeJsonParse(value, fallback = []) {
+  console.log("In safeJsonParse", value);
   if (typeof value !== "string") {
     return fallback;
   }
@@ -179,38 +182,38 @@ export default function Chat() {
         let apiMessages = [];
         if (response.data && Array.isArray(response.data.result)) {
           // First, check if we need to calculate server time offset
-          if (response.data.result.length > 0 && response.data.server_time) {
-            // If server provides current time, calculate offset
-            try {
-              const serverTime = new Date(response.data.server_time).getTime();
-              const localTime = Date.now();
-              const offset = serverTime - localTime;
+          // if (response.data.result.length > 0 && response.data.server_time) {
+          //   // If server provides current time, calculate offset
+          //   try {
+          //     const serverTime = new Date(response.data.server_time).getTime();
+          //     const localTime = Date.now();
+          //     const offset = serverTime - localTime;
 
-              // Only apply significant offsets (>5 seconds) to avoid minor discrepancies
-              if (Math.abs(offset) > 5000) {
-                console.log(`Server-client time offset: ${offset}ms`);
-                setServerTimeOffset(offset);
-              }
-            } catch (err) {
-              console.warn("Error calculating time offset:", err);
-            }
-          }
+          //     // Only apply significant offsets (>5 seconds) to avoid minor discrepancies
+          //     if (Math.abs(offset) > 5000) {
+          //       console.log(`Server-client time offset: ${offset}ms`);
+          //       setServerTimeOffset(offset);
+          //     }
+          //   } catch (err) {
+          //     console.warn("Error calculating time offset:", err);
+          //   }
+          // }
 
-          // If no server time available, try to estimate based on most recent message
-          if (serverTimeOffset === 0 && response.data.result.length > 0) {
-            const latestMsg = response.data.result.reduce((latest, msg) => {
-              const msgTime = new Date(msg.message_sent_at || 0).getTime();
-              return msgTime > latest ? msgTime : latest;
-            }, 0);
+          // // If no server time available, try to estimate based on most recent message
+          // if (serverTimeOffset === 0 && response.data.result.length > 0) {
+          //   const latestMsg = response.data.result.reduce((latest, msg) => {
+          //     const msgTime = new Date(msg.message_sent_at || 0).getTime();
+          //     return msgTime > latest ? msgTime : latest;
+          //   }, 0);
 
-            // If latest message is in the future, use its offset
-            const now = Date.now();
-            if (latestMsg > now) {
-              const estimatedOffset = latestMsg - now + 1000; // Add 1 second buffer
-              console.log(`Estimated time offset from messages: ${estimatedOffset}ms`);
-              setServerTimeOffset(estimatedOffset);
-            }
-          }
+          //   // If latest message is in the future, use its offset
+          //   const now = Date.now();
+          //   if (latestMsg > now) {
+          //     const estimatedOffset = latestMsg - now + 1000; // Add 1 second buffer
+          //     console.log(`Estimated time offset from messages: ${estimatedOffset}ms`);
+          //     setServerTimeOffset(estimatedOffset);
+          //   }
+          // }
 
           apiMessages = response.data.result.map((msg) => {
             // Debug log the raw timestamp from server
@@ -436,63 +439,63 @@ export default function Chat() {
    * @param {string} utcTimestamp - ISO timestamp in UTC
    * @returns {string} - Timestamp adjusted to recipient's timezone
    */
-  const convertToLocalTimestamp = async (utcTimestamp) => {
-    try {
-      // If recipient location is not available, return the UTC timestamp
-      if (!recipientLatitude || !recipientLongitude || recipientLatitude === "No latitude provided" || recipientLongitude === "No longitude provided") {
-        console.log("Recipient location not available, using UTC timestamp");
-        return utcTimestamp;
-      }
+  // const convertToLocalTimestamp = async (utcTimestamp) => {
+  //   try {
+  //     // If recipient location is not available, return the UTC timestamp
+  //     if (!recipientLatitude || !recipientLongitude || recipientLatitude === "No latitude provided" || recipientLongitude === "No longitude provided") {
+  //       console.log("Recipient location not available, using UTC timestamp");
+  //       return utcTimestamp;
+  //     }
 
-      // Get the recipient's time zone using their coordinates
-      const timeZoneId = await getTimeZoneFromLatLng(recipientLatitude, recipientLongitude);
+  //     // Get the recipient's time zone using their coordinates
+  //     const timeZoneId = await getTimeZoneFromLatLng(recipientLatitude, recipientLongitude);
 
-      if (!timeZoneId) {
-        console.log("Could not determine recipient's timezone, using UTC timestamp");
-        return utcTimestamp;
-      }
+  //     if (!timeZoneId) {
+  //       console.log("Could not determine recipient's timezone, using UTC timestamp");
+  //       return utcTimestamp;
+  //     }
 
-      // Parse the UTC timestamp
-      const date = new Date(utcTimestamp);
+  //     // Parse the UTC timestamp
+  //     const date = new Date(utcTimestamp);
 
-      // Format the date to the recipient's timezone
-      const options = {
-        timeZone: timeZoneId,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-      };
+  //     // Format the date to the recipient's timezone
+  //     const options = {
+  //       timeZone: timeZoneId,
+  //       year: "numeric",
+  //       month: "2-digit",
+  //       day: "2-digit",
+  //       hour: "2-digit",
+  //       minute: "2-digit",
+  //       second: "2-digit",
+  //       hour12: false,
+  //     };
 
-      // Get the formatted parts in the recipient's timezone
-      const formatter = new Intl.DateTimeFormat("en-US", options);
-      const parts = formatter.formatToParts(date);
+  //     // Get the formatted parts in the recipient's timezone
+  //     const formatter = new Intl.DateTimeFormat("en-US", options);
+  //     const parts = formatter.formatToParts(date);
 
-      // Extract date parts
-      const dateParts = {};
-      parts.forEach((part) => {
-        if (part.type !== "literal") {
-          dateParts[part.type] = part.value;
-        }
-      });
+  //     // Extract date parts
+  //     const dateParts = {};
+  //     parts.forEach((part) => {
+  //       if (part.type !== "literal") {
+  //         dateParts[part.type] = part.value;
+  //       }
+  //     });
 
-      // Create an ISO-compatible string
-      // Format: YYYY-MM-DDThh:mm:ss.sssZ
-      const localISOString = `${dateParts.year}-${dateParts.month}-${dateParts.day}T${dateParts.hour}:${dateParts.minute}:${dateParts.second}.000Z`;
+  //     // Create an ISO-compatible string
+  //     // Format: YYYY-MM-DDThh:mm:ss.sssZ
+  //     const localISOString = `${dateParts.year}-${dateParts.month}-${dateParts.day}T${dateParts.hour}:${dateParts.minute}:${dateParts.second}.000Z`;
 
-      console.log(`Converted UTC timestamp ${utcTimestamp} to local ISO string ${localISOString} in timezone ${timeZoneId}`);
+  //     console.log(`Converted UTC timestamp ${utcTimestamp} to local ISO string ${localISOString} in timezone ${timeZoneId}`);
 
-      // Return the ISO formatted string
-      return localISOString;
-    } catch (error) {
-      console.error("Error converting timestamp to local time:", error);
-      // Fall back to UTC timestamp in case of error
-      return utcTimestamp;
-    }
-  };
+  //     // Return the ISO formatted string
+  //     return localISOString;
+  //   } catch (error) {
+  //     console.error("Error converting timestamp to local time:", error);
+  //     // Fall back to UTC timestamp in case of error
+  //     return utcTimestamp;
+  //   }
+  // };
 
   // Handle sending messages
   const handleSend = async (text) => {
@@ -564,15 +567,6 @@ export default function Chat() {
     const nowUtc = now.toISOString();
     console.log("now:", now);
     console.log("nowUtc:", nowUtc);
-    // Apply the server time offset if needed for consistency
-    // if (serverTimeOffset !== 0) {
-    //   now.setTime(now.getTime() + serverTimeOffset);
-    // }
-    // console.log("now after serverTimeOffset:", now);
-
-    // Get timestamp in UTC format
-    // const utcTimestamp = now.toISOString();
-    // console.log("utcTimestamp:", utcTimestamp);
 
     // Create temporary message with client-generated ID using the UTC timestamp directly
     const tempMessage = {
@@ -715,66 +709,66 @@ export default function Chat() {
 
   // Debug utility for timestamp conversions - can be called from dev console
   // Not used in the application flow but helpful for debugging
-  if (__DEV__) {
-    global.debugTimestamp = {
-      // Test standardizing a MySQL timestamp
-      standardize: (mysqlTimestamp) => {
-        console.log("Testing timestamp standardization");
-        console.log("Input MySQL timestamp:", mysqlTimestamp);
-        const standardized = standardizeTimestamp(mysqlTimestamp);
-        console.log("Standardized timestamp:", standardized);
-        return standardized;
-      },
+  // if (__DEV__) {
+  //   global.debugTimestamp = {
+  //     // Test standardizing a MySQL timestamp
+  //     standardize: (mysqlTimestamp) => {
+  //       console.log("Testing timestamp standardization");
+  //       console.log("Input MySQL timestamp:", mysqlTimestamp);
+  //       const standardized = standardizeTimestamp(mysqlTimestamp);
+  //       console.log("Standardized timestamp:", standardized);
+  //       return standardized;
+  //     },
 
-      // Test display formatting with different timezones
-      formatWithTimezone: (timestamp, timezone) => {
-        console.log("Testing timestamp formatting with timezone");
-        console.log("Input timestamp:", timestamp);
-        console.log("Test timezone:", timezone);
+  //     // Test display formatting with different timezones
+  //     formatWithTimezone: (timestamp, timezone) => {
+  //       console.log("Testing timestamp formatting with timezone");
+  //       console.log("Input timestamp:", timestamp);
+  //       console.log("Test timezone:", timezone);
 
-        try {
-          const date = new Date(timestamp);
-          const formatted = date.toLocaleTimeString("en-US", {
-            timeZone: timezone,
-            hour: "numeric",
-            minute: "2-digit",
-            hour12: true,
-          });
-          console.log("Formatted result:", formatted);
-          return formatted;
-        } catch (err) {
-          console.error("Error in test formatting:", err);
-          return "Error formatting";
-        }
-      },
+  //       try {
+  //         const date = new Date(timestamp);
+  //         const formatted = date.toLocaleTimeString("en-US", {
+  //           timeZone: timezone,
+  //           hour: "numeric",
+  //           minute: "2-digit",
+  //           hour12: true,
+  //         });
+  //         console.log("Formatted result:", formatted);
+  //         return formatted;
+  //       } catch (err) {
+  //         console.error("Error in test formatting:", err);
+  //         return "Error formatting";
+  //       }
+  //     },
 
-      // Analyze the current state of timestamp handling
-      analyzeMessage: (messageId) => {
-        const message = messages.find((m) => m.id === messageId);
-        if (!message) {
-          console.log("Message not found with ID:", messageId);
-          return null;
-        }
+  //     // Analyze the current state of timestamp handling
+  //     analyzeMessage: (messageId) => {
+  //       const message = messages.find((m) => m.id === messageId);
+  //       if (!message) {
+  //         console.log("Message not found with ID:", messageId);
+  //         return null;
+  //       }
 
-        console.log("Message analysis:", {
-          id: message.id,
-          text: message.text,
-          rawTimestamp: message.timestamp,
-          parsedDate: new Date(message.timestamp).toString(),
-          utcString: new Date(message.timestamp).toUTCString(),
-          localString: new Date(message.timestamp).toLocaleString(),
-          formattedDisplay: formatMessageTime(message.timestamp),
-          recipientCoords: {
-            lat: recipientLatitude,
-            lng: recipientLongitude,
-          },
-          cachedTimeZone: cachedTimeZoneId,
-        });
+  //       console.log("Message analysis:", {
+  //         id: message.id,
+  //         text: message.text,
+  //         rawTimestamp: message.timestamp,
+  //         parsedDate: new Date(message.timestamp).toString(),
+  //         utcString: new Date(message.timestamp).toUTCString(),
+  //         localString: new Date(message.timestamp).toLocaleString(),
+  //         formattedDisplay: formatMessageTime(message.timestamp),
+  //         recipientCoords: {
+  //           lat: recipientLatitude,
+  //           lng: recipientLongitude,
+  //         },
+  //         cachedTimeZone: cachedTimeZoneId,
+  //       });
 
-        return message;
-      },
-    };
-  }
+  //       return message;
+  //     },
+  //   };
+  // }
 
   // Get grouped messages
   const groupedMessages = groupMessagesByDate(messages);

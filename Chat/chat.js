@@ -646,6 +646,7 @@ export default function Chat() {
       }
     } else {
       try {
+        console.log("Inside else: I'm sorry, maybe next time");
         // Update UI state first with temporary message
         setInvitationResponseSent(true);
         setMessages((prev) => [...prev, tempMessage]);
@@ -667,7 +668,7 @@ export default function Chat() {
         if (messageResponse.data && messageResponse.data.message_uid) {
           // Get standardized UTC timestamp from server
           console.log("Server returned raw timestamp (decline):", messageResponse.data.message_sent_at);
-          const serverUtcTimestamp = standardizeTimestamp(messageResponse.data.message_sent_at || utcTimestamp);
+          const serverUtcTimestamp = nowUtc;
           console.log("Standardized server timestamp (decline):", serverUtcTimestamp);
 
           // Create server message with the server timestamp

@@ -288,12 +288,291 @@ export default function AddMediaScreen({ navigation }) {
   }, [videoFileSize, photoFileSizes]);
 
   // Update the uploadMediaToBackend function to check total file size
-  const uploadMediaToBackend = async () => {
-    console.log("--- In AddMediaScreen.js uploadMediaToBackend Function ---");
+  // const uploadMediaToBackend = async () => {
+  //   console.log("--- In AddMediaScreen.js uploadMediaToBackend Function ---");
+  //   try {
+  //     setIsLoading(true);
+
+  //     // Check if userId and userEmail are available
+  //     if (!userId || !userEmail) {
+  //       Alert.alert("Error", "User ID or email missing. Please log in again.");
+  //       setIsLoading(false);
+  //       return;
+  //     }
+
+  //     // Check total file size before uploading using MediaHelper
+  //     const totalSize = checkTotalFileSize();
+  //     const shouldProceed = await MediaHelper.promptLargeFileSize(totalSize, 5);
+
+  //     if (!shouldProceed) {
+  //       setIsLoading(false);
+  //       return; // Stop the save process
+  //     }
+
+  //     // try{}
+
+  //     const uploadData = new FormData();
+  //     uploadData.append("user_uid", userId);
+
+  //     uploadData.append("user_email_id", userEmail);
+
+  //     // Filter out null photos and get only valid URIs
+  //     const validPhotos = photos.filter((uri) => uri !== null);
+  //     console.log("=== Debug Photo Arrays ===");
+  //     console.log("Photos array:", validPhotos);
+  //     console.log("=== End Debug Photo Arrays ===");
+
+  //     // Add photos to FormData with sequential indices
+  //     validPhotos.forEach((uri, index) => {
+  //       console.log(`Adding new local photo ${index}:`, uri);
+  //       uploadData.append(`img_${index}`, {
+  //         uri,
+  //         type: "image/jpeg",
+  //         name: `img_${index}.jpg`,
+  //       });
+  //     });
+
+  //     console.log("=== End Photo Upload Debug ===");
+
+  //     // Handle video upload
+  //     console.log("=== Video Upload Debug ===");
+
+  //     console.log("Current video URL:", videoUri);
+
+  //     // Check if new video
+  //     if (videoUri) {
+  //       // setUploadStatus("Preparing video upload...");
+
+  //       // Enhanced S3 direct upload - align with EditProfile.js approach
+  //       console.log("--- In AddMediaScreen.js, using S3 direct upload ---");
+  //       // First get the presigned URL (same as EditProfile.js)
+  //       const presignedData = await MediaHelper.getPresignedUrl(userId);
+  //       console.log("Presigned data:", presignedData);
+
+  //       if (presignedData && presignedData.url) {
+  //         // setUploadStatus(`Uploading ${videoFileSize}MB video directly to S3...`);
+  //         console.log("Got presigned URL, starting upload to S3...", presignedData.url);
+
+  //         // Perform the actual upload
+  //         const uploadResult = await MediaHelper.uploadVideoToS3(videoUri, presignedData.url);
+  //         const uploadSuccess = uploadResult.success;
+  //         console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
+
+  //         Alert.alert("Debug Info", `Video URI: ${videoUri}\nPresigned URL: ${presignedData?.url}\nVideo URL: ${presignedData?.videoUrl}\nUpload Success: ${uploadSuccess}`);
+
+  //         if (uploadSuccess && presignedData.videoUrl) {
+  //           console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
+  //           // setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
+
+  //           uploadData.append("user_video_url", presignedData.videoUrl);
+  //           console.log("Added user_video_url to form data:", presignedData.videoUrl);
+  //         } else {
+  //           console.error("Direct S3 upload failed, showing alert to user");
+  //           // setUploadStatus("S3 upload failed, waiting for user input...");
+
+  //           // Show alert to user with options to try regular upload or cancel
+  //           return new Promise((resolve) => {
+  //             Alert.alert("S3 Upload Failed", "Your video could not be uploaded to our secure server. Would you like to try a regular upload instead?", [
+  //               {
+  //                 text: "Cancel",
+  //                 style: "cancel",
+  //                 onPress: () => {
+  //                   console.log("User cancelled after S3 upload failure");
+  //                   setIsLoading(false);
+  //                   // setUploadStatus("");
+  //                   navigation.goBack(); // Return to previous screen
+  //                   resolve(false);
+  //                 },
+  //               },
+  //               {
+  //                 text: "OK",
+  //                 onPress: () => {
+  //                   console.log("User opted to try regular upload");
+  //                   // setUploadStatus("Trying regular upload...");
+  //                   // Fall back to regular upload
+  //                   console.log("Adding video as multipart form data...");
+  //                   uploadData.append("user_video", {
+  //                     uri: videoUri,
+  //                     type: "video/mp4",
+  //                     name: "user_video.mp4",
+  //                   });
+  //                   console.log("Added user_video to form data as multipart");
+  //                   resolve(true);
+  //                 },
+  //               },
+  //             ]);
+  //           }).then((shouldContinue) => {
+  //             if (!shouldContinue) {
+  //               throw new Error("Upload cancelled by user after S3 upload failure");
+  //             }
+  //           });
+  //         }
+  //       } else {
+  //         console.error("Failed to get presigned URL, showing alert to user");
+  //         // setUploadStatus("Failed to get presigned URL, waiting for user input...");
+
+  //         // Show alert to user with options to try regular upload or cancel
+  //         return new Promise((resolve) => {
+  //           Alert.alert("S3 Upload Failed", "We couldn't prepare our secure server for upload. Would you like to try a regular upload instead?", [
+  //             {
+  //               text: "Cancel",
+  //               style: "cancel",
+  //               onPress: () => {
+  //                 console.log("User cancelled after presigned URL failure");
+  //                 setIsLoading(false);
+  //                 // setUploadStatus("");
+  //                 navigation.goBack(); // Return to previous screen
+  //                 resolve(false);
+  //               },
+  //             },
+  //             {
+  //               text: "OK",
+  //               onPress: () => {
+  //                 console.log("User opted to try regular upload");
+  //                 // setUploadStatus("Trying regular upload...");
+  //                 // Fall back to regular upload
+  //                 console.log("Adding video as multipart form data (presigned URL failed)...");
+  //                 uploadData.append("user_video", {
+  //                   uri: videoUri,
+  //                   type: "video/mp4",
+  //                   name: "user_video.mp4",
+  //                 });
+  //                 console.log("Added user_video to form data as multipart");
+  //                 resolve(true);
+  //               },
+  //             },
+  //           ]);
+  //         }).then((shouldContinue) => {
+  //           if (!shouldContinue) {
+  //             throw new Error("Upload cancelled by user after presigned URL failure");
+  //           }
+  //         });
+  //       }
+  //     }
+
+  //     console.log("=== End Video Upload Debug ===");
+
+  //     // Make the upload request
+  //     console.log("=== Profile Update API Request ===", uploadData);
+  //     // console.log("Making API request to update profile with timeout of 120 seconds...");
+  //     // console.log("API endpoint: https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo");
+
+  //     // Log the FormData contents (but not the actual file data)
+  //     // console.log("FormData contents:");
+  //     // for (let [key, value] of uploadData._parts) {
+  //     //   if (key === "user_video") {
+  //     //     console.log(`${key}: [File data omitted, size: ${videoFileSize}MB]`);
+  //     //   } else if (key.startsWith("img_")) {
+  //     //     // Extract the index from img_0, img_1, etc.
+  //     //     const imgIndex = parseInt(key.substring(4), 10);
+  //     //     const fileSize = photoFileSizes[imgIndex] || "unknown";
+  //     //     console.log(`${key}: [File data omitted, size: ${fileSize}MB]`);
+  //     //   } else {
+  //     //     console.log(`${key}: ${value}`);
+  //     //   }
+  //     // }
+
+  //     const startTime = Date.now();
+  //     // setUploadStatus("Sending data to server...", uploadData);
+
+  //     const response = await axios.put("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo", uploadData, {
+  //       headers: {
+  //         "Content-Type": "multipart/form-data",
+  //         Accept: "application/json",
+  //       },
+  //       timeout: 120000, // Increase timeout to 2 minutes for large files
+  //       maxContentLength: Infinity,
+  //       maxBodyLength: Infinity,
+  //     });
+
+  //     const endTime = Date.now();
+  //     const requestDuration = (endTime - startTime) / 1000; // in seconds
+  //     console.log("Request duration:", requestDuration.toFixed(2) + " seconds");
+
+  //     if (response.status === 200) {
+  //       // setUploadStatus("Upload successful!");
+  //       console.log("Upload successful!");
+  //       Alert.alert("Success", `Your profile has been updated!`);
+  //       // Alert.alert("Success", `Video URL: ${presignedData.videoUrl}`);
+
+  //       // This is the only functionality difference from EditProfile.js - navigate to next screen
+  //       navigation.navigate("LocationScreen", { photos, videoUri });
+  //     }
+  //   } catch (error) {
+  //     console.error("Error uploading profile:");
+
+  //     let errorMessage = "Something went wrong while uploading.";
+  //     let errorDetails = "";
+
+  //     if (error.response) {
+  //       // The request was made and the server responded with a status code outside of 2xx range
+  //       console.error("Response data:", error.response.data);
+  //       console.error("Response status:", error.response.status);
+  //       console.error("Response headers:", error.response.headers);
+
+  //       errorMessage = "Server Error";
+
+  //       if (error.response.status === 413) {
+  //         errorDetails = "The video is too large.  Please record a shorter video and try again.";
+  //       } else if (error.response.status === 403) {
+  //         errorDetails = "You don't have permission to upload this content.";
+  //       } else if (error.response.status === 500) {
+  //         errorDetails = "Our server encountered an error. Please try again later.";
+  //       } else {
+  //         errorDetails = `Error ${error.response.status}: ${error.response.data?.message || error.response.statusText || "Unknown error"}`;
+  //       }
+  //     } else if (error.request) {
+  //       // The request was made but no response was received
+  //       console.error("Error Request:", error.request);
+  //       errorMessage = "Network Error";
+  //       errorDetails = "Unable to connect to our servers. Please check your internet connection and try again.";
+  //     } else {
+  //       // Something happened in setting up the request
+  //       console.error("Error Message:", error.message);
+  //       errorMessage = "Upload Failed";
+  //       errorDetails = error.message || "An unexpected error occurred during upload.";
+  //     }
+
+  //     // Show alert with retry option
+  //     Alert.alert(errorMessage, errorDetails, [
+  //       {
+  //         text: "Try Again",
+  //         onPress: () => {
+  //           // Wait a moment before retrying
+  //           setTimeout(() => {
+  //             uploadMediaToBackend();
+  //           }, 1000);
+  //         },
+  //       },
+  //       { text: "Cancel", style: "cancel" },
+  //     ]);
+  //   } finally {
+  //     setIsLoading(false);
+  //     // setUploadStatus("");
+  //   }
+  // };
+
+  const isFormComplete = photos.some((p) => p !== null) || videoUri;
+
+  // const handleContinueOG = async () => {
+  //   if (isFormComplete) {
+  //     await uploadMediaToBackend();
+  //     // Note: Navigation to LocationScreen is now handled in uploadMediaToBackend
+  //     // only after a successful upload
+  //   } else {
+  //     // Show a message if no media was selected
+  //     Alert.alert("Missing Content", "Please add at least one photo or video before continuing.", [{ text: "OK" }]);
+  //   }
+  // };
+
+  const handleContinue = async () => {
+    console.log("--- In AddMediaScreen.js handleContinue Function ---");
     try {
       setIsLoading(true);
 
-      if (!userId || !userEmail) {
+      // Get user_uid
+      const uid = userId;
+      if (!uid || !userEmail) {
         Alert.alert("Error", "User ID or email missing. Please log in again.");
         setIsLoading(false);
         return;
@@ -305,280 +584,141 @@ export default function AddMediaScreen({ navigation }) {
 
       if (!shouldProceed) {
         setIsLoading(false);
-        return; // Stop the save process
+        return;
       }
 
-      // Log form data before upload
-      // console.log(
-      //   "FORM DATA before upload in AddMediaScreen.js:",
-      //   JSON.stringify(
-      //     {
-      //       user_uid: userId,
-      //       user_email_id: userEmail,
-      //       photos: photos.map((p) => (p ? (typeof p === "string" ? (p.length > 50 ? p.substring(0, 50) + "..." : p) : "[Object]") : null)),
-      //       videoUri: videoUri ? (videoUri.length > 50 ? videoUri.substring(0, 50) + "..." : videoUri) : null,
-      //       videoFileSize: videoFileSize,
-      //       photoFileSizes: photoFileSizes,
+      try {
+        // Validate the form before submitting
+        // Check if there have been any changes
+        // Only upload if there are changes
+        // Check phone number format if provided
 
-      //     },
-      //     null,
-      //     2
-      //   )
-      // );
+        // Create FormData object
+        const uploadData = new FormData();
+        uploadData.append("user_uid", uid);
 
-      // try{}
+        // Add modified fields to FormData
+        uploadData.append("user_email_id", userEmail);
 
-      const uploadData = new FormData();
-      uploadData.append("user_uid", userId);
+        // Filter out null photos and get only valid URIs
+        const validPhotos = photos.filter((uri) => uri !== null);
+        console.log("=== Debug Photo Arrays ===");
+        console.log("Photos array:", validPhotos);
+        console.log("=== End Debug Photo Arrays ===");
 
-      uploadData.append("user_email_id", userEmail);
-
-      // Filter out null photos and get only valid URIs
-      const validPhotos = photos.filter((uri) => uri !== null);
-      console.log("=== Debug Photo Arrays ===");
-      console.log("Photos array:", validPhotos);
-      console.log("=== End Debug Photo Arrays ===");
-
-      // Add photos to FormData with sequential indices
-      validPhotos.forEach((uri, index) => {
-        console.log(`Adding new local photo ${index}:`, uri);
-        uploadData.append(`img_${index}`, {
-          uri,
-          type: "image/jpeg",
-          name: `img_${index}.jpg`,
+        // Add photos to FormData with sequential indices
+        validPhotos.forEach((uri, index) => {
+          console.log(`Adding new local photo ${index}:`, uri);
+          uploadData.append(`img_${index}`, {
+            uri,
+            type: "image/jpeg",
+            name: `img_${index}.jpg`,
+          });
         });
-      });
 
-      console.log("=== End Photo Upload Debug ===");
+        console.log("=== End Photo Upload Debug ===");
 
-      // Handle video upload
-      console.log("=== Video Upload Debug ===");
+        // Handle video upload
+        console.log("=== Video Upload Debug ===");
+        //
+        //
+        console.log("Current video URL:", videoUri);
 
-      console.log("Current video URL:", videoUri);
+        // Check if video was deleted or changed
+        if (videoUri) {
+          // First get the presigned URL (same as EditProfile.js)
+          const presignedData = await MediaHelper.getPresignedUrl(uid);
 
-      // Check if new video
-      if (videoUri) {
-        // setUploadStatus("Preparing video upload...");
-
-        // Enhanced S3 direct upload - align with EditProfile.js approach
-        console.log("--- In AddMediaScreen.js, using S3 direct upload ---");
-        // First get the presigned URL (same as EditProfile.js)
-        const presignedData = await MediaHelper.getPresignedUrl(userId);
-        console.log("Presigned data:", presignedData);
-
-        if (presignedData && presignedData.url) {
           // setUploadStatus(`Uploading ${videoFileSize}MB video directly to S3...`);
-          console.log("Got presigned URL, starting upload to S3...", presignedData.url);
 
-          // Perform the actual upload
           const uploadResult = await MediaHelper.uploadVideoToS3(videoUri, presignedData.url);
           const uploadSuccess = uploadResult.success;
           console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
 
-          Alert.alert("Debug Info", `Video URI: ${videoUri}\nPresigned URL: ${presignedData?.url}\nVideo URL: ${presignedData?.videoUrl}\nUpload Success: ${uploadSuccess}`);
+          // Alert.alert("Debug Info", `Video URI: ${videoUri}\nPresigned URL: ${presignedData?.url}\nVideo URL: ${presignedData?.videoUrl}\nUpload Success: ${uploadSuccess}`);
 
           if (uploadSuccess && presignedData.videoUrl) {
             console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
-            // setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
 
             uploadData.append("user_video_url", presignedData.videoUrl);
             console.log("Added user_video_url to form data:", presignedData.videoUrl);
           } else {
-            console.error("Direct S3 upload failed, showing alert to user");
-            // setUploadStatus("S3 upload failed, waiting for user input...");
+            console.error("Direct S3 upload failed");
+            // setUploadStatus("S3 upload failed, falling back to regular upload");
 
-            // Show alert to user with options to try regular upload or cancel
-            return new Promise((resolve) => {
-              Alert.alert("S3 Upload Failed", "Your video could not be uploaded to our secure server. Would you like to try a regular upload instead?", [
-                {
-                  text: "Cancel",
-                  style: "cancel",
-                  onPress: () => {
-                    console.log("User cancelled after S3 upload failure");
-                    setIsLoading(false);
-                    // setUploadStatus("");
-                    navigation.goBack(); // Return to previous screen
-                    resolve(false);
-                  },
-                },
-                {
-                  text: "OK",
-                  onPress: () => {
-                    console.log("User opted to try regular upload");
-                    // setUploadStatus("Trying regular upload...");
-                    // Fall back to regular upload
-                    console.log("Adding video as multipart form data...");
-                    uploadData.append("user_video", {
-                      uri: videoUri,
-                      type: "video/mp4",
-                      name: "user_video.mp4",
-                    });
-                    console.log("Added user_video to form data as multipart");
-                    resolve(true);
-                  },
-                },
-              ]);
-            }).then((shouldContinue) => {
-              if (!shouldContinue) {
-                throw new Error("Upload cancelled by user after S3 upload failure");
-              }
-            });
+            // // Fall back to regular upload
+            // console.log("Adding video as multipart form data...");
+            // uploadData.append("user_video", {
+            //   uri: videoUri,
+            //   type: "video/mp4",
+            //   name: "user_video.mp4",
+            // });
+            // console.log("Added user_video to form data as multipart");
+          }
+        }
+        console.log("=== End Video Upload Debug ===");
+
+        // Make the upload request
+        console.log("=== Profile Update API Request ===", uploadData);
+        console.log("Making API request to update profile with timeout of 120 seconds...");
+        console.log("API endpoint: https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo");
+
+        const startTime = Date.now();
+        console.log("FORM DATA Being sent to server from EditProfile.js: ", uploadData);
+        // setUploadStatus("Sending data to server...", uploadData);
+
+        const response = await axios.put("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo", uploadData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Accept: "application/json",
+          },
+          timeout: 120000, // Increase timeout to 2 minutes for large files
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
+        });
+
+        const endTime = Date.now();
+        const requestDuration = (endTime - startTime) / 1000; // in seconds
+        console.log("Request duration:", requestDuration.toFixed(2) + " seconds");
+
+        if (response.status === 200) {
+          //
+          console.log("Upload successful!");
+          Alert.alert("Success", `Your profile has been updated!`);
+          // Alert.alert("Success", `Video URL: ${presignedData.videoUrl}`);
+
+          // This is the only functionality difference from EditProfile.js - navigate to next screen
+          navigation.navigate("LocationScreen", { photos, videoUri });
+        }
+      } catch (error) {
+        console.error("Error uploading profile:");
+        if (error.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          console.error("Response data:", error.response.data);
+          console.error("Response status:", error.response.status);
+          console.error("Response headers:", error.response.headers);
+          Alert.alert("Server Error", `Failed to update profile. Please consider selecting smaller videos and photos or try saving images individually.`);
+        } else if (error.request) {
+          // The request was made but no response was received
+          console.error("No response received:", error.request);
+          if (error.code === "ECONNABORTED") {
+            Alert.alert("Timeout Error", "The request took too long to complete. Please consider selecting smaller videos and photos or try saving images individually.");
+          } else {
+            Alert.alert("Network Error", "Failed to update profile. Please check your internet connection and try again.");
           }
         } else {
-          console.error("Failed to get presigned URL, showing alert to user");
-          // setUploadStatus("Failed to get presigned URL, waiting for user input...");
-
-          // Show alert to user with options to try regular upload or cancel
-          return new Promise((resolve) => {
-            Alert.alert("S3 Upload Failed", "We couldn't prepare our secure server for upload. Would you like to try a regular upload instead?", [
-              {
-                text: "Cancel",
-                style: "cancel",
-                onPress: () => {
-                  console.log("User cancelled after presigned URL failure");
-                  setIsLoading(false);
-                  // setUploadStatus("");
-                  navigation.goBack(); // Return to previous screen
-                  resolve(false);
-                },
-              },
-              {
-                text: "OK",
-                onPress: () => {
-                  console.log("User opted to try regular upload");
-                  // setUploadStatus("Trying regular upload...");
-                  // Fall back to regular upload
-                  console.log("Adding video as multipart form data (presigned URL failed)...");
-                  uploadData.append("user_video", {
-                    uri: videoUri,
-                    type: "video/mp4",
-                    name: "user_video.mp4",
-                  });
-                  console.log("Added user_video to form data as multipart");
-                  resolve(true);
-                },
-              },
-            ]);
-          }).then((shouldContinue) => {
-            if (!shouldContinue) {
-              throw new Error("Upload cancelled by user after presigned URL failure");
-            }
-          });
+          // Something happened in setting up the request that triggered an Error
+          console.error("Error message:", error.message);
+          Alert.alert("Error", `An error occurred: ${error.message}`);
         }
-      }
-
-      console.log("=== End Video Upload Debug ===");
-
-      // Make the upload request
-      console.log("=== Profile Update API Request ===", uploadData);
-      // console.log("Making API request to update profile with timeout of 120 seconds...");
-      // console.log("API endpoint: https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo");
-
-      // Log the FormData contents (but not the actual file data)
-      // console.log("FormData contents:");
-      // for (let [key, value] of uploadData._parts) {
-      //   if (key === "user_video") {
-      //     console.log(`${key}: [File data omitted, size: ${videoFileSize}MB]`);
-      //   } else if (key.startsWith("img_")) {
-      //     // Extract the index from img_0, img_1, etc.
-      //     const imgIndex = parseInt(key.substring(4), 10);
-      //     const fileSize = photoFileSizes[imgIndex] || "unknown";
-      //     console.log(`${key}: [File data omitted, size: ${fileSize}MB]`);
-      //   } else {
-      //     console.log(`${key}: ${value}`);
-      //   }
-      // }
-
-      const startTime = Date.now();
-      // setUploadStatus("Sending data to server...", uploadData);
-
-      const response = await axios.put("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo", uploadData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Accept: "application/json",
-        },
-        timeout: 120000, // Increase timeout to 2 minutes for large files
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity,
-      });
-
-      const endTime = Date.now();
-      const requestDuration = (endTime - startTime) / 1000; // in seconds
-      console.log("Request duration:", requestDuration.toFixed(2) + " seconds");
-
-      if (response.status === 200) {
-        // setUploadStatus("Upload successful!");
-        console.log("Upload successful!");
-        Alert.alert("Success", `Your profile has been updated!`);
-        // Alert.alert("Success", `Video URL: ${presignedData.videoUrl}`);
-
-        // This is the only functionality difference from EditProfile.js - navigate to next screen
-        navigation.navigate("LocationScreen", { photos, videoUri });
+        setIsLoading(false);
+      } finally {
+        setIsLoading(false);
       }
     } catch (error) {
-      console.error("Error uploading profile:");
-
-      let errorMessage = "Something went wrong while uploading.";
-      let errorDetails = "";
-
-      if (error.response) {
-        // The request was made and the server responded with a status code outside of 2xx range
-        console.error("Response data:", error.response.data);
-        console.error("Response status:", error.response.status);
-        console.error("Response headers:", error.response.headers);
-
-        errorMessage = "Server Error";
-
-        if (error.response.status === 413) {
-          errorDetails = "The video is too large.  Please record a shorter video and try again.";
-        } else if (error.response.status === 403) {
-          errorDetails = "You don't have permission to upload this content.";
-        } else if (error.response.status === 500) {
-          errorDetails = "Our server encountered an error. Please try again later.";
-        } else {
-          errorDetails = `Error ${error.response.status}: ${error.response.data?.message || error.response.statusText || "Unknown error"}`;
-        }
-      } else if (error.request) {
-        // The request was made but no response was received
-        console.error("Error Request:", error.request);
-        errorMessage = "Network Error";
-        errorDetails = "Unable to connect to our servers. Please check your internet connection and try again.";
-      } else {
-        // Something happened in setting up the request
-        console.error("Error Message:", error.message);
-        errorMessage = "Upload Failed";
-        errorDetails = error.message || "An unexpected error occurred during upload.";
-      }
-
-      // Show alert with retry option
-      Alert.alert(errorMessage, errorDetails, [
-        {
-          text: "Try Again",
-          onPress: () => {
-            // Wait a moment before retrying
-            setTimeout(() => {
-              uploadMediaToBackend();
-            }, 1000);
-          },
-        },
-        { text: "Cancel", style: "cancel" },
-      ]);
-    } finally {
+      console.error("Error uploading profile:", error);
       setIsLoading(false);
-      // setUploadStatus("");
-    }
-  };
-
-  const isFormComplete = photos.some((p) => p !== null) || videoUri;
-
-  const handleContinue = async () => {
-    if (isFormComplete) {
-      await uploadMediaToBackend();
-      // Note: Navigation to LocationScreen is now handled in uploadMediaToBackend
-      // only after a successful upload
-    } else {
-      // Show a message if no media was selected
-      Alert.alert("Missing Content", "Please add at least one photo or video before continuing.", [{ text: "OK" }]);
     }
   };
 

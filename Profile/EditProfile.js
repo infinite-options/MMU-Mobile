@@ -1272,29 +1272,6 @@ export default function EditProfile() {
         return;
       }
 
-      // Log form data before upload
-      // console.log(
-      //   "FORM DATA before upload in EditProfile.js:",
-      //   JSON.stringify(
-      //     {
-      //       user_uid: uid,
-      //       formValues: formValues,
-      //       photos: photos.map((p) => (p ? (typeof p === "string" ? (p.length > 50 ? p.substring(0, 50) + "..." : p) : "[Object]") : null)),
-      //       videoUri: videoUri ? (videoUri.length > 50 ? videoUri.substring(0, 50) + "..." : videoUri) : null,
-      //       videoFileSize: videoFileSize,
-      //       bodyType: bodyTypeValue,
-      //       gender: genderValue,
-      //       identity: identityValue,
-      //       deletedPhotos: deletedPhotos.length,
-      //       deletedVideo: deletedVideo,
-      //       interests: interests.length,
-      //       dateTypes: dateTypes.length,
-      //     },
-      //     null,
-      //     2
-      //   )
-      // );
-
       try {
         // Validate the form before submitting
         // Check if there have been any changes
@@ -1368,17 +1345,17 @@ export default function EditProfile() {
           // New Video. Check if it's a test video
 
           // First get the presigned URL (same as EditProfile.js)
-          const presignedData = await getPresignedUrl(uid);
+          const presignedData = await MediaHelper.getPresignedUrl(uid);
 
           // setUploadStatus(`Uploading ${videoFileSize}MB video directly to S3...`);
 
-          const uploadResult = await uploadVideoToS3(videoUri, presignedData.url);
+          const uploadResult = await MediaHelper.uploadVideoToS3(videoUri, presignedData.url);
           const uploadSuccess = uploadResult.success;
           console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
 
           if (uploadSuccess && presignedData.videoUrl) {
             console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
-            // setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
+
             // Only include user_delete_video if there was an original video to delete
             if (originalVideoUrl) {
               uploadData.append("user_delete_video", JSON.stringify([originalVideoUrl]));

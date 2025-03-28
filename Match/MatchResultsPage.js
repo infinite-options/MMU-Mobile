@@ -201,136 +201,141 @@ const MatchResultsPage = () => {
       }
 
       // If parse succeeded, proceed
-      console.log("--- data ---", data);
+      console.log("--- Matched Results data ---", data);
 
       const matchedResultsData = data.matched_results || [];
       const interestedInMeData = data.people_who_selected_you || [];
       const interestedInData = data.people_whom_you_selected || [];
 
-      console.log(`MATCH DEBUG: Found ${matchedResultsData.length} matches, ${interestedInMeData.length} people interested in me, ${interestedInData.length} people I'm interested in`);
+      console.log("--- MATCH DEBUG: Matched Results Data ---", matchedResultsData);
 
-      // Fetch user details including interests for each matched user
-      console.log("MATCH DEBUG: Starting to fetch details for matched users");
-      const matchedDetailsStartTime = Date.now();
+      // Set the state with the data received from the API
+      setMatchedResults(matchedResultsData);
+      setInterestedInMe(interestedInMeData);
+      setInterestedIn(interestedInData);
 
-      const enrichedMatchedResults = await Promise.all(
-        matchedResultsData.map(async (match, index) => {
-          try {
-            console.log(`MATCH DEBUG: Fetching details for matched user ${index + 1}/${matchedResultsData.length}: ${match.user_uid}`);
-            const userInfoUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${match.user_uid}`;
-            const startTime = Date.now();
-            const userInfoResponse = await axios.get(userInfoUrl, { timeout: 15000 }); // Increase timeout to 15 seconds
-            const duration = Date.now() - startTime;
-            console.log(`MATCH DEBUG: Fetched details for matched user ${match.user_uid} in ${duration}ms`);
+      // // Fetch user details including interests for each matched user
+      // console.log("MATCH DEBUG: Starting to fetch details for matched users");
+      // const matchedDetailsStartTime = Date.now();
 
-            if (userInfoResponse.data && userInfoResponse.data.result && userInfoResponse.data.result.length > 0) {
-              const userDetails = userInfoResponse.data.result[0];
-              console.log(`MATCH DEBUG: User ${match.user_uid} details from API:`, {
-                favorite_photo: userDetails.user_favorite_photo,
-                photo_urls: userDetails.user_photo_url,
-              });
-              // Merge the user details into the match data
-              return {
-                ...match,
-                user_general_interests: userDetails.user_general_interests,
-                user_favorite_photo: userDetails.user_favorite_photo,
-              };
-            }
-            return match;
-          } catch (error) {
-            console.error(`MATCH DEBUG: ⚠️ ERROR fetching interests for user ${match.user_uid}:`, error.message);
-            if (error.code === "ECONNABORTED") {
-              console.error(`MATCH DEBUG: ⚠️ TIMEOUT occurred for user ${match.user_uid}`);
-            }
-            return match;
-          }
-        })
-      );
+      // const enrichedMatchedResults = await Promise.all(
+      //   matchedResultsData.map(async (match, index) => {
+      //     try {
+      //       console.log(`MATCH DEBUG: Fetching details for matched user ${index + 1}/${matchedResultsData.length}: ${match.user_uid}`);
+      //       const userInfoUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${match.user_uid}`;
+      //       const startTime = Date.now();
+      //       const userInfoResponse = await axios.get(userInfoUrl, { timeout: 15000 }); // Increase timeout to 15 seconds
+      //       const duration = Date.now() - startTime;
+      //       console.log(`MATCH DEBUG: Fetched details for matched user ${match.user_uid} in ${duration}ms`);
 
-      const matchedDetailsDuration = Date.now() - matchedDetailsStartTime;
-      console.log(`MATCH DEBUG: Completed fetching matched user details in ${matchedDetailsDuration}ms`);
+      //       if (userInfoResponse.data && userInfoResponse.data.result && userInfoResponse.data.result.length > 0) {
+      //         const userDetails = userInfoResponse.data.result[0];
+      //         console.log(`MATCH DEBUG: User ${match.user_uid} details from API:`, {
+      //           favorite_photo: userDetails.user_favorite_photo,
+      //           photo_urls: userDetails.user_photo_url,
+      //         });
+      //         // Merge the user details into the match data
+      //         return {
+      //           ...match,
+      //           user_general_interests: userDetails.user_general_interests,
+      //           user_favorite_photo: userDetails.user_favorite_photo,
+      //         };
+      //       }
+      //       return match;
+      //     } catch (error) {
+      //       console.error(`MATCH DEBUG: ⚠️ ERROR fetching interests for user ${match.user_uid}:`, error.message);
+      //       if (error.code === "ECONNABORTED") {
+      //         console.error(`MATCH DEBUG: ⚠️ TIMEOUT occurred for user ${match.user_uid}`);
+      //       }
+      //       return match;
+      //     }
+      //   })
+      // );
 
-      // Similarly fetch details for interested in me users
-      console.log("MATCH DEBUG: Starting to fetch details for users interested in me");
-      const interestedInMeStartTime = Date.now();
+      // const matchedDetailsDuration = Date.now() - matchedDetailsStartTime;
+      // console.log(`MATCH DEBUG: Completed fetching matched user details in ${matchedDetailsDuration}ms`);
 
-      const enrichedInterestedInMe = await Promise.all(
-        interestedInMeData.map(async (match, index) => {
-          try {
-            console.log(`MATCH DEBUG: Fetching details for interested-in-me user ${index + 1}/${interestedInMeData.length}: ${match.user_uid}`);
-            const userInfoUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${match.user_uid}`;
-            const startTime = Date.now();
-            const userInfoResponse = await axios.get(userInfoUrl, { timeout: 15000 }); // Increase timeout to 15 seconds
-            const duration = Date.now() - startTime;
-            console.log(`MATCH DEBUG: Fetched details for interested-in-me user ${match.user_uid} in ${duration}ms`);
+      // // Similarly fetch details for interested in me users
+      // console.log("MATCH DEBUG: Starting to fetch details for users interested in me");
+      // const interestedInMeStartTime = Date.now();
 
-            if (userInfoResponse.data && userInfoResponse.data.result && userInfoResponse.data.result.length > 0) {
-              const userDetails = userInfoResponse.data.result[0];
-              return {
-                ...match,
-                user_general_interests: userDetails.user_general_interests,
-                user_favorite_photo: userDetails.user_favorite_photo,
-              };
-            }
-            return match;
-          } catch (error) {
-            console.error(`MATCH DEBUG: ⚠️ ERROR fetching interests for interested-in-me user ${match.user_uid}:`, error.message);
-            if (error.code === "ECONNABORTED") {
-              console.error(`MATCH DEBUG: ⚠️ TIMEOUT occurred for user ${match.user_uid}`);
-            }
-            return match;
-          }
-        })
-      );
+      // const enrichedInterestedInMe = await Promise.all(
+      //   interestedInMeData.map(async (match, index) => {
+      //     try {
+      //       console.log(`MATCH DEBUG: Fetching details for interested-in-me user ${index + 1}/${interestedInMeData.length}: ${match.user_uid}`);
+      //       const userInfoUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${match.user_uid}`;
+      //       const startTime = Date.now();
+      //       const userInfoResponse = await axios.get(userInfoUrl, { timeout: 15000 }); // Increase timeout to 15 seconds
+      //       const duration = Date.now() - startTime;
+      //       console.log(`MATCH DEBUG: Fetched details for interested-in-me user ${match.user_uid} in ${duration}ms`);
 
-      const interestedInMeDuration = Date.now() - interestedInMeStartTime;
-      console.log(`MATCH DEBUG: Completed fetching interested-in-me user details in ${interestedInMeDuration}ms`);
+      //       if (userInfoResponse.data && userInfoResponse.data.result && userInfoResponse.data.result.length > 0) {
+      //         const userDetails = userInfoResponse.data.result[0];
+      //         return {
+      //           ...match,
+      //           user_general_interests: userDetails.user_general_interests,
+      //           user_favorite_photo: userDetails.user_favorite_photo,
+      //         };
+      //       }
+      //       return match;
+      //     } catch (error) {
+      //       console.error(`MATCH DEBUG: ⚠️ ERROR fetching interests for interested-in-me user ${match.user_uid}:`, error.message);
+      //       if (error.code === "ECONNABORTED") {
+      //         console.error(`MATCH DEBUG: ⚠️ TIMEOUT occurred for user ${match.user_uid}`);
+      //       }
+      //       return match;
+      //     }
+      //   })
+      // );
 
-      // And for interested in users
-      console.log("MATCH DEBUG: Starting to fetch details for users I'm interested in");
-      const interestedInStartTime = Date.now();
+      // const interestedInMeDuration = Date.now() - interestedInMeStartTime;
+      // console.log(`MATCH DEBUG: Completed fetching interested-in-me user details in ${interestedInMeDuration}ms`);
 
-      const enrichedInterestedIn = await Promise.all(
-        interestedInData.map(async (match, index) => {
-          try {
-            console.log(`MATCH DEBUG: Fetching details for interested-in user ${index + 1}/${interestedInData.length}: ${match.user_uid}`);
-            const userInfoUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${match.user_uid}`;
-            const startTime = Date.now();
-            const userInfoResponse = await axios.get(userInfoUrl, { timeout: 15000 }); // Increase timeout to 15 seconds
-            const duration = Date.now() - startTime;
-            console.log(`MATCH DEBUG: Fetched details for interested-in user ${match.user_uid} in ${duration}ms`);
+      // // And for interested in users
+      // console.log("MATCH DEBUG: Starting to fetch details for users I'm interested in");
+      // const interestedInStartTime = Date.now();
 
-            if (userInfoResponse.data && userInfoResponse.data.result && userInfoResponse.data.result.length > 0) {
-              const userDetails = userInfoResponse.data.result[0];
-              return {
-                ...match,
-                user_general_interests: userDetails.user_general_interests,
-                user_favorite_photo: userDetails.user_favorite_photo,
-              };
-            }
-            return match;
-          } catch (error) {
-            console.error(`MATCH DEBUG: ⚠️ ERROR fetching interests for interested-in user ${match.user_uid}:`, error.message);
-            if (error.code === "ECONNABORTED") {
-              console.error(`MATCH DEBUG: ⚠️ TIMEOUT occurred for user ${match.user_uid}`);
-            }
-            return match;
-          }
-        })
-      );
+      // const enrichedInterestedIn = await Promise.all(
+      //   interestedInData.map(async (match, index) => {
+      //     try {
+      //       console.log(`MATCH DEBUG: Fetching details for interested-in user ${index + 1}/${interestedInData.length}: ${match.user_uid}`);
+      //       const userInfoUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${match.user_uid}`;
+      //       const startTime = Date.now();
+      //       const userInfoResponse = await axios.get(userInfoUrl, { timeout: 15000 }); // Increase timeout to 15 seconds
+      //       const duration = Date.now() - startTime;
+      //       console.log(`MATCH DEBUG: Fetched details for interested-in user ${match.user_uid} in ${duration}ms`);
 
-      const interestedInDuration = Date.now() - interestedInStartTime;
-      console.log(`MATCH DEBUG: Completed fetching interested-in user details in ${interestedInDuration}ms`);
+      //       if (userInfoResponse.data && userInfoResponse.data.result && userInfoResponse.data.result.length > 0) {
+      //         const userDetails = userInfoResponse.data.result[0];
+      //         return {
+      //           ...match,
+      //           user_general_interests: userDetails.user_general_interests,
+      //           user_favorite_photo: userDetails.user_favorite_photo,
+      //         };
+      //       }
+      //       return match;
+      //     } catch (error) {
+      //       console.error(`MATCH DEBUG: ⚠️ ERROR fetching interests for interested-in user ${match.user_uid}:`, error.message);
+      //       if (error.code === "ECONNABORTED") {
+      //         console.error(`MATCH DEBUG: ⚠️ TIMEOUT occurred for user ${match.user_uid}`);
+      //       }
+      //       return match;
+      //     }
+      //   })
+      // );
 
-      // Update state with the enriched data
-      console.log("MATCH DEBUG: Updating state with all fetched data");
-      setMatchedResults(enrichedMatchedResults);
-      setInterestedInMe(enrichedInterestedInMe);
-      setInterestedIn(enrichedInterestedIn);
-      console.log("MATCH DEBUG: State updated successfully");
+      // const interestedInDuration = Date.now() - interestedInStartTime;
+      // console.log(`MATCH DEBUG: Completed fetching interested-in user details in ${interestedInDuration}ms`);
 
-      const totalDuration = Date.now() - matchesStartTime;
-      console.log(`MATCH DEBUG: Total findMatchesResult execution time: ${totalDuration}ms`);
+      // // Update state with the enriched data
+      // console.log("MATCH DEBUG: Updating state with all fetched data");
+      // setMatchedResults(enrichedMatchedResults);
+      // setInterestedInMe(enrichedInterestedInMe);
+      // setInterestedIn(enrichedInterestedIn);
+      // console.log("MATCH DEBUG: State updated successfully");
+
+      // const totalDuration = Date.now() - matchesStartTime;
+      // console.log(`MATCH DEBUG: Total findMatchesResult execution time: ${totalDuration}ms`);
     } catch (error) {
       console.error("MATCH DEBUG: ⚠️ CRITICAL ERROR in findMatchesResult:", error);
       console.log("MATCH DEBUG: Error details:", error.message);
@@ -365,63 +370,65 @@ const MatchResultsPage = () => {
   }, [userId, refreshTrigger]);
 
   // Once matchedResults loads, fetch meet info for each matched user
-  useEffect(() => {
-    // If no matches, clear and return
-    if (!matchedResults || matchedResults.length === 0) {
-      setMeetStatus({});
-      setMeetSelfStatus({});
-      return;
-    }
-    const fetchMeetSelfStatus = async () => {
-      try {
-        const meetSelfUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet/${userId}`;
-        const res = await axios.get(meetSelfUrl);
-        const selfmeets = Array.isArray(res.data?.result) ? res.data.result : [];
-        setMeetSelfStatus(selfmeets.length > 0);
-      } catch (err) {
-        console.warn("Error fetching meet data for self users:", err);
-      }
-    };
-    fetchMeetSelfStatus();
+  // useEffect(() => {
+  //   // If no matches, clear and return
+  //   if (!matchedResults || matchedResults.length === 0) {
+  //     setMeetStatus({});
+  //     setMeetSelfStatus({});
+  //     return;
+  //   }
+  //   const fetchMeetSelfStatus = async () => {
+  //     try {
+  //       const meetSelfUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet/${userId}`;
+  //       const res = await axios.get(meetSelfUrl);
+  //       // console.log("--- Meet Self res ---", res);
+  //       const selfmeets = Array.isArray(res.data?.result) ? res.data.result : [];
+  //       console.log("--- selfmeets ---", selfmeets);
+  //       setMeetSelfStatus(selfmeets.length > 0);
+  //     } catch (err) {
+  //       console.warn("Error fetching meet data for self users:", err);
+  //     }
+  //   };
+  //   fetchMeetSelfStatus();
 
-    // Create a copy of matchedResults to fetch meets for each user
-    const fetchMeetStatus = async () => {
-      try {
-        const newMeetStatus = {};
+  //   // Create a copy of matchedResults to fetch meets for each user
+  //   const fetchMeetStatus = async () => {
+  //     try {
+  //       const newMeetStatus = {};
 
-        // For each user in matchedResults, call the meet endpoint for THAT user's ID
-        // NOT your own userId.
-        for (const matchedUser of matchedResults) {
-          const theirUserId = matchedUser.user_uid;
-          console.log("--- theirUserId ---", theirUserId);
-          const meetUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet/${theirUserId}`;
+  //       // For each user in matchedResults, call the meet endpoint for THAT user's ID
+  //       // NOT your own userId.
+  //       for (const matchedUser of matchedResults) {
+  //         const theirUserId = matchedUser.user_uid;
+  //         console.log("--- theirUserId ---", theirUserId);
+  //         const meetUrl = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet/${theirUserId}`;
 
-          try {
-            const res = await axios.get(meetUrl);
+  //         try {
+  //           const res = await axios.get(meetUrl);
 
-            // Handle case where data is missing or malformed
-            const resultData = res.data?.result || [];
-            console.log("--- resultData ---", resultData);
-            const meets = Array.isArray(resultData) ? resultData : [];
+  //           // Handle case where data is missing or malformed
+  //           const resultData = res.data?.result || [];
+  //           console.log("--- Meet resultData ---", resultData);
+  //           const meets = Array.isArray(resultData) ? resultData : [];
 
-            newMeetStatus[theirUserId] = meets.length > 0;
-          } catch (err) {
-            // Only log error if it's not a 404
-            if (!(err.response && err.response.status === 404)) {
-              console.warn("Error fetching meet data for user:", theirUserId, err);
-            }
-            newMeetStatus[theirUserId] = false; // Default to no meet
-          }
-        }
+  //           newMeetStatus[theirUserId] = meets.length > 0;
+  //         } catch (err) {
+  //           // Only log error if it's not a 404
+  //           if (!(err.response && err.response.status === 404)) {
+  //             console.warn("Error fetching meet data for user:", theirUserId, err);
+  //           }
+  //           newMeetStatus[theirUserId] = false; // Default to no meet
+  //         }
+  //       }
 
-        setMeetStatus(newMeetStatus);
-      } catch (err) {
-        console.warn("Error fetching meet data for matched users:", err);
-      }
-    };
+  //       setMeetStatus(newMeetStatus);
+  //     } catch (err) {
+  //       console.warn("Error fetching meet data for matched users:", err);
+  //     }
+  //   };
 
-    fetchMeetStatus();
-  }, [matchedResults]);
+  //   fetchMeetStatus();
+  // }, [matchedResults]);
 
   // Function to calculate common interests
   const calculateCommonInterests = (matchInterests) => {
@@ -478,8 +485,8 @@ const MatchResultsPage = () => {
 
   // Render "Set up date" or "See invitation" depending on meet status
   // Also handle button press to navigate to DateType or Chat
-  const handleButtonPress = (matchId) => {
-    if (meetStatus[matchId]) {
+  const handleButtonPress = (matchId, match) => {
+    if (match.meet_uid !== null) {
       // Pass the matched user UID to Chat
       navigation.navigate("Chat", { matchedUserId: matchId });
     } else {
@@ -507,18 +514,12 @@ const MatchResultsPage = () => {
     }
   };
 
-  const renderMatchRow = (firstname, lastname, interests, imgSrc, buttonLabel = null, matchId = null) => {
+  const renderMatchRow = (firstname, lastname, interests, imgSrc, buttonLabel = null, matchId = null, match = null) => {
     // Calculate common interests
     const commonInterestsCount = calculateCommonInterests(interests);
 
-    // Decide which label to show (we ignore the passed buttonLabel here intentionally,
-    // because we override with either "See invitation" or "Set up date" below).
-    const hasMeet = meetStatus[matchId] || false;
-    console.log("--- hasMeet ---", hasMeet);
-    const hasMeetSelf = meetSelfStatus[matchId] || false;
-    console.log("--- hasMeetSelf ---", hasMeetSelf);
-    const dynamicButtonLabel = hasMeet ? "See invitation" : hasMeetSelf ? "change date" : "Set up date";
-    console.log("--- dynamicButtonLabel ---", dynamicButtonLabel);
+    // Determine button label based on meet conditions
+    const dynamicButtonLabel = match?.meet_uid === null ? "Set up date" : match?.meet_user_id === userId ? "Change date" : "See invitation";
 
     return (
       <View style={styles.matchRow} key={`${firstname}-${matchId}-${Math.random()}`}>
@@ -536,7 +537,7 @@ const MatchResultsPage = () => {
           </TouchableOpacity>
         </View>
         <View style={styles.matchRowRight}>
-          <TouchableOpacity style={[styles.matchButton, dynamicButtonLabel === "Set up date" ? styles.setUpDateButton : styles.defaultButtonBorder]} onPress={() => handleButtonPress(matchId)}>
+          <TouchableOpacity style={[styles.matchButton, dynamicButtonLabel === "Set up date" ? styles.setUpDateButton : styles.defaultButtonBorder]} onPress={() => handleButtonPress(matchId, match)}>
             <Text style={[styles.matchButtonText, dynamicButtonLabel === "Set up date" ? { color: "#fff" } : { color: "#E4423F" }]}>{dynamicButtonLabel}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.closeButton} onPress={() => handleDislike(matchId)}>
@@ -657,7 +658,7 @@ const MatchResultsPage = () => {
             console.log("Selected photo to show:", photoToShow);
             console.log("===============================\n");
 
-            return renderMatchRow(match.user_first_name, match.user_last_name, match.user_general_interests, photoToShow, "Set up date or see invitation", match.user_uid);
+            return renderMatchRow(match.user_first_name, match.user_last_name, match.user_general_interests, photoToShow, "Set up date or see invitation", match.user_uid, match);
           })
         ) : (
           <Text style={styles.noMatchesText}>No matches found</Text>

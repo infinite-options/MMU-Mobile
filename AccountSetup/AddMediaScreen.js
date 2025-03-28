@@ -37,7 +37,7 @@ export default function AddMediaScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(false);
 
   // Add a status message state near other state variables
-  const [uploadStatus, setUploadStatus] = useState("");
+  // const [uploadStatus, setUploadStatus] = useState("");
 
   // Near other state variables
   const [photoFileSizes, setPhotoFileSizes] = useState([null, null, null]);
@@ -290,42 +290,48 @@ export default function AddMediaScreen({ navigation }) {
 
   // Update the uploadMediaToBackend function to check total file size
   const uploadMediaToBackend = async () => {
-    if (!userId || !userEmail) {
-      Alert.alert("Error", "User ID or email missing. Please log in again.");
-      return;
-    }
-
-    setIsLoading(true);
-
-    // Log form data before upload
-    console.log(
-      "FORM DATA before upload in AddMediaScreen.js:",
-      JSON.stringify(
-        {
-          user_uid: userId,
-          user_email_id: userEmail,
-          photos: photos.map((p) => (p ? (typeof p === "string" ? (p.length > 50 ? p.substring(0, 50) + "..." : p) : "[Object]") : null)),
-          videoUri: videoUri ? (videoUri.length > 50 ? videoUri.substring(0, 50) + "..." : videoUri) : null,
-          videoFileSize: videoFileSize,
-          photoFileSizes: photoFileSizes,
-        },
-        null,
-        2
-      )
-    );
-
-    // Check total file size before uploading using MediaHelper
-    const totalSize = checkTotalFileSize();
-    const shouldProceed = await MediaHelper.promptLargeFileSize(totalSize, 5);
-
-    if (!shouldProceed) {
-      setIsLoading(false);
-      return; // Stop the save process
-    }
-
+    console.log("--- In AddMediaScreen.js uploadMediaToBackend Function ---");
     try {
+      setIsLoading(true);
+
+      if (!userId || !userEmail) {
+        Alert.alert("Error", "User ID or email missing. Please log in again.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Check total file size before uploading using MediaHelper
+      const totalSize = checkTotalFileSize();
+      const shouldProceed = await MediaHelper.promptLargeFileSize(totalSize, 5);
+
+      if (!shouldProceed) {
+        setIsLoading(false);
+        return; // Stop the save process
+      }
+
+      // Log form data before upload
+      // console.log(
+      //   "FORM DATA before upload in AddMediaScreen.js:",
+      //   JSON.stringify(
+      //     {
+      //       user_uid: userId,
+      //       user_email_id: userEmail,
+      //       photos: photos.map((p) => (p ? (typeof p === "string" ? (p.length > 50 ? p.substring(0, 50) + "..." : p) : "[Object]") : null)),
+      //       videoUri: videoUri ? (videoUri.length > 50 ? videoUri.substring(0, 50) + "..." : videoUri) : null,
+      //       videoFileSize: videoFileSize,
+      //       photoFileSizes: photoFileSizes,
+
+      //     },
+      //     null,
+      //     2
+      //   )
+      // );
+
+      // try{}
+
       const uploadData = new FormData();
       uploadData.append("user_uid", userId);
+
       uploadData.append("user_email_id", userEmail);
 
       // Filter out null photos and get only valid URIs
@@ -344,21 +350,25 @@ export default function AddMediaScreen({ navigation }) {
         });
       });
 
+      console.log("=== End Photo Upload Debug ===");
+
       // Handle video upload
       console.log("=== Video Upload Debug ===");
+
       console.log("Current video URL:", videoUri);
 
+      // Check if new video
       if (videoUri) {
-        setUploadStatus("Preparing video upload...");
+        // setUploadStatus("Preparing video upload...");
 
         // Enhanced S3 direct upload - align with EditProfile.js approach
         console.log("--- In AddMediaScreen.js, using S3 direct upload ---");
-
         // First get the presigned URL (same as EditProfile.js)
         const presignedData = await getPresignedUrl(userId);
+        console.log("Presigned data:", presignedData);
 
         if (presignedData && presignedData.url) {
-          setUploadStatus(`Uploading ${videoFileSize}MB video directly to S3...`);
+          // setUploadStatus(`Uploading ${videoFileSize}MB video directly to S3...`);
           console.log("Got presigned URL, starting upload to S3...", presignedData.url);
 
           // Perform the actual upload
@@ -366,14 +376,17 @@ export default function AddMediaScreen({ navigation }) {
           const uploadSuccess = uploadResult.success;
           console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
 
+          Alert.alert("Debug Info", `Video URI: ${videoUri}\nPresigned URL: ${presignedData?.url}\nVideo URL: ${presignedData?.videoUrl}\nUpload Success: ${uploadSuccess}`);
+
           if (uploadSuccess && presignedData.videoUrl) {
             console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
-            setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
+            // setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
+
             uploadData.append("user_video_url", presignedData.videoUrl);
             console.log("Added user_video_url to form data:", presignedData.videoUrl);
           } else {
             console.error("Direct S3 upload failed, showing alert to user");
-            setUploadStatus("S3 upload failed, waiting for user input...");
+            // setUploadStatus("S3 upload failed, waiting for user input...");
 
             // Show alert to user with options to try regular upload or cancel
             return new Promise((resolve) => {
@@ -384,7 +397,7 @@ export default function AddMediaScreen({ navigation }) {
                   onPress: () => {
                     console.log("User cancelled after S3 upload failure");
                     setIsLoading(false);
-                    setUploadStatus("");
+                    // setUploadStatus("");
                     navigation.goBack(); // Return to previous screen
                     resolve(false);
                   },
@@ -393,7 +406,7 @@ export default function AddMediaScreen({ navigation }) {
                   text: "OK",
                   onPress: () => {
                     console.log("User opted to try regular upload");
-                    setUploadStatus("Trying regular upload...");
+                    // setUploadStatus("Trying regular upload...");
                     // Fall back to regular upload
                     console.log("Adding video as multipart form data...");
                     uploadData.append("user_video", {
@@ -414,7 +427,7 @@ export default function AddMediaScreen({ navigation }) {
           }
         } else {
           console.error("Failed to get presigned URL, showing alert to user");
-          setUploadStatus("Failed to get presigned URL, waiting for user input...");
+          // setUploadStatus("Failed to get presigned URL, waiting for user input...");
 
           // Show alert to user with options to try regular upload or cancel
           return new Promise((resolve) => {
@@ -425,7 +438,7 @@ export default function AddMediaScreen({ navigation }) {
                 onPress: () => {
                   console.log("User cancelled after presigned URL failure");
                   setIsLoading(false);
-                  setUploadStatus("");
+                  // setUploadStatus("");
                   navigation.goBack(); // Return to previous screen
                   resolve(false);
                 },
@@ -434,7 +447,7 @@ export default function AddMediaScreen({ navigation }) {
                 text: "OK",
                 onPress: () => {
                   console.log("User opted to try regular upload");
-                  setUploadStatus("Trying regular upload...");
+                  // setUploadStatus("Trying regular upload...");
                   // Fall back to regular upload
                   console.log("Adding video as multipart form data (presigned URL failed)...");
                   uploadData.append("user_video", {
@@ -458,9 +471,9 @@ export default function AddMediaScreen({ navigation }) {
       console.log("=== End Video Upload Debug ===");
 
       // Make the upload request
-      console.log("=== Profile Update API Request ===");
-      console.log("Making API request to update profile with timeout of 120 seconds...");
-      console.log("API endpoint: https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo");
+      console.log("=== Profile Update API Request ===", uploadData);
+      // console.log("Making API request to update profile with timeout of 120 seconds...");
+      // console.log("API endpoint: https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo");
 
       // Log the FormData contents (but not the actual file data)
       // console.log("FormData contents:");
@@ -478,7 +491,7 @@ export default function AddMediaScreen({ navigation }) {
       // }
 
       const startTime = Date.now();
-      setUploadStatus("Sending data to server...", uploadData);
+      // setUploadStatus("Sending data to server...", uploadData);
 
       const response = await axios.put("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo", uploadData, {
         headers: {
@@ -495,9 +508,10 @@ export default function AddMediaScreen({ navigation }) {
       console.log("Request duration:", requestDuration.toFixed(2) + " seconds");
 
       if (response.status === 200) {
-        setUploadStatus("Upload successful!");
+        // setUploadStatus("Upload successful!");
         console.log("Upload successful!");
-        Alert.alert("Success", "Your profile has been updated!");
+        Alert.alert("Success", `Your profile has been updated!`);
+        // Alert.alert("Success", `Video URL: ${presignedData.videoUrl}`);
 
         // This is the only functionality difference from EditProfile.js - navigate to next screen
         navigation.navigate("LocationScreen", { photos, videoUri });
@@ -552,7 +566,7 @@ export default function AddMediaScreen({ navigation }) {
       ]);
     } finally {
       setIsLoading(false);
-      setUploadStatus("");
+      // setUploadStatus("");
     }
   };
 
@@ -575,10 +589,11 @@ export default function AddMediaScreen({ navigation }) {
         {isLoading && (
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size='large' color='#E4423F' />
-            <Text style={{ color: "#E4423F", marginTop: 10, marginBottom: 5, fontWeight: "bold" }}>{uploadStatus || "Uploading..."}</Text>
+            <Text style={{ color: "#E4423F", marginTop: 10, marginBottom: 5, fontWeight: "bold" }}>Uploading...</Text>
+            {/* <Text style={{ color: "#E4423F", marginTop: 10, marginBottom: 5, fontWeight: "bold" }}>{uploadStatus || "Uploading..."}</Text>
             {uploadStatus.includes("S3") && (
               <Text style={{ color: "#666", textAlign: "center", paddingHorizontal: 20 }}>Large videos are uploaded directly to our secure server. This may take a moment.</Text>
-            )}
+            )} */}
           </View>
         )}
 

@@ -97,10 +97,10 @@ export const pickVideo = async (testVideos = []) => {
 
       // Show different alert messages based on video file size
       if (parseFloat(fileSize) < 2) {
-        Alert.alert("Video Added", `Your ${fileSize}MB video has been added to your profile. It will be uploaded to our secure server when you continue.`, [{ text: "OK" }]);
+        Alert.alert("Picked Video Added", `Your ${fileSize}MB video has been added to your profile. It will be uploaded to our secure server when you continue.`, [{ text: "OK" }]);
       } else {
         Alert.alert(
-          "Video Added",
+          "Picked Video Added",
           `Your ${fileSize}MB video has been added to your profile. We'll try to upload it to our secure server. Please consider selecting a shorter video if the upload fails.`,
           [{ text: "OK" }]
         );

@@ -773,6 +773,9 @@ export default function Chat() {
   // Get grouped messages
   const groupedMessages = groupMessagesByDate(messages);
 
+  // Create nowUtc variable for current timestamp
+  const nowUtc = new Date().toISOString();
+
   // Compute the latest received Date Invitation
   const receivedInvitations = messages.filter((m) => m.isReceived && m.text && m.text.startsWith("Date Invitation:"));
 

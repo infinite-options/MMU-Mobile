@@ -7,7 +7,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { Video } from "expo-av";
 import { Asset } from "expo-asset";
-import { getPresignedUrl, uploadVideoToS3, getFileSizeInMB, loadTestVideos } from "../utils/S3Helper";
 import * as MediaHelper from "../utils/MediaHelper";
 import ProgressBar from "../src/Assets/Components/ProgressBar";
 import { __DEV_MODE__ } from "../config";
@@ -46,7 +45,7 @@ export default function AddMediaScreen({ navigation }) {
   useEffect(() => {
     const initTestVideos = async () => {
       try {
-        const videos = await loadTestVideos();
+        const videos = await MediaHelper.loadTestVideos();
         console.log("Test videos loaded in AddMediaScreen:", videos);
         setTestVideos(videos);
       } catch (error) {
@@ -152,7 +151,7 @@ export default function AddMediaScreen({ navigation }) {
       try {
         // Calculate video file size
         if (videoUri) {
-          const size = await getFileSizeInMB(videoUri, testVideos);
+          const size = await MediaHelper.getFileSizeInMB(videoUri, testVideos);
           setVideoFileSize(size);
         }
 
@@ -160,7 +159,7 @@ export default function AddMediaScreen({ navigation }) {
         const newPhotoFileSizes = [...photoFileSizes];
         for (let i = 0; i < photos.length; i++) {
           if (photos[i]) {
-            const size = await getFileSizeInMB(photos[i], testVideos);
+            const size = await MediaHelper.getFileSizeInMB(photos[i], testVideos);
             newPhotoFileSizes[i] = size;
           } else {
             newPhotoFileSizes[i] = null;
@@ -364,7 +363,7 @@ export default function AddMediaScreen({ navigation }) {
         // Enhanced S3 direct upload - align with EditProfile.js approach
         console.log("--- In AddMediaScreen.js, using S3 direct upload ---");
         // First get the presigned URL (same as EditProfile.js)
-        const presignedData = await getPresignedUrl(userId);
+        const presignedData = await MediaHelper.getPresignedUrl(userId);
         console.log("Presigned data:", presignedData);
 
         if (presignedData && presignedData.url) {
@@ -372,7 +371,7 @@ export default function AddMediaScreen({ navigation }) {
           console.log("Got presigned URL, starting upload to S3...", presignedData.url);
 
           // Perform the actual upload
-          const uploadResult = await uploadVideoToS3(videoUri, presignedData.url);
+          const uploadResult = await MediaHelper.uploadVideoToS3(videoUri, presignedData.url);
           const uploadSuccess = uploadResult.success;
           console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
 

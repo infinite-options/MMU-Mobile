@@ -42,7 +42,6 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Asset } from "expo-asset";
 import { useBackHandler } from "@react-native-community/hooks";
 import { LinearGradient } from "expo-linear-gradient";
-import { getPresignedUrl, uploadVideoToS3, getFileSizeInMB, loadTestVideos } from "../utils/S3Helper";
 import * as MediaHelper from "../utils/MediaHelper";
 import { __DEV_MODE__ } from "../config";
 
@@ -1367,48 +1366,38 @@ export default function EditProfile() {
           // New Video was deleted
         } else if (videoUri && videoUri !== originalVideoUrl) {
           // New Video. Check if it's a test video
-          const combinedCode = true;
-          if (combinedCode) {
-            console.log("--- In EditProfile.js, combinedCode is true");
-            // First get the presigned URL (same as EditProfile.js)
-            const presignedData = await getPresignedUrl(uid);
 
-            // setUploadStatus(`Uploading ${videoFileSize}MB video directly to S3...`);
+          // First get the presigned URL (same as EditProfile.js)
+          const presignedData = await getPresignedUrl(uid);
 
-            const uploadResult = await uploadVideoToS3(videoUri, presignedData.url);
-            const uploadSuccess = uploadResult.success;
-            console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
+          // setUploadStatus(`Uploading ${videoFileSize}MB video directly to S3...`);
 
-            if (uploadSuccess && presignedData.videoUrl) {
-              console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
-              // setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
-              // Only include user_delete_video if there was an original video to delete
-              if (originalVideoUrl) {
-                uploadData.append("user_delete_video", JSON.stringify([originalVideoUrl]));
-                console.log("Added user_delete_video to form data:", JSON.stringify([originalVideoUrl]));
-              }
-              uploadData.append("user_video_url", presignedData.videoUrl);
-              console.log("Added user_video_url to form data:", presignedData.videoUrl);
-            } else {
-              console.error("Direct S3 upload failed, falling back to regular upload");
-              // setUploadStatus("S3 upload failed, falling back to regular upload");
+          const uploadResult = await uploadVideoToS3(videoUri, presignedData.url);
+          const uploadSuccess = uploadResult.success;
+          console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
 
-              // Fall back to regular upload
-              console.log("Adding video as multipart form data...");
-              uploadData.append("user_video", {
-                uri: videoUri,
-                type: "video/mp4",
-                name: "user_video.mp4",
-              });
-              console.log("Added user_video to form data as multipart");
+          if (uploadSuccess && presignedData.videoUrl) {
+            console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
+            // setUploadStatus(`S3 upload successful! Using S3 URL: ${presignedData.videoUrl}`);
+            // Only include user_delete_video if there was an original video to delete
+            if (originalVideoUrl) {
+              uploadData.append("user_delete_video", JSON.stringify([originalVideoUrl]));
+              console.log("Added user_delete_video to form data:", JSON.stringify([originalVideoUrl]));
             }
+            uploadData.append("user_video_url", presignedData.videoUrl);
+            console.log("Added user_video_url to form data:", presignedData.videoUrl);
           } else {
-            // Existing S3 video - no need to re-upload
-            // console.log("\n=== Existing S3 Video ===");
-            // console.log("Keeping existing S3 video:", videoUri);
-            uploadData.append("user_video_url", videoUri);
-            // console.log("Added user_video_url to form data:", videoUri);
-            // console.log("=== End Existing S3 Video ===\n");
+            console.error("Direct S3 upload failed");
+            // setUploadStatus("S3 upload failed, falling back to regular upload");
+
+            // // Fall back to regular upload
+            // console.log("Adding video as multipart form data...");
+            // uploadData.append("user_video", {
+            //   uri: videoUri,
+            //   type: "video/mp4",
+            //   name: "user_video.mp4",
+            // });
+            // console.log("Added user_video to form data as multipart");
           }
         }
         console.log("=== End Video Upload Debug ===");
@@ -1500,32 +1489,6 @@ export default function EditProfile() {
           }
         });
 
-        // Log the final FormData contents
-        // console.log("=== Final FormData Contents ===");
-        // for (let [key, value] of uploadData._parts) {
-        //   if (key === "user_video") {
-        //     console.log(`${key}: [File data omitted, size: ${videoFileSize}MB]`);
-        //   } else if (key.startsWith("img_")) {
-        //     // Extract the index from img_0, img_1, etc.
-        //     const imgIndex = parseInt(key.substring(4), 10);
-        //     // Try to find the corresponding file size in photoFileSizes
-        //     // This is more complex in EditProfile as img_0 might not correspond to photos[0]
-        //     // due to the reorganization of photos (e.g., favorite photo first)
-        //     let fileSize = "unknown";
-        //     if (imgIndex < newLocalPhotos.length) {
-        //       const photoUri = newLocalPhotos[imgIndex];
-        //       // Find the index in the original photos array
-        //       const originalIndex = photos.indexOf(photoUri);
-        //       if (originalIndex !== -1 && photoFileSizes[originalIndex]) {
-        //         fileSize = photoFileSizes[originalIndex];
-        //       }
-        //     }
-        //     console.log(`${key}: [File data omitted, size: ${fileSize}MB]`);
-        //   } else {
-        //     console.log(`${key}: ${value}`);
-        //   }
-        // }
-
         // Add favorite photo to upload data if one is selected
         if (favoritePhotoIndex !== null && photos[favoritePhotoIndex]) {
           const photoUri = photos[favoritePhotoIndex];
@@ -1568,32 +1531,6 @@ export default function EditProfile() {
         console.log("=== Profile Update API Request ===");
         console.log("Making API request to update profile with timeout of 120 seconds...");
         console.log("API endpoint: https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo");
-
-        // Log the FormData contents (but not the actual file data)
-        // console.log("FormData contents:");
-        // for (let [key, value] of uploadData._parts) {
-        //   if (key === "user_video") {
-        //     console.log(`${key}: [File data omitted, size: ${videoFileSize}MB]`);
-        //   } else if (key.startsWith("img_")) {
-        //     // Extract the index from img_0, img_1, etc.
-        //     const imgIndex = parseInt(key.substring(4), 10);
-        //     // Try to find the corresponding file size in photoFileSizes
-        //     // This is more complex in EditProfile as img_0 might not correspond to photos[0]
-        //     // due to the reorganization of photos (e.g., favorite photo first)
-        //     let fileSize = "unknown";
-        //     if (imgIndex < newLocalPhotos.length) {
-        //       const photoUri = newLocalPhotos[imgIndex];
-        //       // Find the index in the original photos array
-        //       const originalIndex = photos.indexOf(photoUri);
-        //       if (originalIndex !== -1 && photoFileSizes[originalIndex]) {
-        //         fileSize = photoFileSizes[originalIndex];
-        //       }
-        //     }
-        //     console.log(`${key}: [File data omitted, size: ${fileSize}MB]`);
-        //   } else {
-        //     console.log(`${key}: ${value}`);
-        //   }
-        // }
 
         const startTime = Date.now();
         console.log("FORM DATA Being sent to server from EditProfile.js: ", uploadData);

@@ -4,6 +4,7 @@
     "slug": "meetmeup",
     "version": "1.2.0",
     "orientation": "portrait",
+    "hostType": "lan",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
@@ -15,7 +16,7 @@
       "usesAppleSignIn": true,
       "supportsTablet": true,
       "bundleIdentifier": "com.infiniteoptions.meetmeupapp",
-      "buildNumber": "65",
+      "buildNumber": "67",
       "infoPlist": {
         "CFBundleURLTypes": [
           {
@@ -39,10 +40,7 @@
         "backgroundColor": "#E4423F"
       },
       "package": "com.infiniteoptions.meetmeupapp",
-      "permissions": [
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
-      ],
+      "permissions": ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"],
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyBHZlcN8UeLNySmAf66WOfu1N_hDBaq0-I"
@@ -52,9 +50,7 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "assetBundlePatterns": [
-      "assets/fonts/*"
-    ],
+    "assetBundlePatterns": ["assets/fonts/*"],
     "owner": "pmarathay",
     "extra": {
       "eas": {
@@ -84,8 +80,5 @@
         }
       ]
     ]
-  },
-  "web": {
-    "favicon": "./assets/favicon.png"
   }
 }

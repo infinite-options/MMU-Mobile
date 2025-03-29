@@ -101,7 +101,7 @@ export default function AccountSetup5Create() {
       }
     } catch (error) {
       console.error("Error selecting or uploading video:", error);
-      Alert.alert("Error", "There was an issue processing the video. Please try again.");
+      Alert.alert("Error", "There was an issue processing the video. Please try again. (Error 1)");
     }
   };
 

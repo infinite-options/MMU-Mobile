@@ -82,11 +82,11 @@ export const getPresignedUrl = async (uid) => {
       // Add detailed analysis of the response structure
       //   console.log("Presigned URL response structure: ", response.data.key);
 
-      console.log("=== End Presigned URL Request ===");
+      console.log("===== End Presigned URL Request (Success)=====");
       return response.data;
     } else {
       console.error("Invalid response format for presigned URL:", JSON.stringify(response.data));
-      console.log("=== End Presigned URL Request (Failed) ===\n");
+      console.log("===== End Presigned URL Request (Failed) =====\n");
       return null;
     }
   } catch (error) {
@@ -97,7 +97,7 @@ export const getPresignedUrl = async (uid) => {
     } else {
       console.error("Error message:", error.message);
     }
-    console.log("=== End Presigned URL Request (Error) ===\n");
+    console.log("===== End Presigned URL Request (Error) =====\n");
     return null;
   }
 };
@@ -140,7 +140,7 @@ export const uploadVideoToS3 = async (fileUri, presignedUrl) => {
 
     if (!fileInfo.exists) {
       console.error("File does not exist at path:", fileUri);
-      console.log("=== End S3 Direct Upload Process (File Not Found) ===");
+      console.log("===== End S3 Direct Upload Process (File Not Found) =====");
       return { success: false };
     }
 
@@ -205,13 +205,13 @@ export const uploadVideoToS3 = async (fileUri, presignedUrl) => {
 
       if (response.ok) {
         // console.log("Direct S3 upload successful!");
-        console.log("=== End S3 Direct Upload Process (Success) ===\n");
+        console.log("===== End S3 Direct Upload Process (Success) =====\n");
         return { success: true };
       } else {
         const responseText = await response.text();
         console.error("S3 upload failed with status:", response.status);
         console.error("S3 error response:", responseText);
-        console.log("=== End S3 Direct Upload Process (Failed) ===\n");
+        console.log("===== End S3 Direct Upload Process (Failed) =====\n");
         return { success: false };
       }
     } catch (fetchError) {
@@ -226,7 +226,7 @@ export const uploadVideoToS3 = async (fileUri, presignedUrl) => {
           console.error("Error stack:", fetchError.stack);
         }
       }
-      console.log("=== End S3 Direct Upload Process (Error) ===\n");
+      console.log("===== End S3 Direct Upload Process (Error) =====\n");
       return { success: false };
     }
   } catch (error) {
@@ -236,7 +236,7 @@ export const uploadVideoToS3 = async (fileUri, presignedUrl) => {
     if (error.stack) {
       console.error("Error stack:", error.stack);
     }
-    console.log("=== End S3 Direct Upload Process (Preparation Error) ===\n");
+    console.log("===== End S3 Direct Upload Process (Preparation Error) =====\n");
     return { success: false };
   }
 };
@@ -312,130 +312,366 @@ export const pickImage = async (options = {}, testVideos = []) => {
   }
 };
 
-/**
- * Pick a video from the library
- * @param {Array} testVideos Test videos array for file size calculation
- * @returns {Promise<{uri: string, fileSize: number}|boolean>} The selected video data, false if canceled, or null if error
- */
-export const pickVideo = async (testVideos = []) => {
+// /**
+//  * Pick a video from the library
+//  * @param {Array} testVideos Test videos array for file size calculation
+//  * @returns {Promise<{uri: string, fileSize: number}|boolean>} The selected video data, false if canceled, or null if error
+//  */
+// export const pickVideo = async (testVideos = []) => {
+//   try {
+//     const hasPermission = await requestCameraPermissions();
+//     if (!hasPermission) return null;
+
+//     const result = await ImagePicker.launchImageLibraryAsync({
+//       mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+//       allowsEditing: true,
+//       quality: 1.0,
+//       videoQuality: getVideoQuality(),
+//     });
+
+//     if (!result.canceled && result.assets?.[0]?.uri) {
+//       console.log("Video selection success:", result.assets[0]);
+//       const uri = result.assets[0].uri;
+//       const fileSize = await getFileSizeInMB(uri, testVideos);
+
+//       // Show different alert messages based on video file size
+//       if (parseFloat(fileSize) < 2) {
+//         Alert.alert("Picked Video Added", `Your ${fileSize}MB video has been added to your profile. It will be uploaded to our secure server when you continue.`, [{ text: "OK" }]);
+//       } else {
+//         Alert.alert(
+//           "Picked Video Added",
+//           `Your ${fileSize}MB video has been added to your profile. We'll try to upload it to our secure server. Please consider selecting a shorter video if the upload fails.`,
+//           [{ text: "OK" }]
+//         );
+//       }
+
+//       return { uri, fileSize };
+//     } else {
+//       console.log("---- Video Selection Cancelled----");
+//       return false; // Explicitly return false for canceled
+//     }
+//   } catch (error) {
+//     console.error("Error picking video:", error);
+//     return null;
+//   }
+// };
+
+// /**
+//  * Record a video using the device camera
+//  * @param {Array} testVideos Test videos array for file size calculation
+//  * @returns {Promise<{uri: string, fileSize: number}|boolean>} The recorded video data, false if canceled, or null if error
+//  */
+// export const recordVideo = async (testVideos = []) => {
+//   try {
+//     const hasPermission = await requestCameraPermissions();
+//     if (!hasPermission) return null;
+
+//     const result = await ImagePicker.launchCameraAsync({
+//       mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+//       allowsEditing: false, // Set to false for more reliable results
+//       quality: 1,
+//       videoQuality: getVideoQuality(),
+//       maxDuration: 60,
+//       saveToPhotos: true, // Save to device camera roll
+//     });
+
+//     if (!result.canceled && result.assets?.[0]?.uri) {
+//       console.log("Video recording success:", result.assets[0]);
+//       const uri = result.assets[0].uri;
+//       const fileSize = await getFileSizeInMB(uri, testVideos);
+
+//       // Show different alert messages based on video file size
+//       if (parseFloat(fileSize) < 2) {
+//         Alert.alert("Video Recorded", `Your ${fileSize}MB video has been recorded. It will be uploaded to our secure server when you continue.`, [{ text: "OK" }]);
+//       } else {
+//         Alert.alert("Video Recorded", `Your ${fileSize}MB video has been recorded. We'll try to upload it to our secure server. Please consider recording a shorter video if the upload fails.`, [
+//           { text: "OK" },
+//         ]);
+//       }
+
+//       return { uri, fileSize };
+//     } else {
+//       console.log("---- Video Recording Cancelled----");
+//       return false; // Explicitly return false for canceled
+//     }
+//   } catch (error) {
+//     console.error("Error recording video:", error);
+//     return null;
+//   }
+// };
+
+// /**
+//  * Picks a video from the device gallery
+//  * @param {Array} testVideos Test videos array for file size calculation
+//  * @returns {Promise<{uri: string, fileSize: number}|boolean>} The picked video data, false if canceled, or null if error
+//  */
+// export const pickVideo = async (testVideos = []) => {
+//   try {
+//     const hasPermission = await requestCameraPermissions();
+//     if (!hasPermission) return null;
+
+//     const result = await ImagePicker.launchImageLibraryAsync({
+//       mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+//       allowsEditing: false, // Set to false for more reliable results
+//       quality: 1.0,
+//       videoQuality: getVideoQuality(),
+//     });
+
+//     console.log("Video selection result:", result);
+//     return storeVideo(result, testVideos);
+//   } catch (error) {
+//     console.error("Error picking video:", error);
+//     return null;
+//   }
+// };
+
+// /**
+//  * Records a video using the device camera
+//  * @param {Array} testVideos Test videos array for file size calculation
+//  * @returns {Promise<{uri: string, fileSize: number}|boolean>} The recorded video data, false if canceled, or null if error
+//  */
+// export const recordVideo = async (testVideos = []) => {
+//   try {
+//     const hasPermission = await requestCameraPermissions();
+//     if (!hasPermission) return null;
+
+//     const result = await ImagePicker.launchCameraAsync({
+//       mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+//       allowsEditing: false, // Set to false for more reliable results
+//       quality: 1.0,
+//       videoQuality: getVideoQuality(),
+//       maxDuration: 60,
+//       saveToPhotos: true, // Save to device camera roll
+//     });
+
+//     console.log("Video recording result:", result);
+//     return storeVideo(result, testVideos);
+//   } catch (error) {
+//     console.error("Error recording video:", error);
+//     return null;
+//   }
+// };
+
+export const getFileSizeInMB = async (fileUri, testVideos = []) => {
   try {
-    const hasPermission = await requestCameraPermissions();
-    if (!hasPermission) return null;
+    console.log("===== In MediaHelper.js - getFileSizeInMB =====");
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-      allowsEditing: true,
-      quality: 1.0,
-      videoQuality: getVideoQuality(),
-    });
-
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      console.log("Video selection success:", result.assets[0]);
-      const uri = result.assets[0].uri;
-      const fileSize = await getFileSizeInMB(uri, testVideos);
-
-      // Show different alert messages based on video file size
-      if (parseFloat(fileSize) < 2) {
-        Alert.alert("Picked Video Added", `Your ${fileSize}MB video has been added to your profile. It will be uploaded to our secure server when you continue.`, [{ text: "OK" }]);
-      } else {
-        Alert.alert(
-          "Picked Video Added",
-          `Your ${fileSize}MB video has been added to your profile. We'll try to upload it to our secure server. Please consider selecting a shorter video if the upload fails.`,
-          [{ text: "OK" }]
-        );
+    // Check if it's a test video first (only if testVideos is provided)
+    if (testVideos && testVideos.length > 0) {
+      const testVideoSize = getTestVideoFileSize(fileUri, testVideos);
+      if (testVideoSize) {
+        console.log(`Test video detected, size: ${testVideoSize}MB`);
+        return testVideoSize.toString();
       }
+    }
 
-      return { uri, fileSize };
+    if (!fileUri || typeof fileUri !== "string") return null;
+
+    // Handle remote URLs (S3 URLs)
+    if (fileUri.startsWith("http")) {
+      // For remote files, we can't get the size directly
+      // Return a default size for S3 URLs
+      console.log("Remote URL detected, using default size");
+      return "1.5"; // Default size for remote videos
+    }
+
+    // For local files, get the file info
+    if (Platform.OS === "ios") {
+      const fileInfo = await FileSystem.getInfoAsync(fileUri);
+      const fileSizeInBytes = fileInfo.size;
+      const fileSizeInMB = (fileSizeInBytes / (1024 * 1024)).toFixed(2);
+      console.log(`in ios, File size: ${fileSizeInMB}MB`);
+      return fileSizeInMB;
     } else {
-      console.log("---- Video Selection Cancelled----");
-      return false; // Explicitly return false for canceled
+      // For Android, we need to use the content resolver
+      const fileInfo = await FileSystem.getInfoAsync(fileUri);
+      if (fileInfo.exists && fileInfo.size) {
+        const fileSizeInMB = (fileInfo.size / (1024 * 1024)).toFixed(2);
+        console.log(`in android, File size: ${fileSizeInMB}MB`);
+        return fileSizeInMB;
+      } else {
+        console.log("File info not available, using estimated size");
+        return "1.5"; // Default estimated size
+      }
     }
   } catch (error) {
-    console.error("Error picking video:", error);
-    return null;
+    console.error("Error getting file size:", error);
+    return "1.0"; // Default fallback size
   }
 };
 
 /**
- * Record a video using the device camera
+ * Processes and stores video data
+ * @param {Object} result The result from ImagePicker
  * @param {Array} testVideos Test videos array for file size calculation
- * @returns {Promise<{uri: string, fileSize: number}|boolean>} The recorded video data, false if canceled, or null if error
+ * @returns {Promise<{uri: string, fileSize: number}|boolean>} The processed video data, false if canceled, or null if error
  */
-export const recordVideo = async (testVideos = []) => {
+export const storeVideo = async (result) => {
   try {
-    const hasPermission = await requestCameraPermissions();
-    if (!hasPermission) return null;
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-      allowsEditing: false, // Set to false for more reliable results
-      quality: 1,
-      videoQuality: getVideoQuality(),
-      maxDuration: 60,
-      saveToPhotos: true, // Save to device camera roll
-    });
-
     if (!result.canceled && result.assets?.[0]?.uri) {
-      console.log("Video recording success:", result.assets[0]);
-      const uri = result.assets[0].uri;
-      const fileSize = await getFileSizeInMB(uri, testVideos);
+      console.log("In MediaHelper, Video stored:", result.assets[0]);
 
-      // Show different alert messages based on video file size
+      const uri = result.assets[0].uri;
+      const fileSize = await getFileSizeInMB(uri);
+      console.log(`In MediaHelper, Video file size: ${fileSize}MB`);
+
+      // Standardized alert messages
       if (parseFloat(fileSize) < 2) {
-        Alert.alert("Video Recorded", `Your ${fileSize}MB video has been recorded. It will be uploaded to our secure server when you continue.`, [{ text: "OK" }]);
+        Alert.alert("Video Selected", `Your ${fileSize}MB video has been selected. It will be uploaded to our secure server when you continue.`, [{ text: "OK" }]);
       } else {
-        Alert.alert("Video Recorded", `Your ${fileSize}MB video has been recorded. We'll try to upload it to our secure server. Please consider recording a shorter video if the upload fails.`, [
+        Alert.alert("Video Selected", `Your ${fileSize}MB video has been selected. We'll try to upload it to our secure server. Please consider selecting a shorter video if the upload fails.`, [
           { text: "OK" },
         ]);
       }
-
+      console.log("In MediaHelper, just before return:", { uri, fileSize });
       return { uri, fileSize };
     } else {
-      console.log("---- Video Recording Cancelled----");
+      console.log("---- Video NOT stored----");
+      Alert.alert("Video Selection Cancelled", "No video was stored. Please try again.", [{ text: "OK" }]);
       return false; // Explicitly return false for canceled
     }
   } catch (error) {
-    console.error("Error recording video:", error);
+    console.error("Error processing video:", error);
+    Alert.alert("Error", "There was an issue processing the video. (Error 3)");
     return null;
   }
 };
 
-/**
- * Show options to select a test video
- * @param {Array} testVideos Array of test videos
- * @param {Function} onSelect Callback function when a test video is selected
- */
-export const showTestVideoOptions = (testVideos, onSelect) => {
-  if (!testVideos || testVideos.length === 0) {
-    Alert.alert("Error", "No test videos available");
-    return;
-  }
+// /**
+//  * Show options to select a test video
+//  * @param {Array} testVideos Array of test videos
+//  * @param {Function} onSelect Callback function when a test video is selected
+//  */
+// export const useTestVideo = (testVideos = []) => {
+//   if (!testVideos || testVideos.length === 0) {
+//     Alert.alert("Error", "No test videos available");
+//     return;
+//   }
 
-  if (Platform.OS === "ios") {
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        options: ["Cancel", ...testVideos.map((video) => video.name)],
-        cancelButtonIndex: 0,
-        title: "Select a Test Video",
-        message: "Choose a test video to use for upload testing",
-      },
-      (buttonIndex) => {
-        if (buttonIndex > 0) {
-          onSelect(buttonIndex - 1);
-        }
+//   if (Platform.OS === "ios") {
+//     ActionSheetIOS.showActionSheetWithOptions(
+//       {
+//         options: ["Cancel", ...testVideos.map((video) => video.name)],
+//         cancelButtonIndex: 0,
+//         title: "Select a Test Video",
+//         message: "Choose a test video to use for upload testing",
+//       },
+//       (buttonIndex) => {
+//         if (buttonIndex > 0) {
+//           onSelect(buttonIndex - 1);
+//         }
+//       }
+//     );
+//   } else {
+//     // For Android, use Alert with buttons
+//     Alert.alert("Select a Test Video", "Choose a test video to use for upload testing", [
+//       { text: "Cancel", style: "cancel" },
+//       ...testVideos.map((video, index) => ({
+//         text: video.name,
+//         onPress: () => onSelect(index),
+//       })),
+//     ]);
+//   }
+
+//   const selectedVideo = testVideos[index];
+
+//   const uri = selectedVideo.uri;
+//   const fileSize = selectedVideo.size;
+//   console.log(`Video file size: ${fileSize}MB`);
+
+//   return { uri, fileSize };
+// };
+
+export const useTestVideo = (testVideos = []) => {
+  console.log("===== In MediaHelper.js - useTestVideo =====");
+
+  return new Promise((resolve) => {
+    if (!testVideos || testVideos.length === 0) {
+      Alert.alert("Error", "No test videos available");
+      resolve(null);
+      return;
+    }
+
+    const handleVideoSelection = (index) => {
+      const selectedVideo = testVideos[index];
+      console.log("Selected video:", selectedVideo);
+      if (!selectedVideo) {
+        resolve(null);
+        return;
       }
-    );
-  } else {
-    // For Android, use Alert with buttons
-    Alert.alert("Select a Test Video", "Choose a test video to use for upload testing", [
-      { text: "Cancel", style: "cancel" },
-      ...testVideos.map((video, index) => ({
-        text: video.name,
-        onPress: () => onSelect(index),
-      })),
-    ]);
-  }
+      console.log("Selected video URI raw:", selectedVideo.uri);
+      const uri = selectedVideo.uri;
+      console.log("Selected video URI:", uri);
+      const fileSize = selectedVideo.size;
+      console.log(`Video file size: ${fileSize}MB`);
+      resolve({ uri, fileSize });
+    };
+
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ["Cancel", ...testVideos.map((video) => video.name)],
+          cancelButtonIndex: 0,
+          title: "Select a Test Video",
+          message: "Choose a test video to use for upload testing",
+        },
+        (buttonIndex) => {
+          if (buttonIndex > 0) {
+            handleVideoSelection(buttonIndex - 1);
+          } else {
+            resolve(null);
+          }
+        }
+      );
+    } else {
+      // For Android, use Alert with buttons
+      Alert.alert("Select a Test Video", "Choose a test video to use for upload testing", [
+        { text: "Cancel", style: "cancel", onPress: () => resolve(null) },
+        ...testVideos.map((video, index) => ({
+          text: video.name,
+          onPress: () => handleVideoSelection(index),
+        })),
+      ]);
+    }
+  });
 };
+
+// /**
+//  * Show options to select a test video
+//  * @param {Array} testVideos Array of test videos
+//  * @param {Function} onSelect Callback function when a test video is selected
+//  */
+// export const showTestVideoOptions = (testVideos, onSelect) => {
+//   if (!testVideos || testVideos.length === 0) {
+//     Alert.alert("Error", "No test videos available");
+//     return;
+//   }
+
+//   if (Platform.OS === "ios") {
+//     ActionSheetIOS.showActionSheetWithOptions(
+//       {
+//         options: ["Cancel", ...testVideos.map((video) => video.name)],
+//         cancelButtonIndex: 0,
+//         title: "Select a Test Video",
+//         message: "Choose a test video to use for upload testing",
+//       },
+//       (buttonIndex) => {
+//         if (buttonIndex > 0) {
+//           onSelect(buttonIndex - 1);
+//         }
+//       }
+//     );
+//   } else {
+//     // For Android, use Alert with buttons
+//     Alert.alert("Select a Test Video", "Choose a test video to use for upload testing", [
+//       { text: "Cancel", style: "cancel" },
+//       ...testVideos.map((video, index) => ({
+//         text: video.name,
+//         onPress: () => onSelect(index),
+//       })),
+//     ]);
+//   }
+// };
 
 /**
  * Handle the selection of a test video
@@ -469,58 +705,73 @@ export const selectTestVideo = (index, testVideos, context = "continue") => {
   return selectedVideo;
 };
 
-/**
- * Get the file size in MB for a given file URI
- * @param {string} fileUri - The file URI
- * @param {Array} testVideos - Optional array of test videos for checking test video size
- * @returns {Promise<string|null>} - The file size in MB or null
- */
-export const getFileSizeInMB = async (fileUri, testVideos = []) => {
-  try {
-    console.log("===== In MediaHelper.js - getFileSizeInMB =====");
+// export const getTestVideoFileSize = (uri, testVideos) => {
+//   if (!uri || !testVideos || !Array.isArray(testVideos)) return null;
 
-    // Check if it's a test video first (only if testVideos is provided)
-    if (testVideos && testVideos.length > 0) {
-      const testVideoSize = getTestVideoFileSize(fileUri, testVideos);
-      if (testVideoSize) {
-        console.log(`Test video detected, size: ${testVideoSize}MB`);
-        return testVideoSize.toString();
-      }
-    }
+//   // Find the test video by URI
+//   const testVideo = testVideos.find((video) => {
+//     if (!video.uri) return false;
+//     return uri.includes(video.uri.split("/").pop());
+//   });
 
-    if (!fileUri || typeof fileUri !== "string") return null;
+//   if (testVideo) {
+//     return testVideo.size;
+//   }
+//   return null;
+// };
 
-    // Handle remote URLs (S3 URLs)
-    if (fileUri.startsWith("http") && (!testVideos || !isTestVideo(fileUri, testVideos))) {
-      // For remote files, we can't get the size directly
-      // Return null or a placeholder
-      return null;
-    }
+// /**
+//  * Get the file size in MB for a given file URI
+//  * @param {string} fileUri - The file URI
+//  * @param {Array} testVideos - Optional array of test videos for checking test video size
+//  * @returns {Promise<string|null>} - The file size in MB or null
+//  */
+// export const getFileSizeInMB = async (fileUri, testVideos = []) => {
+//   try {
+//     console.log("===== In MediaHelper.js - getFileSizeInMB =====");
 
-    // For local files, get the file info
-    if (Platform.OS === "ios") {
-      const fileInfo = await FileSystem.getInfoAsync(fileUri);
-      const fileSizeInBytes = fileInfo.size;
-      const fileSizeInMB = (fileSizeInBytes / (1024 * 1024)).toFixed(2);
-      console.log(`File size: ${fileSizeInMB}MB`);
-      return fileSizeInMB;
-    } else {
-      // For Android, we need to use the content resolver
-      const fileInfo = await FileSystem.getInfoAsync(fileUri);
-      if (fileInfo.exists && fileInfo.size) {
-        const fileSizeInMB = (fileInfo.size / (1024 * 1024)).toFixed(2);
-        console.log(`File size: ${fileSizeInMB}MB`);
-        return fileSizeInMB;
-      } else {
-        console.log("File info not available, using estimated size");
-        return "1.5"; // Default estimated size
-      }
-    }
-  } catch (error) {
-    console.error("Error getting file size:", error);
-    return "1.0"; // Default fallback size
-  }
-};
+//     // Check if it's a test video first (only if testVideos is provided)
+//     if (testVideos && testVideos.length > 0) {
+//       const testVideoSize = getTestVideoFileSize(fileUri, testVideos);
+//       if (testVideoSize) {
+//         console.log(`Test video detected, size: ${testVideoSize}MB`);
+//         return testVideoSize.toString();
+//       }
+//     }
+
+//     if (!fileUri || typeof fileUri !== "string") return null;
+
+//     // Handle remote URLs (S3 URLs)
+//     if (fileUri.startsWith("http") && (!testVideos || !isTestVideo(fileUri, testVideos))) {
+//       // For remote files, we can't get the size directly
+//       // Return null or a placeholder
+//       return null;
+//     }
+
+//     // For local files, get the file info
+//     if (Platform.OS === "ios") {
+//       const fileInfo = await FileSystem.getInfoAsync(fileUri);
+//       const fileSizeInBytes = fileInfo.size;
+//       const fileSizeInMB = (fileSizeInBytes / (1024 * 1024)).toFixed(2);
+//       console.log(`File size: ${fileSizeInMB}MB`);
+//       return fileSizeInMB;
+//     } else {
+//       // For Android, we need to use the content resolver
+//       const fileInfo = await FileSystem.getInfoAsync(fileUri);
+//       if (fileInfo.exists && fileInfo.size) {
+//         const fileSizeInMB = (fileInfo.size / (1024 * 1024)).toFixed(2);
+//         console.log(`File size: ${fileSizeInMB}MB`);
+//         return fileSizeInMB;
+//       } else {
+//         console.log("File info not available, using estimated size");
+//         return "1.5"; // Default estimated size
+//       }
+//     }
+//   } catch (error) {
+//     console.error("Error getting file size:", error);
+//     return "1.0"; // Default fallback size
+//   }
+// };
 
 /**
  * Check if a URI is a test video
@@ -544,20 +795,6 @@ export const isTestVideo = (uri, testVideos) => {
  * @param {Array} testVideos - Array of test video objects
  * @returns {number|null} - The size of the test video or null if not found
  */
-export const getTestVideoFileSize = (uri, testVideos) => {
-  if (!uri || !testVideos || !Array.isArray(testVideos)) return null;
-
-  // Find the test video by URI
-  const testVideo = testVideos.find((video) => {
-    if (!video.uri) return false;
-    return uri.includes(video.uri.split("/").pop());
-  });
-
-  if (testVideo) {
-    return testVideo.size;
-  }
-  return null;
-};
 
 /**
  * Check the total file size of all media

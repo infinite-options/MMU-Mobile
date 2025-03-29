@@ -201,6 +201,7 @@ export default function EditProfile() {
   const [hasChanges, setHasChanges] = useState(false);
   const [originalValues, setOriginalValues] = useState(null);
   const [originalVideoUrl, setOriginalVideoUrl] = useState(null); // Add this to store the original video URL
+  const [presignedData, setPresignedData] = useState(null); // Add this to store the presigned video URL
 
   // Add these state variables at the top of your component
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -225,7 +226,7 @@ export default function EditProfile() {
   useEffect(() => {
     const initTestVideos = async () => {
       try {
-        const videos = await loadTestVideos();
+        const videos = await MediaHelper.loadTestVideos();
         console.log("Test videos loaded in EditProfile:", videos);
         setTestVideos(videos);
       } catch (error) {
@@ -735,56 +736,323 @@ export default function EditProfile() {
     setPhotoFileSizes(newPhotoFileSizes);
   };
 
-  // Add a state variable to track upload status
-  const [uploadStatus, setUploadStatus] = useState("");
+  // // Handle picking a video using MediaHelper
+  // const handleVideoUpload = async () => {
+  //   const result = await MediaHelper.pickVideo(testVideos);
 
-  // Handle picking a video using MediaHelper
-  const handleVideoUpload = async () => {
-    const result = await MediaHelper.pickVideo(testVideos);
+  //   if (result === false) {
+  //     // Selection was cancelled, show test video options
+  //     Alert.alert("Video Selection Cancelled", "Would you like to use a test video instead?", [
+  //       { text: "No", style: "cancel" },
+  //       { text: "Yes", onPress: showTestVideoOptions },
+  //     ]);
+  //   } else if (result) {
+  //     const { uri, fileSize } = result;
+  //     setVideoUri(uri);
+  //     setVideoFileSize(fileSize);
+  //     setIsVideoPlaying(false);
+  //     setHasChanges(true);
 
-    if (result === false) {
-      // Selection was cancelled, show test video options
-      Alert.alert("Video Selection Cancelled", "Would you like to use a test video instead?", [
-        { text: "No", style: "cancel" },
-        { text: "Yes", onPress: showTestVideoOptions },
-      ]);
-    } else if (result) {
-      const { uri, fileSize } = result;
-      setVideoUri(uri);
-      setVideoFileSize(fileSize);
-      setIsVideoPlaying(false);
+  //     // If there was a video that's now being replaced, mark it as deleted
+  //     if (originalVideoUrl && originalVideoUrl !== uri) {
+  //       setDeletedVideo(true);
+  //     }
+  //   }
+  // };
+
+  // // Record video using MediaHelper
+  // const handleRecordVideo = async () => {
+  //   const result = await MediaHelper.recordVideo(testVideos);
+
+  //   if (result === false) {
+  //     // Recording was cancelled, show test video options
+  //     Alert.alert("Video Recording Cancelled", "Would you like to use a test video instead?", [
+  //       { text: "No", style: "cancel" },
+  //       { text: "Yes", onPress: showTestVideoOptions },
+  //     ]);
+  //   } else if (result) {
+  //     const { uri, fileSize } = result;
+  //     setVideoUri(uri);
+  //     setVideoFileSize(fileSize);
+  //     setIsVideoPlaying(false);
+  //     setHasChanges(true);
+
+  //     // If there was a video that's now being replaced, mark it as deleted
+  //     if (originalVideoUrl && originalVideoUrl !== uri) {
+  //       setDeletedVideo(true);
+  //     }
+
+  //     // Get presigned URL after successful recording
+  //     try {
+  //       const uid = await AsyncStorage.getItem("user_uid");
+  //       if (uid) {
+  //         const presignedData = await MediaHelper.getPresignedUrl(uid);
+  //         setPresignedData(presignedData);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error getting presigned URL:", error);
+  //       Alert.alert("Error getting presigned URL:", error.message);
+  //     }
+  //   }
+  // };
+
+  // Record video using MediaHelper
+  const handleRecordVideo = async () => {
+    console.log("===== In EditProfile.js - newVideo =====");
+    let processedVideo = null; // Declare outside try-catch
+
+    try {
+      console.log("===== In EditProfile.js - handleRecordVideo =====");
+      const hasPermission = await MediaHelper.requestCameraPermissions();
+
+      if (hasPermission) {
+        // If we have camera permission, try recording
+        const result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+          allowsEditing: false,
+          quality: 1.0,
+          videoQuality: MediaHelper.getVideoQuality(),
+          maxDuration: 60,
+          saveToPhotos: true,
+        });
+
+        if (!result.canceled) {
+          processedVideo = await MediaHelper.storeVideo(result);
+        } else {
+          // If recording was cancelled, try library selection
+          const libraryResult = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+            allowsEditing: false,
+            quality: 1.0,
+            videoQuality: MediaHelper.getVideoQuality(),
+          });
+
+          if (!libraryResult.canceled) {
+            processedVideo = await MediaHelper.storeVideo(libraryResult);
+          } else {
+            // If library selection was cancelled, offer test videos
+            Alert.alert("Video Selection", "Would you like to select a test video instead?", [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Select Test Video",
+                onPress: async () => {
+                  processedVideo = await MediaHelper.useTestVideo(testVideos);
+                },
+              },
+            ]);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error in handleRecordVideo:", error);
+      Alert.alert("Error", "There was an issue processing the video. Please try again. (Error 2)");
+
+      // If no camera permission, try library selection first
+      const libraryResult = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        allowsEditing: false,
+        quality: 1.0,
+        videoQuality: MediaHelper.getVideoQuality(),
+      });
+
+      if (!libraryResult.canceled) {
+        processedVideo = await MediaHelper.storeVideo(libraryResult);
+        console.log("===== processedVideo back from MediaHelper.storeVideo =====", processedVideo);
+      } else {
+        // If library selection was cancelled, offer test videos
+        Alert.alert("Video Selection", "Would you like to select a test video instead?", [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Select Test Video",
+            onPress: async () => {
+              processedVideo = await MediaHelper.useTestVideo(testVideos);
+            },
+          },
+        ]);
+      }
+    }
+
+    console.log("===== processedVideo =====", processedVideo);
+    if (processedVideo) {
+      setVideoUri(processedVideo.uri);
+      setVideoFileSize(processedVideo.fileSize);
       setHasChanges(true);
-
-      // If there was a video that's now being replaced, mark it as deleted
-      if (originalVideoUrl && originalVideoUrl !== uri) {
+      if (originalVideoUrl) {
         setDeletedVideo(true);
       }
+    }
+    try {
+      const uid = await AsyncStorage.getItem("user_uid");
+      if (uid) {
+        const presignedData = await MediaHelper.getPresignedUrl(uid);
+        setPresignedData(presignedData);
+        console.log("===== presignedData =====", presignedData);
+      }
+    } catch (error) {
+      console.error("Error getting presigned URL:", error);
+      Alert.alert("Error getting presigned URL:", error.message);
     }
   };
 
   // Record video using MediaHelper
-  const handleRecordVideo = async () => {
-    const result = await MediaHelper.recordVideo(testVideos);
+  // const handleRecordVideo = async () => {
+  //   try {
+  //     console.log("===== In EditProfile.js - handleRecordVideo =====");
+  //     const hasPermission = await MediaHelper.requestCameraPermissions();
 
-    if (result === false) {
-      // Recording was cancelled, show test video options
-      Alert.alert("Video Recording Cancelled", "Would you like to use a test video instead?", [
-        { text: "No", style: "cancel" },
-        { text: "Yes", onPress: showTestVideoOptions },
-      ]);
-    } else if (result) {
-      const { uri, fileSize } = result;
-      setVideoUri(uri);
-      setVideoFileSize(fileSize);
-      setIsVideoPlaying(false);
-      setHasChanges(true);
+  //     if (hasPermission) {
+  //       // If we have camera permission, try recording
+  //       const result = await ImagePicker.launchCameraAsync({
+  //         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+  //         allowsEditing: false,
+  //         quality: 1.0,
+  //         videoQuality: MediaHelper.getVideoQuality(),
+  //         maxDuration: 60,
+  //         saveToPhotos: true,
+  //       });
 
-      // If there was a video that's now being replaced, mark it as deleted
-      if (originalVideoUrl && originalVideoUrl !== uri) {
-        setDeletedVideo(true);
-      }
-    }
-  };
+  //       if (!result.canceled) {
+  //         const processedVideo = await MediaHelper.storeVideo(result);
+  //         if (processedVideo) {
+  //           setVideoUri(processedVideo.uri);
+  //           setVideoFileSize(processedVideo.fileSize);
+  //           setHasChanges(true);
+  //           if (originalVideoUrl) {
+  //             setDeletedVideo(true);
+  //           }
+  //         }
+  //       } else {
+  //         // If recording was cancelled, try library selection
+  //         const libraryResult = await ImagePicker.launchImageLibraryAsync({
+  //           mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+  //           allowsEditing: false,
+  //           quality: 1.0,
+  //           videoQuality: MediaHelper.getVideoQuality(),
+  //         });
+
+  //         if (!libraryResult.canceled) {
+  //           const processedVideo = await MediaHelper.storeVideo(libraryResult);
+  //           if (processedVideo) {
+  //             setVideoUri(processedVideo.uri);
+  //             setVideoFileSize(processedVideo.fileSize);
+  //             setHasChanges(true);
+  //             if (originalVideoUrl) {
+  //               setDeletedVideo(true);
+  //             }
+  //           }
+  //         } else {
+  //           // If library selection was cancelled, offer test videos
+  //           Alert.alert("Video Selection", "Would you like to select a test video instead?", [
+  //             { text: "Cancel", style: "cancel" },
+  //             {
+  //               text: "Select Test Video",
+  //               onPress: async () => {
+  //                 const selectedVideo = await MediaHelper.useTestVideo(testVideos);
+  //                 if (selectedVideo) {
+  //                   setVideoUri(selectedVideo.uri);
+  //                   setVideoFileSize(selectedVideo.fileSize);
+  //                   setHasChanges(true);
+  //                   if (originalVideoUrl) {
+  //                     setDeletedVideo(true);
+  //                   }
+  //                 }
+  //               },
+  //             },
+  //           ]);
+  //         }
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error("Error in handleRecordVideo:", error);
+  //     Alert.alert("Error", "There was an issue processing the video. Please try again. (Error 2)");
+  //     hasPermission = false;
+
+  //     if (!hasPermission) {
+  //       // If no camera permission, try library selection first
+  //       const libraryResult = await ImagePicker.launchImageLibraryAsync({
+  //         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+  //         allowsEditing: false,
+  //         quality: 1.0,
+  //         videoQuality: MediaHelper.getVideoQuality(),
+  //       });
+
+  //       if (!libraryResult.canceled) {
+  //         const processedVideo = await MediaHelper.storeVideo(libraryResult);
+  //         if (processedVideo) {
+  //           setVideoUri(processedVideo.uri);
+  //           setVideoFileSize(processedVideo.fileSize);
+  //           setHasChanges(true);
+  //           if (originalVideoUrl) {
+  //             setDeletedVideo(true);
+  //           }
+  //           return;
+  //         }
+  //       }
+
+  //       // If library selection failed or was cancelled, offer test videos
+  //       Alert.alert("Video Selection", "Would you like to select a test video instead?", [
+  //         { text: "Cancel", style: "cancel" },
+  //         {
+  //           text: "Select Test Video",
+  //           onPress: async () => {
+  //             const selectedVideo = await MediaHelper.useTestVideo(testVideos);
+  //             if (selectedVideo) {
+  //               setVideoUri(selectedVideo.uri);
+  //               setVideoFileSize(selectedVideo.fileSize);
+  //               setHasChanges(true);
+  //               if (originalVideoUrl) {
+  //                 setDeletedVideo(true);
+  //               }
+  //             }
+  //           },
+  //         },
+  //       ]);
+  //       return;
+  //     }
+
+  //     // } catch (error) {
+  //     //   console.error("Error in handleRecordVideo:", error);
+  //     //   Alert.alert("Error", "There was an issue processing the video. Please try again. (Error 2)");
+  //   }
+
+  //   // Get presigned URL after successful recording
+  //   try {
+  //     const uid = await AsyncStorage.getItem("user_uid");
+  //     if (uid) {
+  //       const presignedData = await MediaHelper.getPresignedUrl(uid);
+  //       setPresignedData(presignedData);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error getting presigned URL:", error);
+  //     Alert.alert("Error getting presigned URL:", error.message);
+  //   }
+  // };
+
+  // Function to handle test video selection
+  // const handleTestVideoSelection = (index) => {
+  //   const selectedVideo = MediaHelper.selectTestVideo(index, testVideos, "save changes");
+  //   if (selectedVideo) {
+  //     setVideoUri(selectedVideo.uri);
+  //     setVideoFileSize(selectedVideo.size);
+  //     setIsVideoPlaying(false);
+  //     setHasChanges(true);
+
+  //     // If there was a video that's now being replaced, mark it as deleted
+  //     if (originalVideoUrl && originalVideoUrl !== selectedVideo.uri) {
+  //       setDeletedVideo(true);
+  //     }
+  //   }
+  // };
+
+  // Function to get file size for test videos - using MediaHelper
+  // const getTestVideoFileSize = (uri) => {
+  //   return MediaHelper.getTestVideoFileSize(uri, testVideos);
+  // };
+
+  // Function to check if a URI is a test video - using MediaHelper
+  // const isTestVideo = (uri) => {
+  //   return MediaHelper.isTestVideo(uri, testVideos);
+  // };
 
   const handleRemoveVideo = () => {
     // Modify this function to just mark the video as deleted but don't allow saving unless a new video is uploaded
@@ -806,35 +1074,9 @@ export default function EditProfile() {
   };
 
   // Function to show fallback options for test videos
-  const showTestVideoOptions = () => {
-    MediaHelper.showTestVideoOptions(testVideos, handleTestVideoSelection);
-  };
-
-  // Function to handle test video selection
-  const handleTestVideoSelection = (index) => {
-    const selectedVideo = MediaHelper.selectTestVideo(index, testVideos, "save changes");
-    if (selectedVideo) {
-      setVideoUri(selectedVideo.uri);
-      setVideoFileSize(selectedVideo.size);
-      setIsVideoPlaying(false);
-      setHasChanges(true);
-
-      // If there was a video that's now being replaced, mark it as deleted
-      if (originalVideoUrl && originalVideoUrl !== selectedVideo.uri) {
-        setDeletedVideo(true);
-      }
-    }
-  };
-
-  // Function to get file size for test videos - using MediaHelper
-  const getTestVideoFileSize = (uri) => {
-    return MediaHelper.getTestVideoFileSize(uri, testVideos);
-  };
-
-  // Function to check if a URI is a test video - using MediaHelper
-  const isTestVideo = (uri) => {
-    return MediaHelper.isTestVideo(uri, testVideos);
-  };
+  // const showTestVideoOptions = () => {
+  //   MediaHelper.showTestVideoOptions(testVideos, handleTestVideoSelection);
+  // };
 
   // Driver's license
   const handleLicenseUpload = async () => {
@@ -1344,37 +1586,29 @@ export default function EditProfile() {
         } else if (videoUri && videoUri !== originalVideoUrl) {
           // New Video. Check if it's a test video
 
-          // First get the presigned URL (same as EditProfile.js)
-          const presignedData = await MediaHelper.getPresignedUrl(uid);
+          // Use the presignedData we already have from handleRecordVideo
+          if (presignedData && presignedData.url) {
+            const uploadResult = await MediaHelper.uploadVideoToS3(videoUri, presignedData.url);
+            const uploadSuccess = uploadResult.success;
+            console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
 
-          // setUploadStatus(`Uploading ${videoFileSize}MB video directly to S3...`);
+            if (uploadSuccess && presignedData.videoUrl) {
+              console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
 
-          const uploadResult = await MediaHelper.uploadVideoToS3(videoUri, presignedData.url);
-          const uploadSuccess = uploadResult.success;
-          console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
-
-          if (uploadSuccess && presignedData.videoUrl) {
-            console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
-
-            // Only include user_delete_video if there was an original video to delete
-            if (originalVideoUrl) {
-              uploadData.append("user_delete_video", JSON.stringify([originalVideoUrl]));
-              console.log("Added user_delete_video to form data:", JSON.stringify([originalVideoUrl]));
+              // Only include user_delete_video if there was an original video to delete
+              if (originalVideoUrl) {
+                uploadData.append("user_delete_video", JSON.stringify([originalVideoUrl]));
+                console.log("Added user_delete_video to form data:", JSON.stringify([originalVideoUrl]));
+              }
+              uploadData.append("user_video_url", presignedData.videoUrl);
+              console.log("Added user_video_url to form data:", presignedData.videoUrl);
+            } else {
+              console.error("Direct S3 upload failed");
+              Alert.alert("Error uploading video:", "Please try again.");
             }
-            uploadData.append("user_video_url", presignedData.videoUrl);
-            console.log("Added user_video_url to form data:", presignedData.videoUrl);
           } else {
-            console.error("Direct S3 upload failed");
-            // setUploadStatus("S3 upload failed, falling back to regular upload");
-
-            // // Fall back to regular upload
-            // console.log("Adding video as multipart form data...");
-            // uploadData.append("user_video", {
-            //   uri: videoUri,
-            //   type: "video/mp4",
-            //   name: "user_video.mp4",
-            // });
-            // console.log("Added user_video to form data as multipart");
+            console.error("No presigned URL available");
+            Alert.alert("Error uploading video:", "No presigned URL available.");
           }
         }
         console.log("=== End Video Upload Debug ===");
@@ -1604,7 +1838,7 @@ export default function EditProfile() {
 
         // Add video size if available
         if (videoUri) {
-          const size = await getFileSizeInMB(videoUri, testVideos);
+          const size = await MediaHelper.getFileSizeInMB(videoUri);
           if (size) {
             totalSize += parseFloat(size);
           }
@@ -1614,7 +1848,7 @@ export default function EditProfile() {
         for (let i = 0; i < photos.length; i++) {
           if (photos[i]) {
             // Estimate photo size (can be replaced with actual size later)
-            const size = await getFileSizeInMB(photos[i], testVideos);
+            const size = await MediaHelper.getFileSizeInMB(photos[i]);
             if (size) {
               totalSize += parseFloat(size);
             }
@@ -1645,46 +1879,46 @@ export default function EditProfile() {
   }, [videoFileSize, photoFileSizes, checkTotalFileSize]);
 
   // Add a function to test S3 upload
-  const testS3Upload = async () => {
-    if (!videoUri || !videoFileSize) {
-      Alert.alert("No Video", "Please select a video first");
-      return;
-    }
+  // const testS3Upload = async () => {
+  //   if (!videoUri || !videoFileSize) {
+  //     Alert.alert("No Video", "Please select a video first");
+  //     return;
+  //   }
 
-    // Check if it's a test video
-    if (isTestVideo(videoUri)) {
-      Alert.alert("Test Video", `This is a test video (${videoFileSize}MB) with a direct URL. No need to upload to S3.`, [{ text: "OK" }]);
-      return;
-    }
+  //   // Check if it's a test video
+  //   if (isTestVideo(videoUri)) {
+  //     Alert.alert("Test Video", `This is a test video (${videoFileSize}MB) with a direct URL. No need to upload to S3.`, [{ text: "OK" }]);
+  //     return;
+  //   }
 
-    if (parseFloat(videoFileSize) <= 1) {
-      Alert.alert("Video Too Small", "This video is smaller than 1MB. For testing, please select a larger video.");
-      return;
-    }
+  //   if (parseFloat(videoFileSize) <= 1) {
+  //     Alert.alert("Video Too Small", "This video is smaller than 1MB. For testing, please select a larger video.");
+  //     return;
+  //   }
 
-    try {
-      // Get user_uid from AsyncStorage
-      const uid = await AsyncStorage.getItem("user_uid");
-      if (!uid) {
-        return;
-      }
+  //   try {
+  //     // Get user_uid from AsyncStorage
+  //     const uid = await AsyncStorage.getItem("user_uid");
+  //     if (!uid) {
+  //       return;
+  //     }
 
-      // Get presigned URL
-      const presignedData = await getPresignedUrl(uid);
+  //     // Get presigned URL
+  //     const presignedData = await getPresignedUrl(uid);
 
-      if (!presignedData || !presignedData.signedRequest) {
-        return;
-      }
+  //     if (!presignedData || !presignedData.signedRequest) {
+  //       return;
+  //     }
 
-      const uploadResult = await uploadVideoToS3(videoUri, presignedData.signedRequest);
+  //     const uploadResult = await uploadVideoToS3(videoUri, presignedData.signedRequest);
 
-      if (uploadResult.success) {
-      } else {
-      }
-    } catch (error) {
-      console.error("Error in test S3 upload:", error);
-    }
-  };
+  //     if (uploadResult.success) {
+  //     } else {
+  //     }
+  //   } catch (error) {
+  //     console.error("Error in test S3 upload:", error);
+  //   }
+  // };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -1753,7 +1987,7 @@ export default function EditProfile() {
                 </TouchableOpacity>
 
                 {__DEV_MODE__ && (
-                  <TouchableOpacity onPress={handleVideoUpload} style={[styles.uploadVideoButton, { marginTop: 10 }]}>
+                  <TouchableOpacity onPress={handleRecordVideo} style={[styles.uploadVideoButton, { marginTop: 10 }]}>
                     <Ionicons name='cloud-upload-outline' size={20} color='#E4423F' />
                     <Text style={styles.uploadVideoText}>Select Video</Text>
                   </TouchableOpacity>
@@ -1813,16 +2047,29 @@ export default function EditProfile() {
 
           {/* Total File Size Button */}
           {__DEV_MODE__ && (
-            <TouchableOpacity
-              style={styles.fileSizeButton}
-              onPress={() => {
-                const totalSize = checkTotalFileSize();
-                Alert.alert("Total Media Size", `The total size of your media files is ${totalSize}MB.`, [{ text: "OK" }]);
-              }}
-            >
-              <Ionicons name='information-circle-outline' size={20} color='#E4423F' />
-              <Text style={styles.fileSizeButtonText}>Check Total File Size</Text>
-            </TouchableOpacity>
+            <>
+              <View style={styles.debugBox}>
+                <Text style={styles.debugText}>Video Debug Info:</Text>
+                <Text style={styles.debugText}>videoUri: {videoUri || "null"}</Text>
+                <Text style={styles.debugText}>videoFileSize: {videoFileSize || "null"} MB</Text>
+                <Text style={styles.debugText}>originalVideoUrl: {originalVideoUrl || "null"}</Text>
+              </View>
+              <View style={styles.debugBox}>
+                <Text style={styles.debugText}>Presigned Data Debug Info:</Text>
+                <Text style={styles.debugText}>Presigned URL: {presignedData?.url || "null"}</Text>
+                <Text style={styles.debugText}>Video URL: {presignedData?.videoUrl || "null"}</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.fileSizeButton}
+                onPress={() => {
+                  const totalSize = checkTotalFileSize();
+                  Alert.alert("Total Media Size", `The total size of your media files is ${totalSize}MB.`, [{ text: "OK" }]);
+                }}
+              >
+                <Ionicons name='information-circle-outline' size={20} color='#E4423F' />
+                <Text style={styles.fileSizeButtonText}>Check Total File Size</Text>
+              </TouchableOpacity>
+            </>
           )}
 
           {/* Driver's License */}
@@ -3120,4 +3367,17 @@ const styles = StyleSheet.create({
   //   color: "#FFF",
   //   fontSize: 12,
   // },
+  debugBox: {
+    backgroundColor: "#FFF",
+    borderWidth: 2,
+    borderColor: "#E4423F",
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+  },
+  debugText: {
+    color: "#E4423F",
+    fontSize: 12,
+    marginBottom: 2,
+  },
 });

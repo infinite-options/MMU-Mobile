@@ -212,26 +212,26 @@ export default function AddMediaScreen({ navigation }) {
   };
 
   // Update handleVideoUpload to get presigned URL
-  const handleVideoUpload = async () => {
-    try {
-      const result = await MediaHelper.handleVideoLibrarySelection(testVideos);
-      if (result) {
-        setVideoUri(result.uri);
-        setVideoFileSize(result.fileSize);
-        setIsVideoPlaying(false);
+  // const handleVideoUpload = async () => {
+  //   try {
+  //     const result = await MediaHelper.handleVideoLibrarySelection(testVideos);
+  //     if (result) {
+  //       setVideoUri(result.uri);
+  //       setVideoFileSize(result.fileSize);
+  //       setIsVideoPlaying(false);
 
-        // Get presigned URL
-        const uid = await AsyncStorage.getItem("user_uid");
-        if (uid) {
-          const presignedData = await MediaHelper.getPresignedUrl(uid);
-          setPresignedData(presignedData);
-        }
-      }
-    } catch (error) {
-      console.error("Error in handleVideoUpload:", error);
-      Alert.alert("Error", "There was an issue with the video selection. Please try again.");
-    }
-  };
+  //       // Get presigned URL
+  //       const uid = await AsyncStorage.getItem("user_uid");
+  //       if (uid) {
+  //         const presignedData = await MediaHelper.getPresignedUrl(uid);
+  //         setPresignedData(presignedData);
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error("Error in handleVideoUpload:", error);
+  //     Alert.alert("Error", "There was an issue with the video selection. Please try again.");
+  //   }
+  // };
 
   // Update handleRecordVideo to get presigned URL
   const handleRecordVideo = async () => {
@@ -276,9 +276,9 @@ export default function AddMediaScreen({ navigation }) {
   };
 
   // Function to check if a URI is a test video - using MediaHelper
-  const isTestVideo = (uri) => {
-    return MediaHelper.isTestVideo(uri, testVideos);
-  };
+  // const isTestVideo = (uri) => {
+  //   return MediaHelper.isTestVideo(uri, testVideos);
+  // };
 
   // Update checkTotalFileSize to use MediaHelper
   const checkTotalFileSize = useCallback(() => {

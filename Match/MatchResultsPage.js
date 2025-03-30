@@ -519,7 +519,10 @@ const MatchResultsPage = () => {
     const commonInterestsCount = calculateCommonInterests(interests);
 
     // Determine button label based on meet conditions
-    const dynamicButtonLabel = match?.meet_uid === null ? "Set up date" : match?.meet_user_id === userId ? "Change date" : "See invitation";
+    console.log("In MatchResultsPage.js, Button Label:", match?.meet_uid, userId);
+    // const dynamicButtonLabel = match?.meet_uid === null ? "Set up date" : match?.meet_user_id === userId ? "Change date" : "See invitation";
+    const dynamicButtonLabel =
+      match?.meet_uid === null ? "Set up date" : match?.meet_user_id === userId || (match?.meet_confirmed === 1 && match?.meet_completed === 0) ? "Change date" : "See invitation";
 
     return (
       <View style={styles.matchRow} key={`${firstname}-${matchId}-${Math.random()}`}>

@@ -4,6 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import config from "../config"; // Import config for Google client IDs
 import * as AppleAuthentication from "expo-apple-authentication";
 import { __DEV_MODE__ } from "../config";
+import Constants from "expo-constants"; // Add this import
 
 // Helper function to extract the last two digits before .apps.googleusercontent.com
 const getLastTwoDigits = (clientId) => {
@@ -28,6 +29,15 @@ const mapsApiKeyDisplay = mapsApiKey ? "..." + mapsApiKey.slice(-4) : "Not set";
 const StartPage = () => {
   const navigation = useNavigation();
   const [appleAuthStatus, setAppleAuthStatus] = useState("Checking...");
+
+  // Add debug logging for build number
+  useEffect(() => {
+    console.log("=== Build Number Debug ===");
+    // console.log("Constants.expoConfig:", Constants.expoConfig);
+    console.log("iOS Build Number:", Constants.expoConfig?.ios?.buildNumber);
+    // console.log("Full Constants:", Constants);
+    console.log("========================");
+  }, []);
 
   // Check if Apple Authentication is available
   useEffect(() => {
@@ -79,6 +89,7 @@ const StartPage = () => {
           <Text style={styles.apiKeysText}>Maps API: {mapsApiKeyDisplay}</Text>
           <Text style={styles.apiKeysText}>Apple Auth: {appleAuthStatus}</Text>
           <Text style={styles.apiKeysText}>Environment: {__DEV__ ? "Development" : "Production"}</Text>
+          <Text style={styles.apiKeysText}>iOS Build: {Constants.expoConfig?.ios?.buildNumber || "Not set"}</Text>
         </View>
       )}
 

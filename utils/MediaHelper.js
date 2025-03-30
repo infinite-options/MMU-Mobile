@@ -388,6 +388,7 @@ export const storeVideo = async (result) => {
       console.log("In MediaHelper, Video stored:", result.assets[0]);
 
       const uri = result.assets[0].uri;
+      console.log("In MediaHelper, Video URI:", uri);
       const fileSize = await getFileSizeInMB(uri);
       console.log(`In MediaHelper, Video file size: ${fileSize}MB`);
 
@@ -636,6 +637,7 @@ export const handleVideoRecording = async (testVideos) => {
   try {
     console.log("===== In MediaHelper.js - handleVideoRecording =====");
     const hasPermission = await requestCameraPermissions();
+    console.log("CamerahasPermission Status:", hasPermission);
 
     if (!hasPermission) {
       console.log("No camera permission, trying library selection");
@@ -665,8 +667,9 @@ export const handleVideoRecording = async (testVideos) => {
       return handleVideoLibrarySelection(testVideos);
     }
   } catch (error) {
-    console.error("Error in handleVideoRecording:", error);
-    return null;
+    console.error("Error in handleVideoRecording. No Camera Permission:", error);
+    return handleVideoLibrarySelection(testVideos);
+    // return null;
   }
 };
 
@@ -679,7 +682,7 @@ export const handleVideoLibrarySelection = async (testVideos) => {
   try {
     console.log("===== In MediaHelper.js - handleVideoLibrarySelection =====");
     const hasPermission = await requestMediaLibraryPermissions();
-
+    console.log("LibraryhasPermission Status:", hasPermission);
     if (!hasPermission) {
       console.log("No library permission, offering test videos");
       return await useTestVideo(testVideos);
@@ -694,6 +697,7 @@ export const handleVideoLibrarySelection = async (testVideos) => {
 
     if (!result.canceled) {
       console.log("Library selection successful, processing video");
+      console.log("Library selection Result:", result);
       return await storeVideo(result);
     } else {
       console.log("Library selection cancelled, offering test videos");
@@ -702,5 +706,40 @@ export const handleVideoLibrarySelection = async (testVideos) => {
   } catch (error) {
     console.error("Error in handleVideoLibrarySelection:", error);
     return null;
+  }
+};
+
+/**
+ * Handle video recording and state updates for both AddMediaScreen and EditProfile
+ * @param {Array} testVideos Array of test videos
+ * @param {string} userId User ID for presigned URL
+ * @param {Function} setVideoUri Function to update video URI state
+ * @param {Function} setVideoFileSize Function to update file size state
+ * @param {Function} setIsVideoPlaying Function to update playing state
+ * @param {Function} setPresignedData Function to update presigned data state
+ * @returns {Promise<boolean>} Success status
+ */
+export const handleVideoRecordingWithState = async (testVideos, userId, setVideoUri, setVideoFileSize, setIsVideoPlaying, setPresignedData) => {
+  try {
+    console.log("===== In MediaHelper.js - handleVideoRecordingWithState =====");
+    const result = await handleVideoRecording(testVideos);
+
+    if (result) {
+      setVideoUri(result.uri);
+      setVideoFileSize(result.fileSize);
+      setIsVideoPlaying(false);
+
+      if (userId) {
+        const presignedData = await getPresignedUrl(userId);
+        if (presignedData) {
+          setPresignedData(presignedData);
+          return true;
+        }
+      }
+    }
+    return false;
+  } catch (error) {
+    console.error("Error in handleVideoRecordingWithState:", error);
+    return false;
   }
 };

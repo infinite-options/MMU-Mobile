@@ -732,32 +732,16 @@ export default function EditProfile() {
   // Record video using MediaHelper
   const handleRecordVideo = async () => {
     try {
-      console.log("===== In EditProfile.js - handleRecordVideo =====");
-      let processedVideo = null;
-      const originalVideoUrl = videoUri;
+      const success = await MediaHelper.handleVideoRecordingWithState(testVideos, userId, setVideoUri, setVideoFileSize, setIsVideoPlaying, setPresignedData);
 
-      // Try recording first
-      processedVideo = await MediaHelper.handleVideoRecording(testVideos);
-
-      console.log("===== processedVideo =====", processedVideo);
-      if (processedVideo) {
-        setVideoUri(processedVideo.uri);
-        setVideoFileSize(processedVideo.fileSize);
+      if (success) {
+        // If there was an original video, mark it as changed and deleted
         if (originalVideoUrl) {
           setHasChanges(true);
           setDeletedVideo(true);
         }
-      }
-
-      try {
-        const uid = await AsyncStorage.getItem("user_uid");
-        if (uid) {
-          const presignedData = await MediaHelper.getPresignedUrl(uid);
-          setPresignedData(presignedData);
-          console.log("===== presignedData =====", presignedData);
-        }
-      } catch (error) {
-        console.error("Error getting presigned URL:", error);
+      } else {
+        Alert.alert("Error", "There was an issue with the video recording. Please try again.");
       }
     } catch (error) {
       console.error("Error in handleRecordVideo:", error);
@@ -810,7 +794,7 @@ export default function EditProfile() {
       setSuggestions([]);
       return;
     }
-    console.log("Api key:", GOOGLE_API_KEY);
+    // console.log("Api key:", GOOGLE_API_KEY);
     try {
       const endpoint = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&key=${GOOGLE_API_KEY}&components=country:us`;
       const response = await fetch(endpoint);
@@ -1238,7 +1222,7 @@ export default function EditProfile() {
         // Add modified fields to FormData
         uploadData.append("user_email_id", userData.user_email_id);
 
-        // Code differs from AddMediaScreen.js
+        // ********    Code differs from AddMediaScreen.js
 
         // Add age calculation from birthdate
         if (formValues.birthdate && isValidDate(formValues.birthdate)) {
@@ -1288,7 +1272,7 @@ export default function EditProfile() {
 
         console.log("=== End Photo Upload Debug ===");
 
-        // Code re-aligns from AddMediaScreen.js from here
+        // ********         Code re-aligns from AddMediaScreen.js from here
 
         // Handle video upload
         console.log("=== Video Upload Debug ===");
@@ -1306,12 +1290,12 @@ export default function EditProfile() {
 
           // Use the presignedData we already have from handleRecordVideo
           if (presignedData && presignedData.url) {
+            console.log("In EditProfile.js, We havepresignedData:", presignedData);
             const uploadResult = await MediaHelper.uploadVideoToS3(videoUri, presignedData.url);
             const uploadSuccess = uploadResult.success;
             console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
 
             // Consider adding an Alert here
-
             if (uploadSuccess && presignedData.videoUrl) {
               console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
 

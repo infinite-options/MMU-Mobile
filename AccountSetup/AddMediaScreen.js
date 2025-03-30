@@ -233,21 +233,13 @@ export default function AddMediaScreen({ navigation }) {
   //   }
   // };
 
-  // Update handleRecordVideo to get presigned URL
+  // Update handleRecordVideo to use the new MediaHelper function
   const handleRecordVideo = async () => {
     try {
-      const result = await MediaHelper.handleVideoRecording(testVideos);
-      if (result) {
-        setVideoUri(result.uri);
-        setVideoFileSize(result.fileSize);
-        setIsVideoPlaying(false);
+      const success = await MediaHelper.handleVideoRecordingWithState(testVideos, userId, setVideoUri, setVideoFileSize, setIsVideoPlaying, setPresignedData);
 
-        // Get presigned URL
-        const uid = await AsyncStorage.getItem("user_uid");
-        if (uid) {
-          const presignedData = await MediaHelper.getPresignedUrl(uid);
-          setPresignedData(presignedData);
-        }
+      if (!success) {
+        Alert.alert("Error", "There was an issue with the video recording. Please try again.");
       }
     } catch (error) {
       console.error("Error in handleRecordVideo:", error);
@@ -322,7 +314,7 @@ export default function AddMediaScreen({ navigation }) {
         // Add modified fields to FormData
         uploadData.append("user_email_id", userEmail);
 
-        // Code differs from EditProfile.js
+        // *********   Code differs from EditProfile.js
 
         // Filter out null photos and get only valid URIs
         const validPhotos = photos.filter((uri) => uri !== null);
@@ -342,7 +334,7 @@ export default function AddMediaScreen({ navigation }) {
 
         console.log("=== End Photo Upload Debug ===");
 
-        // Code re-aligns from EditProfile.js from here
+        // ********         Code re-aligns from EditProfile.js from here
 
         // Handle video upload
         console.log("=== Video Upload Debug ===");
@@ -359,11 +351,12 @@ export default function AddMediaScreen({ navigation }) {
 
           // Use the presignedData we already have from handleRecordVideo
           if (presignedData && presignedData.url) {
+            console.log("In AddMediaScreen.js, We havepresignedData:", presignedData);
             const uploadResult = await MediaHelper.uploadVideoToS3(videoUri, presignedData.url);
             const uploadSuccess = uploadResult.success;
             console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
 
-            // Remove all debug alerts
+            // Consider adding an Alert here
             if (uploadSuccess && presignedData.videoUrl) {
               console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
 

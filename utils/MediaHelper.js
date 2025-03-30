@@ -281,6 +281,21 @@ export const requestCameraPermissions = async () => {
   return true;
 };
 
+export const getTestVideoFileSize = (uri, testVideos) => {
+  if (!uri || !testVideos || !Array.isArray(testVideos)) return null;
+
+  // Find the test video by URI
+  const testVideo = testVideos.find((video) => {
+    if (!video.uri) return false;
+    return uri.includes(video.uri.split("/").pop());
+  });
+
+  if (testVideo) {
+    return testVideo.size;
+  }
+  return null;
+};
+
 /**
  * Pick an image from the library
  * @param {object} options Additional options
@@ -315,6 +330,8 @@ export const pickImage = async (options = {}, testVideos = []) => {
 export const getFileSizeInMB = async (fileUri, testVideos = []) => {
   try {
     console.log("===== In MediaHelper.js - getFileSizeInMB =====");
+    // console.log("fileUri:", fileUri);
+    // console.log("testVideos:", testVideos);
 
     // Check if it's a test video first (only if testVideos is provided)
     if (testVideos && testVideos.length > 0) {
@@ -324,7 +341,6 @@ export const getFileSizeInMB = async (fileUri, testVideos = []) => {
         return testVideoSize.toString();
       }
     }
-
     if (!fileUri || typeof fileUri !== "string") return null;
 
     // Handle remote URLs (S3 URLs)
@@ -355,7 +371,7 @@ export const getFileSizeInMB = async (fileUri, testVideos = []) => {
       }
     }
   } catch (error) {
-    console.error("Error getting file size:", error);
+    console.error("Error getting file size. (Error 4)", error);
     return "1.0"; // Default fallback size
   }
 };

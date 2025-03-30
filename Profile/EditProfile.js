@@ -227,7 +227,7 @@ export default function EditProfile() {
     const initTestVideos = async () => {
       try {
         const videos = await MediaHelper.loadTestVideos();
-        console.log("Test videos loaded in EditProfile:", videos);
+        // console.log("Test videos loaded in EditProfile:", videos);
         setTestVideos(videos);
       } catch (error) {
         console.error("Error loading test videos in EditProfile:", error);
@@ -483,7 +483,7 @@ export default function EditProfile() {
     try {
       const response = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo/${uid}`);
       const fetched = response.data.result[0] || {};
-      console.log("Fetched user data:", fetched);
+      // console.log("Fetched user data:", fetched);
 
       // Safely parse open_to field
       let parsedOpenTo = [];
@@ -775,10 +775,12 @@ export default function EditProfile() {
             ]);
           }
         }
+      } else {
+        Alert.alert("Error", "Please enable camera permissions to record a video. (Error 6)");
       }
     } catch (error) {
       console.error("Error in handleRecordVideo:", error);
-      Alert.alert("Error", "There was an issue processing the video. Please try again. (Error 2)");
+      Alert.alert("Error", "Camera not available. Please try again. (Error 2)");
 
       // If no camera permission, try library selection first
       const libraryResult = await ImagePicker.launchImageLibraryAsync({
@@ -790,7 +792,7 @@ export default function EditProfile() {
 
       if (!libraryResult.canceled) {
         processedVideo = await MediaHelper.storeVideo(libraryResult);
-        console.log("===== processedVideo back from MediaHelper.storeVideo =====", processedVideo);
+        // console.log("===== processedVideo back from MediaHelper.storeVideo =====", processedVideo);
       } else {
         // If library selection was cancelled, offer test videos
         Alert.alert("Video Selection", "Would you like to select a test video instead?", [
@@ -809,8 +811,8 @@ export default function EditProfile() {
     if (processedVideo) {
       setVideoUri(processedVideo.uri);
       setVideoFileSize(processedVideo.fileSize);
-      setHasChanges(true);
       if (originalVideoUrl) {
+        setHasChanges(true);
         setDeletedVideo(true);
       }
     }
@@ -1028,6 +1030,11 @@ export default function EditProfile() {
     }
     if (valuesAreDifferent(formValues.lastName, originalValues.lastName)) {
       logChange("lastName", originalValues.lastName, formValues.lastName);
+    }
+
+    // Birthdate change
+    if (valuesAreDifferent(formValues.birthdate, originalValues.birthdate)) {
+      logChange("birthdate", originalValues.birthdate, formValues.birthdate);
     }
 
     // Address change
@@ -1298,6 +1305,7 @@ export default function EditProfile() {
         // Add age calculation from birthdate
         if (formValues.birthdate && isValidDate(formValues.birthdate)) {
           const calculatedAge = calculateAge(formValues.birthdate);
+          console.log("calculatedAge:", calculatedAge);
           uploadData.append("user_age", calculatedAge.toString());
         }
 
@@ -1352,6 +1360,7 @@ export default function EditProfile() {
         if (originalVideoUrl && !videoUri) {
           // New Video was deleted
         } else if (videoUri && videoUri !== originalVideoUrl) {
+          console.log("video has not changed");
           // New Video. Check if it's a test video
 
           // Use the presignedData we already have from handleRecordVideo
@@ -1601,11 +1610,13 @@ export default function EditProfile() {
   // Effect to get file sizes when videoUri or photos change
   useEffect(() => {
     const getFileSizes = async () => {
+      console.log("=======In useEffect - getFileSizes=======");
       try {
         let totalSize = 0;
 
         // Add video size if available
         if (videoUri) {
+          console.log("Calling getFileSizeInMB with videoUri:");
           const size = await MediaHelper.getFileSizeInMB(videoUri);
           if (size) {
             totalSize += parseFloat(size);
@@ -1615,7 +1626,7 @@ export default function EditProfile() {
         // Add photo sizes
         for (let i = 0; i < photos.length; i++) {
           if (photos[i]) {
-            // Estimate photo size (can be replaced with actual size later)
+            console.log("Calling getFileSizeInMB with photoUri:");
             const size = await MediaHelper.getFileSizeInMB(photos[i]);
             if (size) {
               totalSize += parseFloat(size);
@@ -1754,12 +1765,12 @@ export default function EditProfile() {
                   <Text style={styles.uploadVideoText}>Record Video</Text>
                 </TouchableOpacity>
 
-                {__DEV_MODE__ && (
+                {/* {__DEV_MODE__ && (
                   <TouchableOpacity onPress={handleRecordVideo} style={[styles.uploadVideoButton, { marginTop: 10 }]}>
                     <Ionicons name='cloud-upload-outline' size={20} color='#E4423F' />
                     <Text style={styles.uploadVideoText}>Select Video</Text>
                   </TouchableOpacity>
-                )}
+                )} */}
 
                 {/* Test S3 Upload Button */}
                 {videoUri && videoFileSize && parseFloat(videoFileSize) > 1 && (

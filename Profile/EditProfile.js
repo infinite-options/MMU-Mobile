@@ -731,101 +731,37 @@ export default function EditProfile() {
 
   // Record video using MediaHelper
   const handleRecordVideo = async () => {
-    console.log("===== In EditProfile.js - newVideo =====");
-    let processedVideo = null; // Declare outside try-catch
-
     try {
       console.log("===== In EditProfile.js - handleRecordVideo =====");
-      const hasPermission = await MediaHelper.requestCameraPermissions();
+      let processedVideo = null;
+      const originalVideoUrl = videoUri;
 
-      if (hasPermission) {
-        // If we have camera permission, try recording
-        const result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-          allowsEditing: false,
-          quality: 1.0,
-          videoQuality: MediaHelper.getVideoQuality(),
-          maxDuration: 60,
-          saveToPhotos: true,
-        });
+      // Try recording first
+      processedVideo = await MediaHelper.handleVideoRecording(testVideos);
 
-        if (!result.canceled) {
-          processedVideo = await MediaHelper.storeVideo(result);
-        } else {
-          // If recording was cancelled, try library selection
-          const libraryResult = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-            allowsEditing: false,
-            quality: 1.0,
-            videoQuality: MediaHelper.getVideoQuality(),
-          });
-
-          if (!libraryResult.canceled) {
-            processedVideo = await MediaHelper.storeVideo(libraryResult);
-          } else {
-            // If library selection was cancelled, offer test videos
-            Alert.alert("Video Selection", "Would you like to select a test video instead?", [
-              { text: "Cancel", style: "cancel" },
-              {
-                text: "Select Test Video",
-                onPress: async () => {
-                  processedVideo = await MediaHelper.useTestVideo(testVideos);
-                },
-              },
-            ]);
-          }
+      console.log("===== processedVideo =====", processedVideo);
+      if (processedVideo) {
+        setVideoUri(processedVideo.uri);
+        setVideoFileSize(processedVideo.fileSize);
+        if (originalVideoUrl) {
+          setHasChanges(true);
+          setDeletedVideo(true);
         }
-      } else {
-        Alert.alert("Error", "Please enable camera permissions to record a video. (Error 6)");
+      }
+
+      try {
+        const uid = await AsyncStorage.getItem("user_uid");
+        if (uid) {
+          const presignedData = await MediaHelper.getPresignedUrl(uid);
+          setPresignedData(presignedData);
+          console.log("===== presignedData =====", presignedData);
+        }
+      } catch (error) {
+        console.error("Error getting presigned URL:", error);
       }
     } catch (error) {
       console.error("Error in handleRecordVideo:", error);
-      Alert.alert("Error", "Camera not available. Please try again. (Error 2)");
-
-      // If no camera permission, try library selection first
-      const libraryResult = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-        allowsEditing: false,
-        quality: 1.0,
-        videoQuality: MediaHelper.getVideoQuality(),
-      });
-
-      if (!libraryResult.canceled) {
-        processedVideo = await MediaHelper.storeVideo(libraryResult);
-        // console.log("===== processedVideo back from MediaHelper.storeVideo =====", processedVideo);
-      } else {
-        // If library selection was cancelled, offer test videos
-        Alert.alert("Video Selection", "Would you like to select a test video instead?", [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Select Test Video",
-            onPress: async () => {
-              processedVideo = await MediaHelper.useTestVideo(testVideos);
-            },
-          },
-        ]);
-      }
-    }
-
-    console.log("===== processedVideo =====", processedVideo);
-    if (processedVideo) {
-      setVideoUri(processedVideo.uri);
-      setVideoFileSize(processedVideo.fileSize);
-      if (originalVideoUrl) {
-        setHasChanges(true);
-        setDeletedVideo(true);
-      }
-    }
-    try {
-      const uid = await AsyncStorage.getItem("user_uid");
-      if (uid) {
-        const presignedData = await MediaHelper.getPresignedUrl(uid);
-        setPresignedData(presignedData);
-        console.log("===== presignedData =====", presignedData);
-      }
-    } catch (error) {
-      console.error("Error getting presigned URL:", error);
-      Alert.alert("Error getting presigned URL:", error.message);
+      Alert.alert("Error", "There was an issue with the video recording. Please try again.");
     }
   };
 
@@ -1302,6 +1238,8 @@ export default function EditProfile() {
         // Add modified fields to FormData
         uploadData.append("user_email_id", userData.user_email_id);
 
+        // Code differs from AddMediaScreen.js
+
         // Add age calculation from birthdate
         if (formValues.birthdate && isValidDate(formValues.birthdate)) {
           const calculatedAge = calculateAge(formValues.birthdate);
@@ -1350,6 +1288,8 @@ export default function EditProfile() {
 
         console.log("=== End Photo Upload Debug ===");
 
+        // Code re-aligns from AddMediaScreen.js from here
+
         // Handle video upload
         console.log("=== Video Upload Debug ===");
         const originalVideoUrl = userData.user_video_url ? (typeof userData.user_video_url === "string" ? userData.user_video_url.replace(/^"|"$/g, "") : userData.user_video_url) : null;
@@ -1359,15 +1299,18 @@ export default function EditProfile() {
         // Check if video was deleted or changed
         if (originalVideoUrl && !videoUri) {
           // New Video was deleted
+          // Check if new video was added
         } else if (videoUri && videoUri !== originalVideoUrl) {
-          console.log("video has not changed");
-          // New Video. Check if it's a test video
+          console.log("New Video");
+          // New Video
 
           // Use the presignedData we already have from handleRecordVideo
           if (presignedData && presignedData.url) {
             const uploadResult = await MediaHelper.uploadVideoToS3(videoUri, presignedData.url);
             const uploadSuccess = uploadResult.success;
             console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
+
+            // Consider adding an Alert here
 
             if (uploadSuccess && presignedData.videoUrl) {
               console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
@@ -1381,11 +1324,15 @@ export default function EditProfile() {
               console.log("Added user_video_url to form data:", presignedData.videoUrl);
             } else {
               console.error("Direct S3 upload failed");
-              Alert.alert("Error uploading video:", "Please try again.");
+              Alert.alert("Error uploading video:", "Please try a smaller file.");
+              setIsLoading(false);
+              return; // Exit early if video upload fails
             }
           } else {
             console.error("No presigned URL available");
             Alert.alert("Error uploading video:", "No presigned URL available.");
+            setIsLoading(false);
+            return; // Exit early if no presigned URL
           }
         }
         console.log("=== End Video Upload Debug ===");
@@ -1516,7 +1463,7 @@ export default function EditProfile() {
         }
 
         // Make the upload request
-        console.log("=== Profile Update API Request ===");
+        console.log("=== Profile Update API Request ===", uploadData);
         console.log("Making API request to update profile with timeout of 120 seconds...");
         console.log("API endpoint: https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo");
 

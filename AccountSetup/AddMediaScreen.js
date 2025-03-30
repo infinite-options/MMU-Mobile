@@ -41,6 +41,9 @@ export default function AddMediaScreen({ navigation }) {
   // Near other state variables
   const [photoFileSizes, setPhotoFileSizes] = useState([null, null, null]);
 
+  // Add presignedData state near other state declarations
+  const [presignedData, setPresignedData] = useState(null);
+
   // Load test videos using the centralized function
   useEffect(() => {
     const initTestVideos = async () => {
@@ -176,17 +179,23 @@ export default function AddMediaScreen({ navigation }) {
 
   // Update handlePickImage to use MediaHelper
   const handlePickImage = async (slotIndex) => {
-    const result = await MediaHelper.pickImage({}, testVideos);
-    if (result) {
-      const { uri, fileSize } = result;
-      const newPhotos = [...photos];
-      newPhotos[slotIndex] = uri;
-      setPhotos(newPhotos);
+    try {
+      console.log("===== In AddMediaScreen.js - handlePickImage =====");
+      const result = await MediaHelper.pickImage({}, testVideos);
+      if (result) {
+        const { uri, fileSize } = result;
+        const newPhotos = [...photos];
+        newPhotos[slotIndex] = uri;
+        setPhotos(newPhotos);
 
-      // Set file size
-      const newPhotoFileSizes = [...photoFileSizes];
-      newPhotoFileSizes[slotIndex] = fileSize;
-      setPhotoFileSizes(newPhotoFileSizes);
+        // Set file size
+        const newPhotoFileSizes = [...photoFileSizes];
+        newPhotoFileSizes[slotIndex] = fileSize;
+        setPhotoFileSizes(newPhotoFileSizes);
+      }
+    } catch (error) {
+      console.error("Error in handlePickImage:", error);
+      Alert.alert("Error", "There was an issue selecting the image. Please try again.");
     }
   };
 
@@ -202,47 +211,56 @@ export default function AddMediaScreen({ navigation }) {
     setPhotoFileSizes(newPhotoFileSizes);
   };
 
-  // Handle picking a video using MediaHelper
+  // Update handleVideoUpload to get presigned URL
   const handleVideoUpload = async () => {
-    const result = await MediaHelper.pickVideo(testVideos);
+    try {
+      const result = await MediaHelper.handleVideoLibrarySelection(testVideos);
+      if (result) {
+        setVideoUri(result.uri);
+        setVideoFileSize(result.fileSize);
+        setIsVideoPlaying(false);
 
-    if (result === false) {
-      // Selection was cancelled, show test video options
-      Alert.alert("Video Selection Cancelled", "Would you like to use a test video instead?", [
-        { text: "No", style: "cancel" },
-        { text: "Yes", onPress: showTestVideoOptions },
-      ]);
-    } else if (result) {
-      const { uri, fileSize } = result;
-      setVideoUri(uri);
-      setVideoFileSize(fileSize);
-      setIsVideoPlaying(false);
+        // Get presigned URL
+        const uid = await AsyncStorage.getItem("user_uid");
+        if (uid) {
+          const presignedData = await MediaHelper.getPresignedUrl(uid);
+          setPresignedData(presignedData);
+        }
+      }
+    } catch (error) {
+      console.error("Error in handleVideoUpload:", error);
+      Alert.alert("Error", "There was an issue with the video selection. Please try again.");
     }
   };
 
-  // Record video using MediaHelper
+  // Update handleRecordVideo to get presigned URL
   const handleRecordVideo = async () => {
-    const result = await MediaHelper.recordVideo(testVideos);
+    try {
+      const result = await MediaHelper.handleVideoRecording(testVideos);
+      if (result) {
+        setVideoUri(result.uri);
+        setVideoFileSize(result.fileSize);
+        setIsVideoPlaying(false);
 
-    if (result === false) {
-      // Recording was cancelled, show test video options
-      Alert.alert("Video Recording Cancelled", "Would you like to use a test video instead?", [
-        { text: "No", style: "cancel" },
-        { text: "Yes", onPress: showTestVideoOptions },
-      ]);
-    } else if (result) {
-      const { uri, fileSize } = result;
-      setVideoUri(uri);
-      setVideoFileSize(fileSize);
-      setIsVideoPlaying(false);
+        // Get presigned URL
+        const uid = await AsyncStorage.getItem("user_uid");
+        if (uid) {
+          const presignedData = await MediaHelper.getPresignedUrl(uid);
+          setPresignedData(presignedData);
+        }
+      }
+    } catch (error) {
+      console.error("Error in handleRecordVideo:", error);
+      Alert.alert("Error", "There was an issue with the video recording. Please try again.");
     }
   };
 
-  // Remove the video
+  // Update handleRemoveVideo to clear presignedData
   const handleRemoveVideo = () => {
     setVideoUri(null);
     setIsVideoPlaying(false);
     setVideoFileSize(null);
+    setPresignedData(null);
   };
 
   // Toggle video play/pause
@@ -255,26 +273,6 @@ export default function AddMediaScreen({ navigation }) {
       await videoRef.current.playAsync();
       setIsVideoPlaying(true);
     }
-  };
-
-  // Function to show fallback options for test videos
-  const showTestVideoOptions = () => {
-    MediaHelper.showTestVideoOptions(testVideos, handleTestVideoSelection);
-  };
-
-  // Function to handle test video selection
-  const handleTestVideoSelection = (index) => {
-    const selectedVideo = MediaHelper.selectTestVideo(index, testVideos, "continue");
-    if (selectedVideo) {
-      setVideoUri(selectedVideo.uri);
-      setVideoFileSize(selectedVideo.size);
-      setIsVideoPlaying(false);
-    }
-  };
-
-  // Function to get file size for test videos - using MediaHelper
-  const getTestVideoFileSize = (uri) => {
-    return MediaHelper.getTestVideoFileSize(uri, testVideos);
   };
 
   // Function to check if a URI is a test video - using MediaHelper
@@ -324,6 +322,8 @@ export default function AddMediaScreen({ navigation }) {
         // Add modified fields to FormData
         uploadData.append("user_email_id", userEmail);
 
+        // Code differs from EditProfile.js
+
         // Filter out null photos and get only valid URIs
         const validPhotos = photos.filter((uri) => uri !== null);
         console.log("=== Debug Photo Arrays ===");
@@ -342,42 +342,48 @@ export default function AddMediaScreen({ navigation }) {
 
         console.log("=== End Photo Upload Debug ===");
 
+        // Code re-aligns from EditProfile.js from here
+
         // Handle video upload
         console.log("=== Video Upload Debug ===");
         //
         //
         console.log("Current video URL:", videoUri);
 
-        // Check if video was deleted or changed
+        // Intential gap
+
+        // Check if new video was added
         if (videoUri) {
-          // First get the presigned URL (same as EditProfile.js)
-          const presignedData = await MediaHelper.getPresignedUrl(uid);
+          console.log("New Video");
+          // New Video
 
-          // setUploadStatus(`Uploading ${videoFileSize}MB video directly to S3...`);
+          // Use the presignedData we already have from handleRecordVideo
+          if (presignedData && presignedData.url) {
+            const uploadResult = await MediaHelper.uploadVideoToS3(videoUri, presignedData.url);
+            const uploadSuccess = uploadResult.success;
+            console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
 
-          const uploadResult = await MediaHelper.uploadVideoToS3(videoUri, presignedData.url);
-          const uploadSuccess = uploadResult.success;
-          console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
+            // Remove all debug alerts
+            if (uploadSuccess && presignedData.videoUrl) {
+              console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
 
-          // Alert.alert("Debug Info", `Video URI: ${videoUri}\nPresigned URL: ${presignedData?.url}\nVideo URL: ${presignedData?.videoUrl}\nUpload Success: ${uploadSuccess}`);
+              //
+              // EditProfile.js has original video code here
+              //
 
-          if (uploadSuccess && presignedData.videoUrl) {
-            console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
-
-            uploadData.append("user_video_url", presignedData.videoUrl);
-            console.log("Added user_video_url to form data:", presignedData.videoUrl);
+              uploadData.append("user_video_url", presignedData.videoUrl);
+              console.log("Added user_video_url to form data:", presignedData.videoUrl);
+            } else {
+              console.error("Direct S3 upload failed");
+              Alert.alert("Error uploading video:", "Please try a smaller file.");
+              setIsLoading(false);
+              return; // Exit early if video upload fails
+            }
           } else {
-            console.error("Direct S3 upload failed");
-            // setUploadStatus("S3 upload failed, falling back to regular upload");
-
-            // // Fall back to regular upload
-            // console.log("Adding video as multipart form data...");
-            // uploadData.append("user_video", {
-            //   uri: videoUri,
-            //   type: "video/mp4",
-            //   name: "user_video.mp4",
-            // });
-            // console.log("Added user_video to form data as multipart");
+            console.error("No presigned URL available");
+            Alert.alert("Error uploading video:", "No presigned URL available.");
+            setIsLoading(false);
+            return; // Exit early if no presigned URL
           }
         }
         console.log("=== End Video Upload Debug ===");
@@ -524,12 +530,12 @@ export default function AddMediaScreen({ navigation }) {
                   <Text style={styles.uploadVideoText}>Record Video</Text>
                 </TouchableOpacity>
 
-                {__DEV_MODE__ && (
+                {/* {__DEV_MODE__ && (
                   <TouchableOpacity onPress={handleVideoUpload} style={styles.selectVideoButton}>
                     <Ionicons name='images-outline' size={24} color='#E4423F' />
                     <Text style={styles.uploadVideoText}>Select Video</Text>
                   </TouchableOpacity>
-                )}
+                )} */}
               </View>
             )}
           </View>
@@ -566,6 +572,41 @@ export default function AddMediaScreen({ navigation }) {
           </View>
         </View>
         {/* </ScrollView> */}
+
+        {/* Debug Info Section */}
+        {__DEV_MODE__ && (
+          <View style={styles.debugSection}>
+            <Text style={styles.debugTitle}>Debug Information</Text>
+
+            <View style={styles.debugGroup}>
+              <Text style={styles.debugSubtitle}>Video Information:</Text>
+              <View style={styles.debugItem}>
+                <Text style={styles.debugLabel}>URI:</Text>
+                <Text style={styles.debugValue}>{videoUri || "Not set"}</Text>
+              </View>
+              <View style={styles.debugItem}>
+                <Text style={styles.debugLabel}>File Size:</Text>
+                <Text style={styles.debugValue}>{videoFileSize ? `${videoFileSize} MB` : "Not set"}</Text>
+              </View>
+            </View>
+
+            <View style={styles.debugGroup}>
+              <Text style={styles.debugSubtitle}>Presigned Data:</Text>
+              <View style={styles.debugItem}>
+                <Text style={styles.debugLabel}>URL:</Text>
+                <Text style={styles.debugValue}>{presignedData?.url || "Not set"}</Text>
+              </View>
+              <View style={styles.debugItem}>
+                <Text style={styles.debugLabel}>Video URL:</Text>
+                <Text style={styles.debugValue}>{presignedData?.videoUrl || "Not set"}</Text>
+              </View>
+              <View style={styles.debugItem}>
+                <Text style={styles.debugLabel}>Full Data:</Text>
+                <Text style={styles.debugValue}>{presignedData ? JSON.stringify(presignedData, null, 2) : "Not set"}</Text>
+              </View>
+            </View>
+          </View>
+        )}
 
         {/* Continue Button */}
         <Pressable style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5" }]} onPress={handleContinue} disabled={!isFormComplete || isLoading}>
@@ -770,5 +811,45 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 3,
+  },
+
+  // Debug styles
+  debugSection: {
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  debugTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 15,
+    color: "#212529",
+  },
+  debugGroup: {
+    marginBottom: 20,
+  },
+  debugSubtitle: {
+    fontSize: 16,
+    fontWeight: "500",
+    marginBottom: 10,
+    color: "#495057",
+  },
+  debugItem: {
+    flexDirection: "row",
+    marginBottom: 8,
+    paddingLeft: 10,
+  },
+  debugLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#6c757d",
+    width: 80,
+  },
+  debugValue: {
+    fontSize: 14,
+    color: "#495057",
+    flex: 1,
   },
 });

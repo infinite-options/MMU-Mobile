@@ -626,3 +626,81 @@ export const handleVideoUpload = async (userId, videoUri) => {
     return { success: false, videoUrl: null };
   }
 };
+
+/**
+ * Handle video recording with proper fallbacks
+ * @param {Array} testVideos Array of test videos
+ * @returns {Promise<{uri: string, fileSize: number}|null>} The processed video data or null
+ */
+export const handleVideoRecording = async (testVideos) => {
+  try {
+    console.log("===== In MediaHelper.js - handleVideoRecording =====");
+    const hasPermission = await requestCameraPermissions();
+
+    if (!hasPermission) {
+      console.log("No camera permission, trying library selection");
+      return handleVideoLibrarySelection(testVideos);
+    }
+
+    // If we have camera permission, try recording
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        allowsEditing: false,
+        quality: 1.0,
+        videoQuality: getVideoQuality(),
+        maxDuration: 60,
+        saveToPhotos: true,
+      });
+
+      if (!result.canceled) {
+        console.log("Camera recording successful, processing video");
+        return await storeVideo(result);
+      } else {
+        console.log("Camera recording cancelled, trying library selection");
+        return handleVideoLibrarySelection(testVideos);
+      }
+    } catch (cameraError) {
+      console.log("Camera error detected:", cameraError);
+      return handleVideoLibrarySelection(testVideos);
+    }
+  } catch (error) {
+    console.error("Error in handleVideoRecording:", error);
+    return null;
+  }
+};
+
+/**
+ * Handle video library selection with test video fallback
+ * @param {Array} testVideos Array of test videos
+ * @returns {Promise<{uri: string, fileSize: number}|null>} The processed video data or null
+ */
+export const handleVideoLibrarySelection = async (testVideos) => {
+  try {
+    console.log("===== In MediaHelper.js - handleVideoLibrarySelection =====");
+    const hasPermission = await requestMediaLibraryPermissions();
+
+    if (!hasPermission) {
+      console.log("No library permission, offering test videos");
+      return await useTestVideo(testVideos);
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      allowsEditing: false,
+      quality: 1.0,
+      videoQuality: getVideoQuality(),
+    });
+
+    if (!result.canceled) {
+      console.log("Library selection successful, processing video");
+      return await storeVideo(result);
+    } else {
+      console.log("Library selection cancelled, offering test videos");
+      return await useTestVideo(testVideos);
+    }
+  } catch (error) {
+    console.error("Error in handleVideoLibrarySelection:", error);
+    return null;
+  }
+};

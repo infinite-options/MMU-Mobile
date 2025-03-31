@@ -55,14 +55,14 @@ export const loadTestVideos = async () => {
  * @param {string} uid - The user ID
  * @returns {Promise<object|null>} - The presigned URL data or null if there was an error
  */
-export const getPresignedUrl = async (uid) => {
+export const getPresignedUrl = async (uid, mimeType) => {
   try {
     console.log("===== In MediaHelper.js - Presigned URL Request =====");
     // console.log("Requesting presigned URL for user:", uid);
 
     const requestData = {
       user_uid: uid,
-      user_video_filetype: "video/mp4",
+      user_video_filetype: mimeType,
     };
 
     // console.log("Request payload:", JSON.stringify(requestData, null, 2));
@@ -571,64 +571,64 @@ export const promptLargeFileSize = async (totalSize, threshold = 5) => {
   });
 };
 
-/**
- * Handle video upload process including direct S3 upload
- * @param {string} userId User ID for the presigned URL
- * @param {string} videoUri URI of the video to upload
- * @returns {Promise<{success: boolean, videoUrl: string|null}>} Upload result with success status and video URL
- */
-export const handleVideoUpload = async (userId, videoUri) => {
-  try {
-    if (!videoUri) {
-      return { success: false, videoUrl: null };
-    }
+// /**
+//  * Handle video upload process including direct S3 upload
+//  * @param {string} userId User ID for the presigned URL
+//  * @param {string} videoUri URI of the video to upload
+//  * @returns {Promise<{success: boolean, videoUrl: string|null}>} Upload result with success status and video URL
+//  */
+// export const handleVideoUpload = async (userId, videoUri) => {
+//   try {
+//     if (!videoUri) {
+//       return { success: false, videoUrl: null };
+//     }
 
-    // Determine if running in simulator
-    const isSimulator = Platform.select({
-      ios: Constants.executionEnvironment === "simulator" || Constants.modelName?.toLowerCase().includes("simulator") || !Constants.isDevice,
-      android: !Constants.isDevice,
-      default: false,
-    });
+//     // Determine if running in simulator
+//     const isSimulator = Platform.select({
+//       ios: Constants.executionEnvironment === "simulator" || Constants.modelName?.toLowerCase().includes("simulator") || !Constants.isDevice,
+//       android: !Constants.isDevice,
+//       default: false,
+//     });
 
-    console.log("=== Device Detection ===");
-    console.log("Platform:", Platform.OS);
-    console.log("Is Simulator:", isSimulator);
-    console.log("iOS Model Name:", Constants.modelName);
-    console.log("Is Device:", Constants.isDevice);
-    console.log("Execution Environment:", Constants.executionEnvironment);
-    console.log("=====================");
-    console.log("--- In MediaHelper.js handleVideoUpload Function ---");
-    console.log("Starting video upload for user:", userId);
-    console.log("Video URI:", videoUri);
+//     console.log("=== Device Detection ===");
+//     console.log("Platform:", Platform.OS);
+//     console.log("Is Simulator:", isSimulator);
+//     console.log("iOS Model Name:", Constants.modelName);
+//     console.log("Is Device:", Constants.isDevice);
+//     console.log("Execution Environment:", Constants.executionEnvironment);
+//     console.log("=====================");
+//     console.log("--- In MediaHelper.js handleVideoUpload Function ---");
+//     console.log("Starting video upload for user:", userId);
+//     console.log("Video URI:", videoUri);
 
-    // Get presigned URL
-    const presignedData = await getPresignedUrl(userId);
-    console.log("Presigned URL data:", presignedData);
+//     // Get presigned URL
+//     const presignedData = await getPresignedUrl(userId, mimeType);
+//     console.log("Presigned URL data:", presignedData);
 
-    if (!presignedData || !presignedData.url) {
-      console.error("Failed to get presigned URL");
-      return { success: false, videoUrl: null };
-    }
+//     if (!presignedData || !presignedData.url) {
+//       console.error("Failed to get presigned URL");
+//       return { success: false, videoUrl: null };
+//     }
 
-    // Upload to S3
-    const uploadResult = await uploadVideoToS3(videoUri, presignedData.url);
-    console.log("S3 upload result:", uploadResult);
+//     // Upload to S3
+//     const uploadResult = await uploadVideoToS3(videoUri, presignedData.url);
+//     console.log("S3 upload result:", uploadResult);
 
-    if (uploadResult.success && presignedData.videoUrl) {
-      console.log("Direct S3 upload successful, using S3 URL:", presignedData.videoUrl);
-      return {
-        success: true,
-        videoUrl: presignedData.videoUrl,
-      };
-    } else {
-      console.error("S3 upload failed");
-      return { success: false, videoUrl: null };
-    }
-  } catch (error) {
-    console.error("Error in handleVideoUpload:", error);
-    return { success: false, videoUrl: null };
-  }
-};
+//     if (uploadResult.success && presignedData.videoUrl) {
+//       console.log("Direct S3 upload successful, using S3 URL:", presignedData.videoUrl);
+//       return {
+//         success: true,
+//         videoUrl: presignedData.videoUrl,
+//       };
+//     } else {
+//       console.error("S3 upload failed");
+//       return { success: false, videoUrl: null };
+//     }
+//   } catch (error) {
+//     console.error("Error in handleVideoUpload:", error);
+//     return { success: false, videoUrl: null };
+//   }
+// };
 
 /**
  * Handle video recording with proper fallbacks
@@ -720,15 +720,26 @@ export const handleVideoLibrarySelection = async (testVideos) => {
  * @param {Function} setIsVideoPlaying Function to update playing state
  * @returns {Promise<boolean>} Success status
  */
-export const handleVideoRecordingWithState = async (testVideos, userId, setVideoUri, setVideoFileSize, setIsVideoPlaying) => {
+export const handleVideoRecordingWithState = async (testVideos, userId, setVideoUri, setVideoFileSize, setIsVideoPlaying, setPresignedData) => {
   try {
     console.log("===== In MediaHelper.js - handleVideoRecordingWithState =====");
     const result = await handleVideoRecording(testVideos);
+    console.log("Result from handleVideoRecording:", result);
 
     if (result) {
       setVideoUri(result.uri);
       setVideoFileSize(result.fileSize);
       setIsVideoPlaying(false);
+
+      //get presigned url
+
+      const mimeType = getFileType(result.uri);
+      // const mimeType = "video/mp4";
+      console.log("Detected file type:", mimeType);
+
+      const presignedData = await getPresignedUrl(userId, mimeType);
+      console.log("Presigned URL data:", presignedData);
+      setPresignedData(presignedData);
       return true;
     }
     return false;
@@ -736,6 +747,18 @@ export const handleVideoRecordingWithState = async (testVideos, userId, setVideo
     console.error("Error in handleVideoRecordingWithState:", error);
     return false;
   }
+};
+
+const getFileType = (uri) => {
+  const extension = uri.split(".").pop().toLowerCase(); // Extract file extension
+  const mimeTypes = {
+    mp4: "video/mp4",
+    mov: "video/quicktime",
+    avi: "video/x-msvideo",
+    mkv: "video/x-matroska",
+  };
+
+  return mimeTypes[extension] || "application/octet-stream"; // Default if unknown
 };
 
 /**

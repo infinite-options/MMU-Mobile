@@ -327,27 +327,64 @@ export default function AddMediaScreen({ navigation }) {
         console.log("Current video URL:", videoUri);
 
         if (videoUri) {
-          console.log("New Video");
-          try {
-            const videoFile = await MediaHelper.uploadVideo(videoUri);
+          console.log("New Video detected, attempting upload");
+          let uploadSuccess = false;
 
-            if (videoFile) {
-              console.log("Video file prepared for upload:", videoFile);
-              // Append the video file directly to FormData with the correct field name
-              uploadData.append("user_video", {
-                uri: videoFile.uri,
-                type: videoFile.type,
-                name: videoFile.name,
-              });
+          // Try Method 1: Presigned URL with S3 Upload
+          try {
+            console.log("Attempting Method 1: Presigned URL with S3 Upload");
+            console.log("Previously stored Presigned Data:", presignedData);
+
+            if (presignedData && presignedData.url) {
+              console.log("Got presigned URL, attempting S3 upload");
+              const s3UploadResult = await MediaHelper.uploadVideoToS3(videoUri, presignedData.url);
+
+              if (s3UploadResult && s3UploadResult.success) {
+                console.log("S3 upload successful");
+                uploadData.append("user_video_url", presignedData.videoUrl);
+                uploadSuccess = true;
+              } else {
+                console.log("S3 upload failed, will try direct upload method");
+              }
             } else {
-              console.error("Failed to prepare video for upload");
+              console.log("Failed to get presigned URL, will try direct upload method");
+            }
+          } catch (s3Error) {
+            console.error("Error in S3 upload attempt:", s3Error);
+            console.log("Will try direct upload method");
+          }
+
+          // If S3 upload failed, try Method 2: Direct Upload
+          if (!uploadSuccess) {
+            try {
+              console.log("Attempting Method 2: Direct Upload");
+              const videoFile = await MediaHelper.uploadVideo(videoUri);
+
+              if (videoFile) {
+                console.log("Video file prepared for direct upload");
+                uploadData.append("user_video", {
+                  uri: videoFile.uri,
+                  type: videoFile.type,
+                  name: videoFile.name,
+                });
+                uploadSuccess = true;
+              } else {
+                console.error("Failed to prepare video for direct upload");
+                Alert.alert("Error uploading video:", "Please try a smaller file or try again.");
+                setIsLoading(false);
+                return;
+              }
+            } catch (directUploadError) {
+              console.error("Error in direct upload attempt:", directUploadError);
               Alert.alert("Error uploading video:", "Please try a smaller file or try again.");
               setIsLoading(false);
               return;
             }
-          } catch (videoError) {
-            console.error("Error preparing video for upload:", videoError);
-            Alert.alert("Error", "There was an issue preparing your video for upload. Please try again.");
+          }
+
+          if (!uploadSuccess) {
+            console.error("Both upload methods failed");
+            Alert.alert("Error uploading video:", "Please try a smaller file or try again.");
             setIsLoading(false);
             return;
           }

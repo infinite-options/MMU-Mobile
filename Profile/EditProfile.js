@@ -1283,28 +1283,66 @@ export default function EditProfile() {
         // Only handle video if there's a new video or if the video was deleted
         if (videoUri !== originalVideoUrl || deletedVideo) {
           if (videoUri) {
-            console.log("New Video");
-            const videoFile = await MediaHelper.uploadVideo(videoUri);
+            console.log("New Video detected, attempting upload");
+            let uploadSuccess = false;
 
-            if (videoFile) {
-              console.log("Video file prepared for upload:", videoFile);
-              // Append the video file directly to FormData with the correct field name
-              uploadData.append("user_video", {
-                uri: videoFile.uri,
-                type: videoFile.type,
-                name: videoFile.name,
-              });
+            // Try Method 1: Presigned URL with S3 Upload
+            try {
+              console.log("Attempting Method 1: Presigned URL with S3 Upload");
+              // const presignedData = await MediaHelper.getPresignedUrl(userId);
+              console.log("Previously stored Presigned Data:", presignedData);
 
-              // If there was an original video, mark it for deletion
-              if (originalVideoUrl) {
-                uploadData.append("user_delete_video", JSON.stringify([originalVideoUrl]));
-                console.log("Added user_delete_video to form data:", JSON.stringify([originalVideoUrl]));
+              if (presignedData && presignedData.url) {
+                console.log("Got presigned URL, attempting S3 upload");
+                const s3UploadResult = await MediaHelper.uploadVideoToS3(videoUri, presignedData.url);
+
+                if (s3UploadResult && s3UploadResult.success) {
+                  console.log("S3 upload successful");
+                  uploadData.append("user_video_url", presignedData.videoUrl);
+                  uploadSuccess = true;
+                } else {
+                  console.log("S3 upload failed, will try direct upload method");
+                }
+              } else {
+                console.log("Failed to get presigned URL, will try direct upload method");
               }
-            } else {
-              console.error("Failed to prepare video for upload");
-              Alert.alert("Error uploading video:", "Please try a smaller file or try again.");
-              setIsLoading(false);
-              return;
+            } catch (s3Error) {
+              console.error("Error in S3 upload attempt:", s3Error);
+              console.log("Will try direct upload method");
+            }
+
+            // If S3 upload failed, try Method 2: Direct Upload
+            if (!uploadSuccess) {
+              try {
+                console.log("Attempting Method 2: Direct Upload");
+                const videoFile = await MediaHelper.uploadVideo(videoUri);
+
+                if (videoFile) {
+                  console.log("Video file prepared for direct upload");
+                  uploadData.append("user_video", {
+                    uri: videoFile.uri,
+                    type: videoFile.type,
+                    name: videoFile.name,
+                  });
+                  uploadSuccess = true;
+                } else {
+                  console.error("Failed to prepare video for direct upload");
+                  Alert.alert("Error uploading video:", "Please try a smaller file or try again.");
+                  setIsLoading(false);
+                  return;
+                }
+              } catch (directUploadError) {
+                console.error("Error in direct upload attempt:", directUploadError);
+                Alert.alert("Error uploading video:", "Please try a smaller file or try again.");
+                setIsLoading(false);
+                return;
+              }
+            }
+
+            // If there was an original video and either upload method succeeded, mark it for deletion
+            if (uploadSuccess && originalVideoUrl) {
+              uploadData.append("user_delete_video", JSON.stringify([originalVideoUrl]));
+              console.log("Added user_delete_video to form data:", JSON.stringify([originalVideoUrl]));
             }
           } else if (deletedVideo) {
             // If video was deleted and no new video was uploaded
@@ -1401,7 +1439,9 @@ export default function EditProfile() {
           } else {
             console.log(`Skipping equivalent empty values for ${key}`);
           }
+          // console.log("Upload Data after adding fields:", uploadData);
         });
+        // console.log("Upload Data after adding fields:", uploadData);
 
         // Add favorite photo to upload data if one is selected
         if (favoritePhotoIndex !== null && photos[favoritePhotoIndex]) {

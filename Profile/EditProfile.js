@@ -1308,7 +1308,7 @@ export default function EditProfile() {
               console.log("Added user_video_url to form data:", presignedData.videoUrl);
             } else {
               console.error("Direct S3 upload failed");
-              Alert.alert("Error uploading video:", "Please try a smaller file.");
+              Alert.alert("Error uploading video:", "Please try a smaller file. Error EP1");
               setIsLoading(false);
               return; // Exit early if video upload fails
             }

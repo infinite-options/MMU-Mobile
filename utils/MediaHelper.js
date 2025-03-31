@@ -183,6 +183,7 @@ export const uploadVideoToS3 = async (fileUri, presignedUrl) => {
     try {
       const startTime = Date.now();
       console.log("Upload started at:", new Date(startTime).toISOString());
+      console.log("Uploading video to S3 with presigned URL:", presignedUrl);
 
       const response = await fetch(presignedUrl, {
         method: "PUT",
@@ -191,6 +192,7 @@ export const uploadVideoToS3 = async (fileUri, presignedUrl) => {
         signal: controller.signal,
       });
 
+      console.log("Upload response:", response);
       const endTime = Date.now();
       const uploadDuration = (endTime - startTime) / 1000; // in seconds
       console.log("Upload completed at:", new Date(endTime).toISOString());

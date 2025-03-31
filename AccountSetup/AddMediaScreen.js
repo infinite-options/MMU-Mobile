@@ -302,27 +302,17 @@ export default function AddMediaScreen({ navigation }) {
       }
 
       try {
-        // Validate the form before submitting
-        // Check if there have been any changes
-        // Only upload if there are changes
-        // Check phone number format if provided
-
         // Create FormData object
         const uploadData = new FormData();
         uploadData.append("user_uid", uid);
-
-        // Add modified fields to FormData
         uploadData.append("user_email_id", userEmail);
 
-        // *********   Code differs from EditProfile.js
-
-        // Filter out null photos and get only valid URIs
+        // Add photos to FormData with sequential indices
         const validPhotos = photos.filter((uri) => uri !== null);
         console.log("=== Debug Photo Arrays ===");
         console.log("Photos array:", validPhotos);
         console.log("=== End Debug Photo Arrays ===");
 
-        // Add photos to FormData with sequential indices
         validPhotos.forEach((uri, index) => {
           console.log(`Adding new local photo ${index}:`, uri);
           uploadData.append(`img_${index}`, {
@@ -332,51 +322,34 @@ export default function AddMediaScreen({ navigation }) {
           });
         });
 
-        console.log("=== End Photo Upload Debug ===");
-
-        // ********         Code re-aligns from EditProfile.js from here
-
         // Handle video upload
         console.log("=== Video Upload Debug ===");
-        //
-        //
         console.log("Current video URL:", videoUri);
 
-        // Intential gap
-
-        // Check if new video was added
         if (videoUri) {
           console.log("New Video");
-          // New Video
+          try {
+            const videoFile = await MediaHelper.uploadVideo(videoUri);
 
-          // Use the presignedData we already have from handleRecordVideo
-          if (presignedData && presignedData.url) {
-            console.log("In AddMediaScreen.js, We havepresignedData:", presignedData);
-            const uploadResult = await MediaHelper.uploadVideoToS3(videoUri, presignedData.url);
-            const uploadSuccess = uploadResult.success;
-            console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
-
-            // Consider adding an Alert here
-            if (uploadSuccess && presignedData.videoUrl) {
-              console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
-
-              //
-              // EditProfile.js has original video code here
-              //
-
-              uploadData.append("user_video_url", presignedData.videoUrl);
-              console.log("Added user_video_url to form data:", presignedData.videoUrl);
+            if (videoFile) {
+              console.log("Video file prepared for upload:", videoFile);
+              // Append the video file directly to FormData with the correct field name
+              uploadData.append("user_video", {
+                uri: videoFile.uri,
+                type: videoFile.type,
+                name: videoFile.name,
+              });
             } else {
-              console.error("Direct S3 upload failed");
-              Alert.alert("Error uploading video:", "Please try a smaller file. Error AMS1");
+              console.error("Failed to prepare video for upload");
+              Alert.alert("Error uploading video:", "Please try a smaller file or try again.");
               setIsLoading(false);
-              return; // Exit early if video upload fails
+              return;
             }
-          } else {
-            console.error("No presigned URL available");
-            Alert.alert("Error uploading video:", "No presigned URL available.");
+          } catch (videoError) {
+            console.error("Error preparing video for upload:", videoError);
+            Alert.alert("Error", "There was an issue preparing your video for upload. Please try again.");
             setIsLoading(false);
-            return; // Exit early if no presigned URL
+            return;
           }
         }
         console.log("=== End Video Upload Debug ===");
@@ -387,8 +360,7 @@ export default function AddMediaScreen({ navigation }) {
         console.log("API endpoint: https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo");
 
         const startTime = Date.now();
-        console.log("FORM DATA Being sent to server from EditProfile.js: ", uploadData);
-        // setUploadStatus("Sending data to server...", uploadData);
+        console.log("FORM DATA Being sent to server:", uploadData);
 
         const response = await axios.put("https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/userinfo", uploadData, {
           headers: {
@@ -398,6 +370,20 @@ export default function AddMediaScreen({ navigation }) {
           timeout: 120000, // Increase timeout to 2 minutes for large files
           maxContentLength: Infinity,
           maxBodyLength: Infinity,
+          maxRedirects: 5,
+          decompress: true,
+          // Add these configurations for better handling of large files
+          transformRequest: [(data) => data], // Prevent axios from transforming the data
+          transformResponse: [(data) => data], // Prevent axios from transforming the response
+          // Increase the buffer size for large files
+          buffer: true,
+          // Add these headers to help with large file uploads
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Accept: "application/json",
+            "Transfer-Encoding": "chunked",
+            Connection: "keep-alive",
+          },
         });
 
         const endTime = Date.now();
@@ -405,42 +391,44 @@ export default function AddMediaScreen({ navigation }) {
         console.log("Request duration:", requestDuration.toFixed(2) + " seconds");
 
         if (response.status === 200) {
-          //
           console.log("Upload successful!");
           Alert.alert("Success", `Your profile has been updated!`);
-          // Alert.alert("Success", `Video URL: ${presignedData.videoUrl}`);
-
-          // This is the only functionality difference from EditProfile.js - navigate to next screen
           navigation.navigate("LocationScreen", { photos, videoUri });
         }
       } catch (error) {
-        console.error("Error uploading profile:");
+        console.error("Error in handleContinue:", error);
+        let errorMessage = "Failed to update profile. Please try again.";
+
         if (error.response) {
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
-          console.error("Response data:", error.response.data);
-          console.error("Response status:", error.response.status);
-          console.error("Response headers:", error.response.headers);
-          Alert.alert("Server Error", `Failed to update profile. Please consider selecting smaller videos and photos or try saving images individually.`);
+          console.error("Error response:", error.response.data);
+          console.error("Error status:", error.response.status);
+          console.error("Error headers:", error.response.headers);
+
+          if (error.response.status === 413) {
+            errorMessage = "The file size is too large. Please try a smaller video.";
+          } else if (error.response.status === 408) {
+            errorMessage = "The upload took too long. Please try a smaller video or check your connection.";
+          } else if (error.response.status === 500) {
+            errorMessage = "Server error. Please try again later.";
+          }
         } else if (error.request) {
           // The request was made but no response was received
-          console.error("No response received:", error.request);
-          if (error.code === "ECONNABORTED") {
-            Alert.alert("Timeout Error", "The request took too long to complete. Please consider selecting smaller videos and photos or try saving images individually.");
-          } else {
-            Alert.alert("Network Error", "Failed to update profile. Please check your internet connection and try again.");
-          }
+          console.error("Error request:", error.request);
+          errorMessage = "No response from server. Please check your connection and try again.";
         } else {
           // Something happened in setting up the request that triggered an Error
           console.error("Error message:", error.message);
-          Alert.alert("Error", `An error occurred: ${error.message}`);
         }
-        setIsLoading(false);
+
+        Alert.alert("Error", errorMessage);
       } finally {
         setIsLoading(false);
       }
     } catch (error) {
-      console.error("Error uploading profile:", error);
+      console.error("Error in handleContinue:", error);
+      Alert.alert("Error", "An unexpected error occurred. Please try again.");
       setIsLoading(false);
     }
   };
@@ -448,14 +436,14 @@ export default function AddMediaScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={{ flex: 1, paddingBottom: 20 }}>
+        {/* Move loading overlay outside of ScrollView */}
         {isLoading && (
           <View style={styles.loadingOverlay}>
-            <ActivityIndicator size='large' color='#E4423F' />
-            <Text style={{ color: "#E4423F", marginTop: 10, marginBottom: 5, fontWeight: "bold" }}>Uploading...</Text>
-            {/* <Text style={{ color: "#E4423F", marginTop: 10, marginBottom: 5, fontWeight: "bold" }}>{uploadStatus || "Uploading..."}</Text>
-            {uploadStatus.includes("S3") && (
-              <Text style={{ color: "#666", textAlign: "center", paddingHorizontal: 20 }}>Large videos are uploaded directly to our secure server. This may take a moment.</Text>
-            )} */}
+            <View style={styles.loadingContent}>
+              <ActivityIndicator size='large' color='#E4423F' />
+              <Text style={styles.loadingText}>Uploading...</Text>
+              <Text style={styles.loadingSubtext}>Please wait while we upload your media.</Text>
+            </View>
           </View>
         )}
 
@@ -622,14 +610,41 @@ const styles = StyleSheet.create({
   },
   loadingOverlay: {
     position: "absolute",
-    zIndex: 999,
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(255,255,255,0.7)",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 9999, // Increased z-index to ensure it's above everything
+  },
+  loadingContent: {
+    alignItems: "center",
+    padding: 20,
+    borderRadius: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  loadingText: {
+    color: "#E4423F",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginTop: 15,
+    marginBottom: 5,
+  },
+  loadingSubtext: {
+    color: "#666",
+    fontSize: 14,
+    textAlign: "center",
+    paddingHorizontal: 20,
   },
   backButton: {
     alignSelf: "flex-start",

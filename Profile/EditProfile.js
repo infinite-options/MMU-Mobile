@@ -1276,48 +1276,43 @@ export default function EditProfile() {
 
         // Handle video upload
         console.log("=== Video Upload Debug ===");
-        const originalVideoUrl = userData.user_video_url ? (typeof userData.user_video_url === "string" ? userData.user_video_url.replace(/^"|"$/g, "") : userData.user_video_url) : null;
-        console.log("Original video URL:", originalVideoUrl);
         console.log("Current video URL:", videoUri);
+        console.log("Original video URL:", originalVideoUrl);
+        console.log("Video deleted:", deletedVideo);
 
-        // Check if video was deleted or changed
-        if (originalVideoUrl && !videoUri) {
-          // New Video was deleted
-          // Check if new video was added
-        } else if (videoUri && videoUri !== originalVideoUrl) {
-          console.log("New Video");
-          // New Video
+        // Only handle video if there's a new video or if the video was deleted
+        if (videoUri !== originalVideoUrl || deletedVideo) {
+          if (videoUri) {
+            console.log("New Video");
+            const videoFile = await MediaHelper.uploadVideo(videoUri);
 
-          // Use the presignedData we already have from handleRecordVideo
-          if (presignedData && presignedData.url) {
-            console.log("In EditProfile.js, We havepresignedData:", presignedData);
-            const uploadResult = await MediaHelper.uploadVideoToS3(videoUri, presignedData.url);
-            const uploadSuccess = uploadResult.success;
-            console.log("S3 upload result:", uploadSuccess ? "SUCCESS" : "FAILED");
+            if (videoFile) {
+              console.log("Video file prepared for upload:", videoFile);
+              // Append the video file directly to FormData with the correct field name
+              uploadData.append("user_video", {
+                uri: videoFile.uri,
+                type: videoFile.type,
+                name: videoFile.name,
+              });
 
-            // Consider adding an Alert here
-            if (uploadSuccess && presignedData.videoUrl) {
-              console.log("Direct S3 upload successful, using S3 URL in form data:", presignedData.videoUrl);
-
-              // Only include user_delete_video if there was an original video to delete
+              // If there was an original video, mark it for deletion
               if (originalVideoUrl) {
                 uploadData.append("user_delete_video", JSON.stringify([originalVideoUrl]));
                 console.log("Added user_delete_video to form data:", JSON.stringify([originalVideoUrl]));
               }
-              uploadData.append("user_video_url", presignedData.videoUrl);
-              console.log("Added user_video_url to form data:", presignedData.videoUrl);
             } else {
-              console.error("Direct S3 upload failed");
-              Alert.alert("Error uploading video:", "Please try a smaller file. Error EP1");
+              console.error("Failed to prepare video for upload");
+              Alert.alert("Error uploading video:", "Please try a smaller file or try again.");
               setIsLoading(false);
-              return; // Exit early if video upload fails
+              return;
             }
-          } else {
-            console.error("No presigned URL available");
-            Alert.alert("Error uploading video:", "No presigned URL available.");
-            setIsLoading(false);
-            return; // Exit early if no presigned URL
+          } else if (deletedVideo) {
+            // If video was deleted and no new video was uploaded
+            uploadData.append("user_delete_video", JSON.stringify([originalVideoUrl]));
+            console.log("Added user_delete_video to form data for deleted video:", JSON.stringify([originalVideoUrl]));
           }
+        } else {
+          console.log("No video changes detected, skipping video upload");
         }
         console.log("=== End Video Upload Debug ===");
 
@@ -1463,6 +1458,20 @@ export default function EditProfile() {
           timeout: 120000, // Increase timeout to 2 minutes for large files
           maxContentLength: Infinity,
           maxBodyLength: Infinity,
+          maxRedirects: 5,
+          decompress: true,
+          // Add these configurations for better handling of large files
+          transformRequest: [(data) => data], // Prevent axios from transforming the data
+          transformResponse: [(data) => data], // Prevent axios from transforming the response
+          // Increase the buffer size for large files
+          buffer: true,
+          // Add these headers to help with large file uploads
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Accept: "application/json",
+            "Transfer-Encoding": "chunked",
+            Connection: "keep-alive",
+          },
         });
 
         const endTime = Date.now();

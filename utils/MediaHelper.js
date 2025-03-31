@@ -658,7 +658,7 @@ export const handleVideoRecording = async (testVideos) => {
       });
 
       if (!result.canceled) {
-        console.log("Camera recording successful, processing video");
+        console.log("Camera recording successful, processing video", result);
         return await storeVideo(result);
       } else {
         console.log("Camera recording cancelled, trying library selection");
@@ -698,8 +698,8 @@ export const handleVideoLibrarySelection = async (testVideos) => {
     });
 
     if (!result.canceled) {
-      console.log("Library selection successful, processing video");
-      console.log("Library selection Result:", result);
+      console.log("Library selection successful, processing video", result);
+      // console.log("Library selection Result:", result);
       return await storeVideo(result);
     } else {
       console.log("Library selection cancelled, offering test videos");
@@ -718,10 +718,9 @@ export const handleVideoLibrarySelection = async (testVideos) => {
  * @param {Function} setVideoUri Function to update video URI state
  * @param {Function} setVideoFileSize Function to update file size state
  * @param {Function} setIsVideoPlaying Function to update playing state
- * @param {Function} setPresignedData Function to update presigned data state
  * @returns {Promise<boolean>} Success status
  */
-export const handleVideoRecordingWithState = async (testVideos, userId, setVideoUri, setVideoFileSize, setIsVideoPlaying, setPresignedData) => {
+export const handleVideoRecordingWithState = async (testVideos, userId, setVideoUri, setVideoFileSize, setIsVideoPlaying) => {
   try {
     console.log("===== In MediaHelper.js - handleVideoRecordingWithState =====");
     const result = await handleVideoRecording(testVideos);
@@ -730,18 +729,56 @@ export const handleVideoRecordingWithState = async (testVideos, userId, setVideo
       setVideoUri(result.uri);
       setVideoFileSize(result.fileSize);
       setIsVideoPlaying(false);
-
-      if (userId) {
-        const presignedData = await getPresignedUrl(userId);
-        if (presignedData) {
-          setPresignedData(presignedData);
-          return true;
-        }
-      }
+      return true;
     }
     return false;
   } catch (error) {
     console.error("Error in handleVideoRecordingWithState:", error);
     return false;
+  }
+};
+
+/**
+ * Prepare and upload a video file
+ * @param {string} videoUri The URI of the video to upload
+ * @returns {Promise<{uri: string, type: string, name: string}|null>} The prepared video file or null if error
+ */
+export const uploadVideo = async (videoUri) => {
+  try {
+    console.log("===== In MediaHelper.js - uploadVideo =====");
+    console.log("Input video URI:", videoUri);
+
+    // Get file info to confirm existence and size
+    const fileInfo = await FileSystem.getInfoAsync(videoUri);
+    if (!fileInfo.exists) {
+      console.error("File does not exist:", videoUri);
+      return null;
+    }
+
+    const fileSizeMB = (fileInfo.size / (1024 * 1024)).toFixed(2);
+    console.log("File size:", fileSizeMB + " MB");
+
+    // Determine content type based on file extension
+    let contentType = "video/mp4";
+    if (videoUri.toLowerCase().endsWith(".mov")) {
+      contentType = "video/quicktime";
+    } else if (videoUri.toLowerCase().endsWith(".avi")) {
+      contentType = "video/x-msvideo";
+    }
+
+    // Create a FormData-compliant file object
+    const file = {
+      uri: videoUri,
+      type: contentType,
+      name: "user_video.mp4",
+    };
+
+    console.log("Created file object:", file);
+    console.log("===== End uploadVideo =====");
+
+    return file;
+  } catch (error) {
+    console.error("Error preparing video for upload:", error);
+    return null;
   }
 };

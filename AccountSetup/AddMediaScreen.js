@@ -436,17 +436,6 @@ export default function AddMediaScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={{ flex: 1, paddingBottom: 20 }}>
-        {/* Move loading overlay outside of ScrollView */}
-        {isLoading && (
-          <View style={styles.loadingOverlay}>
-            <View style={styles.loadingContent}>
-              <ActivityIndicator size='large' color='#E4423F' />
-              <Text style={styles.loadingText}>Uploading...</Text>
-              <Text style={styles.loadingSubtext}>Please wait while we upload your media.</Text>
-            </View>
-          </View>
-        )}
-
         {/* Back Button */}
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Image source={require("../assets/icons/backarrow.png")} />
@@ -512,11 +501,11 @@ export default function AddMediaScreen({ navigation }) {
                 </TouchableOpacity>
 
                 {/* {__DEV_MODE__ && (
-                  <TouchableOpacity onPress={handleVideoUpload} style={styles.selectVideoButton}>
-                    <Ionicons name='images-outline' size={24} color='#E4423F' />
-                    <Text style={styles.uploadVideoText}>Select Video</Text>
-                  </TouchableOpacity>
-                )} */}
+                <TouchableOpacity onPress={handleVideoUpload} style={styles.selectVideoButton}>
+                  <Ionicons name='images-outline' size={24} color='#E4423F' />
+                  <Text style={styles.uploadVideoText}>Select Video</Text>
+                </TouchableOpacity>
+              )} */}
               </View>
             )}
           </View>
@@ -552,7 +541,6 @@ export default function AddMediaScreen({ navigation }) {
             ))}
           </View>
         </View>
-        {/* </ScrollView> */}
 
         {/* Debug Info Section */}
         {__DEV_MODE__ && (
@@ -594,6 +582,17 @@ export default function AddMediaScreen({ navigation }) {
           <Text style={[styles.continueButtonText, { color: isFormComplete ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
         </Pressable>
       </ScrollView>
+
+      {/* Loading Overlay - Only show when isLoading is true */}
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingContent}>
+            <ActivityIndicator size='large' color='#E4423F' />
+            <Text style={styles.loadingText}>Uploading...</Text>
+            <Text style={styles.loadingSubtext}>Please wait while we upload your media.</Text>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }

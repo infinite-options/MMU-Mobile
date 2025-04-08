@@ -7,6 +7,7 @@ import ProgressBar from "../src/Assets/Components/ProgressBar";
 import { GoogleSignin, statusCodes, GoogleSigninButton } from "@react-native-google-signin/google-signin";
 import config, { __DEV_MODE__ } from "../config"; // Import __DEV_MODE__ along with config
 import AppleSignIn from "./AppleSignIn"; // Import AppleSignIn component
+import Clipboard from "@react-native-clipboard/clipboard";
 
 // Static utility function to reset Google Sign-In state
 export const resetGoogleSignIn = async () => {
@@ -437,23 +438,41 @@ export default function AccountSetup2Create() {
     } catch (error) {
       console.error("Google sign-in error:", error);
 
-      let errorMessage = "Something went wrong with Google sign-in. Please try again.";
+      let errorMessage = "Something went wrong with Google sign-in.\n\n";
+      let debugInfo = `Environment: ${__DEV__ ? "Development" : "Production"}\n`;
+      debugInfo += `Client ID: ${getLastTwoDigits(config.googleClientIds.android)}\n`;
+      debugInfo += `Error Code: ${error.code || "Unknown"}\n`;
+      debugInfo += `Error Message: ${error.message || "No message"}\n`;
+      debugInfo += `Sign In Progress: ${signInInProgress}\n`;
+      debugInfo += `Config Status: ${isGoogleConfigured ? "Configured" : "Not Configured"}\n`;
 
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        console.log("Google sign-in cancelled");
-        errorMessage = "Sign-in was cancelled";
+        errorMessage += "Sign-in was cancelled by the user.";
       } else if (error.code === statusCodes.IN_PROGRESS || error.message?.includes("Sign-In in progress")) {
-        console.log("Google sign-in in progress error - attempting reset");
+        errorMessage += "Another sign-in is already in progress.\nTrying to reset the sign-in state...";
         // Try to reset Google Sign-In state
         await resetGoogleSignIn();
-        errorMessage = "There was an issue with Google Sign-In. We've reset the sign-in process. Please try again.";
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        errorMessage = "Play services not available or outdated";
+        errorMessage += "Google Play services are not available or need to be updated.";
       } else if (error.code === "DEVELOPER_ERROR") {
-        errorMessage = "Configuration error with Google Sign-In. Please check app credentials.";
+        errorMessage +=
+          "There is a configuration issue with Google Sign-In.\n" + "This might be due to:\n" + "- Incorrect SHA-1 fingerprint\n" + "- Wrong package name\n" + "- Invalid OAuth client ID";
+      } else if (error.code === 12501) {
+        errorMessage += "Account selection was canceled.";
+      } else if (error.code === 12502) {
+        errorMessage += "Sign-in attempt failed.";
       }
 
-      Alert.alert("Error", errorMessage);
+      Alert.alert("Google Sign-In Error", `${errorMessage}\n\nDebug Info:\n${debugInfo}`, [
+        {
+          text: "Copy Debug Info",
+          onPress: () => {
+            Clipboard.setString(debugInfo);
+            Alert.alert("Copied", "Debug information has been copied to clipboard");
+          },
+        },
+        { text: "OK" },
+      ]);
     } finally {
       clearTimeout(signInTimeoutId); // Clear the timeout if sign-in completes normally
       setShowSpinner(false);

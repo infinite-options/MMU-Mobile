@@ -2,7 +2,7 @@
   "expo": {
     "name": "MMU App",
     "slug": "meetmeup",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "orientation": "portrait",
     "hostType": "lan",
     "icon": "./assets/icon.png",
@@ -40,23 +40,18 @@
         "backgroundColor": "#E4423F"
       },
       "package": "com.infiniteoptions.meetmeupapp",
-      "permissions": [
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
-      ],
+      "permissions": ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"],
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyBHZlcN8UeLNySmAf66WOfu1N_hDBaq0-I"
         }
       },
-      "versionCode": 4
+      "versionCode": 5
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "assetBundlePatterns": [
-      "assets/fonts/*"
-    ],
+    "assetBundlePatterns": ["assets/fonts/*"],
     "owner": "pmarathay",
     "extra": {
       "eas": {

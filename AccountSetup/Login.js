@@ -5,6 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ProgressBar from "../src/Assets/Components/ProgressBar";
+import Clipboard from "@react-native-clipboard/clipboard";
 
 import axios from "axios";
 import sha256 from "crypto-js/sha256";
@@ -305,21 +306,37 @@ export default function Login() {
     } catch (error) {
       console.error("LP Google sign-in error:", error);
 
-      let errorMessage = "Something went wrong with Google sign-in. Please try again.";
+      let errorMessage = "Something went wrong with Google sign-in.\n\n";
+      let debugInfo = `Environment: ${__DEV__ ? "Development" : "Production"}\n`;
+      debugInfo += `Client ID: ${getLastTwoDigits(config.googleClientIds.android)}\n`;
+      debugInfo += `Error Code: ${error.code || "Unknown"}\n`;
+      debugInfo += `Error Message: ${error.message || "No message"}\n`;
 
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        console.log("LP Google sign-in cancelled");
-        errorMessage = "Sign-in was cancelled";
+        errorMessage += "Sign-in was cancelled by the user.";
       } else if (error.code === statusCodes.IN_PROGRESS) {
-        console.log("LP Google sign-in in progress");
-        errorMessage = "Sign-in is already in progress";
+        errorMessage += "Another sign-in is already in progress.";
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        errorMessage = "Play services not available or outdated";
+        errorMessage += "Google Play services are not available or need to be updated.";
       } else if (error.code === "DEVELOPER_ERROR") {
-        errorMessage = "Configuration error with Google Sign-In. Please check app credentials.";
+        errorMessage +=
+          "There is a configuration issue with Google Sign-In.\n" + "This might be due to:\n" + "- Incorrect SHA-1 fingerprint\n" + "- Wrong package name\n" + "- Invalid OAuth client ID";
+      } else if (error.code === 12501) {
+        errorMessage += "Account selection was canceled.";
+      } else if (error.code === 12502) {
+        errorMessage += "Sign-in attempt failed.";
       }
 
-      Alert.alert("Error", errorMessage);
+      Alert.alert("Google Sign-In Error", `${errorMessage}\n\nDebug Info:\n${debugInfo}`, [
+        {
+          text: "Copy Debug Info",
+          onPress: () => {
+            Clipboard.setString(debugInfo);
+            Alert.alert("Copied", "Debug information has been copied to clipboard");
+          },
+        },
+        { text: "OK" },
+      ]);
     } finally {
       setShowSpinner(false);
     }

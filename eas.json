@@ -77,6 +77,8 @@
         }
       },
       "android": {
+        "buildType": "app-bundle",
+        "credentialsSource": "remote",
         "env": {
           "EXPO_PUBLIC_MMU_IOS_CLIENT_ID": "secret:EXPO_PUBLIC_MMU_IOS_CLIENT_ID",
           "EXPO_PUBLIC_MMU_ANDROID_CLIENT_ID_DEBUG": "secret:EXPO_PUBLIC_MMU_ANDROID_CLIENT_ID_DEBUG",

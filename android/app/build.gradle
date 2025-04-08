@@ -118,12 +118,18 @@ android {
         applicationId 'com.infiniteoptions.meetmeupapp'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.1.2"
+        versionCode 4
+        versionName "1.2.0"
         resValue "string", "google_maps_api_key", System.getenv("EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY") ?: "YOUR_GOOGLE_API_KEY_HERE"
     }
     signingConfigs {
         debug {
+            storeFile file('MMU.keystore')
+            storePassword 'InfiniteOptions'
+            keyAlias 'MMU'
+            keyPassword 'InfiniteOptions'
+        }
+        release {
             storeFile file('MMU.keystore')
             storePassword 'InfiniteOptions'
             keyAlias 'MMU'
@@ -137,7 +143,7 @@ android {
         release {
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             shrinkResources (findProperty('android.enableShrinkResourcesInReleaseBuilds')?.toBoolean() ?: false)
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"

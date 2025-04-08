@@ -16,7 +16,7 @@
       "usesAppleSignIn": true,
       "supportsTablet": true,
       "bundleIdentifier": "com.infiniteoptions.meetmeupapp",
-      "buildNumber": "69",
+      "buildNumber": "71",
       "infoPlist": {
         "CFBundleURLTypes": [
           {
@@ -48,7 +48,8 @@
         "googleMaps": {
           "apiKey": "AIzaSyBHZlcN8UeLNySmAf66WOfu1N_hDBaq0-I"
         }
-      }
+      },
+      "versionCode": 4
     },
     "web": {
       "favicon": "./assets/favicon.png"

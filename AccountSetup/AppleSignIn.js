@@ -35,6 +35,8 @@ const AppleSignIn = ({ onSignIn, onError }) => {
           requestedScopes: [AppleAuthentication.AppleAuthenticationScope.FULL_NAME, AppleAuthentication.AppleAuthenticationScope.EMAIL],
         });
 
+        console.log("--- In AppleSignIn.js, Credentials Received:", credential);
+
         // If we received the user's name, store it for future use
         if (credential.fullName) {
           const userFullName = {

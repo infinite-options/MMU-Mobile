@@ -497,10 +497,18 @@ export default function Login() {
 
         {/* Social Login Buttons */}
         <View style={styles.socialContainer}>
-          <TouchableOpacity style={styles.socialLoginButton} onPress={handleGoogleSignIn}>
-            <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
-          </TouchableOpacity>
-          <AppleSignIn onSignIn={handleAppleSignIn} onError={handleAppleSignInError} />
+          {Platform.OS === "ios" ? (
+            <>
+              <TouchableOpacity style={styles.socialLoginButton} onPress={handleGoogleSignIn}>
+                <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
+              </TouchableOpacity>
+              <AppleSignIn onSignIn={handleAppleSignIn} onError={handleAppleSignInError} />
+            </>
+          ) : (
+            <TouchableOpacity style={[styles.socialLoginButton, { marginHorizontal: 0 }]} onPress={handleGoogleSignIn}>
+              <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Google Sign-In Button */}

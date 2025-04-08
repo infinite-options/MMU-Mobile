@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Image, ActivityIndicator, Modal, Alert } from "react-native";
+import { View, Text, TextInput, Button, StyleSheet, Image, ActivityIndicator, Modal, Alert, TouchableOpacity, Platform } from "react-native";
 import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
 import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
 import { formatPhoneNumber } from "./helper";
 import { EXPO_PUBLIC_MMU_WEB_CLIENT_ID, EXPO_PUBLIC_MMU_WEB_CLIENT_SECRET, REACT_APP_GOOGLE_LOGIN } from "@env";
+import AppleSignIn from "./AppleSignIn";
 
 const CLIENT_ID = EXPO_PUBLIC_MMU_WEB_CLIENT_ID;
 const CLIENT_SECRET = EXPO_PUBLIC_MMU_WEB_CLIENT_SECRET;
@@ -133,8 +134,20 @@ function GoogleSignup() {
             <TextInput style={styles.input} placeholder='Last Name' value={lastName} onChangeText={setLastName} />
             <TextInput style={styles.input} placeholder='Phone Number' value={phoneNumber} onChangeText={(value) => setPhoneNumber(formatPhoneNumber(value))} keyboardType='phone-pad' />
           </View>
-          <View style={styles.signUpButton}>
-            <Button title='Sign Up with Google' onPress={handleGoogleSignup} />
+          {/* Social Signup Buttons */}
+          <View style={styles.socialContainer}>
+            {Platform.OS === "ios" ? (
+              <>
+                <TouchableOpacity style={styles.socialLoginButton} onPress={handleGoogleSignup}>
+                  <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
+                </TouchableOpacity>
+                <AppleSignIn onSignIn={handleAppleSignIn} onError={handleAppleSignInError} />
+              </>
+            ) : (
+              <TouchableOpacity style={[styles.socialLoginButton, { marginHorizontal: 0 }]} onPress={handleGoogleSignup}>
+                <Image source={require("../assets/google_logo.png")} style={styles.googleLogo} />
+              </TouchableOpacity>
+            )}
           </View>
           {loading && <ActivityIndicator size='large' color='#0000ff' />}
         </>
@@ -192,6 +205,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+  },
+  socialContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 20,
+  },
+  socialLoginButton: {
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+  },
+  googleLogo: {
+    width: 24,
+    height: 24,
   },
 });
 

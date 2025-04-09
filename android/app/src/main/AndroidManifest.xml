@@ -30,7 +30,7 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="com.googleusercontent.apps.466541803518-mpejfib4i7g8m88tbk4hpgfrmqlt9aho"/>
+        <data android:scheme="com.googleusercontent.apps.466541803518-41pdpb9pei96hihdt70db2e6a5hg8sj6"/>
         <data android:scheme="com.infiniteoptions.meetmeupapp"/>
         <data android:scheme="exp+meetmeup"/>
       </intent-filter>

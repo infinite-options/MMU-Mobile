@@ -73,12 +73,15 @@ export default function Login() {
       try {
         setIsGoogleConfiguring(true); // Set configuring state to true
         // console.log("LP from login configure useeffect .env:", process.env.EXPO_PUBLIC_MMU_ANDROID_CLIENT_ID_DEBUG);
-        // console.log("LP Configuring Google Sign-In with config:", {
-        //   iosClientId: config.googleClientIds.ios,
-        //   androidClientId: config.googleClientIds.android,
-        //   webClientId: config.googleClientIds.web,
-        //   googleURLScheme: config.googleClientIds.googleURLScheme,
-        // });
+
+        console.log("LP Configuring Google Sign-In with detailed config:", {
+          iosClientId: config.googleClientIds.ios,
+          androidClientId: config.googleClientIds.android,
+          webClientId: config.googleClientIds.web,
+          googleURLScheme: config.googleClientIds.googleURLScheme,
+          packageName: DeviceInfo.getBundleId(),
+          sha1Fingerprint: "45:DC:8C:F7:21:FD:66:C2:78:3E:B2:BA:98:1C:31:E2:06:E1:0F:60",
+        });
 
         // Create Google Sign-In configuration object
         const googleSignInConfig = {
@@ -86,6 +89,7 @@ export default function Login() {
           androidClientId: config.googleClientIds.android,
           webClientId: config.googleClientIds.web,
           offlineAccess: true,
+          scopes: ["profile", "email"], // Add explicit scopes
         };
 
         // Add URL scheme for iOS if available

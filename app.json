@@ -2,7 +2,7 @@
   "expo": {
     "name": "MMU App",
     "slug": "meetmeup",
-    "version": "1.2.2",
+    "version": "1.2.3",
     "orientation": "portrait",
     "hostType": "lan",
     "icon": "./assets/icon.png",
@@ -46,7 +46,7 @@
           "apiKey": "AIzaSyBHZlcN8UeLNySmAf66WOfu1N_hDBaq0-I"
         }
       },
-      "versionCode": 7
+      "versionCode": 9
     },
     "web": {
       "favicon": "./assets/favicon.png"

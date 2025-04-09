@@ -118,8 +118,8 @@ android {
         applicationId 'com.infiniteoptions.meetmeupapp'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 8
-        versionName "1.2.2"
+        versionCode 10
+        versionName "1.2.3"
         resValue "string", "google_maps_api_key", System.getenv("EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY") ?: "YOUR_GOOGLE_API_KEY_HERE"
     }
     signingConfigs {

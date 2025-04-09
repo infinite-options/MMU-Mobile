@@ -1645,6 +1645,8 @@ PODS:
     - Yoga
   - RNCPicker (2.11.0):
     - React-Core
+  - RNDeviceInfo (14.0.4):
+    - React-Core
   - RNGestureHandler (2.16.2):
     - DoubleConversion
     - glog
@@ -1829,6 +1831,7 @@ DEPENDENCIES:
   - "RNCClipboard (from `../node_modules/@react-native-clipboard/clipboard`)"
   - "RNCMaskedView (from `../node_modules/@react-native-masked-view/masked-view`)"
   - "RNCPicker (from `../node_modules/@react-native-picker/picker`)"
+  - RNDeviceInfo (from `../node_modules/react-native-device-info`)
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - "RNGoogleSignin (from `../node_modules/@react-native-google-signin/google-signin`)"
   - RNPermissions (from `../node_modules/react-native-permissions`)
@@ -2047,6 +2050,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-masked-view/masked-view"
   RNCPicker:
     :path: "../node_modules/@react-native-picker/picker"
+  RNDeviceInfo:
+    :path: "../node_modules/react-native-device-info"
   RNGestureHandler:
     :path: "../node_modules/react-native-gesture-handler"
   RNGoogleSignin:
@@ -2166,6 +2171,7 @@ SPEC CHECKSUMS:
   RNCClipboard: e1d17c9d093d8129ef50b39b63a17a0e8ccd0ade
   RNCMaskedView: d7d429af166e632081fc0933bebad668e8e700b7
   RNCPicker: 124b4fb5859ba1a3fd53a91e16d1e7a0fc016e59
+  RNDeviceInfo: d863506092aef7e7af3a1c350c913d867d795047
   RNGestureHandler: 5d95b0a3cffed8325ed0c181f4f411c1dcd49317
   RNGoogleSignin: c1a22e417bbb2629eb04d458c24e11c84a6cb433
   RNPermissions: 418ed8a22834f0fdbd92dd925f25a4124f3673f8

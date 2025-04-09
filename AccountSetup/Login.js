@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ProgressBar from "../src/Assets/Components/ProgressBar";
 import Clipboard from "@react-native-clipboard/clipboard";
+import DeviceInfo from "react-native-device-info";
 
 import axios from "axios";
 import sha256 from "crypto-js/sha256";
@@ -16,9 +17,19 @@ import AppleSignIn from "./AppleSignIn"; // Import AppleSignIn component
 console.log("- In Login.js Starting Login---");
 
 // Helper function to get last two digits of a string (for debugging)
-const getLastTwoDigits = (str) => {
-  if (!str) return "Not set";
-  return str.slice(-2);
+const getLastTwoDigits = (clientId) => {
+  if (!clientId) return "Not set";
+
+  // Extract the part before .apps.googleusercontent.com
+  const match = clientId.match(/(.+)\.apps\.googleusercontent\.com$/);
+  if (match) {
+    const idPart = match[1];
+    // Get the last two digits of the ID part
+    return "..." + idPart.slice(-2);
+  }
+
+  // Fallback if the pattern doesn't match
+  return "..." + clientId.slice(-2);
 };
 
 export default function Login() {
@@ -215,16 +226,18 @@ export default function Login() {
       // Sign in - this is the part that was failing before
       let userInfo;
       try {
-        // console.log("==============> LP Starting Google sign in process in try block...");
+        console.log("==============> LP Starting Google sign in process in try block...");
         userInfo = await GoogleSignin.signIn();
-        // console.log("Sign-in successful:", userInfo);
-        // console.log("LP Google Sign-In successful", JSON.stringify(userInfo, null, 2));
         console.log("- In Login.js, LP Google Sign-In successful");
+        console.log("Sign-in successful:", userInfo);
+        console.log("LP Google Sign-In successful", JSON.stringify(userInfo, null, 2));
       } catch (signInError) {
         console.error("LP Sign in specific error:", signInError);
+        console.log("Full error object:", JSON.stringify(signInError, null, 2));
 
         // Log more details if it's a DEVELOPER_ERROR
-        if (signInError.code === "DEVELOPER_ERROR") {
+        if (signInError.message.includes("DEVELOPER_ERROR")) {
+          const packageName = DeviceInfo.getBundleId(); // Dynamically retrieve the package name
           console.error(
             "LP DEVELOPER_ERROR details:",
             JSON.stringify(
@@ -236,11 +249,18 @@ export default function Login() {
                 webClientId: config.googleClientIds.web,
                 iosClientId: config.googleClientIds.ios,
                 scopes: ["profile", "email"],
+                packageName: packageName, // Use the dynamically retrieved package name
               },
               null,
               2
             )
           );
+
+          // Log the full OAuth Client ID and Package Name
+          console.log("Full OAuth Client ID (Android):", config.googleClientIds.android);
+          console.log("Full OAuth Client ID (iOS):", config.googleClientIds.ios);
+          console.log("Full OAuth Client ID (Web):", config.googleClientIds.web);
+          console.log("Package Name:", packageName); // Log the dynamically retrieved package name
 
           // For Android: Show guidance to check SHA-1 fingerprint registration
           if (Platform.OS === "android") {

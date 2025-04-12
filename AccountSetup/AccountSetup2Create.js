@@ -197,6 +197,22 @@ export default function AccountSetup2Create() {
       signInInProgress,
     });
 
+    // Log relevant Client ID and URL Scheme based on platform
+    if (Platform.OS === "ios") {
+      console.log("iOS Client ID (config):", config.googleClientIds.ios);
+      console.log("Google URL Scheme (config):", config.googleClientIds.googleURLScheme);
+      console.log("iOS Client ID (app.json):", process.env.EXPO_PUBLIC_MMU_IOS_CLIENT_ID);
+      console.log("Google URL Scheme (app.json):", process.env.EXPO_PUBLIC_MMU_GOOGLE_URL_SCHEME);
+    } else if (Platform.OS === "android") {
+      console.log("Android Client ID (config):", config.googleClientIds.android);
+      console.log("Google URL Scheme (config):", config.googleClientIds.googleURLScheme);
+      console.log("Android Client ID (app.json):", process.env.EXPO_PUBLIC_MMU_ANDROID_CLIENT_ID_DEBUG);
+      console.log("Google URL Scheme (app.json):", process.env.EXPO_PUBLIC_MMU_GOOGLE_URL_SCHEME);
+    } else {
+      console.log("Web Client ID (config):", config.googleClientIds.web);
+      console.log("Web Client ID (app.json):", process.env.EXPO_PUBLIC_MMU_WEB_CLIENT_ID);
+    }
+
     // Check current states
     checkGoogleStates();
 
@@ -441,7 +457,7 @@ export default function AccountSetup2Create() {
 
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
         console.log("Google sign-in cancelled");
-        errorMessage = "Sign-in was cancelled";
+        errorMessage = "ancelled";
       } else if (error.code === statusCodes.IN_PROGRESS || error.message?.includes("Sign-In in progress")) {
         console.log("Google sign-in in progress error - attempting reset");
         // Try to reset Google Sign-In state

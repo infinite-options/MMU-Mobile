@@ -35,6 +35,12 @@ export default function Login() {
   const [configAttemptCount, setConfigAttemptCount] = useState(0); // Track configuration attempts
   const maxAttempts = 3; // Define maxAttempts at component level
 
+  // Log the Client IDs and URL Scheme
+  console.log("iOS Client ID:", config.googleClientIds.ios);
+  console.log("Android Client ID:", config.googleClientIds.android);
+  console.log("Web Client ID:", config.googleClientIds.web);
+  console.log("Google URL Scheme:", config.googleClientIds.googleURLScheme);
+
   // Helper function to check state values
   const checkGoogleStates = () => {
     console.log(`LP CURRENT STATES: isGoogleConfigured=${isGoogleConfigured}, isGoogleConfiguring=${isGoogleConfiguring}, configAttemptCount=${configAttemptCount}`);
@@ -139,10 +145,21 @@ export default function Login() {
   const handleGoogleSignIn = async () => {
     console.log("LP Google button clicked - handleGoogleSignIn called");
 
-    // console.log("LP handleGoogleSignIn called - Current states:", {
-    //   isGoogleConfiguring,
-    //   isGoogleConfigured,
-    // });
+    // Log relevant Client ID and URL Scheme based on platform
+    if (Platform.OS === "ios") {
+      console.log("iOS Client ID (config):", config.googleClientIds.ios);
+      console.log("Google URL Scheme (config):", config.googleClientIds.googleURLScheme);
+      console.log("iOS Client ID (app.json):", process.env.EXPO_PUBLIC_MMU_IOS_CLIENT_ID);
+      console.log("Google URL Scheme (app.json):", process.env.EXPO_PUBLIC_MMU_GOOGLE_URL_SCHEME);
+    } else if (Platform.OS === "android") {
+      console.log("Android Client ID (config):", config.googleClientIds.android);
+      console.log("Google URL Scheme (config):", config.googleClientIds.googleURLScheme);
+      console.log("Android Client ID (app.json):", process.env.EXPO_PUBLIC_MMU_ANDROID_CLIENT_ID_DEBUG);
+      console.log("Google URL Scheme (app.json):", process.env.EXPO_PUBLIC_MMU_GOOGLE_URL_SCHEME);
+    } else {
+      console.log("Web Client ID (config):", config.googleClientIds.web);
+      console.log("Web Client ID (app.json):", process.env.EXPO_PUBLIC_MMU_WEB_CLIENT_ID);
+    }
 
     // Check current states
     checkGoogleStates();

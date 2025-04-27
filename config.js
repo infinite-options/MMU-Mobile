@@ -12,8 +12,8 @@ const ENV = {
 
 // Global development mode flag
 // IMPORTANT: Set this to false before deploying to production/app store
-// export const __DEV_MODE__ = true;
-export const __DEV_MODE__ = false;
+export const __DEV_MODE__ = true;
+// export const __DEV_MODE__ = false;
 console.log("__DEV_MODE__:", __DEV_MODE__);
 
 // console.log("IOS Client ID:", ENV.IOS_CLIENT_ID);

@@ -28,7 +28,9 @@
     <array>
       <dict>
         <key>CFBundleURLSchemes</key>
-        <string>com.googleusercontent.apps.466541803518-mpejfib4i7g8m88tbk4hpgfrmqlt9aho</string>
+        <array>
+          <string>com.googleusercontent.apps.466541803518-mpejfib4i7g8m88tbk4hpgfrmqlt9aho</string>
+        </array>
         <key>CFBundleURLName</key>
         <string>google</string>
       </dict>

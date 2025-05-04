@@ -120,6 +120,13 @@ const isValidDate = (date) => {
   return dateRegex.test(date);
 };
 
+// Add this helper function near the top of the file, after the imports
+const calculateDropdownHeight = (items) => {
+  const itemHeight = 50; // Approximate height of each item
+  const maxVisibleItems = Math.min(items.length, 12); // Show at most 12 items
+  return maxVisibleItems * itemHeight;
+};
+
 export default function EditProfile() {
   console.log("--- In EditProfile.js Function ---");
   const navigation = useNavigation();
@@ -2177,15 +2184,20 @@ export default function EditProfile() {
                 setValue={setGenderValue}
                 setItems={setGenderItems}
                 placeholder='Select Gender assigned at birth'
-                style={styles.dropdownStyle}
                 listMode='SCROLLVIEW'
                 scrollViewProps={{
                   nestedScrollEnabled: true,
+                  androidNestedScrollView: {
+                    enabled: true,
+                    scrollEnabled: true,
+                  },
                 }}
+                style={styles.dropdownStyle}
                 textStyle={styles.dropdownTextStyle}
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
+                  maxHeight: Platform.OS === 'android' ? calculateDropdownHeight(genderItems) : undefined,
                 }}
                 onChangeValue={(value) => setFormValues((prev) => ({ ...prev, gender: value }))}
               />
@@ -2205,15 +2217,20 @@ export default function EditProfile() {
                 setValue={setIdentityValue}
                 setItems={setIdentityItems}
                 placeholder='Select Identity'
-                style={styles.dropdownStyle}
                 listMode='SCROLLVIEW'
                 scrollViewProps={{
                   nestedScrollEnabled: true,
+                  androidNestedScrollView: {
+                    enabled: true,
+                    scrollEnabled: true,
+                  },
                 }}
+                style={styles.dropdownStyle}
                 textStyle={styles.dropdownTextStyle}
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
+                  maxHeight: Platform.OS === 'android' ? calculateDropdownHeight(identityItems) : undefined,
                 }}
                 onChangeValue={(value) => setFormValues((prev) => ({ ...prev, identity: value }))}
               />
@@ -2269,12 +2286,17 @@ export default function EditProfile() {
                 listMode='SCROLLVIEW'
                 scrollViewProps={{
                   nestedScrollEnabled: true,
+                  androidNestedScrollView: {
+                    enabled: true,
+                    scrollEnabled: true,
+                  },
                 }}
                 style={styles.dropdownStyle}
                 textStyle={styles.dropdownTextStyle}
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
+                  maxHeight: Platform.OS === 'android' ? calculateDropdownHeight(openToItems) : undefined,
                 }}
                 onChangeValue={(value) => setFormValues((prev) => ({ ...prev, openTo: value }))}
               />
@@ -2297,12 +2319,17 @@ export default function EditProfile() {
                 listMode='SCROLLVIEW'
                 scrollViewProps={{
                   nestedScrollEnabled: true,
+                  androidNestedScrollView: {
+                    enabled: true,
+                    scrollEnabled: true,
+                  },
                 }}
                 style={styles.dropdownStyle}
                 textStyle={styles.dropdownTextStyle}
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
+                  maxHeight: Platform.OS === 'android' ? calculateDropdownHeight(smokingItems) : undefined,
                 }}
                 onChangeValue={(value) => setFormValues((prev) => ({ ...prev, smoking: value }))}
               />
@@ -2325,12 +2352,17 @@ export default function EditProfile() {
                 listMode='SCROLLVIEW'
                 scrollViewProps={{
                   nestedScrollEnabled: true,
+                  androidNestedScrollView: {
+                    enabled: true,
+                    scrollEnabled: true,
+                  },
                 }}
                 style={styles.dropdownStyle}
                 textStyle={styles.dropdownTextStyle}
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
+                  maxHeight: Platform.OS === 'android' ? calculateDropdownHeight(drinkingItems) : undefined,
                 }}
                 onChangeValue={(value) => setFormValues((prev) => ({ ...prev, drinking: value }))}
               />
@@ -2353,12 +2385,17 @@ export default function EditProfile() {
                 listMode='SCROLLVIEW'
                 scrollViewProps={{
                   nestedScrollEnabled: true,
+                  androidNestedScrollView: {
+                    enabled: true,
+                    scrollEnabled: true,
+                  },
                 }}
                 style={styles.dropdownStyle}
                 textStyle={styles.dropdownTextStyle}
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
+                  maxHeight: Platform.OS === 'android' ? calculateDropdownHeight(religionItems) : undefined,
                 }}
                 onChangeValue={(value) => setFormValues((prev) => ({ ...prev, religion: value }))}
               />
@@ -2381,12 +2418,17 @@ export default function EditProfile() {
                 listMode='SCROLLVIEW'
                 scrollViewProps={{
                   nestedScrollEnabled: true,
+                  androidNestedScrollView: {
+                    enabled: true,
+                    scrollEnabled: true,
+                  },
                 }}
                 style={styles.dropdownStyle}
                 textStyle={styles.dropdownTextStyle}
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
+                  maxHeight: Platform.OS === 'android' ? calculateDropdownHeight(starSignItems) : undefined,
                 }}
                 onChangeValue={(value) => setFormValues((prev) => ({ ...prev, starSign: value }))}
               />
@@ -2409,12 +2451,17 @@ export default function EditProfile() {
                 listMode='SCROLLVIEW'
                 scrollViewProps={{
                   nestedScrollEnabled: true,
+                  androidNestedScrollView: {
+                    enabled: true,
+                    scrollEnabled: true,
+                  },
                 }}
                 style={styles.dropdownStyle}
                 textStyle={styles.dropdownTextStyle}
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
+                  maxHeight: Platform.OS === 'android' ? calculateDropdownHeight(educationItems) : undefined,
                 }}
                 onChangeValue={(value) => setFormValues((prev) => ({ ...prev, education: value }))}
               />
@@ -2504,12 +2551,17 @@ export default function EditProfile() {
                 listMode='SCROLLVIEW'
                 scrollViewProps={{
                   nestedScrollEnabled: true,
+                  androidNestedScrollView: {
+                    enabled: true,
+                    scrollEnabled: true,
+                  },
                 }}
                 style={styles.dropdownStyle}
                 textStyle={styles.dropdownTextStyle}
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
+                  maxHeight: Platform.OS === 'android' ? calculateDropdownHeight(bodyTypeItems) : undefined,
                 }}
                 onChangeValue={(value) => setFormValues((prev) => ({ ...prev, bodyType: value }))}
               />
@@ -2953,6 +3005,14 @@ const styles = StyleSheet.create({
     borderColor: "#E4423F",
     borderWidth: 1,
     borderRadius: 10,
+    elevation: 3, // Add elevation for Android
+    shadowColor: "#000", // Add shadow for iOS
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   autocompleteContainer: {
     flex: 0,

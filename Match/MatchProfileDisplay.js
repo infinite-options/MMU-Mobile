@@ -614,7 +614,7 @@ export default function MatchProfileDisplay() {
               {/* User Photos */}
               {userInfo?.user_photo_url && (
                 <View style={styles.photoContainer}>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoScroll}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoScroll} contentContainerStyle={{ justifyContent: "center", alignItems: "center", width: "100%" }}>
                     {(() => {
                       try {
                         const photoUrls = typeof userInfo.user_photo_url === "string" ? JSON.parse(userInfo.user_photo_url.replace(/\\"/g, '"')) : userInfo.user_photo_url || [];
@@ -786,7 +786,7 @@ const styles = StyleSheet.create({
 
   topBar: {
     position: "absolute",
-    top: 40,
+    top: 50,
     left: 20,
     right: 20,
     flexDirection: "row",
@@ -795,8 +795,9 @@ const styles = StyleSheet.create({
     zIndex: 9999,
   },
   topCounter: {
-    color: "#ccc",
-    fontSize: 16,
+    color: "#E4423F",
+    fontSize: 18,
+    fontWeight: "bold",
   },
 
   backgroundVideo: {
@@ -984,13 +985,14 @@ const styles = StyleSheet.create({
 
   photoContainer: {
     marginBottom: 15,
+    alignItems: "center",
   },
   photoScroll: {
     flexDirection: "row",
   },
   userPhoto: {
-    width: 100,
-    height: 100,
+    width: 110,
+    height: 110,
     borderRadius: 10,
     marginRight: 8,
   },

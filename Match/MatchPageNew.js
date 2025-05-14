@@ -95,7 +95,8 @@ const MatchPageNew = () => {
     navigation.navigate("DateType", { matchedUserId: meet_date_user_id });
   };
   return (
-    <LinearGradient colors={["#a09076", "#c67d6d"]} style={styles.container}>
+    <LinearGradient colors={["#E4423F", "#E4423F"]} style={styles.container}>
+      {/* <LinearGradient colors={["#a09076", "#c67d6d"]} style={styles.container}> */}
       {/* Title */}
       <Text style={styles.title}>It's a Match!</Text>
       <Text style={styles.subtitle}>You and {matchedUserName} have liked each other.</Text>

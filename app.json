@@ -49,7 +49,7 @@
           "apiKey": "AIzaSyBHZlcN8UeLNySmAf66WOfu1N_hDBaq0-I"
         }
       },
-      "versionCode": 10
+      "versionCode": 11
     },
     "web": {
       "favicon": "./assets/favicon.png"

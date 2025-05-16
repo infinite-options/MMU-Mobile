@@ -178,12 +178,12 @@ export default function MyProfile() {
 
         if (hasDateInterests && hasAvailableTime) {
           // Remove date preferences step entirely if both are complete
-          const filteredSteps = steps.filter((step) => step.title !== "your date preferences");
+          const filteredSteps = steps.filter((step) => step.title !== "Your Date Preferences");
           setProfileSteps(filteredSteps);
         } else {
           // Update date preferences step count based on available data
           const updatedSteps = steps.map((step) => {
-            if (step.title === "your date preferences") {
+            if (step.title === "Your Date Preferences") {
               if (hasDateInterests) {
                 // Only need DateAvailability
                 return { ...step, count: 1 };
@@ -239,7 +239,7 @@ export default function MyProfile() {
   const handlePressLink = (index) => {
     const step = profileSteps[index];
 
-    if (step.title === "your date preferences") {
+    if (step.title === "Your Date Preferences") {
       // Check user data to determine appropriate navigation
       const hasDateInterests = !!userData?.user_date_interests;
       const hasAvailableTime = !!userData?.user_available_time;
@@ -258,7 +258,7 @@ export default function MyProfile() {
           navigation.navigate("TypeOfDate", { stepIndex: index });
         }
       }
-    } else if (step.title === "a few more details about you") {
+    } else if (step.title === "A few more details about you") {
       // 8 sub-pages
       switch (step.count) {
         case 8:
@@ -289,12 +289,12 @@ export default function MyProfile() {
           // If count is 0 or some unexpected value, do nothing or handle error
           break;
       }
-    } else if (step.title === "profile bio") {
+    } else if (step.title === "Profile bio") {
       // 1 sub-page
       if (step.count === 1) {
         navigation.navigate("ProfileBio", { stepIndex: index });
       }
-    } else if (step.title === "verify your account") {
+    } else if (step.title === "Verify your account") {
       // 2 sub-pages
       if (step.count === 2) {
         navigation.navigate("VerifyPhoneNumber1", { stepIndex: index });

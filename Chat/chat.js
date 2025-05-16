@@ -784,6 +784,10 @@ export default function Chat() {
 
   const latestInvitation = sortedInvitations.length > 0 ? sortedInvitations[0] : null;
 
+  // Find the last sent date invitation (for editability)
+  const sentDateInvitations = messages.filter((m) => m.isSent && m.text && m.text.startsWith("Date Invitation:"));
+  const lastSentDateInvitationId = sentDateInvitations.length > 0 ? sentDateInvitations[sentDateInvitations.length - 1].id : null;
+
   /**
    * Formats a message timestamp for display, converting to recipient's timezone if possible
    * @param {string} timestamp - ISO timestamp to format
@@ -1000,8 +1004,10 @@ export default function Chat() {
                         <Text style={styles.dateInvitationText}>{location}</Text>
                       </View>
 
-                      <Text style={styles.messageTimestamp}>{formatMessageTime(nowUtc)}</Text>
-
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 4 }}>
+                        {title === "Hi! Wanna go on a date with me?" && item.id === lastSentDateInvitationId && <Text style={styles.clickToEditText}>Click to Edit</Text>}
+                        <Text style={styles.messageTimestamp}>{formatMessageTime(nowUtc)}</Text>
+                      </View>
                       <View style={styles.rightArrow} />
                     </LinearGradient>
                   );
@@ -1367,5 +1373,12 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     tintColor: "#FF5E62",
+  },
+  clickToEditText: {
+    fontSize: 12,
+    color: "#eee",
+    fontStyle: "italic",
+    alignSelf: "flex-start",
+    marginRight: 8,
   },
 });

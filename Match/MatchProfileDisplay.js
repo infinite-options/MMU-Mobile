@@ -893,10 +893,22 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginBottom: 10,
   },
+  bottomSheet: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "transparent",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    zIndex: 1000,
+    overflow: "hidden",
+  },
   bottomSheetScroll: {
     paddingHorizontal: 20,
-    paddingBottom: 120,
+    paddingBottom: 24,
     backgroundColor: "#000",
+    flex: 1,
   },
 
   chipsRow: {

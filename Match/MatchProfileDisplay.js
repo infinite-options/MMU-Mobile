@@ -117,15 +117,18 @@ export default function MatchProfileDisplay() {
   ).current;
 
   const [isLiked, setIsLiked] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   // Add a function to toggle the bottom sheet
   const toggleBottomSheet = () => {
     // Determine if we're closer to open or closed position
     const isCurrentlyMoreOpen = sheetAnim._value < (sheetOpenY + sheetClosedY) / 2;
+    const newIsOpen = !isCurrentlyMoreOpen;
+    setIsSheetOpen(newIsOpen);
 
     // Animate to the opposite position
     Animated.spring(sheetAnim, {
-      toValue: isCurrentlyMoreOpen ? sheetClosedY : sheetOpenY,
+      toValue: newIsOpen ? sheetOpenY : sheetClosedY,
       tension: 50,
       friction: 10,
       useNativeDriver: false,
@@ -135,6 +138,7 @@ export default function MatchProfileDisplay() {
   useEffect(() => {
     // On mount, we want the sheet at the position shown in the image
     sheetAnim.setValue(sheetClosedY);
+    setIsSheetOpen(false);
   }, []);
 
   useEffect(() => {
@@ -511,31 +515,6 @@ export default function MatchProfileDisplay() {
                 resizeMode='cover'
                 onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
               />
-              {/* Play/Pause Button */}
-              <TouchableOpacity
-                style={styles.playPauseButton}
-                onPress={async () => {
-                  if (!videoRef.current) return;
-
-                  try {
-                    // Get current playback status
-                    const currentStatus = await videoRef.current.getStatusAsync();
-
-                    // If video is at the end or paused, reset and play from beginning
-                    if (currentStatus.didJustFinish || currentStatus.positionMillis >= currentStatus.durationMillis - 100 || !currentStatus.isPlaying) {
-                      await videoRef.current.setPositionAsync(0);
-                      await videoRef.current.playAsync();
-                    } else {
-                      // If video is currently playing, pause it
-                      await videoRef.current.pauseAsync();
-                    }
-                  } catch (error) {
-                    console.log("Error handling video play/pause:", error);
-                  }
-                }}
-              >
-                <Text style={styles.playPauseText}>{status.isPlaying ? "❚❚" : "►"}</Text>
-              </TouchableOpacity>
             </>
           ) : (
             <View style={styles.backgroundVideo}>
@@ -568,6 +547,37 @@ export default function MatchProfileDisplay() {
 
               <TouchableOpacity style={[styles.roundButton, { backgroundColor: "#fff" }]} onPress={handleClosePress}>
                 <Ionicons name='close' size={24} color='red' />
+              </TouchableOpacity>
+
+              {isValidUrl(videoUrl) && (
+                <TouchableOpacity
+                  style={[styles.roundButton, { backgroundColor: "#fff" }]}
+                  onPress={async () => {
+                    if (!videoRef.current) return;
+
+                    try {
+                      // Get current playback status
+                      const currentStatus = await videoRef.current.getStatusAsync();
+
+                      // If video is at the end or paused, reset and play from beginning
+                      if (currentStatus.didJustFinish || currentStatus.positionMillis >= currentStatus.durationMillis - 100 || !currentStatus.isPlaying) {
+                        await videoRef.current.setPositionAsync(0);
+                        await videoRef.current.playAsync();
+                      } else {
+                        // If video is currently playing, pause it
+                        await videoRef.current.pauseAsync();
+                      }
+                    } catch (error) {
+                      console.log("Error handling video play/pause:", error);
+                    }
+                  }}
+                >
+                  <Ionicons name={status.isPlaying ? "pause" : "play"} size={24} color='black' />
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity style={[styles.roundButton, { backgroundColor: "#fff" }]} onPress={toggleBottomSheet}>
+                <Ionicons name={isSheetOpen ? "chevron-down" : "chevron-up"} size={24} color='black' />
               </TouchableOpacity>
 
               <TouchableOpacity style={[styles.roundButton, { backgroundColor: isLiked ? "red" : "white" }]} onPress={handleLikePress}>
@@ -886,12 +896,14 @@ const styles = StyleSheet.create({
   bottomSheetScroll: {
     paddingHorizontal: 20,
     paddingBottom: 120,
+    backgroundColor: "#000",
   },
 
   chipsRow: {
     flexWrap: "wrap",
     flexDirection: "row",
     marginBottom: 16,
+    marginTop: 20,
   },
   chip: {
     backgroundColor: "#333",

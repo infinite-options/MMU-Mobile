@@ -502,12 +502,33 @@ export default function MyProfile() {
                 // Print errors to console
                 onError={(err) => console.log("VIDEO ERROR:", err)}
               />
-              {/* Center play overlay if paused */}
-              {!isVideoPlaying && (
-                <TouchableOpacity style={styles.playOverlay} onPress={handlePlayPause}>
-                  <Ionicons name='play' size={48} color='#FFF' />
+              {/* Action buttons row */}
+              <View style={styles.videoActionsContainer}>
+                <TouchableOpacity
+                  style={[styles.roundButton, { backgroundColor: "#fff" }]}
+                  onPress={async () => {
+                    if (!videoRef.current) return;
+
+                    try {
+                      // Get current playback status
+                      const currentStatus = await videoRef.current.getStatusAsync();
+
+                      // If video is at the end or paused, reset and play from beginning
+                      if (currentStatus.didJustFinish || currentStatus.positionMillis >= currentStatus.durationMillis - 100 || !currentStatus.isPlaying) {
+                        await videoRef.current.setPositionAsync(0);
+                        await videoRef.current.playAsync();
+                      } else {
+                        // If video is currently playing, pause it
+                        await videoRef.current.pauseAsync();
+                      }
+                    } catch (error) {
+                      console.log("Error handling video play/pause:", error);
+                    }
+                  }}
+                >
+                  <Ionicons name={isVideoPlaying ? "pause" : "play"} size={24} color='black' />
                 </TouchableOpacity>
-              )}
+              </View>
             </View>
           ) : (
             <TouchableOpacity style={styles.uploadVideoButton} onPress={() => navigation.navigate("EditProfile")}>
@@ -825,14 +846,23 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  playOverlay: {
+  videoActionsContainer: {
     position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: [{ translateX: -24 }, { translateY: -24 }],
-    backgroundColor: "rgba(0,0,0,0.3)",
-    borderRadius: 50,
-    padding: 10,
+    bottom: 20,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  roundButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    margin: 5,
   },
   removeIconTopRight: {
     position: "absolute",

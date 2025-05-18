@@ -4,7 +4,7 @@
     "slug": "meetmeup",
     "version": "1.2.3",
     "orientation": "portrait",
-    "hostType": "lan",
+    "scheme": "com.googleusercontent.apps.466541803518-mpejfib4i7g8m88tbk4hpgfrmqlt9aho",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
@@ -16,22 +16,20 @@
       "usesAppleSignIn": true,
       "supportsTablet": true,
       "bundleIdentifier": "com.infiniteoptions.meetmeupapp",
-      "buildNumber": "71",
+      "buildNumber": "74",
+      "deploymentTarget": "18.0",
       "infoPlist": {
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": "com.googleusercontent.apps.466541803518-mpejfib4i7g8m88tbk4hpgfrmqlt9aho",
-            "CFBundleURLName": "google"
+            "CFBundleURLName": "google",
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.466541803518-mpejfib4i7g8m88tbk4hpgfrmqlt9aho"
+            ]
           }
         ],
         "NSLocationWhenInUseUsageDescription": "This app needs access to location to show it on the map.",
         "NSLocationAlwaysUsageDescription": "This app needs access to location to show it on the map.",
         "GMSApiKey": "AIzaSyBHZlcN8UeLNySmAf66WOfu1N_hDBaq0-I"
-      },
-      "config": {
-        "googleSignIn": {
-          "reservedClientId": "com.googleusercontent.apps.466541803518-mpejfib4i7g8m88tbk4hpgfrmqlt9aho"
-        }
       }
     },
     "android": {
@@ -49,7 +47,7 @@
           "apiKey": "AIzaSyBHZlcN8UeLNySmAf66WOfu1N_hDBaq0-I"
         }
       },
-      "versionCode": 11
+      "versionCode": 14
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -63,7 +61,6 @@
         "projectId": "a57a9873-7c6d-45b1-af9e-2ba19255cdb6"
       }
     },
-    "scheme": "com.googleusercontent.apps.466541803518-mpejfib4i7g8m88tbk4hpgfrmqlt9aho",
     "plugins": [
       [
         "expo-camera",

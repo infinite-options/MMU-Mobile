@@ -4,7 +4,8 @@ require File.join(File.dirname(`node --print "require.resolve('react-native/pack
 require 'json'
 podfile_properties = JSON.parse(File.read(File.join(__dir__, 'Podfile.properties.json'))) rescue {}
 
-ENV['RCT_NEW_ARCH_ENABLED'] = podfile_properties['newArchEnabled'] == 'true' ? '1' : '0'
+# Force the new architecture to be enabled
+ENV['RCT_NEW_ARCH_ENABLED'] = '1'
 ENV['EX_DEV_CLIENT_NETWORK_INSPECTOR'] = podfile_properties['EX_DEV_CLIENT_NETWORK_INSPECTOR']
 
 use_autolinking_method_symbol = ('use' + '_native' + '_modules!').to_sym
@@ -28,7 +29,7 @@ self.define_singleton_method(use_autolinking_method_symbol) do |*args|
   end
 end
 
-platform :ios, podfile_properties['ios.deploymentTarget'] || '13.4'
+platform :ios, '16.0'
 install! 'cocoapods',
   :deterministic_uuids => false
 
@@ -47,6 +48,8 @@ target 'MMUApp' do
     # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/..",
     :privacy_file_aggregation_enabled => podfile_properties['apple.privacyManifestAggregationEnabled'] != 'false',
+    :fabric_enabled => true,
+    :new_arch_enabled => true
   )
 
   post_install do |installer|
@@ -64,6 +67,39 @@ target 'MMUApp' do
       target_installation_result.resource_bundle_targets.each do |resource_bundle_target|
         resource_bundle_target.build_configurations.each do |config|
           config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+        end
+      end
+    end
+
+    # Ensure all pods use the same deployment target and have proper header search paths
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+        
+        # Add header search paths
+        if target.name == 'React-Core'
+          config.build_settings['HEADER_SEARCH_PATHS'] ||= '$(inherited)'
+          config.build_settings['HEADER_SEARCH_PATHS'] += ' "${PODS_ROOT}/Headers/Public/React-Core"'
+          config.build_settings['HEADER_SEARCH_PATHS'] += ' "${PODS_ROOT}/Headers/Public/ReactCommon"'
+          config.build_settings['HEADER_SEARCH_PATHS'] += ' "${PODS_ROOT}/Headers/Public/React-Codegen"'
+          config.build_settings['HEADER_SEARCH_PATHS'] += ' "${PODS_ROOT}/Headers/Public/React-Fabric"'
+          config.build_settings['HEADER_SEARCH_PATHS'] += ' "${PODS_ROOT}/Headers/Public/React-FabricComponents"'
+          config.build_settings['HEADER_SEARCH_PATHS'] += ' "${PODS_ROOT}/Headers/Public/React-RuntimeCore"'
+          config.build_settings['HEADER_SEARCH_PATHS'] += ' "${PODS_ROOT}/Headers/Public/React-RuntimeApple"'
+        end
+        
+        # Enable modules and new architecture
+        config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
+        config.build_settings['DEFINES_MODULE'] = 'YES'
+        config.build_settings['RCT_NEW_ARCH_ENABLED'] = 'YES'
+      end
+
+      # Configure script phases for React-Fabric and React-FabricComponents
+      if ['React-Fabric', 'React-FabricComponents'].include?(target.name)
+        target.build_phases.each do |build_phase|
+          if build_phase.respond_to?(:name) && build_phase.name == 'Create Symlinks to Header Folders'
+            build_phase.always_out_of_date = 'YES'
+          end
         end
       end
     end

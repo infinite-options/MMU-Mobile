@@ -92,5 +92,7 @@
     <string>Light</string>
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <false/>
+    <key>MinimumOSVersion</key>
+    <string>16.0</string>
   </dict>
 </plist>

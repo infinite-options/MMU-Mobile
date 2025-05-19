@@ -38,7 +38,7 @@ const BottomNav = () => {
 export default function MatchProfileDisplay() {
   const screenHeight = Dimensions.get("window").height;
   const sheetOpenY = screenHeight * 0.15; // how far from top when "open"
-  const sheetClosedY = screenHeight * 0.73; // Adjusted to show name, rating, and buttons
+  const sheetClosedY = screenHeight * 0.705; // Adjusted to show name, rating, and buttons
   const navigation = useNavigation();
   const videoRef = useRef(null);
   const [status, setStatus] = useState({});
@@ -551,7 +551,7 @@ export default function MatchProfileDisplay() {
 
               {isValidUrl(videoUrl) && (
                 <TouchableOpacity
-                  style={[styles.roundButton, { backgroundColor: "#fff" }]}
+                  style={[styles.roundButton, { backgroundColor: "#FFD700" }]}
                   onPress={async () => {
                     if (!videoRef.current) return;
 

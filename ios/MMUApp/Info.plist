@@ -27,12 +27,12 @@
     <key>CFBundleURLTypes</key>
     <array>
       <dict>
+        <key>CFBundleURLName</key>
+        <string>google</string>
         <key>CFBundleURLSchemes</key>
         <array>
           <string>com.googleusercontent.apps.466541803518-mpejfib4i7g8m88tbk4hpgfrmqlt9aho</string>
         </array>
-        <key>CFBundleURLName</key>
-        <string>google</string>
       </dict>
       <dict>
         <key>CFBundleURLSchemes</key>
@@ -92,7 +92,5 @@
     <string>Light</string>
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <false/>
-    <key>MinimumOSVersion</key>
-    <string>16.0</string>
   </dict>
 </plist>

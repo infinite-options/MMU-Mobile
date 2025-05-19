@@ -71,13 +71,13 @@ target 'MMUApp' do
       end
     end
 
-    # Ensure all pods use the same deployment target and have proper header search paths
+    # Ensure all pods use the same deployment target
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
         
         # Add header search paths
-        if target.name == 'React-Core'
+        if ['React-Core', 'React-Codegen', 'React-rncore'].include?(target.name)
           config.build_settings['HEADER_SEARCH_PATHS'] ||= '$(inherited)'
           config.build_settings['HEADER_SEARCH_PATHS'] += ' "${PODS_ROOT}/Headers/Public/React-Core"'
           config.build_settings['HEADER_SEARCH_PATHS'] += ' "${PODS_ROOT}/Headers/Public/ReactCommon"'
@@ -86,21 +86,13 @@ target 'MMUApp' do
           config.build_settings['HEADER_SEARCH_PATHS'] += ' "${PODS_ROOT}/Headers/Public/React-FabricComponents"'
           config.build_settings['HEADER_SEARCH_PATHS'] += ' "${PODS_ROOT}/Headers/Public/React-RuntimeCore"'
           config.build_settings['HEADER_SEARCH_PATHS'] += ' "${PODS_ROOT}/Headers/Public/React-RuntimeApple"'
+          config.build_settings['HEADER_SEARCH_PATHS'] += ' "${PODS_ROOT}/Headers/Public/rncore"'
         end
         
         # Enable modules and new architecture
         config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
         config.build_settings['DEFINES_MODULE'] = 'YES'
         config.build_settings['RCT_NEW_ARCH_ENABLED'] = 'YES'
-      end
-
-      # Configure script phases for React-Fabric and React-FabricComponents
-      if ['React-Fabric', 'React-FabricComponents'].include?(target.name)
-        target.build_phases.each do |build_phase|
-          if build_phase.respond_to?(:name) && build_phase.name == 'Create Symlinks to Header Folders'
-            build_phase.always_out_of_date = 'YES'
-          end
-        end
       end
     end
   end

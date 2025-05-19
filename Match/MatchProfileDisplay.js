@@ -846,15 +846,16 @@ const styles = StyleSheet.create({
 
   matchActionsContainer: {
     flexDirection: "row",
-    justifyContent: "space-evenly",
+    justifyContent: "center",
     alignItems: "center",
     paddingVertical: 10,
     marginBottom: 5,
+    paddingHorizontal: 18,
   },
   roundButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "center",
     alignItems: "center",

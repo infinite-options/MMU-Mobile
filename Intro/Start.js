@@ -22,6 +22,26 @@ const getLastTwoDigits = (clientId) => {
   return "..." + clientId.slice(-2);
 };
 
+// Helper function to extract the first four digits/letters of the unique part before .apps.googleusercontent.com
+const getFirstFourDigits = (clientId) => {
+  if (!clientId) return "Not set";
+
+  // Extract the part before .apps.googleusercontent.com
+  const match = clientId.match(/([\w-]+)-([\w]+)\.apps\.googleusercontent\.com$/);
+  if (match) {
+    const uniquePart = match[2];
+    return uniquePart.slice(0, 4);
+  }
+
+  // Fallback: try to extract the part after the first hyphen
+  const fallback = clientId.split("-")[1];
+  if (fallback) {
+    return fallback.slice(0, 4);
+  }
+
+  return "Not found";
+};
+
 // Get Maps API Key from environment variables and export it for use in other components
 export const mapsApiKey = process.env.EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY;
 const mapsApiKeyDisplay = mapsApiKey ? "..." + mapsApiKey.slice(-4) : "Not set";
@@ -81,11 +101,15 @@ const StartPage = () => {
       {/* API Keys Info - For debugging */}
       {__DEV_MODE__ && (
         <View style={styles.apiKeysContainer}>
-          <Text style={styles.apiKeysTitle}>API Keys (Last 2 Digits):</Text>
-          <Text style={styles.apiKeysText}>iOS: {getLastTwoDigits(config.googleClientIds.ios)}</Text>
+          <Text style={styles.apiKeysTitle}>API Keys (First 4 Digits):</Text>
+          {/* <Text style={styles.apiKeysText}>iOS: {getLastTwoDigits(config.googleClientIds.ios)}</Text>
           <Text style={styles.apiKeysText}>Android: {getLastTwoDigits(config.googleClientIds.android)}</Text>
           <Text style={styles.apiKeysText}>Web: {getLastTwoDigits(config.googleClientIds.web)}</Text>
-          <Text style={styles.apiKeysText}>URL Scheme: {config.googleClientIds.googleURLScheme ? "..." + config.googleClientIds.googleURLScheme.slice(-2) : "Not set"}</Text>
+          <Text style={styles.apiKeysText}>URL Scheme: {config.googleClientIds.googleURLScheme ? "..." + config.googleClientIds.googleURLScheme.slice(-2) : "Not set"}</Text> */}
+          <Text style={styles.apiKeysText}>iOS: {getFirstFourDigits(config.googleClientIds.ios)}</Text>
+          <Text style={styles.apiKeysText}>Android: {getFirstFourDigits(config.googleClientIds.android)}</Text>
+          <Text style={styles.apiKeysText}>Web: {getFirstFourDigits(config.googleClientIds.web)}</Text>
+          <Text style={styles.apiKeysText}>URL Scheme: {config.googleClientIds.googleURLScheme ? config.googleClientIds.googleURLScheme.split("-").pop().slice(0, 4) : "Not set"}</Text>
           <Text style={styles.apiKeysText}>Maps API: {mapsApiKeyDisplay}</Text>
           <Text style={styles.apiKeysText}>Apple Auth: {appleAuthStatus}</Text>
           <Text style={styles.apiKeysText}>Environment: {__DEV__ ? "Development" : "Production"}</Text>

@@ -615,13 +615,25 @@ export default function MyProfile() {
             <Text style={styles.completionText}>Profile: {profileCompletion}% complete</Text>
             <ProgressBar startProgress={0} endProgress={profileCompletion} />
 
-            {profileSteps.map((step, index) => (
-              <Pressable key={index} onPress={() => handlePressLink(index, step.route)}>
-                <Text style={styles.completionLink}>
-                  {step.title} ({step.count})
+            {profileSteps.map((step, index) => {
+              // Check if this is one of the disabled steps
+              const isDisabledStep = step.title === "A few more details about you" || step.title === "Profile bio" || step.title === "Verify your account";
+
+              // Create display text with "(Coming in Live Version)" for disabled steps
+              const displayText = isDisabledStep ? `${step.title} (${step.count}) (Coming in Live Version)` : `${step.title} (${step.count})`;
+
+              return isDisabledStep ? (
+                // Non-clickable text for disabled steps
+                <Text key={index} style={[styles.completionLink, styles.disabledLink]}>
+                  {displayText}
                 </Text>
-              </Pressable>
-            ))}
+              ) : (
+                // Clickable pressable for enabled steps (like Availablity Calendar)
+                <Pressable key={index} onPress={() => handlePressLink(index, step.route)}>
+                  <Text style={styles.completionLink}>{displayText}</Text>
+                </Pressable>
+              );
+            })}
           </View>
         )}
 
@@ -685,7 +697,41 @@ export default function MyProfile() {
                     return <Text style={styles.emptyStateText}>No availability set</Text>;
                   }
 
-                  return availabilityData.map((time, index) => {
+                  // Helper function to convert day name to numeric value for sorting
+                  const getDayNumber = (dayName) => {
+                    const dayMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+                    return dayMap[dayName] || 0;
+                  };
+
+                  // Helper function to convert time string to minutes for sorting
+                  const getTimeInMinutes = (timeStr) => {
+                    const [timePart, modifier] = timeStr.split(" ");
+                    let [hours, minutes] = timePart.split(":");
+                    hours = parseInt(hours);
+                    minutes = parseInt(minutes);
+
+                    // Convert to 24-hour format for comparison
+                    if (modifier === "AM" && hours === 12) hours = 0;
+                    if (modifier === "PM" && hours !== 12) hours += 12;
+
+                    return hours * 60 + minutes;
+                  };
+
+                  // Sort the availability data
+                  const sortedData = [...availabilityData].sort((a, b) => {
+                    // Get the first day from each entry for sorting
+                    const firstDayA = a.day.split(", ")[0];
+                    const firstDayB = b.day.split(", ")[0];
+
+                    // Sort by day first
+                    const dayDiff = getDayNumber(firstDayA) - getDayNumber(firstDayB);
+                    if (dayDiff !== 0) return dayDiff;
+
+                    // If same day, sort by start time
+                    return getTimeInMinutes(a.start_time) - getTimeInMinutes(b.start_time);
+                  });
+
+                  return sortedData.map((time, index) => {
                     const days = time.day.split(", ");
                     // Format day ranges as "Mon-Fri" or "Sat & Sun"
                     const dayRange = days.length > 1 ? (days.length === 2 ? days.join(" & ") : `${days[0]}-${days[days.length - 1]}`) : days[0];
@@ -693,14 +739,14 @@ export default function MyProfile() {
                     // Check for all-day availability
                     const isAllDay = time.start_time === "12:00 AM" && time.end_time === "11:59 PM";
 
-                    // Format time as "5:30 pm" without leading zeros
+                    // Format time as "5:30 pm" always showing minutes
                     const formatTime = (t) => {
                       const [timePart, modifier] = t.split(" ");
                       let [hours, minutes] = timePart.split(":");
                       hours = parseInt(hours);
                       const displayHours = hours % 12 || 12; // Convert to 12-hour format
                       const ampm = modifier.toLowerCase();
-                      return `${displayHours}${minutes !== "00" ? `:${minutes}` : ""} ${ampm}`;
+                      return `${displayHours}:${minutes} ${ampm}`; // Always show minutes
                     };
 
                     return (
@@ -1150,5 +1196,10 @@ const styles = StyleSheet.create({
     color: "gray",
     fontSize: 16,
     textAlign: "center",
+  },
+  disabledLink: {
+    color: "gray",
+    fontSize: 14,
+    marginVertical: 3,
   },
 });

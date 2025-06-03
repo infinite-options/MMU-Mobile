@@ -26,9 +26,8 @@ const LandingPage3 = () => {
 
         {/* Description */}
         <Text style={styles.description}>
-          Wary of being catfished? Don't be! meet me up{"\n"}
-          requires every user to upload a video of{"\n"}
-          themselves to their profile, updated yearly.
+          Wary of being catfished? Don't be!{"\n"}
+          meet me up requires every user to upload a video of themselves to their profile, updated yearly.
         </Text>
 
         {/* Continue Button */}

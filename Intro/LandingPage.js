@@ -25,10 +25,7 @@ const LandingPage = () => {
         <Text style={styles.title}>No Boring Small Talk</Text>
 
         {/* Description */}
-        <Text style={styles.description}>
-          Arrange your meeting time & destination through{"\n"}
-          the app with only automated prompting.
-        </Text>
+        <Text style={styles.description}>Arrange your meeting time & destination through the app with only automated prompting.</Text>
 
         {/* Continue Button */}
         <TouchableOpacity style={styles.continueButton} onPress={() => navigation.navigate("LandingPage2")}>

@@ -25,11 +25,7 @@ const LandingPage4 = () => {
         <Text style={styles.title}>Never Be Stood Up</Text>
 
         {/* Description */}
-        <Text style={styles.description}>
-          We keep track of each person's attendance{"\n"}
-          rating on their dates through generated{"\n"}
-          codes exchanged by both parties.
-        </Text>
+        <Text style={styles.description}>We keep track of each person's attendance rating on their dates through generated codes exchanged by both parties.</Text>
 
         {/* Continue Button */}
         <TouchableOpacity style={styles.continueButton} onPress={() => navigation.navigate("LandingPage5")}>

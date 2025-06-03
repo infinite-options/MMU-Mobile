@@ -73,8 +73,18 @@ function validateTimeDuration(startTime, endTime) {
   const startMinutes = convertTo24Hour(startTime);
   const endMinutes = convertTo24Hour(endTime);
 
+  // Debug logging
+  // console.log("Validating time duration:", {
+  //   startTime,
+  //   endTime,
+  //   startMinutes,
+  //   endMinutes,
+  //   durationMinutes: endMinutes - startMinutes,
+  // });
+
   // Check if end time is after start time
   if (endMinutes <= startMinutes) {
+    // console.log("Validation failed: End time not after start time");
     return { valid: false, message: "End time must be after start time." };
   }
 
@@ -83,12 +93,14 @@ function validateTimeDuration(startTime, endTime) {
 
   // Check if duration is at least 1 hour (60 minutes)
   if (durationMinutes < 60) {
+    // console.log("Validation failed: Duration less than 60 minutes:", durationMinutes);
     return {
       valid: false,
       message: "The duration is less than 1 hour. Please ensure your availability window is at least 1 hour long.",
     };
   }
 
+  // console.log("Validation passed: Duration is", durationMinutes, "minutes");
   return { valid: true };
 }
 
@@ -417,52 +429,50 @@ export default function DateAvailability() {
                   {/* Start Time - all on one line */}
                   <View style={styles.singleTimeRow}>
                     <Text style={styles.timeLabel}>Start Time</Text>
-                    <Picker
-                      style={styles.hourPicker}
-                      mode='dropdown'
-                      itemStyle={styles.pickerItem}
-                      dropdownIconColor='#333'
-                      dropdownIconRippleColor='#E4423F'
-                      selectedValue={tw.start.hour}
-                      onValueChange={(value) => {
-                        setTimeWindows((prev) => {
-                          const newArr = [...prev];
-                          newArr[index] = {
-                            ...newArr[index],
-                            start: { ...newArr[index].start, hour: value },
-                          };
-                          return newArr;
-                        });
-                      }}
-                    >
-                      {Array.from({ length: 12 }, (_, i) => {
-                        const hour = i === 0 ? 12 : i;
-                        return <Picker.Item key={i} label={hour.toString()} value={hour} />;
-                      })}
-                    </Picker>
-                    <Text style={styles.timeSeparator}>:</Text>
-                    <Picker
-                      style={styles.minutePicker}
-                      mode='dropdown'
-                      itemStyle={styles.pickerItem}
-                      dropdownIconColor='#333'
-                      dropdownIconRippleColor='#E4423F'
-                      selectedValue={tw.start.minute}
-                      onValueChange={(value) => {
-                        setTimeWindows((prev) => {
-                          const newArr = [...prev];
-                          newArr[index] = {
-                            ...newArr[index],
-                            start: { ...newArr[index].start, minute: value },
-                          };
-                          return newArr;
-                        });
-                      }}
-                    >
-                      {Array.from({ length: 60 }, (_, i) => (
-                        <Picker.Item key={i} label={i.toString().padStart(2, "0")} value={i} />
-                      ))}
-                    </Picker>
+                    <View style={styles.timePickerContainer}>
+                      <Picker
+                        style={styles.hourPicker}
+                        itemStyle={styles.pickerItem}
+                        selectedValue={tw.start.hour}
+                        onValueChange={(value) => {
+                          // console.log("Hour picker changed - Start time:", value);
+                          setTimeWindows((prev) => {
+                            const newArr = [...prev];
+                            newArr[index] = {
+                              ...newArr[index],
+                              start: { ...newArr[index].start, hour: value },
+                            };
+                            return newArr;
+                          });
+                        }}
+                      >
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const hour = i === 0 ? 12 : i;
+                          return <Picker.Item key={i} label={hour.toString()} value={hour} />;
+                        })}
+                      </Picker>
+                      <Text style={styles.timeSeparator}>:</Text>
+                      <Picker
+                        style={styles.minutePicker}
+                        itemStyle={styles.pickerItem}
+                        selectedValue={tw.start.minute}
+                        onValueChange={(value) => {
+                          // console.log("Minute picker changed - Start time:", value);
+                          setTimeWindows((prev) => {
+                            const newArr = [...prev];
+                            newArr[index] = {
+                              ...newArr[index],
+                              start: { ...newArr[index].start, minute: value },
+                            };
+                            return newArr;
+                          });
+                        }}
+                      >
+                        {Array.from({ length: 60 }, (_, i) => (
+                          <Picker.Item key={i} label={i.toString().padStart(2, "0")} value={i} />
+                        ))}
+                      </Picker>
+                    </View>
                     <View style={styles.ampmButtonsVertical}>
                       <Pressable onPress={() => handleToggleAmPm(index, "start")} style={[styles.ampmButtonStacked, tw.start.ampm === "AM" && styles.ampmButtonStackedActive]}>
                         <View style={styles.radioButton}>{tw.start.ampm === "AM" && <View style={styles.radioButtonSelected} />}</View>
@@ -478,52 +488,50 @@ export default function DateAvailability() {
                   {/* End Time - all on one line */}
                   <View style={styles.singleTimeRow}>
                     <Text style={styles.timeLabel}>End Time</Text>
-                    <Picker
-                      style={styles.hourPicker}
-                      mode='dropdown'
-                      itemStyle={styles.pickerItem}
-                      dropdownIconColor='#333'
-                      dropdownIconRippleColor='#E4423F'
-                      selectedValue={tw.end.hour}
-                      onValueChange={(value) => {
-                        setTimeWindows((prev) => {
-                          const newArr = [...prev];
-                          newArr[index] = {
-                            ...newArr[index],
-                            end: { ...newArr[index].end, hour: value },
-                          };
-                          return newArr;
-                        });
-                      }}
-                    >
-                      {Array.from({ length: 12 }, (_, i) => {
-                        const hour = i === 0 ? 12 : i;
-                        return <Picker.Item key={i} label={hour.toString()} value={hour} />;
-                      })}
-                    </Picker>
-                    <Text style={styles.timeSeparator}>:</Text>
-                    <Picker
-                      style={styles.minutePicker}
-                      mode='dropdown'
-                      itemStyle={styles.pickerItem}
-                      dropdownIconColor='#333'
-                      dropdownIconRippleColor='#E4423F'
-                      selectedValue={tw.end.minute}
-                      onValueChange={(value) => {
-                        setTimeWindows((prev) => {
-                          const newArr = [...prev];
-                          newArr[index] = {
-                            ...newArr[index],
-                            end: { ...newArr[index].end, minute: value },
-                          };
-                          return newArr;
-                        });
-                      }}
-                    >
-                      {Array.from({ length: 60 }, (_, i) => (
-                        <Picker.Item key={i} label={i.toString().padStart(2, "0")} value={i} />
-                      ))}
-                    </Picker>
+                    <View style={styles.timePickerContainer}>
+                      <Picker
+                        style={styles.hourPicker}
+                        itemStyle={styles.pickerItem}
+                        selectedValue={tw.end.hour}
+                        onValueChange={(value) => {
+                          // console.log("Hour picker changed - End time:", value);
+                          setTimeWindows((prev) => {
+                            const newArr = [...prev];
+                            newArr[index] = {
+                              ...newArr[index],
+                              end: { ...newArr[index].end, hour: value },
+                            };
+                            return newArr;
+                          });
+                        }}
+                      >
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const hour = i === 0 ? 12 : i;
+                          return <Picker.Item key={i} label={hour.toString()} value={hour} />;
+                        })}
+                      </Picker>
+                      <Text style={styles.timeSeparator}>:</Text>
+                      <Picker
+                        style={styles.minutePicker}
+                        itemStyle={styles.pickerItem}
+                        selectedValue={tw.end.minute}
+                        onValueChange={(value) => {
+                          // console.log("Minute picker changed - End time:", value);
+                          setTimeWindows((prev) => {
+                            const newArr = [...prev];
+                            newArr[index] = {
+                              ...newArr[index],
+                              end: { ...newArr[index].end, minute: value },
+                            };
+                            return newArr;
+                          });
+                        }}
+                      >
+                        {Array.from({ length: 60 }, (_, i) => (
+                          <Picker.Item key={i} label={i.toString().padStart(2, "0")} value={i} />
+                        ))}
+                      </Picker>
+                    </View>
                     <View style={styles.ampmButtonsVertical}>
                       <Pressable onPress={() => handleToggleAmPm(index, "end")} style={[styles.ampmButtonStacked, tw.end.ampm === "AM" && styles.ampmButtonStackedActive]}>
                         <View style={styles.radioButton}>{tw.end.ampm === "AM" && <View style={styles.radioButtonSelected} />}</View>
@@ -547,12 +555,23 @@ export default function DateAvailability() {
                   {(() => {
                     // Validate current window
                     const hasDaySelected = tw.days.some((day) => day === true);
+
+                    // Fix hour validation - allow 12 (which represents 12 AM/PM)
                     const hasValidStartTime = tw.start.hour >= 1 && tw.start.hour <= 12;
                     const hasValidEndTime = tw.end.hour >= 1 && tw.end.hour <= 12;
 
                     // Use the same validation function for consistency
                     const timeValidation = validateTimeDuration(tw.start, tw.end);
                     const hasValidDuration = timeValidation.valid;
+
+                    // Debug log to help identify the issue
+                    // if (!hasValidDuration) {
+                    //   console.log("Validation failed for duration:", {
+                    //     start: tw.start,
+                    //     end: tw.end,
+                    //     timeValidation,
+                    //   });
+                    // }
 
                     const isValid = hasDaySelected && hasValidStartTime && hasValidEndTime && hasValidDuration;
 
@@ -688,37 +707,56 @@ const styles = StyleSheet.create({
   },
   singleTimeRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: Platform.OS === "ios" ? "flex-start" : "center",
     marginBottom: 15,
+    paddingHorizontal: 5,
+    minHeight: Platform.OS === "ios" ? 120 : 40,
+    justifyContent: "space-between",
   },
   timeLabel: {
-    width: 90,
+    width: 65,
     fontSize: 16,
     color: "#333",
     fontWeight: "500",
-    marginRight: 10,
+    marginRight: 6,
+    alignSelf: Platform.OS === "ios" ? "center" : "center",
+    marginTop: Platform.OS === "ios" ? 40 : 0,
+  },
+  timePickerContainer: {
+    flexDirection: "row",
+    alignItems: Platform.OS === "ios" ? "flex-start" : "center",
+    marginRight: 6,
+    minHeight: Platform.OS === "ios" ? 120 : 40,
   },
   timeSeparator: {
     fontSize: 18,
     color: "#333",
     fontWeight: "500",
     marginHorizontal: 6,
+    alignSelf: Platform.OS === "ios" ? "center" : "center",
+    marginTop: Platform.OS === "ios" ? 40 : 0,
+    minWidth: 8,
   },
   pickerItem: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#333",
     fontWeight: "600",
+    height: 120,
   },
   ampmButtonsVertical: {
     flexDirection: "column",
     alignItems: "center",
-    marginLeft: 10,
+    justifyContent: Platform.OS === "ios" ? "center" : "center",
+    width: 40,
+    alignSelf: Platform.OS === "ios" ? "center" : "center",
+    marginTop: Platform.OS === "ios" ? 40 : 0,
   },
   ampmButtonStacked: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    marginBottom: 2,
   },
   ampmButtonStackedActive: {
     backgroundColor: "transparent",
@@ -747,7 +785,7 @@ const styles = StyleSheet.create({
   actionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 20,
+    marginTop: 10,
     alignItems: "center",
     paddingHorizontal: 10,
   },
@@ -822,29 +860,23 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   hourPicker: {
-    width: 95,
-    height: 45,
+    width: Platform.OS === "ios" ? 100 : 95,
+    height: Platform.OS === "ios" ? 120 : 40,
     backgroundColor: "#FFF",
     borderWidth: 1,
     borderColor: "#ddd",
     borderTopLeftRadius: 8,
     borderBottomLeftRadius: 8,
-    fontSize: 18,
-    fontWeight: "600",
-    textAlign: "center",
-    paddingHorizontal: 8,
+    borderRightWidth: 0,
   },
   minutePicker: {
-    width: 95,
-    height: 45,
+    width: Platform.OS === "ios" ? 100 : 95,
+    height: Platform.OS === "ios" ? 120 : 40,
     backgroundColor: "#FFF",
     borderWidth: 1,
     borderColor: "#ddd",
     borderTopRightRadius: 8,
     borderBottomRightRadius: 8,
-    fontSize: 18,
-    fontWeight: "600",
-    textAlign: "center",
-    paddingHorizontal: 8,
+    borderLeftWidth: 0,
   },
 });

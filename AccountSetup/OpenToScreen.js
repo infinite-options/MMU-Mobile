@@ -8,7 +8,7 @@ export default function OpenToScreen({ navigation }) {
   const [selectedOptions, setSelectedOptions] = useState([]);
 
   // The list of choices, as shown in the screenshot:
-  const openToOptions = ["Men", "Women", "Men (transgender)", "Women (transgender)", "Non-binary", "Genderqueer", "Other", "Everyone"];
+  const openToOptions = ["Men", "Women", "Men (transgender)", "Women (transgender)", "Non-binary", "Genderqueer", "Other"];
 
   // Toggle an option on/off in the selectedOptions array
   const toggleOption = (option) => {

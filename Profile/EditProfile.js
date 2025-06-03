@@ -74,12 +74,21 @@ const DROPDOWN_ZINDEX = {
 };
 
 // Add this near the top with other constants
-const DEFAULT_REGION = {
-  latitude: 37.7749,
-  longitude: -122.4194,
-  latitudeDelta: 0.06,
-  longitudeDelta: 0.06,
-};
+const DEFAULT_REGION = __DEV_MODE__
+  ? {
+      // Development: San Francisco, US
+      latitude: 37.7749,
+      longitude: -122.4194,
+      latitudeDelta: 0.06,
+      longitudeDelta: 0.06,
+    }
+  : {
+      // Production: Perth, Australia
+      latitude: -31.9505,
+      longitude: 115.8605,
+      latitudeDelta: 0.06,
+      longitudeDelta: 0.06,
+    };
 
 // Add these helper functions from BirthdayInput.js to EditProfile.js
 function calculateAge(birthdateString) {
@@ -812,7 +821,7 @@ export default function EditProfile() {
     }
     // console.log("Api key:", GOOGLE_API_KEY);
     try {
-      const endpoint = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&key=${GOOGLE_API_KEY}&components=country:us`;
+      const endpoint = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&key=${GOOGLE_API_KEY}&components=country:${__DEV_MODE__ ? "us" : "au"}`;
       const response = await fetch(endpoint);
       const data = await response.json();
       if (data.status === "OK") {

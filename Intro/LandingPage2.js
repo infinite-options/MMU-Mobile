@@ -27,8 +27,7 @@ const LandingPage2 = () => {
         {/* Description */}
         <Text style={styles.description}>
           Asking for the first date shouldn't be awkward.{"\n"}
-          meet me up eases up the process with{"\n"}
-          automated prompting.
+          meet me up eases up the process with automated prompting.
         </Text>
 
         {/* Continue Button */}

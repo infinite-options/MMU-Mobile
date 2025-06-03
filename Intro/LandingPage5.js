@@ -47,10 +47,10 @@ const LandingPage5 = () => {
         </View>
 
         {/* Title */}
-        <Text style={styles.title}>Meet Me</Text>
+        <Text style={styles.title}>Welcome to meet me up</Text>
 
         {/* Description */}
-        <Text style={styles.description}>Meet the missing piece that compliments you.</Text>
+        <Text style={styles.description}>We’re currently in development and inviting singles to join early. The first 5,000 profiles will be entered into a draw to win a $3,000 travel voucher.</Text>
 
         {/* Continue Button */}
         <TouchableOpacity style={styles.continueButton} onPress={handleStart}>

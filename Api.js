@@ -20,7 +20,7 @@ export async function postUserData(formData) {
 
 export async function fetchUserInfo(user_uid) {
   try {
-    console.log(`=== API DEBUG: Fetching user info for ${user_uid} ===`);
+    // console.log(`=== API DEBUG: Fetching user info for ${user_uid} ===`);
     const startTimeTotal = Date.now();
 
     const apiEndpoint = apiUrl + "/" + user_uid;
@@ -42,7 +42,7 @@ export async function fetchUserInfo(user_uid) {
     // console.log(`API DEBUG: Received response for ${user_uid} in ${duration}ms`);
 
     if (!response.ok) {
-      console.error(`API DEBUG: HTTP error! Status: ${response.status} for user ${user_uid}`);
+      // console.error(`API DEBUG: HTTP error! Status: ${response.status} for user ${user_uid}`);
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
@@ -51,7 +51,7 @@ export async function fetchUserInfo(user_uid) {
     // console.log(`API DEBUG: Total time to fetch and parse data for ${user_uid}: ${totalDuration}ms`);
 
     if (!data.result || !data.result[0]) {
-      console.error(`API DEBUG: No user data found for ${user_uid}`);
+      // console.error(`API DEBUG: No user data found for ${user_uid}`);
       throw new Error(`No user data found for ${user_uid}`);
     }
 

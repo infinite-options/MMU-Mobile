@@ -277,7 +277,7 @@ export default function MatchProfileDisplay() {
         setUserUid(uid);
         // Fetch current user data once when we have the UID
         const userData = await fetchUserInfo(uid);
-        console.log("Current userData", userData);
+        // console.log("Current userData", userData);
         setCurrentUserData(userData);
         const response = await axios.get(`https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/matches/${uid}`);
         // console.log("responseData:", response.data);

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { SafeAreaView, Platform, StatusBar, View, Text, TouchableOpacity, Pressable, StyleSheet, ScrollView, Image } from "react-native";
+import { SafeAreaView, Platform, StatusBar, View, Text, TouchableOpacity, Pressable, StyleSheet, ScrollView, Image, KeyboardAvoidingView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import ProgressBar from "../src/Assets/Components/ProgressBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -101,65 +101,62 @@ export default function InterestsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
-        {/* Back Button */}
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Image source={require("../assets/icons/backarrow.png")} />
-        </TouchableOpacity>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent} keyboardShouldPersistTaps='handled' showsVerticalScrollIndicator={false}>
+          {/* Back Button */}
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Image source={require("../assets/icons/backarrow.png")} />
+          </TouchableOpacity>
 
-        {/* Progress Bar (adjust progress as needed) */}
-        <ProgressBar startProgress={60} endProgress={70} style={styles.progressBar} />
+          {/* Progress Bar (adjust progress as needed) */}
+          <ProgressBar startProgress={60} endProgress={70} style={styles.progressBar} />
 
-        {/* Title / Subtitle */}
-        <View style={styles.content}>
-          <Text style={styles.title}>What are your interests?</Text>
-          <Text style={styles.subtitle}>Help us better match you with others of similar interests.</Text>
+          {/* Title / Subtitle */}
+          <View style={styles.content}>
+            <Text style={styles.title}>What are your interests?</Text>
+            <Text style={styles.subtitle}>Help us better match you with others of similar interests.</Text>
 
-          {/* Interests in a wrap layout */}
-          <View style={styles.interestsContainer}>
-            {allInterests.map((interest) => {
-              const isSelected = selectedInterests.includes(interest);
-              return (
-                <TouchableOpacity
-                  key={interest}
-                  onPress={() => toggleInterest(interest)}
-                  style={[
-                    styles.interestButton,
-                    // We might give a border color for the unselected state
-                    // or a black border if selected:
-                    {
-                      borderColor: isSelected ? "rgba(26, 26, 26, 1)" : "rgba(26, 26, 26, 0.5)",
-                    },
-                  ]}
-                >
-                  {/* Circle icon on the left (for unselected, just a ring; for selected, a checkmark) */}
-                  <View
+            {/* Interests in a wrap layout */}
+            <View style={styles.interestsContainer}>
+              {allInterests.map((interest) => {
+                const isSelected = selectedInterests.includes(interest);
+                return (
+                  <TouchableOpacity
+                    key={interest}
+                    onPress={() => toggleInterest(interest)}
                     style={[
-                      styles.circle,
+                      styles.interestButton,
                       {
-                        backgroundColor: isSelected ? "#000" : "#FFF",
                         borderColor: isSelected ? "rgba(26, 26, 26, 1)" : "rgba(26, 26, 26, 0.5)",
                       },
                     ]}
                   >
-                    {isSelected && <Ionicons name='checkmark' size={10} color='#FFF' />}
-                  </View>
-                  {/* Interest text */}
-                  <Text style={[styles.interestText, { color: isSelected ? "rgba(26, 26, 26, 1)" : "rgba(26, 26, 26, 0.5)" }]}>{interest}</Text>
-                </TouchableOpacity>
-              );
-            })}
+                    {/* Circle icon on the left (for unselected, just a ring; for selected, a checkmark) */}
+                    <View
+                      style={[
+                        styles.circle,
+                        {
+                          backgroundColor: isSelected ? "#000" : "#FFF",
+                          borderColor: isSelected ? "rgba(26, 26, 26, 1)" : "rgba(26, 26, 26, 0.5)",
+                        },
+                      ]}
+                    >
+                      {isSelected && <Ionicons name='checkmark' size={10} color='#FFF' />}
+                    </View>
+                    {/* Interest text */}
+                    <Text style={[styles.interestText, { color: isSelected ? "rgba(26, 26, 26, 1)" : "rgba(26, 26, 26, 0.5)" }]}>{interest}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
-        </View>
-      </ScrollView>
-      {/* Continue Button */}
-      {/* <Pressable style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5", marginBottom: 20 }]} onPress={handleTemp} disabled={!isFormComplete}>
-        <Text style={[styles.continueButtonText, { color: isFormComplete ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Temp Button to Summary</Text>
-      </Pressable> */}
-      {/* Continue Button */}
-      <Pressable style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5" }]} onPress={handleContinue} disabled={!isFormComplete}>
-        <Text style={[styles.continueButtonText, { color: isFormComplete ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
-      </Pressable>
+
+          {/* Continue Button */}
+          <Pressable style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5" }]} onPress={handleContinue} disabled={!isFormComplete}>
+            <Text style={[styles.continueButtonText, { color: isFormComplete ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
+          </Pressable>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -169,9 +166,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFF",
-    justifyContent: "flex-start", // Align content to the top
-    alignItems: "stretch",
-    paddingHorizontal: 25,
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   // Back button style
@@ -186,8 +180,7 @@ const styles = StyleSheet.create({
   },
   // Title
   content: {
-    flex: 1,
-    justifyContent: "flex-start",
+    marginBottom: 30,
   },
   title: {
     fontSize: 24,
@@ -238,11 +231,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#E4423F",
     borderRadius: 30,
-    marginBottom: 50,
+    marginBottom: 30,
+    marginTop: 20,
   },
   continueButtonText: {
     color: "#FFF",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    paddingHorizontal: 25,
+    paddingBottom: 50,
   },
 });

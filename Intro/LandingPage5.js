@@ -120,6 +120,7 @@ export const styles = StyleSheet.create({
     padding: 10,
     color: "#1A1A1A",
     textAlign: "center",
+    marginTop: 40,
     marginBottom: 10,
   },
   description: {
@@ -127,6 +128,7 @@ export const styles = StyleSheet.create({
     color: "#666666",
     textAlign: "center",
     marginBottom: 50,
+    lineHeight: 24,
   },
   continueButton: {
     backgroundColor: "#E4423F",

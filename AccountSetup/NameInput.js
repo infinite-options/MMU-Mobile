@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StatusBar, Platform, SafeAreaView, View, StyleSheet, TouchableOpacity, Pressable, Image } from "react-native";
+import { StatusBar, Platform, SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity, Pressable, Image, KeyboardAvoidingView } from "react-native";
 import { Text, TextInput } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import ProgressBar from "../src/Assets/Components/ProgressBar";
@@ -103,76 +103,82 @@ export default function NameInput({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Back Button */}
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Image source={require("../assets/icons/backarrow.png")} />
-      </TouchableOpacity>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent} keyboardShouldPersistTaps='handled' showsVerticalScrollIndicator={false}>
+          {/* Back Button */}
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Image source={require("../assets/icons/backarrow.png")} />
+          </TouchableOpacity>
 
-      {/* Progress Bar */}
-      <ProgressBar startProgress={10} endProgress={20} style={styles.progressBar} />
+          {/* Progress Bar */}
+          <ProgressBar startProgress={10} endProgress={20} style={styles.progressBar} />
 
-      {/* Title and Input Fields */}
-      <View style={styles.content}>
-        <Text style={styles.title}>What should we call you?</Text>
-        <Text style={styles.subtitle}>Your full name will be public.</Text>
+          {/* Title and Input Fields */}
+          <View style={styles.content}>
+            <Text style={styles.title}>What should we call you?</Text>
+            <Text style={styles.subtitle}>Your full name will be public.</Text>
 
-        <TextInput
-          label='First Name'
-          mode='outlined'
-          value={formData.firstName}
-          onChangeText={(text) => {
-            // Allow spaces during typing but validate the input
-            const validatedText = text.replace(/[^A-Za-z\s\-']/g, "");
+            <TextInput
+              label='First Name'
+              mode='outlined'
+              value={formData.firstName}
+              onChangeText={(text) => {
+                // Allow spaces during typing but validate the input
+                const validatedText = text.replace(/[^A-Za-z\s\-']/g, "");
 
-            // Capitalize first letter when there's content
-            const formattedText = validatedText.length > 0 ? validatedText.charAt(0).toUpperCase() + validatedText.slice(1) : validatedText;
+                // Capitalize first letter when there's content
+                const formattedText = validatedText.length > 0 ? validatedText.charAt(0).toUpperCase() + validatedText.slice(1) : validatedText;
 
-            setFormData({ ...formData, firstName: formattedText });
+                setFormData({ ...formData, firstName: formattedText });
 
-            // Validate
-            setNameErrors((prev) => ({
-              ...prev,
-              firstName: validateName(formattedText, "First name"),
-            }));
-          }}
-          autoCorrect={false}
-          autoCapitalize='words'
-          style={[styles.input, nameErrors.firstName ? styles.inputError : null]}
-          outlineStyle={[styles.textInputOutline, nameErrors.firstName ? styles.textInputOutlineError : null]}
-        />
-        {nameErrors.firstName ? <Text style={styles.errorText}>{nameErrors.firstName}</Text> : null}
+                // Validate
+                setNameErrors((prev) => ({
+                  ...prev,
+                  firstName: validateName(formattedText, "First name"),
+                }));
+              }}
+              autoCorrect={false}
+              autoCapitalize='words'
+              style={[styles.input, nameErrors.firstName ? styles.inputError : null]}
+              outlineStyle={[styles.textInputOutline, nameErrors.firstName ? styles.textInputOutlineError : null]}
+              returnKeyType='next'
+            />
+            {nameErrors.firstName ? <Text style={styles.errorText}>{nameErrors.firstName}</Text> : null}
 
-        <TextInput
-          label='Last Name'
-          mode='outlined'
-          value={formData.lastName}
-          onChangeText={(text) => {
-            // Allow spaces during typing but validate the input
-            const validatedText = text.replace(/[^A-Za-z\s\-']/g, "");
+            <TextInput
+              label='Last Name'
+              mode='outlined'
+              value={formData.lastName}
+              onChangeText={(text) => {
+                // Allow spaces during typing but validate the input
+                const validatedText = text.replace(/[^A-Za-z\s\-']/g, "");
 
-            // Capitalize first letter when there's content
-            const formattedText = validatedText.length > 0 ? validatedText.charAt(0).toUpperCase() + validatedText.slice(1) : validatedText;
+                // Capitalize first letter when there's content
+                const formattedText = validatedText.length > 0 ? validatedText.charAt(0).toUpperCase() + validatedText.slice(1) : validatedText;
 
-            setFormData({ ...formData, lastName: formattedText });
+                setFormData({ ...formData, lastName: formattedText });
 
-            // Validate
-            setNameErrors((prev) => ({
-              ...prev,
-              lastName: validateName(formattedText, "Last name"),
-            }));
-          }}
-          autoCorrect={false}
-          autoCapitalize='words'
-          style={[styles.input, nameErrors.lastName ? styles.inputError : null]}
-          outlineStyle={[styles.textInputOutline, nameErrors.lastName ? styles.textInputOutlineError : null]}
-        />
-        {nameErrors.lastName ? <Text style={styles.errorText}>{nameErrors.lastName}</Text> : null}
-      </View>
+                // Validate
+                setNameErrors((prev) => ({
+                  ...prev,
+                  lastName: validateName(formattedText, "Last name"),
+                }));
+              }}
+              autoCorrect={false}
+              autoCapitalize='words'
+              style={[styles.input, nameErrors.lastName ? styles.inputError : null]}
+              outlineStyle={[styles.textInputOutline, nameErrors.lastName ? styles.textInputOutlineError : null]}
+              returnKeyType='done'
+            />
+            {nameErrors.lastName ? <Text style={styles.errorText}>{nameErrors.lastName}</Text> : null}
+          </View>
 
-      {/* Continue Button */}
-      <Pressable style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5" }]} onPress={handleContinue} disabled={!isFormComplete}>
-        <Text style={[styles.continueButtonText, { color: isFormComplete ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
-      </Pressable>
+          {/* Continue Button */}
+          <Pressable style={[styles.continueButton, { backgroundColor: isFormComplete ? "#E4423F" : "#F5F5F5" }]} onPress={handleContinue} disabled={!isFormComplete}>
+            <Text style={[styles.continueButtonText, { color: isFormComplete ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
+          </Pressable>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -180,10 +186,7 @@ export default function NameInput({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 25,
     backgroundColor: "#FFF",
-    justifyContent: "flex-start",
-    alignItems: "stretch",
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   backButton: {
@@ -196,8 +199,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   content: {
-    flex: 1,
-    justifyContent: "flex-start",
+    marginBottom: 30,
   },
   title: {
     fontSize: 26,
@@ -221,7 +223,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#E4423F",
     borderRadius: 30,
-    marginBottom: 50,
+    marginBottom: 30,
+    marginTop: 20,
   },
   continueButtonText: {
     color: "#FFF",
@@ -252,5 +255,13 @@ const styles = StyleSheet.create({
     marginTop: -5,
     marginBottom: 15,
     marginLeft: 5,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    paddingHorizontal: 25,
+    paddingBottom: 50,
   },
 });

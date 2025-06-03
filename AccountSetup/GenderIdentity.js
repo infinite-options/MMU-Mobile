@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Pressable, SafeAreaView, Platform, StatusBar, View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
+import { Pressable, SafeAreaView, Platform, StatusBar, ScrollView, View, Text, TouchableOpacity, StyleSheet, Image, KeyboardAvoidingView } from "react-native";
 import ProgressBar from "../src/Assets/Components/ProgressBar";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage"; // <-- Import AsyncStorage
@@ -29,40 +29,45 @@ export default function GenderIdentity({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Back Button */}
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Image source={require("../assets/icons/backarrow.png")} />
-      </TouchableOpacity>
-
-      {/* Progress Bar (adjust progress as needed) */}
-      <ProgressBar startProgress={35} endProgress={40} style={styles.progressBar} />
-
-      {/* Title / Subtitle */}
-      <View style={styles.content}>
-        <Text style={styles.title}>What gender do you identify as?</Text>
-        <Text style={styles.subtitle}>Your gender will be public.</Text>
-
-        {/* Options List */}
-        {genderOptions.map((option) => (
-          <TouchableOpacity
-            key={option}
-            style={[
-              styles.optionButton,
-              {
-                backgroundColor: selectedOption === option ? "#000" : "#FFF",
-                borderColor: "rgba(26, 26, 26, 0.5)",
-              },
-            ]}
-            onPress={() => setSelectedOption(option)}
-          >
-            <Text style={[styles.optionText, { color: selectedOption === option ? "#F5F5F5" : "rgba(26, 26, 26, 0.5)" }]}>{option}</Text>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent} keyboardShouldPersistTaps='handled' showsVerticalScrollIndicator={false}>
+          {/* Back Button */}
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Image source={require("../assets/icons/backarrow.png")} />
           </TouchableOpacity>
-        ))}
-      </View>
-      {/* Continue Button */}
-      <Pressable style={[styles.continueButton, { backgroundColor: selectedOption ? "#E4423F" : "#F5F5F5" }]} onPress={handleContinue} disabled={!selectedOption}>
-        <Text style={[styles.continueButtonText, { color: selectedOption ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
-      </Pressable>
+
+          {/* Progress Bar (adjust progress as needed) */}
+          <ProgressBar startProgress={35} endProgress={40} style={styles.progressBar} />
+
+          {/* Title / Subtitle */}
+          <View style={styles.content}>
+            <Text style={styles.title}>What gender do you identify as?</Text>
+            <Text style={styles.subtitle}>Your gender will be public.</Text>
+
+            {/* Options List */}
+            {genderOptions.map((option) => (
+              <TouchableOpacity
+                key={option}
+                style={[
+                  styles.optionButton,
+                  {
+                    backgroundColor: selectedOption === option ? "#000" : "#FFF",
+                    borderColor: "rgba(26, 26, 26, 0.5)",
+                  },
+                ]}
+                onPress={() => setSelectedOption(option)}
+              >
+                <Text style={[styles.optionText, { color: selectedOption === option ? "#F5F5F5" : "rgba(26, 26, 26, 0.5)" }]}>{option}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Continue Button */}
+          <Pressable style={[styles.continueButton, { backgroundColor: selectedOption ? "#E4423F" : "#F5F5F5" }]} onPress={handleContinue} disabled={!selectedOption}>
+            <Text style={[styles.continueButtonText, { color: selectedOption ? "#FFF" : "rgba(26, 26, 26, 0.25)" }]}>Continue</Text>
+          </Pressable>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -70,10 +75,7 @@ export default function GenderIdentity({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 25,
     backgroundColor: "#FFF",
-    justifyContent: "flex-start", // Align content to the top
-    alignItems: "stretch",
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   backButton: {
@@ -86,8 +88,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   content: {
-    flex: 1,
-    justifyContent: "flex-start",
+    marginBottom: 30,
   },
   title: {
     fontSize: 24,
@@ -117,11 +118,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#E4423F",
     borderRadius: 30,
-    marginBottom: 50,
+    marginBottom: 30,
+    marginTop: 20,
   },
   continueButtonText: {
     color: "#FFF",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    paddingHorizontal: 25,
+    paddingBottom: 50,
   },
 });

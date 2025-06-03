@@ -2,7 +2,7 @@
 
 // For demonstration, we store the steps in a simple in-memory array:
 let profileSteps = [
-  { title: "Your date preferences", count: 2 },
+  { title: "Availablity Calendar", count: 2 },
   { title: "A few more details about you", count: 8 },
   { title: "Profile bio", count: 1 },
   { title: "Verify your account", count: 2 },

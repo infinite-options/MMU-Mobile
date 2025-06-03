@@ -22,10 +22,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { TextInput, Text } from "react-native-paper";
-import { useNavigation, useIsFocused } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import { useFocusEffect } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
 import { Video } from "expo-av";
@@ -130,8 +129,7 @@ const calculateDropdownHeight = (items) => {
 export default function EditProfile() {
   console.log("--- In EditProfile.js Function ---");
   const navigation = useNavigation();
-  const isFocused = useIsFocused();
-  const route = useNavigation().getState().routes[useNavigation().getState().index];
+  const route = useRoute();
 
   const [userData, setUserData] = useState({});
   const [photos, setPhotos] = useState([null, null, null]); // array of photo URIs
@@ -306,7 +304,6 @@ export default function EditProfile() {
     { label: "Non-binary", value: "Non-binary" },
     { label: "Genderqueer", value: "Genderqueer" },
     { label: "Other", value: "Other" },
-    { label: "Everyone", value: "Everyone" },
   ]);
 
   // Smoking
@@ -449,6 +446,18 @@ export default function EditProfile() {
         setIsVideoPlaying(false);
       }
     }, [])
+  );
+
+  // Add refresh data when coming back from DateAvailability
+  useFocusEffect(
+    React.useCallback(() => {
+      // Refresh user data when returning from DateAvailability
+      if (userId && route.params?.fromDateAvailability) {
+        fetchUserData(userId);
+        // Clear the parameter to avoid repeated refreshes
+        navigation.setParams({ fromDateAvailability: undefined });
+      }
+    }, [userId, route.params?.fromDateAvailability, fetchUserData, navigation])
   );
 
   // Permission check on component mount
@@ -1184,7 +1193,7 @@ export default function EditProfile() {
 
     // Check if user is at least 18
     if (age < 18) {
-      setBirthdateWarning("You must be 18+ to use MeetMeUp.");
+      setBirthdateWarning("You must be 18+ to use meet me up.");
       setFormValues(updatedValues);
       return;
     }
@@ -2013,8 +2022,8 @@ export default function EditProfile() {
               })}
             </View>
 
-            {/* Kinds of Date I Enjoy as Tag Buttons */}
-            <Text style={styles.label}>Kinds of Date I Enjoy</Text>
+            {/* Dates I Enjoy as Tag Buttons */}
+            <Text style={styles.label}>Dates I Enjoy</Text>
             <View style={styles.interestsContainer}>
               {allDateTypes.map((dateType) => {
                 const isSelected = dateTypes.includes(dateType);
@@ -2051,7 +2060,6 @@ export default function EditProfile() {
                   onPress={() =>
                     navigation.navigate("DateAvailability", {
                       fromEditProfile: true,
-                      onSave: () => navigation.navigate("EditProfile"),
                     })
                   }
                 >
@@ -2060,26 +2068,40 @@ export default function EditProfile() {
               </View>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
                 {formValues.availableTimes ? (
-                  JSON.parse(formValues.availableTimes).map((time, index) => {
-                    const days = time.day.split(", ");
-                    const dayRange = days.length > 1 ? (days.length === 2 ? days.join(" & ") : `${days[0]}-${days[days.length - 1]}`) : days[0];
+                  (() => {
+                    try {
+                      // Parse the availability data - handle both string and already parsed data
+                      const availabilityData = typeof formValues.availableTimes === "string" ? JSON.parse(formValues.availableTimes) : formValues.availableTimes;
 
-                    const isAllDay = time.start_time === "12:00 AM" && time.end_time === "11:59 PM";
-                    const formatTime = (t) => {
-                      const [timePart, modifier] = t.split(" ");
-                      let [hours, minutes] = timePart.split(":");
-                      hours = parseInt(hours);
-                      const displayHours = hours % 12 || 12;
-                      const ampm = modifier.toLowerCase();
-                      return `${displayHours}${minutes !== "00" ? `:${minutes}` : ""} ${ampm}`;
-                    };
+                      if (!Array.isArray(availabilityData) || availabilityData.length === 0) {
+                        return <Text style={styles.emptyStateText}>No availability set</Text>;
+                      }
 
-                    return (
-                      <Text key={index} style={styles.timeSlot}>
-                        {isAllDay ? `${dayRange}, all day` : `${dayRange}, ${formatTime(time.start_time)} to ${formatTime(time.end_time)}`}
-                      </Text>
-                    );
-                  })
+                      return availabilityData.map((time, index) => {
+                        const days = time.day.split(", ");
+                        const dayRange = days.length > 1 ? (days.length === 2 ? days.join(" & ") : `${days[0]}-${days[days.length - 1]}`) : days[0];
+
+                        const isAllDay = time.start_time === "12:00 AM" && time.end_time === "11:59 PM";
+                        const formatTime = (t) => {
+                          const [timePart, modifier] = t.split(" ");
+                          let [hours, minutes] = timePart.split(":");
+                          hours = parseInt(hours);
+                          const displayHours = hours % 12 || 12;
+                          const ampm = modifier.toLowerCase();
+                          return `${displayHours}${minutes !== "00" ? `:${minutes}` : ""} ${ampm}`;
+                        };
+
+                        return (
+                          <Text key={index} style={styles.timeSlot}>
+                            {isAllDay ? `${dayRange}, all day` : `${dayRange}, ${formatTime(time.start_time)} to ${formatTime(time.end_time)}`}
+                          </Text>
+                        );
+                      });
+                    } catch (error) {
+                      console.error("Error parsing availability data:", error);
+                      return <Text style={styles.emptyStateText}>Error loading availability data</Text>;
+                    }
+                  })()
                 ) : (
                   <Text style={styles.emptyStateText}>No availability set</Text>
                 )}
@@ -2197,7 +2219,7 @@ export default function EditProfile() {
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
-                  maxHeight: Platform.OS === 'android' ? calculateDropdownHeight(genderItems) : undefined,
+                  maxHeight: Platform.OS === "android" ? calculateDropdownHeight(genderItems) : undefined,
                 }}
                 onChangeValue={(value) => setFormValues((prev) => ({ ...prev, gender: value }))}
               />
@@ -2230,7 +2252,7 @@ export default function EditProfile() {
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
-                  maxHeight: Platform.OS === 'android' ? calculateDropdownHeight(identityItems) : undefined,
+                  maxHeight: Platform.OS === "android" ? calculateDropdownHeight(identityItems) : undefined,
                 }}
                 onChangeValue={(value) => setFormValues((prev) => ({ ...prev, identity: value }))}
               />
@@ -2296,7 +2318,7 @@ export default function EditProfile() {
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
-                  maxHeight: Platform.OS === 'android' ? calculateDropdownHeight(openToItems) : undefined,
+                  maxHeight: Platform.OS === "android" ? calculateDropdownHeight(openToItems) : undefined,
                 }}
                 onChangeValue={(value) => setFormValues((prev) => ({ ...prev, openTo: value }))}
               />
@@ -2329,7 +2351,7 @@ export default function EditProfile() {
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
-                  maxHeight: Platform.OS === 'android' ? calculateDropdownHeight(smokingItems) : undefined,
+                  maxHeight: Platform.OS === "android" ? calculateDropdownHeight(smokingItems) : undefined,
                 }}
                 onChangeValue={(value) => setFormValues((prev) => ({ ...prev, smoking: value }))}
               />
@@ -2362,7 +2384,7 @@ export default function EditProfile() {
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
-                  maxHeight: Platform.OS === 'android' ? calculateDropdownHeight(drinkingItems) : undefined,
+                  maxHeight: Platform.OS === "android" ? calculateDropdownHeight(drinkingItems) : undefined,
                 }}
                 onChangeValue={(value) => setFormValues((prev) => ({ ...prev, drinking: value }))}
               />
@@ -2395,7 +2417,7 @@ export default function EditProfile() {
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
-                  maxHeight: Platform.OS === 'android' ? calculateDropdownHeight(religionItems) : undefined,
+                  maxHeight: Platform.OS === "android" ? calculateDropdownHeight(religionItems) : undefined,
                 }}
                 onChangeValue={(value) => setFormValues((prev) => ({ ...prev, religion: value }))}
               />
@@ -2428,7 +2450,7 @@ export default function EditProfile() {
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
-                  maxHeight: Platform.OS === 'android' ? calculateDropdownHeight(starSignItems) : undefined,
+                  maxHeight: Platform.OS === "android" ? calculateDropdownHeight(starSignItems) : undefined,
                 }}
                 onChangeValue={(value) => setFormValues((prev) => ({ ...prev, starSign: value }))}
               />
@@ -2461,7 +2483,7 @@ export default function EditProfile() {
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
-                  maxHeight: Platform.OS === 'android' ? calculateDropdownHeight(educationItems) : undefined,
+                  maxHeight: Platform.OS === "android" ? calculateDropdownHeight(educationItems) : undefined,
                 }}
                 onChangeValue={(value) => setFormValues((prev) => ({ ...prev, education: value }))}
               />
@@ -2561,7 +2583,7 @@ export default function EditProfile() {
                 dropDownContainerStyle={{
                   ...styles.dropdownContainerStyle,
                   position: "absolute",
-                  maxHeight: Platform.OS === 'android' ? calculateDropdownHeight(bodyTypeItems) : undefined,
+                  maxHeight: Platform.OS === "android" ? calculateDropdownHeight(bodyTypeItems) : undefined,
                 }}
                 onChangeValue={(value) => setFormValues((prev) => ({ ...prev, bodyType: value }))}
               />

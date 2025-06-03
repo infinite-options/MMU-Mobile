@@ -821,7 +821,7 @@ export default function AccountSetup2Create() {
         <ProgressBar startProgress={0} endProgress={10} style={styles.progressBar} />
 
         {/* Title and Subtitle */}
-        <Text style={styles.title}>Welcome to MeetMeUp!</Text>
+        <Text style={styles.title}>Welcome to meet me up!</Text>
         <Text style={styles.subtitle}>Please choose a signup option to continue.</Text>
 
         {/* Spinner (optional) */}
@@ -830,13 +830,16 @@ export default function AccountSetup2Create() {
         {/* Input Fields */}
         <View style={styles.inputContainer}>
           <TextInput
-            style={styles.input}
             label='Email'
             mode='outlined'
-            keyboardType='email-address'
+            // keyboardType='email-address'
             value={formData.email}
             onChangeText={(text) => handleInputChange("email", text)}
+            style={styles.input}
             outlineStyle={styles.textInputOutline}
+            // showSoftInputOnFocus={true}
+            // editable={true}
+            // selectTextOnFocus={true}
           />
           {/* <TextInput
                       style={styles.phoneInput}

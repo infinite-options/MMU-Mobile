@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { SafeAreaView, ScrollView, View, Text, StyleSheet, Platform, StatusBar, TouchableOpacity, Image, Pressable, Alert } from "react-native";
+import { SafeAreaView, ScrollView, View, Text, StyleSheet, Platform, StatusBar, TouchableOpacity, Image, Pressable, Alert, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useIsFocused, useRoute } from "@react-navigation/native";
+import { useNavigation, useIsFocused, useRoute, useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { Video } from "expo-av";
-import { useFocusEffect } from "@react-navigation/native";
+import { Text as RNText } from "react-native-paper";
 import ProgressBar from "../src/Assets/Components/ProgressBar";
 import { getProfileSteps, getProfileCompletion } from "./profileStepsState";
 import { EXPO_PUBLIC_MMU_GOOGLE_MAPS_API_KEY } from "@env";
@@ -58,6 +58,9 @@ export default function MyProfile() {
   const [photos, setPhotos] = useState([null, null, null]); // array of photo URIs
   const [videoUri, setVideoUri] = useState(null); // single video URI
 
+  // Loading states for media
+  const [isMediaLoading, setIsMediaLoading] = useState(true);
+
   const [profileSteps, setProfileSteps] = useState([]);
   const [profileCompletion, setProfileCompletion] = useState(80);
   const videoRef = useRef(null);
@@ -93,11 +96,13 @@ export default function MyProfile() {
   // Fetch user data on mount/focus
   useEffect(() => {
     const fetchUserInfo = async () => {
+      setIsMediaLoading(true);
       console.log("-- In MyProfile.js, Requesting userinfo given successful Login");
       try {
         const uid = await AsyncStorage.getItem("user_uid");
         if (!uid) {
           console.log("No user_uid in AsyncStorage");
+          setIsMediaLoading(false);
           return;
         }
         // GET user info
@@ -178,12 +183,12 @@ export default function MyProfile() {
 
         if (hasDateInterests && hasAvailableTime) {
           // Remove date preferences step entirely if both are complete
-          const filteredSteps = steps.filter((step) => step.title !== "Your Date Preferences");
+          const filteredSteps = steps.filter((step) => step.title !== "Availablity Calendar");
           setProfileSteps(filteredSteps);
         } else {
           // Update date preferences step count based on available data
           const updatedSteps = steps.map((step) => {
-            if (step.title === "Your Date Preferences") {
+            if (step.title === "Availablity Calendar") {
               if (hasDateInterests) {
                 // Only need DateAvailability
                 return { ...step, count: 1 };
@@ -200,15 +205,30 @@ export default function MyProfile() {
           setProfileSteps(updatedSteps);
         }
         setProfileCompletion(getProfileCompletion());
+
+        // Set loading to false after all data is processed
+        setIsMediaLoading(false);
       } catch (error) {
         console.log("Error fetching user info:", error);
+        setIsMediaLoading(false);
       }
     };
 
-    if (isFocused) {
-      fetchUserInfo();
+    // Check for route parameters
+    if (route.params?.showSuccessMessage) {
+      Alert.alert("Success", "Profile updated successfully!");
+      navigation.setParams({ showSuccessMessage: false });
     }
-  }, [isFocused]);
+
+    if (isFocused || route.params?.refreshData) {
+      fetchUserInfo();
+
+      // Clear the refreshData parameter
+      if (route.params?.refreshData) {
+        navigation.setParams({ refreshData: false });
+      }
+    }
+  }, [isFocused, route.params?.showSuccessMessage, route.params?.refreshData, navigation]);
 
   const isProfileComplete = profileSteps.length === 0;
 
@@ -239,7 +259,7 @@ export default function MyProfile() {
   const handlePressLink = (index) => {
     const step = profileSteps[index];
 
-    if (step.title === "Your Date Preferences") {
+    if (step.title === "Availablity Calendar") {
       // Check user data to determine appropriate navigation
       const hasDateInterests = !!userData?.user_date_interests;
       const hasAvailableTime = !!userData?.user_available_time;
@@ -484,7 +504,12 @@ export default function MyProfile() {
 
         {/* Top media section */}
         <View style={styles.mediaContainer}>
-          {videoUri ? (
+          {isMediaLoading ? (
+            <View style={styles.mediaLoadingContainer}>
+              <ActivityIndicator size='large' color='#E4423F' />
+              <Text style={styles.loadingText}>Loading media...</Text>
+            </View>
+          ) : videoUri ? (
             <View style={styles.videoWrapper}>
               <Video
                 ref={videoRef}
@@ -539,35 +564,42 @@ export default function MyProfile() {
         </View>
 
         {/* Photos Section (3 boxes) */}
-        <View style={styles.photoBoxesRow}>
-          {photos.map((photoUri, idx) => (
-            <View key={idx} style={styles.photoBox}>
-              {photoUri ? (
-                <>
-                  <Image source={{ uri: photoUri }} style={styles.photoImage} />
-                  {favoritePhotoIndex === idx && (
-                    <View style={styles.heartIconBottomRight}>
-                      <View style={styles.heartIconBackground}>
-                        <Ionicons name='heart' size={20} color='#E4423F' />
+        {isMediaLoading ? (
+          <View style={styles.photosLoadingContainer}>
+            <ActivityIndicator size='large' color='#E4423F' />
+            <Text style={styles.loadingText}>Loading photos...</Text>
+          </View>
+        ) : (
+          <View style={styles.photoBoxesRow}>
+            {photos.map((photoUri, idx) => (
+              <View key={idx} style={styles.photoBox}>
+                {photoUri ? (
+                  <>
+                    <Image source={{ uri: photoUri }} style={styles.photoImage} />
+                    {favoritePhotoIndex === idx && (
+                      <View style={styles.heartIconBottomRight}>
+                        <View style={styles.heartIconBackground}>
+                          <Ionicons name='heart' size={20} color='#E4423F' />
+                        </View>
                       </View>
-                    </View>
-                  )}
-                </>
-              ) : (
-                <Pressable style={styles.emptyPhotoBox} onPress={() => navigation.navigate("EditProfile")}>
-                  <Ionicons name='add' size={24} color='red' />
-                </Pressable>
-              )}
-            </View>
-          ))}
-        </View>
+                    )}
+                  </>
+                ) : (
+                  <Pressable style={styles.emptyPhotoBox} onPress={() => navigation.navigate("EditProfile")}>
+                    <Ionicons name='add' size={24} color='red' />
+                  </Pressable>
+                )}
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Dots / page indicator (if you want) */}
-        <View style={styles.pageIndicator}>
+        {/* <View style={styles.pageIndicator}>
           <View style={[styles.dot, styles.activeDot]} />
           <View style={styles.dot} />
           <View style={styles.dot} />
-        </View>
+        </View> */}
 
         {/* Name / Email */}
         <View style={styles.userInfo}>
@@ -630,32 +662,58 @@ export default function MyProfile() {
         {/* Available times */}
         {user_available_time ? (
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>My available times</Text>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+              <Text style={styles.sectionTitle}>My available times</Text>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() =>
+                  navigation.navigate("DateAvailability", {
+                    fromEditProfile: false,
+                  })
+                }
+              >
+                <Text style={styles.editButtonText}>Edit</Text>
+              </TouchableOpacity>
+            </View>
             <View style={styles.aboutItemText}>
-              {JSON.parse(user_available_time).map((time, index) => {
-                const days = time.day.split(", ");
-                // Format day ranges as "Mon-Fri" or "Sat & Sun"
-                const dayRange = days.length > 1 ? (days.length === 2 ? days.join(" & ") : `${days[0]}-${days[days.length - 1]}`) : days[0];
+              {(() => {
+                try {
+                  // Parse the availability data - handle both string and already parsed data
+                  const availabilityData = typeof user_available_time === "string" ? JSON.parse(user_available_time) : user_available_time;
 
-                // Check for all-day availability
-                const isAllDay = time.start_time === "12:00 AM" && time.end_time === "11:59 PM";
+                  if (!Array.isArray(availabilityData) || availabilityData.length === 0) {
+                    return <Text style={styles.emptyStateText}>No availability set</Text>;
+                  }
 
-                // Format time as "5:30 pm" without leading zeros
-                const formatTime = (t) => {
-                  const [timePart, modifier] = t.split(" ");
-                  let [hours, minutes] = timePart.split(":");
-                  hours = parseInt(hours);
-                  const displayHours = hours % 12 || 12; // Convert to 12-hour format
-                  const ampm = modifier.toLowerCase();
-                  return `${displayHours}${minutes !== "00" ? `:${minutes}` : ""} ${ampm}`;
-                };
+                  return availabilityData.map((time, index) => {
+                    const days = time.day.split(", ");
+                    // Format day ranges as "Mon-Fri" or "Sat & Sun"
+                    const dayRange = days.length > 1 ? (days.length === 2 ? days.join(" & ") : `${days[0]}-${days[days.length - 1]}`) : days[0];
 
-                return (
-                  <Text key={index} style={styles.aboutItem}>
-                    {isAllDay ? `${dayRange}, all day` : `${dayRange}, ${formatTime(time.start_time)} to ${formatTime(time.end_time)}`}
-                  </Text>
-                );
-              })}
+                    // Check for all-day availability
+                    const isAllDay = time.start_time === "12:00 AM" && time.end_time === "11:59 PM";
+
+                    // Format time as "5:30 pm" without leading zeros
+                    const formatTime = (t) => {
+                      const [timePart, modifier] = t.split(" ");
+                      let [hours, minutes] = timePart.split(":");
+                      hours = parseInt(hours);
+                      const displayHours = hours % 12 || 12; // Convert to 12-hour format
+                      const ampm = modifier.toLowerCase();
+                      return `${displayHours}${minutes !== "00" ? `:${minutes}` : ""} ${ampm}`;
+                    };
+
+                    return (
+                      <Text key={index} style={styles.aboutItem}>
+                        {isAllDay ? `${dayRange}, all day` : `${dayRange}, ${formatTime(time.start_time)} to ${formatTime(time.end_time)}`}
+                      </Text>
+                    );
+                  });
+                } catch (error) {
+                  console.error("Error parsing availability data:", error);
+                  return <Text style={styles.emptyStateText}>Error loading availability data</Text>;
+                }
+              })()}
             </View>
           </View>
         ) : null}
@@ -901,7 +959,7 @@ const styles = StyleSheet.create({
     width: "30%",
     aspectRatio: 1,
     borderRadius: 10,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#F5F5F9",
     overflow: "hidden",
     position: "relative",
   },
@@ -1055,5 +1113,42 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     fontSize: 14,
     color: "#333",
+  },
+  mediaLoadingContainer: {
+    height: 250,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F5F5F5",
+    borderRadius: 10,
+    marginBottom: 15,
+  },
+  photosLoadingContainer: {
+    height: 120,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F5F5F5",
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  loadingText: {
+    color: "#E4423F",
+    fontSize: 16,
+    marginTop: 10,
+    fontWeight: "500",
+  },
+  editButton: {
+    backgroundColor: "#E4423F",
+    padding: 8,
+    borderRadius: 5,
+  },
+  editButtonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  emptyStateText: {
+    color: "gray",
+    fontSize: 16,
+    textAlign: "center",
   },
 });

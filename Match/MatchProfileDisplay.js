@@ -51,6 +51,12 @@ export default function MatchProfileDisplay() {
   const [currentUserData, setCurrentUserData] = useState(null);
   const [matchedUserData, setMatchedUserData] = useState(null);
 
+  // Local cache for liked profiles during this session
+  const [localLikedProfiles, setLocalLikedProfiles] = useState(new Set());
+
+  // Track which profiles have been interacted with in this session
+  const [touchedProfiles, setTouchedProfiles] = useState(new Set());
+
   // For video slider (optional)
   const [videoPosition, setVideoPosition] = useState(0);
   const [videoDuration, setVideoDuration] = useState(0);
@@ -141,12 +147,6 @@ export default function MatchProfileDisplay() {
     setIsSheetOpen(false);
   }, []);
 
-  useEffect(() => {
-    if (userInfo?.["Liked by"] === "YES") {
-      setIsLiked(true);
-    }
-  }, [userInfo]);
-
   // Video logic
   const handlePlaybackStatusUpdate = (statusUpdate) => {
     setStatus(statusUpdate);
@@ -203,8 +203,25 @@ export default function MatchProfileDisplay() {
     const updatedIsLiked = !isLiked;
     setIsLiked(updatedIsLiked);
 
-    const userUid = await AsyncStorage.getItem("user_uid");
     const likedUserUid = userInfo.user_uid;
+
+    console.log(`${updatedIsLiked ? "Liking" : "Unliking"} profile:`, likedUserUid);
+
+    // Mark this profile as touched in this session
+    setTouchedProfiles((prev) => new Set(prev).add(likedUserUid));
+
+    // Update local cache
+    setLocalLikedProfiles((prev) => {
+      const newSet = new Set(prev);
+      if (updatedIsLiked) {
+        newSet.add(likedUserUid);
+      } else {
+        newSet.delete(likedUserUid);
+      }
+      return newSet;
+    });
+
+    const userUid = await AsyncStorage.getItem("user_uid");
     const formData = new URLSearchParams();
     formData.append("liker_user_id", userUid);
     formData.append("liked_user_id", likedUserUid);
@@ -227,6 +244,25 @@ export default function MatchProfileDisplay() {
     } catch (error) {
       console.error("Error handling like action", error.message);
       console.error("Error details:", error.response ? error.response.data : "No response data");
+
+      // If API call fails, revert the local state
+      setIsLiked(!updatedIsLiked);
+      setLocalLikedProfiles((prev) => {
+        const newSet = new Set(prev);
+        if (!updatedIsLiked) {
+          newSet.add(likedUserUid);
+        } else {
+          newSet.delete(likedUserUid);
+        }
+        return newSet;
+      });
+      // Also revert the touched state
+      setTouchedProfiles((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(likedUserUid);
+        return newSet;
+      });
+      return;
     }
 
     // Debugging logs
@@ -354,8 +390,21 @@ export default function MatchProfileDisplay() {
             // Add distance to the userInfo object
             setUserInfo({ ...fetchedData, distance: distance });
 
-            // Update isLiked state based on the new userInfo
-            setIsLiked(fetchedData["Liked by"] === "YES");
+            // Check if this profile has been touched in this session
+            const hasBeenTouched = touchedProfiles.has(fetchedData.user_uid);
+            const isInLocalCache = localLikedProfiles.has(fetchedData.user_uid);
+            const serverLikeStatus = fetchedData["Liked by"] === "YES";
+
+            if (hasBeenTouched) {
+              // For touched profiles, only use local cache state
+              console.log(`Profile ${fetchedData.user_uid} touched - using local cache:`, isInLocalCache);
+              setIsLiked(isInLocalCache);
+            } else {
+              // For untouched profiles, use server data or local cache
+              const finalState = isInLocalCache || serverLikeStatus;
+              console.log(`Profile ${fetchedData.user_uid} untouched - using server/cache:`, finalState);
+              setIsLiked(finalState);
+            }
           } else {
             setError("No match data available.");
           }
@@ -376,6 +425,41 @@ export default function MatchProfileDisplay() {
   useEffect(() => {
     getUserUid();
   }, []);
+
+  // Initialize local cache with existing likes from AsyncStorage
+  useEffect(() => {
+    const initializeLocalCache = async () => {
+      try {
+        const likedUserIds = await AsyncStorage.getItem("liked_user_ids");
+        if (likedUserIds) {
+          const parsedLikedUserIds = JSON.parse(likedUserIds);
+          console.log("Initializing local cache from AsyncStorage:", parsedLikedUserIds);
+          setLocalLikedProfiles(new Set(parsedLikedUserIds));
+        }
+      } catch (error) {
+        console.error("Error initializing local cache:", error);
+      }
+    };
+    initializeLocalCache();
+  }, []);
+
+  // Update AsyncStorage when local liked profiles change
+  useEffect(() => {
+    const updateAsyncStorage = async () => {
+      try {
+        const likedArray = Array.from(localLikedProfiles);
+        await AsyncStorage.setItem("liked_user_ids", JSON.stringify(likedArray));
+        console.log("Updated AsyncStorage with local liked profiles:", likedArray);
+      } catch (error) {
+        console.error("Error updating AsyncStorage:", error);
+      }
+    };
+
+    // Only update if localLikedProfiles is not empty (to avoid clearing on initial render)
+    if (localLikedProfiles.size > 0 || touchedProfiles.size > 0) {
+      updateAsyncStorage();
+    }
+  }, [localLikedProfiles]);
 
   useEffect(() => {
     if (userUid && matchedUserData && lastPositionRef.current !== arrposition) {

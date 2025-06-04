@@ -426,16 +426,17 @@ export default function DateAvailability() {
 
                 {/* Time pickers */}
                 <View style={styles.timeSection}>
-                  {/* Start Time - all on one line */}
-                  <View style={styles.singleTimeRow}>
-                    <Text style={styles.timeLabel}>Start Time</Text>
-                    <View style={styles.timePickerContainer}>
+                  {/* Start Time */}
+                  <View style={styles.timeContainer}>
+                    <View style={styles.timeTitleRow}>
+                      <Text style={styles.timeLabel}>Start Time</Text>
+                    </View>
+                    <View style={styles.timePickerRow}>
                       <Picker
                         style={styles.hourPicker}
                         itemStyle={styles.pickerItem}
                         selectedValue={tw.start.hour}
                         onValueChange={(value) => {
-                          // console.log("Hour picker changed - Start time:", value);
                           setTimeWindows((prev) => {
                             const newArr = [...prev];
                             newArr[index] = {
@@ -457,7 +458,6 @@ export default function DateAvailability() {
                         itemStyle={styles.pickerItem}
                         selectedValue={tw.start.minute}
                         onValueChange={(value) => {
-                          // console.log("Minute picker changed - Start time:", value);
                           setTimeWindows((prev) => {
                             const newArr = [...prev];
                             newArr[index] = {
@@ -472,29 +472,30 @@ export default function DateAvailability() {
                           <Picker.Item key={i} label={i.toString().padStart(2, "0")} value={i} />
                         ))}
                       </Picker>
-                    </View>
-                    <View style={styles.ampmButtonsVertical}>
-                      <Pressable onPress={() => handleToggleAmPm(index, "start")} style={[styles.ampmButtonStacked, tw.start.ampm === "AM" && styles.ampmButtonStackedActive]}>
-                        <View style={styles.radioButton}>{tw.start.ampm === "AM" && <View style={styles.radioButtonSelected} />}</View>
-                        <Text style={styles.ampmButtonStackedText}>AM</Text>
-                      </Pressable>
-                      <Pressable onPress={() => handleToggleAmPm(index, "start")} style={[styles.ampmButtonStacked, tw.start.ampm === "PM" && styles.ampmButtonStackedActive]}>
-                        <View style={styles.radioButton}>{tw.start.ampm === "PM" && <View style={styles.radioButtonSelected} />}</View>
-                        <Text style={styles.ampmButtonStackedText}>PM</Text>
-                      </Pressable>
+                      <View style={styles.ampmButtonsVertical}>
+                        <Pressable onPress={() => handleToggleAmPm(index, "start")} style={[styles.ampmButtonStacked, tw.start.ampm === "AM" && styles.ampmButtonStackedActive]}>
+                          <View style={styles.radioButton}>{tw.start.ampm === "AM" && <View style={styles.radioButtonSelected} />}</View>
+                          <Text style={styles.ampmButtonStackedText}>AM</Text>
+                        </Pressable>
+                        <Pressable onPress={() => handleToggleAmPm(index, "start")} style={[styles.ampmButtonStacked, tw.start.ampm === "PM" && styles.ampmButtonStackedActive]}>
+                          <View style={styles.radioButton}>{tw.start.ampm === "PM" && <View style={styles.radioButtonSelected} />}</View>
+                          <Text style={styles.ampmButtonStackedText}>PM</Text>
+                        </Pressable>
+                      </View>
                     </View>
                   </View>
 
-                  {/* End Time - all on one line */}
-                  <View style={styles.singleTimeRow}>
-                    <Text style={styles.timeLabel}>End Time</Text>
-                    <View style={styles.timePickerContainer}>
+                  {/* End Time */}
+                  <View style={styles.timeContainer}>
+                    <View style={styles.timeTitleRow}>
+                      <Text style={styles.timeLabel}>End Time</Text>
+                    </View>
+                    <View style={styles.timePickerRow}>
                       <Picker
                         style={styles.hourPicker}
                         itemStyle={styles.pickerItem}
                         selectedValue={tw.end.hour}
                         onValueChange={(value) => {
-                          // console.log("Hour picker changed - End time:", value);
                           setTimeWindows((prev) => {
                             const newArr = [...prev];
                             newArr[index] = {
@@ -516,7 +517,6 @@ export default function DateAvailability() {
                         itemStyle={styles.pickerItem}
                         selectedValue={tw.end.minute}
                         onValueChange={(value) => {
-                          // console.log("Minute picker changed - End time:", value);
                           setTimeWindows((prev) => {
                             const newArr = [...prev];
                             newArr[index] = {
@@ -531,16 +531,16 @@ export default function DateAvailability() {
                           <Picker.Item key={i} label={i.toString().padStart(2, "0")} value={i} />
                         ))}
                       </Picker>
-                    </View>
-                    <View style={styles.ampmButtonsVertical}>
-                      <Pressable onPress={() => handleToggleAmPm(index, "end")} style={[styles.ampmButtonStacked, tw.end.ampm === "AM" && styles.ampmButtonStackedActive]}>
-                        <View style={styles.radioButton}>{tw.end.ampm === "AM" && <View style={styles.radioButtonSelected} />}</View>
-                        <Text style={styles.ampmButtonStackedText}>AM</Text>
-                      </Pressable>
-                      <Pressable onPress={() => handleToggleAmPm(index, "end")} style={[styles.ampmButtonStacked, tw.end.ampm === "PM" && styles.ampmButtonStackedActive]}>
-                        <View style={styles.radioButton}>{tw.end.ampm === "PM" && <View style={styles.radioButtonSelected} />}</View>
-                        <Text style={styles.ampmButtonStackedText}>PM</Text>
-                      </Pressable>
+                      <View style={styles.ampmButtonsVertical}>
+                        <Pressable onPress={() => handleToggleAmPm(index, "end")} style={[styles.ampmButtonStacked, tw.end.ampm === "AM" && styles.ampmButtonStackedActive]}>
+                          <View style={styles.radioButton}>{tw.end.ampm === "AM" && <View style={styles.radioButtonSelected} />}</View>
+                          <Text style={styles.ampmButtonStackedText}>AM</Text>
+                        </Pressable>
+                        <Pressable onPress={() => handleToggleAmPm(index, "end")} style={[styles.ampmButtonStacked, tw.end.ampm === "PM" && styles.ampmButtonStackedActive]}>
+                          <View style={styles.radioButton}>{tw.end.ampm === "PM" && <View style={styles.radioButtonSelected} />}</View>
+                          <Text style={styles.ampmButtonStackedText}>PM</Text>
+                        </Pressable>
+                      </View>
                     </View>
                   </View>
                 </View>
@@ -707,53 +707,29 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 10,
   },
-  singleTimeRow: {
+  timeContainer: {
+    flexDirection: "column",
+    marginBottom: 10,
+  },
+  timeTitleRow: {
     flexDirection: "row",
-    alignItems: Platform.OS === "ios" ? "flex-start" : "center",
-    marginBottom: 15,
-    paddingHorizontal: 2,
-    minHeight: Platform.OS === "ios" ? 120 : 40,
     justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 5,
   },
   timeLabel: {
-    width: 60,
     fontSize: 16,
     color: "#333",
     fontWeight: "500",
-    marginRight: 6,
-    alignSelf: Platform.OS === "ios" ? "center" : "center",
-    marginTop: Platform.OS === "ios" ? 40 : 0,
-  },
-  timePickerContainer: {
-    flexDirection: "row",
-    alignItems: Platform.OS === "ios" ? "flex-start" : "center",
-    flex: 1,
-    marginRight: 6,
-    minHeight: Platform.OS === "ios" ? 120 : 40,
-    maxWidth: Platform.OS === "ios" ? 270 : 220,
-  },
-  timeSeparator: {
-    fontSize: 18,
-    color: "#333",
-    fontWeight: "500",
-    marginHorizontal: 2,
-    alignSelf: Platform.OS === "ios" ? "center" : "center",
-    marginTop: Platform.OS === "ios" ? 40 : 0,
-    minWidth: 8,
-  },
-  pickerItem: {
-    fontSize: 16,
-    color: "#333",
-    fontWeight: "600",
-    height: 120,
+    flexShrink: 0,
+    minWidth: 80,
   },
   ampmButtonsVertical: {
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: Platform.OS === "ios" ? "center" : "center",
+    justifyContent: "center",
     width: 45,
-    alignSelf: Platform.OS === "ios" ? "center" : "center",
-    marginTop: Platform.OS === "ios" ? 40 : 0,
+    marginLeft: 8,
   },
   ampmButtonStacked: {
     flexDirection: "row",
@@ -785,6 +761,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#333",
     fontWeight: "500",
+  },
+  timePickerRow: {
+    flexDirection: "row",
+    alignItems: Platform.OS === "ios" ? "flex-start" : "center",
+    justifyContent: "center",
+    minHeight: Platform.OS === "ios" ? 120 : 40,
+  },
+  timeSeparator: {
+    fontSize: 18,
+    color: "#333",
+    fontWeight: "500",
+    marginHorizontal: 2,
+    alignSelf: Platform.OS === "ios" ? "center" : "center",
+    marginTop: Platform.OS === "ios" ? 40 : 0,
+    minWidth: 8,
+  },
+  pickerItem: {
+    fontSize: 16,
+    color: "#333",
+    fontWeight: "600",
+    height: 120,
   },
   actionRow: {
     flexDirection: "row",
@@ -865,7 +862,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   hourPicker: {
-    flex: 1,
+    // flex: 1,
     height: Platform.OS === "ios" ? 120 : 40,
     backgroundColor: "#FFF",
     borderWidth: 1,
@@ -873,10 +870,10 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 8,
     borderBottomLeftRadius: 8,
     borderRightWidth: 0,
-    minWidth: Platform.OS === "ios" ? 120 : 100,
+    minWidth: Platform.OS === "ios" ? 100 : 100,
   },
   minutePicker: {
-    flex: 1,
+    // flex: 1,
     height: Platform.OS === "ios" ? 120 : 40,
     backgroundColor: "#FFF",
     borderWidth: 1,
@@ -884,6 +881,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 8,
     borderBottomRightRadius: 8,
     borderLeftWidth: 0,
-    minWidth: Platform.OS === "ios" ? 120 : 100,
+    minWidth: Platform.OS === "ios" ? 100 : 100,
   },
 });

@@ -102,10 +102,6 @@ const StartPage = () => {
       {__DEV_MODE__ && (
         <View style={styles.apiKeysContainer}>
           <Text style={styles.apiKeysTitle}>API Keys (First 4 Digits):</Text>
-          {/* <Text style={styles.apiKeysText}>iOS: {getLastTwoDigits(config.googleClientIds.ios)}</Text>
-          <Text style={styles.apiKeysText}>Android: {getLastTwoDigits(config.googleClientIds.android)}</Text>
-          <Text style={styles.apiKeysText}>Web: {getLastTwoDigits(config.googleClientIds.web)}</Text>
-          <Text style={styles.apiKeysText}>URL Scheme: {config.googleClientIds.googleURLScheme ? "..." + config.googleClientIds.googleURLScheme.slice(-2) : "Not set"}</Text> */}
           <Text style={styles.apiKeysText}>iOS: {getFirstFourDigits(config.googleClientIds.ios)}</Text>
           <Text style={styles.apiKeysText}>Android: {getFirstFourDigits(config.googleClientIds.android)}</Text>
           <Text style={styles.apiKeysText}>Web: {getFirstFourDigits(config.googleClientIds.web)}</Text>
@@ -119,17 +115,27 @@ const StartPage = () => {
 
       {/* Get Started Button */}
       <View style={styles.bottomContainer}>
-        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("LandingPage")}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => {
+            console.log("Get Started button pressed");
+            navigation.navigate("LandingPage");
+          }}
+        >
           <Text style={styles.buttonText}>Get Started!</Text>
         </TouchableOpacity>
 
         {/* Log In Link */}
-        <Text style={styles.loginText}>
-          Already have an account?{" "}
-          <Text style={styles.loginLink} onPress={() => navigation.navigate("Login")}>
-            Log In
+        <TouchableOpacity
+          onPress={() => {
+            console.log("Log In link pressed");
+            navigation.navigate("Login");
+          }}
+        >
+          <Text style={styles.loginText}>
+            Already have an account? <Text style={styles.loginLink}>Log In</Text>
           </Text>
-        </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -139,27 +145,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#E4423F",
-    justifyContent: "center",
+    justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
+    paddingTop: 100,
+    paddingBottom: 50,
   },
   title: {
     fontSize: 48,
     fontWeight: "bold",
     color: "#FFFFFF",
     textAlign: "center",
-    position: "absolute",
-    top: "35%", // Moves the text higher
+    flex: 1,
+    textAlignVertical: "center",
   },
   apiKeysContainer: {
     backgroundColor: "rgba(255, 255, 255, 0.8)",
     padding: 10,
     borderRadius: 5,
-    marginTop: 20,
+    marginVertical: 20,
     borderWidth: 1,
     borderColor: "#ddd",
-    position: "absolute",
-    top: "45%", // Position below the title
     width: "90%",
   },
   apiKeysTitle: {
@@ -174,10 +180,9 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   bottomContainer: {
-    position: "absolute",
-    bottom: 50, // Positions the container near the bottom
     alignItems: "center",
     width: "100%",
+    paddingBottom: 20,
   },
   button: {
     backgroundColor: "#FFFFFF",
@@ -185,6 +190,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     alignItems: "center",
     width: "100%",
+    marginBottom: 15,
   },
   buttonText: {
     fontSize: 18,
@@ -193,13 +199,13 @@ const styles = StyleSheet.create({
   },
   loginText: {
     fontSize: 16,
-    color: "#1A1A1A",
-    marginTop: 10,
+    color: "#FFFFFF",
+    textAlign: "center",
   },
   loginLink: {
     fontWeight: "bold",
     textDecorationLine: "underline",
-    color: "#F5F5F5",
+    color: "#FFFFFF",
   },
 });
 

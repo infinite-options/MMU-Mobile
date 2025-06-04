@@ -58,11 +58,12 @@ const styles = StyleSheet.create({
   overlay: {
     backgroundColor: "rgba(255, 255, 255, 0.8)", // Slightly translucent white card
     borderRadius: 25,
-    padding: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
     alignItems: "center",
     justifyContent: "center",
     width: "95%", // Adjusted width
-    height: "38%", // Increased height
+    minHeight: "35%", // Use minHeight instead of fixed height
     alignSelf: "center",
     position: "absolute",
     bottom: "2.5%", // Moves the card higher
@@ -95,15 +96,16 @@ const styles = StyleSheet.create({
     padding: 10,
     color: "#1A1A1A",
     textAlign: "center",
-    marginTop: 40,
-    marginBottom: 10,
+    marginTop: 25,
+    marginBottom: 8,
   },
   description: {
     fontSize: 16,
     color: "#666666",
     textAlign: "center",
-    marginBottom: 50,
+    marginBottom: 25,
     lineHeight: 24,
+    paddingHorizontal: 10,
   },
   continueButton: {
     backgroundColor: "#E4423F",
@@ -111,7 +113,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: "center",
     width: "60%", // Reduced button width
-    marginBottom: 15,
+    marginBottom: 12,
   },
   continueButtonText: {
     fontSize: 18,
@@ -127,6 +129,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textDecorationLine: "underline",
     color: "#1A1A1A",
+    marginBottom: 5,
   },
 });
 

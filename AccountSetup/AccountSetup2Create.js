@@ -981,7 +981,7 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     paddingHorizontal: 25,
-    paddingBottom: 30, // Add padding at the bottom for better scrolling
+    paddingBottom: 20, // Reduced from 30
     justifyContent: "flex-start", // Align content to the top
     alignItems: "stretch",
   },
@@ -992,24 +992,24 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
   },
   progressBar: {
-    marginTop: 110,
-    marginBottom: 30,
+    marginTop: 60, // Reduced from 110
+    marginBottom: 20, // Reduced from 30
   },
   title: {
     fontSize: 26,
     fontWeight: "bold",
     textAlign: "left",
     color: "#000",
-    marginBottom: 10,
+    marginBottom: 8, // Reduced from 10
   },
   subtitle: {
     fontSize: 14,
     color: "gray",
     textAlign: "left",
-    marginBottom: 20,
+    marginBottom: 15, // Reduced from 20
   },
   inputContainer: {
-    marginBottom: 30,
+    marginBottom: 20, // Reduced from 30
   },
   eyeIcon: {
     marginTop: 15,
@@ -1017,8 +1017,8 @@ const styles = StyleSheet.create({
   strengthBarContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 10,
-    marginBottom: 5,
+    marginTop: 8, // Reduced from 10
+    marginBottom: 4, // Reduced from 5
   },
   strengthSegment: {
     flex: 1,
@@ -1030,12 +1030,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
     textAlign: "right",
-    marginTop: 5,
+    marginTop: 4, // Reduced from 5
   },
   mismatchText: {
     color: "red",
     fontSize: 14,
-    marginBottom: 10,
+    marginBottom: 8, // Reduced from 10
   },
   continueButton: {
     height: 50,
@@ -1043,7 +1043,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#E4423F",
     borderRadius: 30,
-    marginBottom: 20,
+    marginBottom: 15, // Reduced from 20
   },
   continueButtonText: {
     color: "#FFF",
@@ -1053,7 +1053,7 @@ const styles = StyleSheet.create({
   orSeparator: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 20,
+    marginVertical: 15, // Reduced from 20
   },
   separatorLine: {
     flex: 1,
@@ -1068,21 +1068,21 @@ const styles = StyleSheet.create({
   socialContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginBottom: 25,
+    marginBottom: 15, // Reduced from 25
   },
   socialLoginButton: {
     backgroundColor: "#F5F5F5",
     borderRadius: 50,
-    padding: 15,
+    padding: 12, // Reduced from 15
     marginHorizontal: 10,
     alignItems: "center",
     justifyContent: "center",
-    width: 75,
-    height: 75,
+    width: 65, // Reduced from 75
+    height: 65, // Reduced from 75
   },
   footerText: {
     textAlign: "center",
-    marginTop: 20,
+    marginTop: 10, // Reduced from 20
     fontSize: 16,
     color: "#666",
   },
@@ -1092,12 +1092,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   googleLogo: {
-    width: 45,
-    height: 45,
+    width: 40, // Reduced from 45
+    height: 40, // Reduced from 45
   },
   appleLogo: {
-    width: 45,
-    height: 45,
+    width: 40, // Reduced from 45
+    height: 40, // Reduced from 45
   },
   textInputOutline: {
     borderWidth: 0,
@@ -1110,7 +1110,7 @@ const styles = StyleSheet.create({
     height: 50,
   },
   input: {
-    marginBottom: 15, // Space between input fields
+    marginBottom: 12, // Reduced from 15
   },
   googleButton: {
     width: 192,
@@ -1123,8 +1123,8 @@ const styles = StyleSheet.create({
   },
   // Add new styles for debug information
   debugContainer: {
-    marginTop: 20,
-    padding: 10,
+    marginTop: 15, // Reduced from 20
+    padding: 8, // Reduced from 10
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 5,
@@ -1133,15 +1133,15 @@ const styles = StyleSheet.create({
   debugText: {
     fontSize: 12,
     color: "#333",
-    marginBottom: 4,
+    marginBottom: 3, // Reduced from 4
   },
   debugButton: {
     backgroundColor: "#E4423F",
     borderRadius: 5,
-    padding: 10,
+    padding: 8, // Reduced from 10
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 10,
+    marginTop: 8, // Reduced from 10
   },
   debugButtonText: {
     color: "#FFF",

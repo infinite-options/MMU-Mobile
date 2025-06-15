@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import MaskedView from "@react-native-masked-view/masked-view";
+import { Picker } from "@react-native-picker/picker";
 
 export default function DateOccurance({ navigation }) {
   const route = useRoute();
@@ -24,13 +25,10 @@ export default function DateOccurance({ navigation }) {
 
   // Enhanced time state with formatting
   const [timeState, setTimeState] = useState({
-    formattedInput: "",
-    hour: 0,
+    hour: 12,
     minute: 0,
+    ampm: "AM",
   });
-
-  // Track AM/PM selection
-  const [amPm, setAmPm] = useState(null);
 
   // Days array with single letters for display
   const days = ["S", "M", "T", "W", "T", "F", "S"];
@@ -74,13 +72,10 @@ export default function DateOccurance({ navigation }) {
             const minute = parseInt(minuteStr, 10);
 
             setTimeState({
-              formattedInput: timeString,
               hour: hour,
               minute: minute,
+              ampm: periodStr,
             });
-
-            // Set AM/PM
-            setAmPm(periodStr);
           }
         }
       } catch (error) {
@@ -93,10 +88,9 @@ export default function DateOccurance({ navigation }) {
 
   // Helper function to format time string for display and storage
   const formatTime = () => {
-    if (!timeState.formattedInput) return "";
     const hour = timeState.hour || 12; // Default to 12 if hour is 0
     const minute = timeState.minute.toString().padStart(2, "0");
-    return `${hour}:${minute} ${amPm}`;
+    return `${hour}:${minute} ${timeState.ampm}`;
   };
 
   // Fetch user info when component mounts
@@ -175,55 +169,10 @@ export default function DateOccurance({ navigation }) {
 
   // Handler to pick AM/PM
   const handleAmPmPress = (val) => {
-    setAmPm(val);
-  };
-
-  // Handler for time input with formatting and validation
-  const handleTimeChange = (val) => {
-    // Allow only numbers
-    const digitsOnly = val.replace(/[^0-9]/g, "");
-
-    // Format time as user types (HH:MM)
-    let formatted = "";
-    if (digitsOnly.length > 0) {
-      // First digit of hour
-      const hour1 = parseInt(digitsOnly[0], 10);
-      // Only allow 0, 1 as first digit if there's a second digit
-      if (digitsOnly.length > 1 && hour1 > 1) {
-        return; // Invalid hour first digit
-      }
-
-      if (digitsOnly.length === 1) {
-        formatted = digitsOnly[0];
-      } else if (digitsOnly.length === 2) {
-        // Check for valid hour
-        const hour = parseInt(digitsOnly.substring(0, 2), 10);
-        if (hour === 0 || hour > 12) return; // Invalid hour
-        formatted = digitsOnly.substring(0, 2) + ":";
-      } else if (digitsOnly.length >= 3) {
-        // Add minutes
-        const hour = parseInt(digitsOnly.substring(0, 2), 10);
-        if (hour === 0 || hour > 12) return; // Invalid hour
-
-        const min1 = parseInt(digitsOnly[2], 10);
-        if (min1 > 5) return; // First minute digit can only be 0-5
-
-        if (digitsOnly.length === 3) {
-          formatted = digitsOnly.substring(0, 2) + ":" + digitsOnly[2];
-        } else {
-          const minutes = parseInt(digitsOnly.substring(2, 4), 10);
-          if (minutes > 59) return; // Invalid minutes
-          formatted = digitsOnly.substring(0, 2) + ":" + digitsOnly.substring(2, 4);
-        }
-      }
-    }
-
-    // Update state with formatted value and actual time values
-    setTimeState({
-      formattedInput: formatted,
-      hour: digitsOnly.length >= 2 ? parseInt(digitsOnly.substring(0, 2), 10) : 0,
-      minute: digitsOnly.length >= 4 ? parseInt(digitsOnly.substring(2, 4), 10) : digitsOnly.length === 3 ? parseInt(digitsOnly[2] + "0", 10) : 0,
-    });
+    setTimeState((prev) => ({
+      ...prev,
+      ampm: val,
+    }));
   };
 
   // Improved validation logic
@@ -235,7 +184,7 @@ export default function DateOccurance({ navigation }) {
     const hasValidTime = timeState.hour > 0 || timeState.minute > 0;
 
     // AM/PM selected
-    const hasAmPmSelected = amPm !== null;
+    const hasAmPmSelected = timeState.ampm !== null;
 
     return hasDaySelected && hasValidTime && hasAmPmSelected;
   };
@@ -262,7 +211,7 @@ export default function DateOccurance({ navigation }) {
         selectedDayIndex,
         selectedDay: fullDayNames[selectedDayIndex],
         startTime: formatTime(),
-        amPm,
+        amPm: timeState.ampm,
         matchedUserId: matchedUserId,
       });
     }
@@ -334,23 +283,58 @@ export default function DateOccurance({ navigation }) {
               })}
             </View>
 
-            {/* Row for Start Time label, input, AM/PM toggles */}
-            <View style={styles.timeRow}>
-              <Text style={styles.timeLabel}>Start Time</Text>
-              <View style={styles.timeInputContainer}>
-                <TextInput style={styles.timeInput} placeholder='00:00' value={timeState.formattedInput} onChangeText={handleTimeChange} keyboardType='numeric' />
+            {/* Start Time section matches DateAvailability.js */}
+            <View style={styles.timeContainer}>
+              <View style={styles.timeTitleRow}>
+                <Text style={styles.timeLabel}>Start Time</Text>
               </View>
-
-              <View style={styles.amPmContainer}>
-                {/* AM toggle */}
-                <TouchableOpacity style={[styles.amPmButton, styles.amPmButtonLeft, amPm === "AM" && { backgroundColor: "#000" }]} onPress={() => handleAmPmPress("AM")}>
-                  <Text style={[styles.amPmText, amPm === "AM" && { color: "#FFF" }]}>AM</Text>
-                </TouchableOpacity>
-
-                {/* PM toggle */}
-                <TouchableOpacity style={[styles.amPmButton, styles.amPmButtonRight, amPm === "PM" && { backgroundColor: "#000" }]} onPress={() => handleAmPmPress("PM")}>
-                  <Text style={[styles.amPmText, amPm === "PM" && { color: "#FFF" }]}>PM</Text>
-                </TouchableOpacity>
+              <View style={styles.timePickerRow}>
+                <View style={styles.pickerBox}>
+                  <Picker
+                    style={styles.picker}
+                    itemStyle={styles.pickerItem}
+                    selectedValue={timeState.hour}
+                    onValueChange={(value) => {
+                      setTimeState((prev) => ({
+                        ...prev,
+                        hour: value,
+                      }));
+                    }}
+                  >
+                    {Array.from({ length: 12 }, (_, i) => {
+                      const hour = i === 0 ? 12 : i;
+                      return <Picker.Item key={i} label={hour.toString()} value={hour} />;
+                    })}
+                  </Picker>
+                </View>
+                <Text style={styles.timeSeparator}>:</Text>
+                <View style={styles.pickerBox}>
+                  <Picker
+                    style={styles.picker}
+                    itemStyle={styles.pickerItem}
+                    selectedValue={timeState.minute}
+                    onValueChange={(value) => {
+                      setTimeState((prev) => ({
+                        ...prev,
+                        minute: value,
+                      }));
+                    }}
+                  >
+                    {Array.from({ length: 60 }, (_, i) => (
+                      <Picker.Item key={i} label={i.toString().padStart(2, "0")} value={i} />
+                    ))}
+                  </Picker>
+                </View>
+                <View style={styles.ampmButtonsVertical}>
+                  <Pressable onPress={() => handleAmPmPress("AM")} style={[styles.ampmButtonStacked, timeState.ampm === "AM" && styles.ampmButtonStackedActive]}>
+                    <View style={styles.radioButton}>{timeState.ampm === "AM" && <View style={styles.radioButtonSelected} />}</View>
+                    <Text style={styles.ampmButtonStackedText}>AM</Text>
+                  </Pressable>
+                  <Pressable onPress={() => handleAmPmPress("PM")} style={[styles.ampmButtonStacked, timeState.ampm === "PM" && styles.ampmButtonStackedActive]}>
+                    <View style={styles.radioButton}>{timeState.ampm === "PM" && <View style={styles.radioButtonSelected} />}</View>
+                    <Text style={styles.ampmButtonStackedText}>PM</Text>
+                  </Pressable>
+                </View>
               </View>
             </View>
           </View>
@@ -490,52 +474,83 @@ const styles = StyleSheet.create({
     width: 90,
     marginRight: 5,
   },
-  timeInputContainer: {
-    width: 100,
-    marginRight: 15,
+  timePickerRow: {
+    flexDirection: "row",
+    alignItems: Platform.OS === "ios" ? "flex-start" : "center",
+    justifyContent: "center",
+    minHeight: Platform.OS === "ios" ? 120 : 40,
   },
-  timeInput: {
+  timeSeparator: {
+    fontSize: 18,
+    color: "#333",
+    fontWeight: "500",
+    marginHorizontal: 2,
+    alignSelf: Platform.OS === "ios" ? "center" : "center",
+    marginTop: Platform.OS === "ios" ? 40 : 0,
+    minWidth: 8,
+  },
+  pickerBox: {
     backgroundColor: "#FFF",
     borderRadius: 12,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    fontSize: 16,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    width: 90, // wider for two digits
+    height: Platform.OS === "ios" ? 120 : 50,
+    justifyContent: "center",
+    alignItems: "center",
+    marginHorizontal: 2,
+  },
+  picker: {
+    width: "100%",
+    height: Platform.OS === "ios" ? 120 : 50,
+    color: "#222",
+    fontSize: 22,
     textAlign: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1,
-    elevation: 1,
   },
-
-  // AM/PM toggles
-  amPmContainer: {
-    flexDirection: "row",
+  pickerItem: {
+    fontSize: 16,
+    color: "#222",
+    fontWeight: "600",
+    textAlign: "center",
+    height: 120,
   },
-  amPmButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: "#FFF",
+  ampmButtonsVertical: {
+    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
+    width: 45,
+    marginLeft: 8,
   },
-  amPmButtonLeft: {
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRightWidth: 0,
+  ampmButtonStacked: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 2,
+    paddingHorizontal: 2,
+    marginBottom: 2,
   },
-  amPmButtonRight: {
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 12,
-    borderColor: "#ccc",
-    borderWidth: 1,
+  ampmButtonStackedActive: {
+    backgroundColor: "transparent",
   },
-  amPmText: {
-    color: "#888",
+  radioButton: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: "#333",
+    marginRight: 4,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  radioButtonSelected: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#E4423F",
+  },
+  ampmButtonStackedText: {
+    fontSize: 12,
+    color: "#333",
     fontWeight: "500",
-    fontSize: 16,
   },
 
   // Continue button
@@ -563,5 +578,17 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     marginHorizontal: 4,
+  },
+
+  // Add missing styles if needed:
+  timeContainer: {
+    flexDirection: "column",
+    marginBottom: 10,
+  },
+  timeTitleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 5,
   },
 });

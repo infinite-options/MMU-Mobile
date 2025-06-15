@@ -446,11 +446,11 @@ export default function DateFinal({ navigation }) {
       <Modal visible={showCancelModal} transparent animationType='fade' onRequestClose={() => setShowCancelModal(false)}>
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Cancel Invitation?</Text>
+            <Text style={styles.modalTitle}>Cancel Changes?</Text>
             <Text style={styles.modalSubtitle}>All information entered will be lost.</Text>
 
             <TouchableOpacity style={styles.confirmCancelButton} onPress={handleConfirmCancel}>
-              <Text style={styles.confirmCancelText}>Yes, cancel invitation</Text>
+              <Text style={styles.confirmCancelText}>Yes, cancel changes</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.neverMindButton} onPress={() => setShowCancelModal(false)}>

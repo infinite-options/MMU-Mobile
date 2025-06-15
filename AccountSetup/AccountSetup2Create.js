@@ -446,7 +446,7 @@ export default function AccountSetup2Create() {
       debugInfo += `Sign In Progress: ${signInInProgress}\n`;
       debugInfo += `Config Status: ${isGoogleConfigured ? "Configured" : "Not Configured"}\n`;
 
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED || error.message?.includes("The user canceled the sign-in flow")) {
         errorMessage += "Sign-in was cancelled by the user.";
       } else if (error.code === statusCodes.IN_PROGRESS || error.message?.includes("Sign-In in progress")) {
         errorMessage += "Another sign-in is already in progress.\nTrying to reset the sign-in state...";
@@ -463,16 +463,19 @@ export default function AccountSetup2Create() {
         errorMessage += "Sign-in attempt failed.";
       }
 
-      Alert.alert("Google Sign-In Error", `${errorMessage}\n\nDebug Info:\n${debugInfo}`, [
-        {
-          text: "Copy Debug Info",
-          onPress: () => {
-            Clipboard.setString(debugInfo);
-            Alert.alert("Copied", "Debug information has been copied to clipboard");
+      // Only show Alert in development mode
+      if (__DEV__) {
+        Alert.alert("Google Sign-In Error", `${errorMessage}\n\nDebug Info:\n${debugInfo}`, [
+          {
+            text: "Copy Debug Info",
+            onPress: () => {
+              Clipboard.setString(debugInfo);
+              Alert.alert("Copied", "Debug information has been copied to clipboard");
+            },
           },
-        },
-        { text: "OK" },
-      ]);
+          { text: "OK" },
+        ]);
+      }
     } finally {
       clearTimeout(signInTimeoutId); // Clear the timeout if sign-in completes normally
       setShowSpinner(false);

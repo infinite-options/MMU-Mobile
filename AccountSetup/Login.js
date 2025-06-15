@@ -336,7 +336,7 @@ export default function Login() {
       debugInfo += `Error Code: ${error.code || "Unknown"}\n`;
       debugInfo += `Error Message: ${error.message || "No message"}\n`;
 
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED || error.message?.includes("The user canceled the sign-in flow")) {
         errorMessage += "Sign-in was cancelled by the user.";
       } else if (error.code === statusCodes.IN_PROGRESS) {
         errorMessage += "Another sign-in is already in progress.";
@@ -351,16 +351,19 @@ export default function Login() {
         errorMessage += "Sign-in attempt failed.";
       }
 
-      Alert.alert("Google Sign-In Error", `${errorMessage}\n\nDebug Info:\n${debugInfo}`, [
-        {
-          text: "Copy Debug Info",
-          onPress: () => {
-            Clipboard.setString(debugInfo);
-            Alert.alert("Copied", "Debug information has been copied to clipboard");
+      // Only show Alert in development mode
+      if (__DEV__) {
+        Alert.alert("Google Sign-In Error", `${errorMessage}\n\nDebug Info:\n${debugInfo}`, [
+          {
+            text: "Copy Debug Info",
+            onPress: () => {
+              Clipboard.setString(debugInfo);
+              Alert.alert("Copied", "Debug information has been copied to clipboard");
+            },
           },
-        },
-        { text: "OK" },
-      ]);
+          { text: "OK" },
+        ]);
+      }
     } finally {
       setShowSpinner(false);
     }

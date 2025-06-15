@@ -514,6 +514,69 @@ const MatchResultsPage = () => {
     }
   };
 
+  // Helper to delete a date (meet) from the database
+  const handleCancelDate = async (meet_uid, matchId) => {
+    try {
+      console.log("Attempting to cancel date. meet_uid:", meet_uid, "matchId:", matchId);
+      const endpoint = `https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/meet/delete/${meet_uid}`;
+      console.log("Calling DELETE endpoint:", endpoint);
+      // Delete the date (meet) from the database using the correct endpoint
+      let deleteResult;
+      try {
+        deleteResult = await axios.delete(endpoint);
+        console.log("DELETE call successful:", deleteResult.status);
+      } catch (deleteError) {
+        console.error("DELETE call error:", deleteError.message);
+        if (deleteError.response) {
+          console.log("DELETE error response data:", deleteError.response.data);
+          console.log("DELETE error response status:", deleteError.response.status);
+          console.log("DELETE error response headers:", deleteError.response.headers);
+        }
+        throw deleteError;
+      }
+      // Optionally, refresh the matches
+      setRefreshTrigger((prev) => prev + 1);
+      // Send a chat message to the match using the /messages endpoint
+      const sender_id = await AsyncStorage.getItem("user_uid");
+      const messagesEndpoint = "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/messages";
+      const message_content = "Sorry I have to cancel";
+      const now = new Date();
+      const message_sent_at = now.toISOString().replace("T", " ").slice(0, 19); // MySQL format
+      console.log("Calling messages POST endpoint:", messagesEndpoint, "with sender_id:", sender_id, "receiver_id:", matchId);
+      let chatResult;
+      try {
+        chatResult = await axios.post(
+          messagesEndpoint,
+          {
+            sender_id: sender_id,
+            receiver_id: matchId,
+            message_content: message_content,
+            message_sent_at: message_sent_at,
+          },
+          {
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+        console.log("Messages POST call successful:", chatResult.status);
+      } catch (chatError) {
+        console.error("Messages POST call error:", chatError.message);
+        if (chatError.response) {
+          console.log("Messages POST error response data:", chatError.response.data);
+          console.log("Messages POST error response status:", chatError.response.status);
+          console.log("Messages POST error response headers:", chatError.response.headers);
+        }
+        throw chatError;
+      }
+    } catch (error) {
+      console.error("Error cancelling date:", error.message);
+      if (error.response) {
+        console.log("Error response data:", error.response.data);
+        console.log("Error response status:", error.response.status);
+        console.log("Error response headers:", error.response.headers);
+      }
+    }
+  };
+
   const renderMatchRow = (firstname, lastname, interests, imgSrc, buttonLabel = null, matchId = null, match = null) => {
     // Calculate common interests
     const commonInterestsCount = calculateCommonInterests(interests);
@@ -543,9 +606,30 @@ const MatchResultsPage = () => {
           <TouchableOpacity style={[styles.matchButton, dynamicButtonLabel === "Set up date" ? styles.setUpDateButton : styles.defaultButtonBorder]} onPress={() => handleButtonPress(matchId, match)}>
             <Text style={[styles.matchButtonText, dynamicButtonLabel === "Set up date" ? { color: "#fff" } : { color: "#E4423F" }]}>{dynamicButtonLabel}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.closeButton} onPress={() => handleDislike(matchId)}>
-            <Text style={styles.closeButtonIcon}>×</Text>
-          </TouchableOpacity>
+          {/* Only show the x if in My matches section */}
+          {typeof match?.meet_uid !== "undefined" && (
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => {
+                if (match.meet_uid !== null) {
+                  Alert.alert("Cancel Invitation", "Are you sure you want to cancel this invitation?", [
+                    { text: "No", style: "cancel" },
+                    {
+                      text: "Yes",
+                      style: "destructive",
+                      onPress: async () => {
+                        await handleCancelDate(match.meet_uid, matchId);
+                      },
+                    },
+                  ]);
+                } else {
+                  handleDislike(matchId);
+                }
+              }}
+            >
+              <Text style={styles.closeButtonIcon}>×</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     );
@@ -570,9 +654,7 @@ const MatchResultsPage = () => {
           <TouchableOpacity style={[styles.matchButton, styles.setUpDateButton]} onPress={() => navigation.navigate("UserProfile", { meet_date_user_id: matchId })}>
             <Text style={[styles.matchButtonText, { color: "#fff" }]}>{buttonLabel}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.closeButton} onPress={() => setInterestedInMe((prevResults) => prevResults.filter((match) => match.user_uid !== matchId))}>
-            <Text style={styles.closeButtonIcon}>×</Text>
-          </TouchableOpacity>
+          {/* No x button here */}
         </View>
       </View>
     );

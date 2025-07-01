@@ -58,11 +58,11 @@ export const styles = StyleSheet.create({
   overlay: {
     backgroundColor: "rgba(255, 255, 255, 0.8)", // Slightly translucent white card
     borderRadius: 25,
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     paddingVertical: 15,
     alignItems: "center",
     justifyContent: "center",
-    width: "95%", // Adjusted width
+    width: "100%",
     minHeight: "35%", // Use minHeight instead of fixed height
     alignSelf: "center",
     position: "absolute",

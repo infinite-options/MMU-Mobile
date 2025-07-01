@@ -114,7 +114,7 @@ export default function NameInput({ navigation }) {
       {/* Title and Input Fields */}
       <View style={styles.content}>
         <Text style={styles.title}>What should we call you?</Text>
-        <Text style={styles.subtitle}>Your full name will be public.</Text>
+        <Text style={styles.subtitle}>Your first name will be public.</Text>
 
         <TextInput
           label='First Name'

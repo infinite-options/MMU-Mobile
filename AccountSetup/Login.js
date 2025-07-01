@@ -80,7 +80,8 @@ export default function Login() {
           webClientId: config.googleClientIds.web,
           googleURLScheme: config.googleClientIds.googleURLScheme,
           packageName: DeviceInfo.getBundleId(),
-          sha1Fingerprint: "45:DC:8C:F7:21:FD:66:C2:78:3E:B2:BA:98:1C:31:E2:06:E1:0F:60",
+          sha1Fingerprint: "5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25",
+          // sha1Fingerprint: "45:DC:8C:F7:21:FD:66:C2:78:3E:B2:BA:98:1C:31:E2:06:E1:0F:60
         });
 
         // Create Google Sign-In configuration object

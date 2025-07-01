@@ -256,13 +256,30 @@ export const getVideoQuality = () => {
  * @returns {Promise<boolean>} Whether permissions were granted
  */
 export const requestMediaLibraryPermissions = async () => {
-  const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!permissionResult.granted) {
-    Alert.alert("Permission Required", "This app needs permission to access your photo library.", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Settings", onPress: () => Linking.openSettings() },
+  if (Platform.OS === 'android' && Platform.Version >= 33) {
+    // For Android 13+ (API level 33+), request granular media permissions
+    const [imagesPermission, videosPermission] = await Promise.all([
+      ImagePicker.requestMediaLibraryPermissionsAsync(),
+      ImagePicker.requestMediaLibraryPermissionsAsync()
     ]);
-    return false;
+
+    if (!imagesPermission.granted || !videosPermission.granted) {
+      Alert.alert("Permission Required", "This app needs permission to access your media library.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Settings", onPress: () => Linking.openSettings() },
+      ]);
+      return false;
+    }
+  } else {
+    // For iOS and older Android versions, use the legacy permission
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert("Permission Required", "This app needs permission to access your photo library.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Settings", onPress: () => Linking.openSettings() },
+      ]);
+      return false;
+    }
   }
   return true;
 };
@@ -309,12 +326,20 @@ export const pickImage = async (options = {}, testVideos = []) => {
     const hasPermission = await requestMediaLibraryPermissions();
     if (!hasPermission) return null;
 
-    const result = await ImagePicker.launchImageLibraryAsync({
+    const pickerOptions = {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.5,
       ...options,
-    });
+    };
+
+    // Add specific options for Android 13+
+    if (Platform.OS === 'android' && Platform.Version >= 33) {
+      pickerOptions.allowsMultipleSelection = false;
+      pickerOptions.selectionLimit = 1;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync(pickerOptions);
 
     if (!result.canceled && result.assets?.[0]?.uri) {
       const uri = result.assets[0].uri;

@@ -24,6 +24,39 @@ const LandingPage3 = () => {
         {/* Title */}
         <Text style={styles.title}>No Misleading Profiles</Text>
 
+        {/* Attention Notice */}
+        <View
+          style={{
+            backgroundColor: "rgba(255, 230, 200, 0.85)",
+            borderRadius: 12,
+            padding: 12,
+            marginBottom: 16,
+            width: "100%",
+          }}
+        >
+          <Text
+            style={{
+              color: "#E4423F",
+              fontWeight: "bold",
+              fontSize: 15,
+              textAlign: "center",
+              marginBottom: 4,
+            }}
+          >
+            Attention users - In order to mimic the live version of this app, please do not attempt to add lighting and photo filters to this profile video as these filters and options will be
+            disabled in the Live App.
+          </Text>
+          <Text
+            style={{
+              color: "#1A1A1A",
+              fontSize: 15,
+              textAlign: "center",
+            }}
+          >
+            Let your natural amazing self shine through meet me up!
+          </Text>
+        </View>
+
         {/* Description */}
         <Text style={styles.description}>
           Wary of being catfished? Don't be!{"\n"}
